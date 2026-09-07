@@ -1,0 +1,340 @@
+{
+  "mba": {
+    "heading": "Job Roles and Salary After an Online & Distance MBA Degree",
+    "description": "Graduates with an Online & Distance MBA degree can explore career opportunities in various fields. Their salary can differ depending on qualifications, experience, skills, job title, organisation and location. Here are some of the key job roles and their expected salary ranges.",
+    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "roles": [
+      {
+        "role": "Marketing Manager",
+        "description": "Plans marketing strategies",
+        "salary": "₹6–15 LPA"
+      },
+      {
+        "role": "Financial Analyst",
+        "description": "Analyzes financial data",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "HR Manager",
+        "description": "Manages employee relations",
+        "salary": "₹6–14 LPA"
+      },
+      {
+        "role": "Business Analyst",
+        "description": "Analyzes business processes",
+        "salary": "₹6–14 LPA"
+      },
+      {
+        "role": "Sales Manager",
+        "description": "Drives sales growth",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "Operations Manager",
+        "description": "Manages daily operations",
+        "salary": "₹6–15 LPA"
+      },
+      {
+        "role": "Product Manager",
+        "description": "Manages product development",
+        "salary": "₹10–25 LPA"
+      },
+      {
+        "role": "Management Consultant",
+        "description": "Provides business solutions",
+        "salary": "₹8–20 LPA"
+      },
+      {
+        "role": "Investment Banking Analyst",
+        "description": "Handles financial transactions",
+        "salary": "₹8–18 LPA"
+      },
+      {
+        "role": "Project Manager",
+        "description": "Oversees project execution",
+        "salary": "₹7–18 LPA"
+      },
+      {
+        "role": "Business Development Manager",
+        "description": "Develops business opportunities",
+        "salary": "₹5–14 LPA"
+      },
+      {
+        "role": "Supply Chain Manager",
+        "description": "Manages supply networks",
+        "salary": "₹7–16 LPA"
+      },
+      {
+        "role": "Brand Manager",
+        "description": "Builds brand strategy",
+        "salary": "₹7–18 LPA"
+      },
+      {
+        "role": "Risk Manager",
+        "description": "Identifies business risks",
+        "salary": "₹7–16 LPA"
+      },
+      {
+        "role": "Data Analytics Manager",
+        "description": "Leads data analysis",
+        "salary": "₹8–20 LPA"
+      }
+    ]
+  },
+  "mca": {
+    "heading": "Job Roles and Salary After an Online & Distance MCA Degree",
+    "description": "After completing an Online & Distance MCA, graduates can pursue several technical and IT-related job roles. Career opportunities are available in areas such as software, databases, networking, and data management. Here are some popular job roles and their estimated salary ranges.",
+    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "roles": [
+      {
+        "role": "Software Developer",
+        "description": "Develops software applications",
+        "salary": "₹4–12 LPA"
+      },
+      {
+        "role": "Web Developer",
+        "description": "Builds websites and applications",
+        "salary": "₹3–10 LPA"
+      },
+      {
+        "role": "Data Analyst",
+        "description": "Analyzes business data",
+        "salary": "₹4–10 LPA"
+      },
+      {
+        "role": "System Analyst",
+        "description": "Improves IT systems",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "Database Administrator",
+        "description": "Manages databases",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "Cloud Engineer",
+        "description": "Manages cloud infrastructure",
+        "salary": "₹5–15 LPA"
+      },
+      {
+        "role": "Cybersecurity Analyst",
+        "description": "Protects digital systems",
+        "salary": "₹5–14 LPA"
+      },
+      {
+        "role": "Network Administrator",
+        "description": "Manages computer networks",
+        "salary": "₹4–10 LPA"
+      },
+      {
+        "role": "Software Tester",
+        "description": "Tests software quality",
+        "salary": "₹3–9 LPA"
+      },
+      {
+        "role": "DevOps Engineer",
+        "description": "Automates software deployment",
+        "salary": "₹6–16 LPA"
+      },
+      {
+        "role": "Mobile App Developer",
+        "description": "Develops mobile applications",
+        "salary": "₹4–12 LPA"
+      },
+      {
+        "role": "AI/ML Engineer",
+        "description": "Develops intelligent systems",
+        "salary": "₹6–18 LPA"
+      },
+      {
+        "role": "Technical Project Manager",
+        "description": "Manages IT projects",
+        "salary": "₹8–20 LPA"
+      },
+      {
+        "role": "IT Consultant",
+        "description": "Provides technology solutions",
+        "salary": "₹6–15 LPA"
+      },
+      {
+        "role": "UI/UX Developer",
+        "description": "Designs digital interfaces",
+        "salary": "₹4–12 LPA"
+      }
+    ]
+  },
+  "mcom": {
+    "heading": "Job Roles and Salary After an Online & Distance MCom Degree",
+    "description": "MCom graduates can find jobs in accounting firms, banks, financial institutions, corporate companies, and other organisations. The degree provides knowledge of accounting, finance, taxation, economics, and business management. The following table lists suitable job roles along with their approximate salaries in India.",
+    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "roles": [
+      {
+        "role": "Accountant",
+        "description": "Maintains financial records",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Financial Analyst",
+        "description": "Analyzes financial data",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Tax Consultant",
+        "description": "Handles tax planning and filing",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Finance Executive",
+        "description": "Manages finance operations",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Audit Executive",
+        "description": "Reviews financial records",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Banking Executive",
+        "description": "Handles banking operations",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Investment Analyst",
+        "description": "Studies investment opportunities",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Credit Analyst",
+        "description": "Evaluates credit and loan risks",
+        "salary": "₹3.5–7 LPA"
+      },
+      {
+        "role": "Accounts Manager",
+        "description": "Supervises accounting activities",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Business Analyst",
+        "description": "Analyzes business performance",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Financial Advisor",
+        "description": "Provides financial guidance",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Tax Analyst",
+        "description": "Analyzes tax-related matters",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Payroll Specialist",
+        "description": "Manages employee salaries",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Finance Manager",
+        "description": "Oversees financial planning",
+        "salary": "₹6–12 LPA"
+      },
+      {
+        "role": "Risk Analyst",
+        "description": "Identifies financial risks",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Cost Accountant",
+        "description": "Tracks and controls business costs",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Treasury Analyst",
+        "description": "Manages cash and investments",
+        "salary": "₹4–9 LPA"
+      }
+    ]
+  },
+  "ma": {
+    "heading": "Job Roles and Salary After an Online & Distance MA Degree",
+    "description": "MA graduates can build careers in education, publishing, media, social work, public administration, research organisations, and government departments. The available job roles depend on the specialisation, skills, and industry requirements. Below are some of the most popular career options after an Online & Distance MA degree.",
+    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "roles": [
+      {
+        "role": "School Teacher",
+        "description": "Teaches students and prepares lessons",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "College Lecturer",
+        "description": "Teaches undergraduate and postgraduate students",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Content Writer",
+        "description": "Creates articles, blogs, and website content",
+        "salary": "₹2.5–6 LPA"
+      },
+      {
+        "role": "Editor",
+        "description": "Reviews and improves written content",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Journalist",
+        "description": "Researches and reports news stories",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Research Assistant",
+        "description": "Supports academic and research projects",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Political Analyst",
+        "description": "Analyses political events and developments",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Economist",
+        "description": "Studies economic trends and developments",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "Public Administration Professional",
+        "description": "Supports administrative and public-sector activities",
+        "salary": "₹3.5–8 LPA"
+      },
+      {
+        "role": "Community Development Officer",
+        "description": "Works on community development initiatives",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Counsellor",
+        "description": "Provides guidance and counselling services",
+        "salary": "₹2.5–6 LPA"
+      },
+      {
+        "role": "Translator",
+        "description": "Translates documents and other written content",
+        "salary": "₹2.5–7 LPA"
+      },
+      {
+        "role": "Education Counsellor",
+        "description": "Guides students about courses and education options",
+        "salary": "₹2.5–6 LPA"
+      },
+      {
+        "role": "Archaeologist",
+        "description": "Studies and preserves historical remains",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Historian",
+        "description": "Researches and documents historical events",
+        "salary": "₹3–8 LPA"
+      }
+    ]
+  }
+}
