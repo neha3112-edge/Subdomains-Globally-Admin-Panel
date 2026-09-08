@@ -23,12 +23,14 @@
       {
         "role": "HR Manager",
         "description": "Manages employee relations",
-        "salary": "₹6–14 LPA"
+        "salary": "₹6–14 LPA",
+        "link": "#"
       },
       {
         "role": "Business Analyst",
         "description": "Analyzes business processes",
-        "salary": "₹6–14 LPA"
+        "salary": "₹6–14 LPA",
+        "link": "#"
       },
       {
         "role": "Sales Manager",
