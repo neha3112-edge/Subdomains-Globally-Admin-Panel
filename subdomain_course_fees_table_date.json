@@ -763,5 +763,523 @@
         "link": "https://distanceeducationschool.com/msw/distance-msw-in-bharati-vidyapeeth-university/"
       }
     ]
+  },
+  "bba": {
+    "course_name": "BBA",
+    "heading": "Top Online & Distance BBA Universities in India $YEAR$",
+    "description": "Before selecting an Online & Distance BBA program, students should consider the university’s recognition, fees, curriculum, learning flexibility, and support services. Comparing these factors can help learners choose a program that suits their academic and career goals. The following distance and online universities are worth considering for BBA admission in $YEAR$.",
+    "columns": [
+      "University Name",
+      "BBA Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Lovely Professional University (LPU)",
+        "fees": "₹25,000/- per semester",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/bba/distance-bba-in-lovely-professional-university/"
+      },
+      {
+        "name": "Amity University",
+        "fees": "₹33,200/- per semester",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/bba/online-bba-from-amity-university/"
+      },
+      {
+        "name": "Manipal University Jaipur",
+        "fees": "₹23,250/- per semester",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Strong brand credibility",
+        "link": "https://distanceeducationschool.com/bba/bba-in-online-manipal/"
+      },
+      {
+        "name": "Chandigarh University",
+        "fees": "₹21,875-27,550/- per semester",
+        "location": "Chandigarh, Punjab",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry Connect",
+        "link": "https://distanceeducationschool.com/bba/online-bba-in-chandigarh-university/"
+      },
+      {
+        "name": "Dr. D.Y. Patil Vidyapeeth University",
+        "fees": "₹33,167/- per semester",
+        "location": "Pune, Maharashtra",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Practical Exposure",
+        "link": "https://distanceeducationschool.com/bba/bba-in-dy-patil/"
+      },
+      {
+        "name": "Shoolini University",
+        "fees": "₹17,500/- per semester",
+        "location": "Solan, Himachal Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Placement Assistance",
+        "link": "https://distanceeducationschool.com/bba/online-bba-in-shoolini-university/"
+      },
+      {
+        "name": "Sikkim Manipal University",
+        "fees": "₹15,000/- per semester",
+        "location": "Gangtok, Sikkim",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Scholarship Opportunities",
+        "link": "https://distanceeducationschool.com/bba/bba-from-sikkim-manipal-university/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹10,667/- per semester",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bba/online-bba-in-mangalayatan-university/"
+      },
+      {
+        "name": "Vignan University",
+        "fees": "₹18,000/- per semester",
+        "location": "Guntur, Andhra Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Skill-based learning",
+        "link": "https://distanceeducationschool.com/bba/bba-in-vignan-university/"
+      },
+      {
+        "name": "Uttaranchal University",
+        "fees": "₹17,000/- per semester",
+        "location": "Dehradun, Uttarakhand",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Student support",
+        "link": "https://distanceeducationschool.com/bba/bba-in-uttaranchal-university/"
+      },
+      {
+        "name": "Jamia Hamdard University",
+        "fees": "₹14,000/- per semester",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Learner Support Centres",
+        "link": "https://distanceeducationschool.com/bba/online-bba-jamia-hamdard-university/"
+      },
+      {
+        "name": "Bharathidasan University",
+        "fees": "₹15,133/- per semester",
+        "location": "Tiruchirappalli, Tamil Nadu",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable education",
+        "link": "https://distanceeducationschool.com/bba/online-bba-bharathidasan-university/"
+      },
+      {
+        "name": "Vivekananda Global University",
+        "fees": "₹22,000/- per semester",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry-oriented learning",
+        "link": "https://distanceeducationschool.com/bba/online-bba-in-vivekananda-global-university/"
+      },
+      {
+        "name": "UPES University",
+        "fees": "₹25,000/- per semester",
+        "location": "Dehradun, Uttarakhand",
+        "accreditation": "UGC, NAAC A",
+        "advantage": "Industry-focused education",
+        "link": "https://distanceeducationschool.com/bba/bba-in-upes-university/"
+      },
+      {
+        "name": "Sharda University",
+        "fees": "₹20,000/- per semester",
+        "location": "Greater Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "AI courses with Campus Immersion",
+        "link": "https://distanceeducationschool.com/bba/online-bba-in-sharda-university/"
+      },
+      {
+        "name": "Galgotias University",
+        "fees": "₹12,867/- per semester",
+        "location": "Greater Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Career-focused programs",
+        "link": "https://distanceeducationschool.com/bba/online-bba-from-galgotias-online/"
+      }
+    ]
+  },
+  "bca": {
+    "course_name": "BCA",
+    "heading": "Top Online & Distance BCA Universities in India $YEAR$",
+    "description": "Choosing the right university is important for building a strong foundation in computer applications and IT. The universities listed below offer Online & Distance BCA programs with flexible learning options. Compare their fees, approvals, and other key features before making a choice.",
+    "columns": [
+      "University Name",
+      "BCA Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Manipal University Jaipur",
+        "fees": "₹23,250/- per semester",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Strong brand credibility",
+        "link": "https://distanceeducationschool.com/bca/bca-in-online-manipal/"
+      },
+      {
+        "name": "Lovely Professional University (LPU)",
+        "fees": "₹25,000/- per semester",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-lovely-professional-university/"
+      },
+      {
+        "name": "Chandigarh University",
+        "fees": "₹22,125/- per semester",
+        "location": "Mohali, Punjab",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry Connect",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-chandigarh-university/"
+      },
+      {
+        "name": "Dr. D.Y. Patil Vidyapeeth University",
+        "fees": "₹29,167/- per semester",
+        "location": "Pune, Maharashtra",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Practical Exposure",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-dy-patil-university/"
+      },
+      {
+        "name": "Amity University",
+        "fees": "₹29,200/- per semester",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/bca/online-bca-from-amity-university/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹11,667/- per semester",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-mangalayatan-university/"
+      },
+      {
+        "name": "Vignan University",
+        "fees": "₹18,000/- per semester",
+        "location": "Guntur, Andhra Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Skill-based learning",
+        "link": "https://distanceeducationschool.com/bca/bca-in-vignan-university/"
+      },
+      {
+        "name": "Uttaranchal University",
+        "fees": "₹17,000/- per semester",
+        "location": "Dehradun, Uttarakhand",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Student support",
+        "link": "https://distanceeducationschool.com/bca/bca-in-uttaranchal-university/"
+      },
+      {
+        "name": "Shoolini University",
+        "fees": "₹17,500/- per semester",
+        "location": "Solan, Himachal Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Placement Assistance",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-shoolini-university/"
+      },
+      {
+        "name": "Vivekananda Global University",
+        "fees": "₹22,000/- per semester",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry-oriented learning",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-vivekananda-global-university/"
+      },
+      {
+        "name": "UPES University",
+        "fees": "₹25,000/- per semester",
+        "location": "Dehradun, Uttarakhand",
+        "accreditation": "UGC, NAAC A",
+        "advantage": "Industry-focused education",
+        "link": "https://distanceeducationschool.com/bca/bca-in-upes-university/"
+      },
+      {
+        "name": "Sharda University",
+        "fees": "₹20,000/- per semester",
+        "location": "Greater Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "AI courses with Campus Immersion",
+        "link": "https://distanceeducationschool.com/bca/online-bca-in-sharda-university/"
+      },
+      {
+        "name": "Galgotias University",
+        "fees": "₹13,867/- per semester",
+        "location": "Greater Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Career-focused programs",
+        "link": "https://distanceeducationschool.com/bca/online-bca-from-galgotias-online/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹8,300/- per semester",
+        "location": "New Delhi, Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bca/distance-bca-in-ignou/"
+      }
+    ]
+  },
+  "bcom": {
+    "course_name": "BCom",
+    "heading": "Top Online & Distance BCom Universities in India $YEAR$",
+    "description": "Choosing the right university is important for building a strong foundation in commerce, accounting, finance, and business. The top Online & Distance BCom universities offer flexible learning, recognised degrees, and student support services. Below are some of the top universities offering Online & Distance BCom programs in India in $YEAR$.",
+    "columns": [
+      "University Name",
+      "BCom Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Manipal University Jaipur",
+        "fees": "₹16,500/-",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Strong brand credibility",
+        "link": "https://distanceeducationschool.com/bcom/bcom-in-online-manipal/"
+      },
+      {
+        "name": "Lovely Professional University",
+        "fees": "₹10,500",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/bcom/distance-bcom-in-lovely-professional-university/"
+      },
+      {
+        "name": "Amity University",
+        "fees": "₹19,200/-29,167/-",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/bcom/online-bcom-from-amity-university/"
+      },
+      {
+        "name": "Sikkim Manipal University",
+        "fees": "₹12,500/-",
+        "location": "Gangtok, Sikkim",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Scholarship Opportunities",
+        "link": "https://distanceeducationschool.com/bcom/bcom-from-sikkim-manipal-university/"
+      },
+      {
+        "name": "Shoolini University",
+        "fees": "₹15,000/-",
+        "location": "Solan, Himachal Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Placement Assistance",
+        "link": "https://distanceeducationschool.com/bcom/online-bcom-in-shoolini-university/"
+      },
+      {
+        "name": "Kurukshetra University",
+        "fees": "₹12,000/-",
+        "location": "Kurukshetra, Haryana",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Govt. Scholarship Services",
+        "link": "https://distanceeducationschool.com/bcom/online-bcom-course-kurukshetra-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹2,400/-",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fee structure",
+        "link": "https://distanceeducationschool.com/bcom/distance-bcom-in-ignou/"
+      },
+      {
+        "name": "Amrita University",
+        "fees": "₹40,500/-",
+        "location": "Coimbatore, Tamil Nadu",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Globally recognized degrees",
+        "link": "https://distanceeducationschool.com/bcom/bcom-in-amrita-university/"
+      },
+      {
+        "name": "Jain University",
+        "fees": "₹20,000/-",
+        "location": "Bengaluru, Karnataka",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "LinkedIn Learning",
+        "link": "https://distanceeducationschool.com/bcom/b-com-from-jain-university/"
+      },
+      {
+        "name": "Dayanand Sagar University",
+        "fees": "22,250/-",
+        "location": "Bengaluru, Karnataka",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Placement Cell",
+        "link": "https://distanceeducationschool.com/bcom/online-b-com-from-dsu/"
+      }
+    ]
+  },
+  "ba": {
+    "course_name": "BA",
+    "heading": "Top Online & Distance BA Universities in India $YEAR$",
+    "description": "Selecting a recognised university is essential for receiving a quality education and a degree accepted by employers and higher education institutions. The top Online & Distance BA universities offer flexible learning, experienced faculty, and UGC-recognised programs. Below are some of the leading universities offering Online & Distance BA courses in India in $YEAR$.",
+    "columns": [
+      "University Name",
+      "BA Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Lovely Professional University (LPU)",
+        "fees": "₹20,000/-",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/ba/ba-from-lovely-professional-university/"
+      },
+      {
+        "name": "Amity University",
+        "fees": "₹19,200/-",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/ba/online-ba-from-amity-university/"
+      },
+      {
+        "name": "Sikkim Manipal University",
+        "fees": "₹12,500/-",
+        "location": "Gangtok, Sikkim",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Scholarship Opportunities",
+        "link": "https://distanceeducationschool.com/ba/ba-from-sikkim-manipal-university/"
+      },
+      {
+        "name": "Uttaranchal University",
+        "fees": "₹10,200/-",
+        "location": "Dehradun, Uttarakhand",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Student support",
+        "link": "https://distanceeducationschool.com/ba/ba-in-uttaranchal-university/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹6,667/-",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/ba/online-ba-course-mangalayatan-university/"
+      },
+      {
+        "name": "Kurukshetra University",
+        "fees": "₹12,000/-",
+        "location": "Kurukshetra, Haryana",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Govt. Scholarship Services",
+        "link": "https://distanceeducationschool.com/ba/online-ba-kurukshetra-university/"
+      },
+      {
+        "name": "Jamia Hamdard",
+        "fees": "₹10,000/-",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Learner Support Centres",
+        "link": "https://distanceeducationschool.com/ba/online-ba-jamia-hamdard-university/"
+      },
+      {
+        "name": "Bharathidasan University",
+        "fees": "₹7,633/-",
+        "location": "Tiruchirappalli, Tamil Nadu",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable education",
+        "link": "https://distanceeducationschool.com/ba/online-ba-course-bharathidasan-university/"
+      },
+      {
+        "name": "Vivekananda Global University",
+        "fees": "₹12,000/-",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry-oriented learning",
+        "link": "https://distanceeducationschool.com/ba/online-ba-degree-program-vivekananda-global-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹1,600/-",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fee structure",
+        "link": "https://distanceeducationschool.com/ba/distance-ba-in-ignou/"
+      }
+    ]
+  },
+  "bsc": {
+    "course_name": "BSc",
+    "heading": "Top Online & Distance BSc Universities in India $YEAR$",
+    "description": "Choosing the right university is important for getting quality education and a recognised BSc degree through online or distance learning. The universities listed below offer BSc programs with flexible learning options, suitable for students and working professionals. The table highlights the top online and distance BSc universities in India in $YEAR$, along with their key details.",
+    "columns": [
+      "University Name",
+      "BSc Fees",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Lovely Professional University (LPU)",
+        "fees": "₹14,000/-Per Semester",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/bsc/distance-bsc-in-lovely-professional-university/"
+      },
+      {
+        "name": "OP Jindal Global University",
+        "fees": "₹45,834/-Per Semester",
+        "location": "Sonipat, Haryana",
+        "accreditation": "UGC, NAAC",
+        "advantage": "Global Exposure",
+        "link": "https://distanceeducationschool.com/bsc/online-bsc-in-op-jindal-university/"
+      },
+      {
+        "name": "BITS Pilani",
+        "fees": "₹35,690/-Trimester",
+        "location": "Pilani, Rajasthan",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Internships and placements",
+        "link": "https://distanceeducationschool.com/bsc/online-bsc-in-bits-pilani/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹6500/-per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bsc/distance-bsc-in-ignou/"
+      },
+      {
+        "name": "IIT Guwahati",
+        "fees": "₹88,000/-per year",
+        "location": "Guwahati, Assam",
+        "accreditation": "Ministry of Education, Government of India",
+        "advantage": "Internship opportunities",
+        "link": "https://distanceeducationschool.com/bsc/online-bsc-in-iit-guwahati/"
+      },
+      {
+        "name": "IIT Madras",
+        "fees": "₹47,667 – ₹51,667",
+        "location": "Chennai, Tamil Nadu",
+        "accreditation": "Ministry of Education, Government of India",
+        "advantage": "Scholarship Facility",
+        "link": "https://distanceeducationschool.com/bsc/online-bsc-in-iit-madras/"
+      }
+    ]
   }
 }

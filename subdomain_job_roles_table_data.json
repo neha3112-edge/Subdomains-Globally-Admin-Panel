@@ -686,5 +686,380 @@
         "salary": "₹3–7 LPA"
       }
     ]
+  },
+  "bba": {
+    "heading": "Job Roles and Salary After an Online & Distance BBA Degree",
+    "description": "An Online & Distance BBA degree opens career opportunities across sales, marketing, finance, HR, operations, and business development. Graduates can start their careers in entry-level executive and management trainee roles across different industries. The salary after a BBA degree varies based on the job role, skills, experience, and organisation. The table below highlights the common job roles and expected salary ranges.",
+    "columns": [
+      "Job Role",
+      "Description",
+      "Average Salary (Per Annum)"
+    ],
+    "roles": [
+      {
+        "role": "Business Development Executive",
+        "description": "Identifies business opportunities and drives company growth.",
+        "salary": "₹3 LPA – ₹6 LPA"
+      },
+      {
+        "role": "Marketing Executive",
+        "description": "Plans and executes marketing campaigns to promote products or services.",
+        "salary": "₹3 LPA – ₹6 LPA"
+      },
+      {
+        "role": "Sales Executive",
+        "description": "Generates leads, manages clients, and achieves sales targets.",
+        "salary": "₹2.5 LPA – ₹5.5 LPA"
+      },
+      {
+        "role": "Human Resources (HR) Executive",
+        "description": "Handles recruitment, onboarding, employee relations, and HR operations.",
+        "salary": "₹3 LPA – ₹6 LPA"
+      },
+      {
+        "role": "Financial Analyst",
+        "description": "Evaluates financial data and supports business decision-making.",
+        "salary": "₹4 LPA – ₹8 LPA"
+      },
+      {
+        "role": "Operations Executive",
+        "description": "Oversees daily business operations and process efficiency.",
+        "salary": "₹3 LPA – ₹6.5 LPA"
+      },
+      {
+        "role": "Customer Relationship Manager",
+        "description": "Builds and maintains long-term relationships with customers.",
+        "salary": "₹4 LPA – ₹8 LPA"
+      },
+      {
+        "role": "Digital Marketing Executive",
+        "description": "Manages SEO, social media, email marketing, and online campaigns.",
+        "salary": "₹3 LPA – ₹7 LPA"
+      },
+      {
+        "role": "Retail Store Manager",
+        "description": "Supervises store operations, staff, inventory, and customer service.",
+        "salary": "₹4 LPA – ₹8 LPA"
+      },
+      {
+        "role": "Management Trainee",
+        "description": "Receives practical training across business functions before taking managerial roles.",
+        "salary": "₹3.5 LPA – ₹7 LPA"
+      },
+      {
+        "role": "Administrative Executive",
+        "description": "Supports office administration and business coordination.",
+        "salary": "₹2.5 LPA – ₹5 LPA"
+      },
+      {
+        "role": "Supply Chain Executive",
+        "description": "Manages procurement, inventory, logistics, and distribution processes.",
+        "salary": "₹4 LPA – ₹7.5 LPA"
+      }
+    ]
+  },
+  "bca": {
+    "heading": "Job Roles and Salary After an Online & Distance BCA Degree",
+    "description": "After completing an Online & Distance BCA, graduates can pursue careers across various areas of the IT industry. Depending on their technical skills and interests, they can work in development, testing, support, or database-related roles. The following table provides an overview of job roles and salary ranges after BCA.",
+    "columns": [
+      "Job Role",
+      "Key Responsibilities",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Web Developer",
+        "description": "Builds and maintains websites",
+        "salary": "₹2.5–₹6 LPA"
+      },
+      {
+        "role": "Software Developer",
+        "description": "Develops and tests software applications",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Front-End Developer",
+        "description": "Creates website interfaces and layouts",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Back-End Developer",
+        "description": "Manages server-side application development",
+        "salary": "₹3–₹8 LPA"
+      },
+      {
+        "role": "Full-Stack Developer",
+        "description": "Handles both front-end and back-end development",
+        "salary": "₹4–₹10 LPA"
+      },
+      {
+        "role": "Database Administrator",
+        "description": "Manages databases and data security",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "System Administrator",
+        "description": "Manages IT systems and networks",
+        "salary": "₹2.5–₹6 LPA"
+      },
+      {
+        "role": "Technical Support Executive",
+        "description": "Resolves technical and software issues",
+        "salary": "₹2–₹5 LPA"
+      },
+      {
+        "role": "Software Tester",
+        "description": "Tests software for bugs and performance",
+        "salary": "₹2.5–₹6 LPA"
+      },
+      {
+        "role": "IT Support Specialist",
+        "description": "Provides technical assistance to users",
+        "salary": "₹2.5–₹6 LPA"
+      },
+      {
+        "role": "Data Analyst",
+        "description": "Analyses data to support business decisions",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Cloud Support Associate",
+        "description": "Supports cloud-based systems and services",
+        "salary": "₹3–7 LPA"
+      }
+    ]
+  },
+  "bcom": {
+    "heading": "Job Roles and Salary After an Online & Distance BCom Degree",
+    "description": "After completing an Online & Distance BCom degree, graduates can explore opportunities in accounting, finance, banking, taxation, and business operations. The degree provides a foundation for both entry-level corporate jobs and further professional courses in commerce and finance. The table below highlights common job roles and their approximate salary ranges in India.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Accountant",
+        "description": "Manages financial records",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Financial Analyst",
+        "description": "Analyses financial data",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Tax Associate",
+        "description": "Assists with tax-related work",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Banking Executive",
+        "description": "Handles banking operations",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Audit Associate",
+        "description": "Supports audit and compliance",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Finance Executive",
+        "description": "Manages financial operations",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Credit Analyst",
+        "description": "Evaluates credit applications",
+        "salary": "₹4–7 LPA"
+      },
+      {
+        "role": "Investment Operations Executive",
+        "description": "Supports investment transactions",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Payroll Executive",
+        "description": "Manages salary processing",
+        "salary": "₹3–5.5 LPA"
+      },
+      {
+        "role": "Business Operations Executive",
+        "description": "Supports business processes",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "GST Executive",
+        "description": "Handles GST compliance and filings",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Accounts Payable Executive",
+        "description": "Manages vendor payments",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Financial Services Associate",
+        "description": "Supports financial service operations",
+        "salary": "₹3–6 LPA"
+      }
+    ]
+  },
+  "ba": {
+    "heading": "Job Roles and Salary After an Online & Distance BA Degree",
+    "description": "After completing an Online & Distance BA degree, graduates can explore career opportunities in both the government and private sectors or pursue higher education for career advancement. The program develops essential skills such as communication, research, and problem-solving. Below are some of the most popular job roles and their estimated salaries.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Content Writer",
+        "description": "Creates articles and digital content",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Human Resources Executive",
+        "description": "Supports recruitment and employee management",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Social Media Executive",
+        "description": "Manages social media platforms and campaigns",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Public Relations Executive",
+        "description": "Builds and maintains brand image",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Customer Relationship Executive",
+        "description": "Handles customer queries and client relations",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Administrative Executive",
+        "description": "Manages office operations and documentation",
+        "salary": "₹3–5.5 LPA"
+      },
+      {
+        "role": "Sales Executive",
+        "description": "Promotes products and drives business growth",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Marketing Executive",
+        "description": "Assists in marketing campaigns and promotions",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Journalist",
+        "description": "Reports news and creates media content",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Research Assistant",
+        "description": "Supports research projects and data analysis",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Teacher",
+        "description": "Teaches at schools after meeting required qualifications",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "NGO Programme Coordinator",
+        "description": "Manages community development projects",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Academic Counsellor",
+        "description": "Guides students on education and career choices",
+        "salary": "₹3–5.5 LPA"
+      },
+      {
+        "role": "Office Executive",
+        "description": "Oversees day-to-day administrative activities",
+        "salary": "₹2.5–5 LPA"
+      }
+    ]
+  },
+  "bsc": {
+    "heading": "Job Roles and Salary After an Online & Distance BSc Degree",
+    "description": "An online and distance BSc degree can prepare students for various entry-level roles in science, technology, research, and related fields. Job opportunities and salary packages depend on the BSc specialisation, skills, experience, and industry. The table below highlights common job roles and their average salary ranges after completing an online or distance BSc degree.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Research Assistant",
+        "description": "Assists with research and data collection.",
+        "salary": "₹2.5–₹4.5 LPA"
+      },
+      {
+        "role": "Quality Control Executive",
+        "description": "Checks product quality and standards.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Data Analyst",
+        "description": "Analyses data and prepares reports.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Clinical Research Associate",
+        "description": "Supports clinical trials and research.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Environmental Analyst",
+        "description": "Analyses environmental data and samples.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Technical Assistant",
+        "description": "Provides technical and laboratory support.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Scientific Assistant",
+        "description": "Supports scientific research and experiments.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Research Associate",
+        "description": "Conducts research and analyses findings.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Laboratory Technician",
+        "description": "Performs routine laboratory tests.",
+        "salary": "₹2–₹4.5 LPA"
+      },
+      {
+        "role": "Food Quality Analyst",
+        "description": "Checks food quality and safety.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Environmental Technician",
+        "description": "Conducts environmental testing and monitoring.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "GIS Analyst",
+        "description": "Analyses geographic and spatial data.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Statistics Assistant",
+        "description": "Collects and analyses statistical data.",
+        "salary": "₹2.5–₹5 LPA"
+      }
+    ]
   }
 }
