@@ -2,12 +2,17 @@
   "mba": {
     "heading": "Job Roles and Salary After an Online & Distance MBA Degree",
     "description": "Graduates with an Online & Distance MBA degree can explore career opportunities in various fields. Their salary can differ depending on qualifications, experience, skills, job title, organisation and location. Here are some of the key job roles and their expected salary ranges.",
-    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Salary Range in India"
+    ],
     "roles": [
       {
         "role": "Marketing Manager",
         "description": "Plans marketing strategies",
-        "salary": "₹6–15 LPA"
+        "salary": "₹6–15 LPA",
+        "link": "#"
       },
       {
         "role": "Financial Analyst",
@@ -84,7 +89,11 @@
   "mca": {
     "heading": "Job Roles and Salary After an Online & Distance MCA Degree",
     "description": "After completing an Online & Distance MCA, graduates can pursue several technical and IT-related job roles. Career opportunities are available in areas such as software, databases, networking, and data management. Here are some popular job roles and their estimated salary ranges.",
-    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Salary Range in India"
+    ],
     "roles": [
       {
         "role": "Software Developer",
@@ -166,7 +175,11 @@
   "mcom": {
     "heading": "Job Roles and Salary After an Online & Distance MCom Degree",
     "description": "MCom graduates can find jobs in accounting firms, banks, financial institutions, corporate companies, and other organisations. The degree provides knowledge of accounting, finance, taxation, economics, and business management. The following table lists suitable job roles along with their approximate salaries in India.",
-    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Salary Range in India"
+    ],
     "roles": [
       {
         "role": "Accountant",
@@ -258,7 +271,11 @@
   "ma": {
     "heading": "Job Roles and Salary After an Online & Distance MA Degree",
     "description": "MA graduates can build careers in education, publishing, media, social work, public administration, research organisations, and government departments. The available job roles depend on the specialisation, skills, and industry requirements. Below are some of the most popular career options after an Online & Distance MA degree.",
-    "columns": ["Job Role", "Role Description", "Salary Range in India"],
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Salary Range in India"
+    ],
     "roles": [
       {
         "role": "School Teacher",
