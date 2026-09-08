@@ -136,6 +136,37 @@ if ( ! function_exists( 'wp_rand' ) ) {
     }
 }
 
+if ( ! function_exists( 'add_action' ) ) {
+    /**
+     * @param string $hook_name
+     * @param callable|string $callback
+     * @param int $priority
+     * @param int $accepted_args
+     * @return true
+     */
+    function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+        return true;
+    }
+}
+
+if ( ! function_exists( 'is_admin' ) ) {
+    /**
+     * @return bool
+     */
+    function is_admin() {
+        return false;
+    }
+}
+
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+    /**
+     * @return bool
+     */
+    function wp_doing_ajax() {
+        return false;
+    }
+}
+
 if ( ! function_exists( 'get_site_year' ) ) {
     /**
      * @return string
@@ -144,3 +175,22 @@ if ( ! function_exists( 'get_site_year' ) ) {
         return date( 'Y' );
     }
 }
+
+if ( ! function_exists( 'get_site_session' ) ) {
+    /**
+     * @return string
+     */
+    function get_site_session() {
+        return '2026-27';
+    }
+}
+
+if ( ! function_exists( 'get_site_next_year' ) ) {
+    /**
+     * @return string
+     */
+    function get_site_next_year() {
+        return '2027';
+    }
+}
+

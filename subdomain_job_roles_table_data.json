@@ -11,14 +11,12 @@
       {
         "role": "Marketing Manager",
         "description": "Plans marketing strategies",
-        "salary": "₹6–15 LPA",
-        "link": "#"
+        "salary": "₹6–15 LPA"
       },
       {
         "role": "Financial Analyst",
         "description": "Analyzes financial data",
-        "salary": "₹5–12 LPA",
-        "link": "#"
+        "salary": "₹5–12 LPA"
       },
       {
         "role": "HR Manager",
@@ -352,6 +350,340 @@
         "role": "Historian",
         "description": "Researches and documents historical events",
         "salary": "₹3–8 LPA"
+      }
+    ]
+  },
+  "msc": {
+    "heading": "Job Roles and Salary After an Online & Distance MSc Degree",
+    "description": "An Online & Distance MSc degree can prepare students for careers in science, research, data analysis, technology, and other specialised fields. Career opportunities depend on the MSc specialisation, skills, experience, and industry requirements. The table below highlights common job roles and their approximate salaries in India.",
+    "columns": [
+      "Job Role",
+      "Key Work",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Data Analyst",
+        "description": "Analyse data and trends",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Research Analyst",
+        "description": "Conduct research and analysis",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Business Analyst",
+        "description": "Analyse business requirements",
+        "salary": "₹5–10 LPA"
+      },
+      {
+        "role": "Data Scientist",
+        "description": "Build data-driven models",
+        "salary": "₹6–15 LPA"
+      },
+      {
+        "role": "Statistician",
+        "description": "Analyse statistical data",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Research Associate",
+        "description": "Support research projects",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Laboratory Analyst",
+        "description": "Perform laboratory testing",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Quality Control Analyst",
+        "description": "Maintain product quality",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Environmental Analyst",
+        "description": "Study environmental data",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Scientific Assistant",
+        "description": "Assist scientific research",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Biostatistician",
+        "description": "Analyse biological data",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "Microbiologist",
+        "description": "Study microorganisms",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Lecturer/Assistant Professor*",
+        "description": "Teach MSc-related subjects",
+        "salary": "₹4–10 LPA"
+      },
+      {
+        "role": "Project Associate",
+        "description": "Manage research projects",
+        "salary": "₹4–8 LPA"
+      }
+    ]
+  },
+  "mlis": {
+    "heading": "Job Roles and Salary After an Online & Distance MLIS Degree",
+    "description": "An Online & Distance MLIS degree offers career opportunities in libraries, information centres, archives, and documentation services. The salary depends on the job role, experience, organisation, and professional skills. The table below lists popular MLIS job roles along with their approximate salary ranges in India.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Approx. Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Librarian",
+        "description": "Manage library resources and services",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Assistant Librarian",
+        "description": "Support library operations and users",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Library Information Officer",
+        "description": "Manage information and library systems",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Information Scientist",
+        "description": "Organise and analyse information resources",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Digital Librarian",
+        "description": "Manage digital library resources",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Library Manager",
+        "description": "Oversee library operations and staff",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Cataloguing Specialist",
+        "description": "Classify and catalogue library materials",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Archivist",
+        "description": "Preserve and manage historical records",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Documentation Officer",
+        "description": "Maintain and organise documents",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Knowledge Manager",
+        "description": "Manage organisational knowledge resources",
+        "salary": "₹5–12 LPA"
+      },
+      {
+        "role": "Research Assistant",
+        "description": "Support research and information activities",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Records Manager",
+        "description": "Manage organisational records and archives",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Academic Librarian",
+        "description": "Provide library services in institutions",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Library Technician",
+        "description": "Handle library systems and technical tasks",
+        "salary": "₹2.5–5 LPA"
+      }
+    ]
+  },
+  "mjmc": {
+    "heading": "Job Roles and Salary After an Online & Distance MJMC Degree",
+    "description": "After completing an Online & Distance MJMC degree, graduates can pursue careers across different areas of the media and communication industry. Career growth and salary depend on professional skills, experience, job profile, and industry. Below are some common MJMC job roles along with their approximate salary ranges in India.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Approx. Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Journalist",
+        "description": "Research and report news stories",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "News Reporter",
+        "description": "Cover and report current events",
+        "salary": "₹2.5–6 LPA"
+      },
+      {
+        "role": "Content Writer",
+        "description": "Create articles and digital content",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Copywriter",
+        "description": "Write promotional and advertising content",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Digital Media Executive",
+        "description": "Manage digital media content",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Social Media Manager",
+        "description": "Manage social media campaigns",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "Public Relations Executive",
+        "description": "Handle media and public communication",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Corporate Communication Executive",
+        "description": "Manage internal and external communication",
+        "salary": "₹4–9 LPA"
+      },
+      {
+        "role": "News Editor",
+        "description": "Edit and manage news content",
+        "salary": "₹4–10 LPA"
+      },
+      {
+        "role": "Video Content Producer",
+        "description": "Create and manage video content",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Radio Jockey",
+        "description": "Present programmes on radio platforms",
+        "salary": "₹2.5–7 LPA"
+      },
+      {
+        "role": "Media Researcher",
+        "description": "Conduct media and audience research",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Advertising Executive",
+        "description": "Plan and manage advertising activities",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Broadcast Journalist",
+        "description": "Report and produce broadcast news",
+        "salary": "₹3–8 LPA"
+      },
+      {
+        "role": "Communications Manager",
+        "description": "Develop and manage communication strategies",
+        "salary": "₹6–12 LPA"
+      }
+    ]
+  },
+  "msw": {
+    "heading": "Job Roles and Salary After an Online & Distance MSW Degree",
+    "description": "An Online & Distance MSW degree can prepare graduates for careers in social work, community development, counselling, and welfare services. Job opportunities and salaries depend on the role, experience, organisation, and area of social work. The table below highlights common MSW job roles and their approximate salary ranges in India.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Approx. Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Social Worker",
+        "description": "Support individuals and communities",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Community Development Officer",
+        "description": "Manage community welfare projects",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Programme Coordinator",
+        "description": "Coordinate social development programmes",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Social Welfare Officer",
+        "description": "Implement welfare schemes and services",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Counsellor",
+        "description": "Provide guidance and emotional support",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "NGO Coordinator",
+        "description": "Manage NGO projects and activities",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Case Worker",
+        "description": "Assist individuals with social issues",
+        "salary": "₹2.5–5 LPA"
+      },
+      {
+        "role": "Child Welfare Officer",
+        "description": "Support child protection and welfare",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Rehabilitation Worker",
+        "description": "Support rehabilitation programmes",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "CSR Executive",
+        "description": "Manage corporate social initiatives",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Project Officer",
+        "description": "Manage social development projects",
+        "salary": "₹4–8 LPA"
+      },
+      {
+        "role": "Research Assistant",
+        "description": "Conduct social research and analysis",
+        "salary": "₹3–6 LPA"
+      },
+      {
+        "role": "Public Health Social Worker",
+        "description": "Support community health programmes",
+        "salary": "₹3–7 LPA"
+      },
+      {
+        "role": "Field Coordinator",
+        "description": "Manage field-level social activities",
+        "salary": "₹2.5–6 LPA"
+      },
+      {
+        "role": "Human Services Professional",
+        "description": "Provide support and welfare services",
+        "salary": "₹3–7 LPA"
       }
     ]
   }

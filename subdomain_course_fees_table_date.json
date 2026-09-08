@@ -378,70 +378,305 @@
         "fees": "₹37,500–₹47,500",
         "location": "Noida, Uttar Pradesh",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Global recognition"
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/ma/online-ma-from-amity-university/"
       },
       {
         "name": "Manipal University, Jaipur",
         "fees": "₹18,750-20,000",
         "location": "Jaipur, Rajasthan",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Strong brand credibility"
+        "advantage": "Strong brand credibility",
+        "link": "https://distanceeducationschool.com/ma/ma-in-online-manipal/"
       },
       {
         "name": "O.P. Jindal Global University",
         "fees": "₹68,750",
         "location": "Sonipat, Haryana",
         "accreditation": "UGC, NAAC",
-        "advantage": "Global academic exposure"
+        "advantage": "Global academic exposure",
+        "link": "https://distanceeducationschool.com/ma/online-ma-in-jindal-university/"
       },
       {
         "name": "Lovely Professional University (LPU)",
         "fees": "₹20,000",
         "location": "Phagwara, Punjab",
         "accreditation": "UGC, NAAC A++",
-        "advantage": "Industry tie-ups"
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/ma/ma-in-lovely-professional-university/"
       },
       {
         "name": "Chandigarh University",
         "fees": "₹18,750–₹27,000",
         "location": "Mohali, Punjab",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Strong industry collaborations"
+        "advantage": "Strong industry collaborations",
+        "link": "https://distanceeducationschool.com/ma/online-ma-in-chandigarh-university/"
       },
       {
         "name": "Shoolini University",
         "fees": "₹15,000–₹20,000",
         "location": "Solan, Himachal Pradesh",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Placement assistance"
+        "advantage": "Placement assistance",
+        "link": "https://distanceeducationschool.com/ma/online-ma-in-shoolini-university/"
       },
       {
         "name": "Sikkim Manipal University",
         "fees": "₹18,750-₹20,000",
         "location": "Gangtok, Sikkim",
-        "accreditation": "UGC, UGC-DEB, NAAC A+",
-        "advantage": "Scholarship Opportunities"
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Scholarship Opportunities",
+        "link": "https://distanceeducationschool.com/ma/ma-from-sikkim-manipal-university/"
       },
       {
         "name": "Galgotias University",
         "fees": "₹10,050",
         "location": "Greater Noida, Uttar Pradesh",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Career-focused programs"
+        "advantage": "Career-focused programs",
+        "link": "https://distanceeducationschool.com/ma/online-ma-from-galgotias/"
       },
       {
         "name": "Vivekananda Global University",
         "fees": "₹18,000",
         "location": "Jaipur, Rajasthan",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Industry-oriented learning"
+        "advantage": "Industry-oriented learning",
+        "link": "https://distanceeducationschool.com/ma/online-ma-in-vivekananda-global-university/"
       },
       {
         "name": "Bharathidasan University",
         "fees": "₹19,000",
         "location": "Tiruchirappalli, Tamil Nadu",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Affordable education"
+        "advantage": "Affordable education",
+        "link": "https://distanceeducationschool.com/ma/online-ma-bharathidasan-university/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹8,750",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/ma/online-ma-in-mangalayatan-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹4,750-₹9,250",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fee structure",
+        "link": "https://distanceeducationschool.com/ma/distance-ma-in-ignou/"
+      },
+      {
+        "name": "Andhra University",
+        "fees": "₹14,125",
+        "location": "Visakhapatnam, Andhra Pradesh",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Budget-friendly fees",
+        "link": "https://distanceeducationschool.com/ma/online-ma-andhra-university/"
+      },
+      {
+        "name": "Kurukshetra University",
+        "fees": "₹15,000",
+        "location": "Kurukshetra, Haryana",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Govt. Scholarship Services",
+        "link": "https://distanceeducationschool.com/ma/online-ma-kurukshetra-university/"
+      },
+      {
+        "name": "Jamia Hamdard University",
+        "fees": "₹6,500-₹8,000",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Learner Support Centres",
+        "link": "https://distanceeducationschool.com/ma/online-ma-jamia-hamdard-university/"
+      }
+    ]
+  },
+  "msc": {
+    "course_name": "MSc",
+    "heading": "Top Online & Distance MSc Universities in India $YEAR$",
+    "description": "Choosing the right university is important when pursuing an Online & Distance MSc in India. Students should consider factors such as MSc specialisations, fees, accreditation, learning support, and career opportunities. The table below lists some of the top Online & Distance MSc universities in India for $YEAR$.",
+    "columns": [
+      "University Name",
+      "M.Sc. Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditation",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Amity University",
+        "fees": "₹68,800",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-amity-university/"
+      },
+      {
+        "name": "Lovely Professional University (LPU)",
+        "fees": "₹25,000",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/m-sc/m-sc-maths-lovely-professional-university/"
+      },
+      {
+        "name": "O.P. Jindal Global University",
+        "fees": "₹68,750",
+        "location": "Sonipat, Haryana",
+        "accreditation": "UGC, NAAC",
+        "advantage": "Global academic exposure",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-op-jindal-university/"
+      },
+      {
+        "name": "Manipal University, Jaipur",
+        "fees": "₹20,000",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Strong brand credibility",
+        "link": "https://distanceeducationschool.com/m-sc/msc-maths-in-online-manipal/"
+      },
+      {
+        "name": "Shoolini University",
+        "fees": "₹32,500",
+        "location": "Solan, Himachal Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Placement assistance",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-in-shoolini-university/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹13,750",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-in-mangalayatan-university/"
+      },
+      {
+        "name": "Kurukshetra University",
+        "fees": "₹13,759",
+        "location": "Kurukshetra, Haryana",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Govt. Scholarship Services",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-kurukshetra-university/"
+      },
+      {
+        "name": "Chandigarh University",
+        "fees": "₹25,251",
+        "location": "Mohali, Punjab",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry connect",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-in-chandigarh-university/"
+      },
+      {
+        "name": "Vivekananda Global University",
+        "fees": "₹18,000",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry-oriented learning",
+        "link": "https://distanceeducationschool.com/m-sc/online-msc-in-vivekananda-global-university/"
+      }
+    ]
+  },
+  "mlis": {
+    "course_name": "MLIS",
+    "heading": "Top Online & Distance MLIS Universities in India $YEAR$",
+    "description": "The choice of university can make a difference in the quality and value of an Online & Distance MLIS degree. Students should consider university recognition, fees, academic support, and learning flexibility before making a decision. The table below presents leading MLIS universities in India for the $YEAR$ academic session.",
+    "columns": [
+      "Universities",
+      "MLIS Course Fees",
+      "Location",
+      "Approval & Accreditation",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Lovely Professional University Distance",
+        "fees": "₹7,500/- Semester",
+        "location": "Phagwara, Punjab",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Industry tie-ups",
+        "link": "https://distanceeducationschool.com/mlis/distance-mlis-in-lovely-professional-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹12,000/-Total Fees",
+        "location": "Maidan Garhi, New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/mlis/distance-mlis-in-ignou"
+      },
+      {
+        "name": "DU SOL",
+        "fees": "₹12,820/-Total",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "COL Radio",
+        "link": "https://distanceeducationschool.com/mlis/distance-mlis-in-dusol"
+      },
+      {
+        "name": "Karnataka State Open University",
+        "fees": "₹18,332-19,965/-Total",
+        "location": "Mysuru, Karnataka",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "KSOU Radio App"
+      },
+      {
+        "name": "Subharti University",
+        "fees": "Rs. 20,000/-",
+        "location": "Meerut, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A",
+        "advantage": "Flexible online learning modules",
+        "link": "https://distanceeducationschool.com/mlis/mlis-in-subharti/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "Rs. 10,000/-",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/mlis/distance-mlis-in-mangalayatan-university/"
+      },
+      {
+        "name": "Dr. Babasaheb Ambedkar Open University",
+        "fees": "Rs. 9,000/-",
+        "location": "Ahmedabad, Gujarat",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Scholarship facility",
+        "link": "https://distanceeducationschool.com/mlis/distance-mlis-in-baou/"
+      }
+    ]
+  },
+  "mjmc": {
+    "course_name": "MJMC",
+    "heading": "Top Online & Distance MJMC Universities in India $YEAR$",
+    "description": "An Online & Distance MJMC degree program helps students build knowledge in journalism, mass communication, media writing, digital journalism, and media management. When selecting an MJMC university, students should compare fees, recognition, academic support, and flexibility in learning. The following table lists the top Online & Distance MJMC universities in India for $YEAR$.",
+    "columns": [
+      "University Name",
+      "MJMC Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditation",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Manipal University, Jaipur",
+        "fees": "₹20,000",
+        "location": "Jaipur, Rajasthan",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Strong brand credibility",
+        "link": "https://distanceeducationschool.com/mjmc/mjmc-in-manipal/"
+      },
+      {
+        "name": "Shoolini University",
+        "fees": "₹20,000",
+        "location": "Solan, Himachal Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Placement assistance",
+        "link": "https://distanceeducationschool.com/mjmc/online-mjmc-in-shoolini-university/"
       },
       {
         "name": "Mangalayatan University",
@@ -451,32 +686,81 @@
         "advantage": "Affordable fees"
       },
       {
-        "name": "IGNOU",
-        "fees": "₹4,750-₹9,250",
-        "location": "New Delhi",
-        "accreditation": "UGC, NAAC A++",
-        "advantage": "Affordable fee structure"
-      },
-      {
-        "name": "Andhra University",
-        "fees": "₹14,125",
-        "location": "Visakhapatnam, Andhra Pradesh",
-        "accreditation": "UGC, NAAC A++",
-        "advantage": "Budget-friendly fees"
-      },
-      {
         "name": "Kurukshetra University",
         "fees": "₹15,000",
         "location": "Kurukshetra, Haryana",
         "accreditation": "UGC, NAAC A++",
-        "advantage": "Govt. Scholarship Services"
+        "advantage": "Govt. Scholarship Services",
+        "link": "https://distanceeducationschool.com/mjmc/online-mjmc-in-Kurukshetra-university/"
       },
       {
-        "name": "Jamia Hamdard University",
-        "fees": "₹6,500-₹8,000",
-        "location": "New Delhi",
+        "name": "Chandigarh University",
+        "fees": "₹27,000",
+        "location": "Mohali, Punjab",
         "accreditation": "UGC, NAAC A+",
-        "advantage": "Learner Support Centres"
+        "advantage": "Industry connect",
+        "link": "https://distanceeducationschool.com/mjmc/online-mjmc-in-chandigarh-university/"
+      },
+      {
+        "name": "Amity University",
+        "fees": "₹47,500",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/mjmc/online-mjmc-in-amity-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹12,500- ₹13500 /-per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fee structure"
+      }
+    ]
+  },
+  "msw": {
+    "course_name": "MSW",
+    "heading": "Top Online & Distance MSW Universities in India $YEAR$",
+    "description": "Choosing the right MSW university is important for students who want to build a career in social work, community development, and welfare services. Students should consider factors such as fees, university recognition, academic support, and learning flexibility. The table below highlights some of the top Online & Distance MSW universities in India for $YEAR$.",
+    "columns": [
+      "University Name",
+      "MSW Fee Per Semester",
+      "Location",
+      "Approvals & Accreditation",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Parul University",
+        "fees": "₹18,500/- per semester",
+        "location": "Vadodara, Gujarat",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "EMI facility",
+        "link": "https://distanceeducationschool.com/msw/online-msw-in-parul-university/"
+      },
+      {
+        "name": "Mizoram University",
+        "fees": "₹12,700",
+        "location": "Aizawl, Mizoram",
+        "accreditation": "UGC, NAAC A",
+        "advantage": "Apprenticeship Embedded Degree Program",
+        "link": "https://distanceeducationschool.com/msw/online-msw-in-mizoram-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹18,500/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/msw/distance-msw-in-ignou/"
+      },
+      {
+        "name": "Bharati Vidyapeeth Deemed University",
+        "fees": "37,000/- per year",
+        "location": "Pune, Maharashtra",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Learner Support Centres",
+        "link": "https://distanceeducationschool.com/msw/distance-msw-in-bharati-vidyapeeth-university/"
       }
     ]
   }
