@@ -715,9 +715,11 @@ function course_table_shortcode( $atts ) {
                 if (e.target.closest('#uni-compare-submit-btn')) {
                     if (selectedUnis.length === 0) return;
                     
-                    var slugs = selectedUnis.map(function(item) { return item.slug; }).join(',');
+                    var slugs = selectedUnis.map(function(item) { 
+                        return item.slug; 
+                    }).join(',');
                     var course = selectedUnis[0].course || '';
-                    var redirectUrl = 'https://distanceeducationschool.com/compare-university?university=' + encodeURIComponent(slugs) + '&course=' + encodeURIComponent(course);
+                    var redirectUrl = 'https://distanceeducationschool.com/compare-university/?university=' + slugs + '&course=' + encodeURIComponent(course);
                     
                     window.open(redirectUrl, '_blank');
                     return;
