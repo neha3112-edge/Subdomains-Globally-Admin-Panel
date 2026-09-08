@@ -36,7 +36,7 @@ define('SITE_YEAR_UNIVERSAL_LOADED', true);
 if (!function_exists('get_site_year')) {
     function get_site_year()
     {
-        return '2028';
+        return '2026';
     }
 }
 
