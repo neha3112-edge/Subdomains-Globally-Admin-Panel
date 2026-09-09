@@ -1281,5 +1281,167 @@
         "link": "https://distanceeducationschool.com/bsc/online-bsc-in-iit-madras/"
       }
     ]
+  },
+  "bjmc": {
+    "course_name": "BJMC",
+    "heading": "Top Online & Distance BJMC Universities in India $YEAR$",
+    "description": "Choosing the right university is important for pursuing a recognised BJMC degree through online or distance learning. The universities listed below offer flexible learning options along with industry-relevant media and journalism programs. The following points highlight the top online and distance BJMC universities in India for $YEAR$.",
+    "columns": [
+      "University Name",
+      "BJMC Fee (Per Semester)",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "Amity University",
+        "fees": "₹31,700/-",
+        "location": "Noida, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Global recognition",
+        "link": "https://distanceeducationschool.com/bjmc/online-bjmc-in-amity-university/"
+      },
+      {
+        "name": "Chandigarh University",
+        "fees": "₹21,875/-",
+        "location": "Mohali, Punjab",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Industry Connect",
+        "link": "https://distanceeducationschool.com/bjmc/online-bjmc-in-chandigarh-university/"
+      },
+      {
+        "name": "IGNOU",
+        "fees": "₹10600/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bjmc/distance-bjmc-in-ignou/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹8,000/-",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Budget-Friendly Fee Structure",
+        "link": "https://distanceeducationschool.com/bjmc/distance-bjmc-in-mangalayatan-university/"
+      },
+      {
+        "name": "Swami Vivekanand Subharti University",
+        "fees": "₹15,000/- per year",
+        "location": "Meerut, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A",
+        "advantage": "Credit Transfer Policy",
+        "link": "https://distanceeducationschool.com/bjmc/distance-bjmc-in-swami-vivekanand-subharti-university/"
+      }
+    ]
+  },
+  "blis": {
+    "course_name": "BLIS",
+    "heading": "Top Online & Distance BLIS Universities in India $YEAR$",
+    "description": "Choosing the right university is important for pursuing a recognised BLIS degree through online or distance learning. Students should compare universities based on recognition, fees, learning support, and course structure. The table below highlights some of the top online and distance BLIS universities in India for $YEAR$.",
+    "columns": [
+      "University Name",
+      "BLIS Fees",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "IGNOU Distance",
+        "fees": "₹9000/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/blis/distance-blis-in-ignou/"
+      },
+      {
+        "name": "IGNOU Online",
+        "fees": "₹7,900/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/blis/online-blis-in-ignou/"
+      },
+      {
+        "name": "Mangalayatan University",
+        "fees": "₹9000/- per semester",
+        "location": "Aligarh, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Budget-Friendly Fee Structure",
+        "link": "https://distanceeducationschool.com/blis/distance-blis-in-mangalayatan-university/"
+      },
+      {
+        "name": "Swami Vivekanand Subharti University",
+        "fees": "₹20,000/- per year",
+        "location": "Meerut, Uttar Pradesh",
+        "accreditation": "UGC, NAAC A",
+        "advantage": "Credit Transfer Policy",
+        "link": "https://distanceeducationschool.com/blis/blis-from-distance-education-from-subharti-university/"
+      },
+      {
+        "name": "DU SOL",
+        "fees": "₹11,820/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Fee Concession",
+        "link": "https://distanceeducationschool.com/blis/distance-blis-in-dusol/"
+      }
+    ]
+  },
+  "bsw": {
+    "course_name": "BSW",
+    "heading": "Top Online & Distance BSW Universities in India $YEAR$",
+    "description": "A BSW degree prepares students for careers in NGOs, community development, social welfare, healthcare, and public service. While choosing a BSW university, students should consider recognition, course fees, syllabus, and academic support. The following table highlights the top online and distance BSW universities in India for $YEAR$.",
+    "columns": [
+      "University Name",
+      "BSW Fees",
+      "Location",
+      "Approvals & Accreditations",
+      "Advantage"
+    ],
+    "universities": [
+      {
+        "name": "IGNOU Distance",
+        "fees": "₹6700/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bsw/distance-bsw-in-ignou/"
+      },
+      {
+        "name": "IGNOU Online",
+        "fees": "₹6,700/- per year",
+        "location": "New Delhi",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Affordable fees",
+        "link": "https://distanceeducationschool.com/bsw/online-bsw-in-ignou/"
+      },
+      {
+        "name": "Dr. Babasaheb Ambedkar Open University",
+        "fees": "₹4000/- Per Semester",
+        "location": "Ahmedabad, Gujarat",
+        "accreditation": "UGC, NAAC A++",
+        "advantage": "Learner Support Services",
+        "link": "https://distanceeducationschool.com/bsw/distance-bsw-in-baou/"
+      },
+      {
+        "name": "Karnataka State Open University",
+        "fees": "₹10,560-14,190/-per year",
+        "location": "Mysuru, Karnataka",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Radio Lectures",
+        "link": "https://distanceeducationschool.com/bsw/distance-bsw-in-ksou/"
+      },
+      {
+        "name": "Tamil Nadu Open University",
+        "fees": "₹3,300-3,500/-per year",
+        "location": "Chennai, Tamil Nadu",
+        "accreditation": "UGC, NAAC A+",
+        "advantage": "Regional Centres",
+        "link": "https://distanceeducationschool.com/bsw/distance-bsw-in-tnou/"
+      }
+    ]
   }
 }

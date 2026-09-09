@@ -1061,5 +1061,263 @@
         "salary": "₹2.5–₹5 LPA"
       }
     ]
+  },
+  "bjmc": {
+    "heading": "Job Roles and Salary After an Online & Distance BJMC Degree",
+    "description": "After completing an online or distance BJMC degree, graduates can explore various roles across the media and communication industry. Career growth depends on practical skills, experience, and knowledge of digital media tools. The table below presents popular BJMC job roles along with their average salary ranges.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Journalist",
+        "description": "Reports and writes news stories for media organisations.",
+        "salary": "₹2.5–₹6 LPA"
+      },
+      {
+        "role": "News Reporter",
+        "description": "Covers events, interviews people, and prepares news reports.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Content Writer",
+        "description": "Creates articles, blogs, website, and media content.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Copywriter",
+        "description": "Writes promotional and advertising content.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Social Media Executive",
+        "description": "Manages social media content and campaigns.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Digital Marketing Executive",
+        "description": "Promotes brands through digital channels.",
+        "salary": "₹2.5–₹5.5 LPA"
+      },
+      {
+        "role": "Public Relations Executive",
+        "description": "Handles media communication and brand relations.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "News Anchor",
+        "description": "Presents news and conducts interviews on media platforms.",
+        "salary": "₹3–₹8 LPA"
+      },
+      {
+        "role": "Video Journalist",
+        "description": "Shoots, edits, and presents video news stories.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Radio Jockey",
+        "description": "Hosts radio shows and engages with audiences.",
+        "salary": "₹2.5–₹6 LPA"
+      },
+      {
+        "role": "Editor",
+        "description": "Reviews, edits, and improves written content.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Sub-Editor",
+        "description": "Edits news stories and prepares them for publication.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Correspondent",
+        "description": "Reports news and events from a specific location or field.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Advertising Executive",
+        "description": "Works on advertising campaigns and client coordination.",
+        "salary": "₹2.5–₹5.5 LPA"
+      },
+      {
+        "role": "Public Relations Officer",
+        "description": "Manages an organisation’s public image and communication.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Media Planner",
+        "description": "Plans media campaigns and selects suitable advertising channels.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Brand Communication Executive",
+        "description": "Develops communication content for brands and campaigns.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Multimedia Journalist",
+        "description": "Creates news content using text, video, audio, and images.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Script Writer",
+        "description": "Writes scripts for videos, advertisements, and media productions.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Blogger",
+        "description": "Creates and manages blogs and online content.",
+        "salary": "₹2.5–₹5 LPA"
+      }
+    ]
+  },
+  "blis": {
+    "heading": "Job Roles and Salary After an Online & Distance BLIS Degree",
+    "description": "BLIS graduates can build careers in traditional libraries as well as digital information and knowledge management. The salary offered varies according to the organisation, job profile, experience, and professional skills. Below are some popular career options and their average salary ranges after a BLIS degree.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Assistant Librarian",
+        "description": "Supports daily library operations and services.",
+        "salary": "₹2–₹4.5 LPA"
+      },
+      {
+        "role": "Library Information Assistant",
+        "description": "Provides information and assists users with research resources.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Digital Librarian",
+        "description": "Manages digital resources, databases, and online collections.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Library Technician",
+        "description": "Handles library systems, records, and technical tasks.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Information Assistant",
+        "description": "Helps users access and organise information resources.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Documentation Assistant",
+        "description": "Maintains documents, records, and information databases.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Cataloguing Assistant",
+        "description": "Classifies and catalogues books and other resources.",
+        "salary": "₹2–₹4.5 LPA"
+      },
+      {
+        "role": "Archive Assistant",
+        "description": "Organises, preserves, and maintains historical records.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Knowledge Management Assistant",
+        "description": "Organises and manages organisational information resources.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Research Assistant",
+        "description": "Supports research through information and resource collection.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Records Manager",
+        "description": "Maintains and organises institutional records.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Library Automation Assistant",
+        "description": "Supports computerised library systems and databases.",
+        "salary": "₹2.5–₹5 LPA"
+      }
+    ]
+  },
+  "bsw": {
+    "heading": "Job Roles and Salary After an Online & Distance BSW Degree",
+    "description": "After completing an online or distance BSW degree, graduates can pursue various roles in social work and community services. Career opportunities are available across NGOs, welfare organisations, healthcare institutions, and development projects. The following table presents common job roles and their expected salary ranges.",
+    "columns": [
+      "Job Role",
+      "Role Description",
+      "Average Salary in India"
+    ],
+    "roles": [
+      {
+        "role": "Social Worker",
+        "description": "Supports individuals and communities with social issues.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Community Worker",
+        "description": "Works with communities on welfare and development programmes.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Child Welfare Officer",
+        "description": "Supports children and promotes their safety and welfare.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Community Development Officer",
+        "description": "Supports community development and welfare initiatives.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "NGO Project Coordinator",
+        "description": "Coordinates NGO projects, activities, and fieldwork.",
+        "salary": "₹3–₹6 LPA"
+      },
+      {
+        "role": "Counselling Assistant",
+        "description": "Provides basic support and assists counselling professionals.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Rehabilitation Assistant",
+        "description": "Supports rehabilitation programmes for individuals and communities.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Family Welfare Assistant",
+        "description": "Supports families through welfare and community programmes.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Rural Development Worker",
+        "description": "Works on development programmes in rural communities.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Youth Development Worker",
+        "description": "Supports youth-focused development and welfare programmes.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "CSR Executive",
+        "description": "Supports corporate social responsibility projects and initiatives.",
+        "salary": "₹3–₹7 LPA"
+      },
+      {
+        "role": "Public Health Worker",
+        "description": "Supports community health and awareness programmes.",
+        "salary": "₹2.5–₹5 LPA"
+      },
+      {
+        "role": "Women Welfare Officer",
+        "description": "Supports programmes focused on women's welfare and empowerment.",
+        "salary": "₹3–₹6 LPA"
+      }
+    ]
   }
 }
