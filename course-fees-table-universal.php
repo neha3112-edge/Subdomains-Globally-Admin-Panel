@@ -586,28 +586,6 @@ function course_table_shortcode( $atts ) {
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
-        /* DYNAMICALLY HIDE WHATSAPP & GETBUTTON WIDGETS WHEN COMPARE DOCK IS OPEN */
-        body.has-uni-compare-dock-open #gb-waw-iframe,
-        body.has-uni-compare-dock-open [id*="gb-waw"],
-        body.has-uni-compare-dock-open [class*="gb-waw"],
-        body.has-uni-compare-dock-open [class*="whatsapp"],
-        body.has-uni-compare-dock-open [id*="whatsapp"],
-        body.has-uni-compare-dock-open [class*="joinchat"],
-        body.has-uni-compare-dock-open [id*="joinchat"],
-        body.has-uni-compare-dock-open [class*="ht-ctc"],
-        body.has-uni-compare-dock-open [id*="ht-ctc"],
-        body.has-uni-compare-dock-open [class*="chaty"],
-        body.has-uni-compare-dock-open [id*="chaty"],
-        body.has-uni-compare-dock-open [class*="qlwapp"],
-        body.has-uni-compare-dock-open [id*="qlwapp"],
-        body.has-uni-compare-dock-open [class*="get-help"],
-        body.has-uni-compare-dock-open [id*="get-help"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
         @media (max-width: 768px) {
             /* 1. Mobile pe Compare column First aayega */
             .course-table-col-mobile-only {
@@ -615,6 +593,28 @@ function course_table_shortcode( $atts ) {
             }
             .course-table-col-desktop-only {
                 display: none !important;
+            }
+
+            /* 2. DYNAMICALLY HIDE WHATSAPP & GETBUTTON WIDGETS ON MOBILE ONLY WHEN COMPARE DOCK IS OPEN */
+            body.has-uni-compare-dock-open #gb-waw-iframe,
+            body.has-uni-compare-dock-open [id*="gb-waw"],
+            body.has-uni-compare-dock-open [class*="gb-waw"],
+            body.has-uni-compare-dock-open [class*="whatsapp"],
+            body.has-uni-compare-dock-open [id*="whatsapp"],
+            body.has-uni-compare-dock-open [class*="joinchat"],
+            body.has-uni-compare-dock-open [id*="joinchat"],
+            body.has-uni-compare-dock-open [class*="ht-ctc"],
+            body.has-uni-compare-dock-open [id*="ht-ctc"],
+            body.has-uni-compare-dock-open [class*="chaty"],
+            body.has-uni-compare-dock-open [id*="chaty"],
+            body.has-uni-compare-dock-open [class*="qlwapp"],
+            body.has-uni-compare-dock-open [id*="qlwapp"],
+            body.has-uni-compare-dock-open [class*="get-help"],
+            body.has-uni-compare-dock-open [id*="get-help"] {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
             }
 
             /* 2. Table Width Compact & Headings in 2 Lines */
@@ -742,8 +742,13 @@ function course_table_shortcode( $atts ) {
                 function setExternalWidgetVisibility(visible) {
                     var waEl = document.getElementById('gb-waw-iframe');
                     if (waEl) {
-                        waEl.style.setProperty('display', visible ? '' : 'none', 'important');
-                        waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
+                        if (window.innerWidth <= 768) {
+                            waEl.style.setProperty('display', visible ? '' : 'none', 'important');
+                            waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
+                        } else {
+                            waEl.style.removeProperty('display');
+                            waEl.style.removeProperty('visibility');
+                        }
                     }
                 }
 
