@@ -305,21 +305,21 @@ function course_table_shortcode( $atts ) {
         .course-fees-table {
             width: 100%;
             min-width: 720px;
-            border-collapse: collapse;
+            border-collapse: collapse !important;
             font-size: 13px;
             margin: 0px;
         }
         .course-fees-table thead th {
-            background-color: #dbeafe;
+            background-color: #dbeafe !important;
             text-align: left;
             padding: 14px 16px;
             font-weight: 700;
             white-space: nowrap;
-            border-bottom: 1px solid #e5e7eb;
-            border-right: 1px solid #c7d9f5;
+            border-bottom: 1px solid #cbd5e1 !important;
+            border-right: 1px solid #b8d3f8 !important;
         }
         .course-fees-table thead th:last-child {
-            border-right: none;
+            border-right: none !important;
         }
         .course-fees-table thead th.course-table-th-compare {
             text-align: center;
@@ -327,12 +327,12 @@ function course_table_shortcode( $atts ) {
         }
         .course-fees-table tbody td {
             padding: 12px 16px;
-            border-bottom: 1px solid #eef0f3;
-            border-right: 1px solid #eef0f3;
+            border-bottom: 1px solid #e2e8f0 !important;
+            border-right: 1px solid #e2e8f0 !important;
             vertical-align: middle;
         }
         .course-fees-table tbody td:last-child {
-            border-right: none;
+            border-right: none !important;
         }
         .course-fees-table tbody tr:hover {
             background-color: #f9fafb;
@@ -414,7 +414,7 @@ function course_table_shortcode( $atts ) {
             bottom: 24px;
             left: 50%;
             transform: translateX(-50%) translateY(0);
-            z-index: 99999999 !important;
+            z-index: 2147483647 !important;
             width: calc(100% - 32px);
             max-width: 900px;
             background: rgba(15, 23, 42, 0.94);
@@ -578,12 +578,29 @@ function course_table_shortcode( $atts ) {
             font-size: 13px;
             font-weight: 600;
             box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
-            z-index: 999999999 !important;
+            z-index: 2147483647 !important;
             animation: uniToastFade 0.25s ease-out;
         }
         @keyframes uniToastFade {
             from { opacity: 0; transform: translateX(-50%) translateY(10px); }
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* DYNAMICALLY SHIFT WHATSAPP & FLOATING CHAT WIDGETS UP WHEN COMPARE DOCK IS OPEN */
+        body.has-uni-compare-dock-open [class*="whatsapp"],
+        body.has-uni-compare-dock-open [id*="whatsapp"],
+        body.has-uni-compare-dock-open [class*="joinchat"],
+        body.has-uni-compare-dock-open [id*="joinchat"],
+        body.has-uni-compare-dock-open [class*="ht-ctc"],
+        body.has-uni-compare-dock-open [id*="ht-ctc"],
+        body.has-uni-compare-dock-open [class*="chaty"],
+        body.has-uni-compare-dock-open [id*="chaty"],
+        body.has-uni-compare-dock-open [class*="qlwapp"],
+        body.has-uni-compare-dock-open [id*="qlwapp"],
+        body.has-uni-compare-dock-open [class*="get-help"],
+        body.has-uni-compare-dock-open [id*="get-help"] {
+            bottom: 155px !important;
+            transition: bottom 0.3s ease !important;
         }
 
         @media (max-width: 768px) {
@@ -597,16 +614,19 @@ function course_table_shortcode( $atts ) {
 
             /* 2. Table Width Compact & Headings in 2 Lines */
             .course-fees-table {
-                min-width: 520px;
+                min-width: 530px;
                 font-size: 12px;
             }
             .course-fees-table thead th {
-                padding: 10px 8px;
+                padding: 10px 8px !important;
                 white-space: normal !important;
-                line-height: 1.3;
-                font-size: 11.5px;
-                vertical-align: middle;
-                max-width: 105px;
+                word-break: normal !important;
+                overflow-wrap: normal !important;
+                line-height: 1.3 !important;
+                font-size: 11.5px !important;
+                vertical-align: middle !important;
+                border-bottom: 1px solid #cbd5e1 !important;
+                border-right: 1px solid #b8d3f8 !important;
                 text-align: left;
             }
             .course-fees-table thead th.course-table-th-compare {
@@ -614,13 +634,20 @@ function course_table_shortcode( $atts ) {
                 min-width: 86px;
                 max-width: 86px;
                 text-align: center;
-                padding: 10px 4px;
+                padding: 10px 4px !important;
             }
             .course-fees-table tbody td {
-                padding: 10px 8px;
-                font-size: 12px;
-                line-height: 1.35;
-                vertical-align: middle;
+                padding: 10px 8px !important;
+                font-size: 12px !important;
+                line-height: 1.35 !important;
+                vertical-align: middle !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                border-right: 1px solid #e2e8f0 !important;
+            }
+            /* Hide border on last visible mobile column */
+            .course-fees-table thead th:nth-last-child(2),
+            .course-fees-table tbody td:nth-last-child(2) {
+                border-right: none !important;
             }
             .course-table-compare-cell {
                 padding: 8px 4px !important;
@@ -633,13 +660,13 @@ function course_table_shortcode( $atts ) {
                 border-radius: 14px;
             }
 
-            /* 3. Floating Compare Dock - Higher Z-Index than WhatsApp & Floating Widgets */
+            /* 3. Floating Compare Dock - Mobile layout & Max Priority */
             .uni-compare-dock {
                 bottom: 12px;
                 padding: 12px 14px;
                 width: calc(100% - 20px);
                 border-radius: 14px;
-                z-index: 99999999 !important;
+                z-index: 2147483647 !important;
                 box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15);
             }
             .uni-compare-dock-container {
@@ -664,7 +691,7 @@ function course_table_shortcode( $atts ) {
                 width: calc(100% - 32px);
                 text-align: center;
                 box-sizing: border-box;
-                z-index: 999999999 !important;
+                z-index: 2147483647 !important;
             }
         }
         </style>
@@ -710,10 +737,12 @@ function course_table_shortcode( $atts ) {
                 if (!dock || !countBadge || !chipsList) return;
 
                 if (selectedUnis.length === 0) {
+                    document.body.classList.remove('has-uni-compare-dock-open');
                     dock.style.display = 'none';
                     return;
                 }
 
+                document.body.classList.add('has-uni-compare-dock-open');
                 dock.style.display = 'block';
                 countBadge.textContent = selectedUnis.length + '/' + maxSelections;
 
