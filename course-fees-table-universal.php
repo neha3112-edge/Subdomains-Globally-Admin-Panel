@@ -586,7 +586,10 @@ function course_table_shortcode( $atts ) {
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
-        /* DYNAMICALLY SHIFT WHATSAPP & FLOATING CHAT WIDGETS UP WHEN COMPARE DOCK IS OPEN */
+        /* DYNAMICALLY HIDE WHATSAPP & GETBUTTON WIDGETS WHEN COMPARE DOCK IS OPEN */
+        body.has-uni-compare-dock-open #gb-waw-iframe,
+        body.has-uni-compare-dock-open [id*="gb-waw"],
+        body.has-uni-compare-dock-open [class*="gb-waw"],
         body.has-uni-compare-dock-open [class*="whatsapp"],
         body.has-uni-compare-dock-open [id*="whatsapp"],
         body.has-uni-compare-dock-open [class*="joinchat"],
@@ -599,8 +602,10 @@ function course_table_shortcode( $atts ) {
         body.has-uni-compare-dock-open [id*="qlwapp"],
         body.has-uni-compare-dock-open [class*="get-help"],
         body.has-uni-compare-dock-open [id*="get-help"] {
-            bottom: 155px !important;
-            transition: bottom 0.3s ease !important;
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
 
         @media (max-width: 768px) {
@@ -734,15 +739,25 @@ function course_table_shortcode( $atts ) {
                     }
                 });
 
+                function setExternalWidgetVisibility(visible) {
+                    var waEl = document.getElementById('gb-waw-iframe');
+                    if (waEl) {
+                        waEl.style.setProperty('display', visible ? '' : 'none', 'important');
+                        waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
+                    }
+                }
+
                 if (!dock || !countBadge || !chipsList) return;
 
                 if (selectedUnis.length === 0) {
                     document.body.classList.remove('has-uni-compare-dock-open');
+                    setExternalWidgetVisibility(true);
                     dock.style.display = 'none';
                     return;
                 }
 
                 document.body.classList.add('has-uni-compare-dock-open');
+                setExternalWidgetVisibility(false);
                 dock.style.display = 'block';
                 countBadge.textContent = selectedUnis.length + '/' + maxSelections;
 
