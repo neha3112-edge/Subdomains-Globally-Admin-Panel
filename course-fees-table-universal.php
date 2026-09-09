@@ -107,6 +107,17 @@ function render_course_table_row_cells( $uni, $course_key = '' ) {
     $uni_name = isset( $uni['name'] ) ? $uni['name'] : '';
     $uni_slug = get_uni_compare_slug( $uni );
     ?>
+    <td class="course-table-compare-cell course-table-col-mobile-only">
+        <button type="button"
+            class="uni-compare-toggle-btn"
+            data-uni-name="<?php echo esc_attr( $uni_name ); ?>"
+            data-uni-slug="<?php echo esc_attr( $uni_slug ); ?>"
+            data-course="<?php echo esc_attr( $course_key ); ?>"
+            aria-label="Compare <?php echo esc_attr( $uni_name ); ?>">
+            <span class="compare-icon">+</span>
+            <span class="compare-text">Compare</span>
+        </button>
+    </td>
     <td>
         <?php if ( ! empty( $uni['link'] ) ) : ?>
             <a href="<?php echo esc_url( $uni['link'] ); ?>" target="_blank" rel="noopener noreferrer" class="course-table-uni-link">
@@ -122,7 +133,7 @@ function render_course_table_row_cells( $uni, $course_key = '' ) {
     <?php if ( isset( $uni['advantage'] ) ) : ?>
         <td><?php echo esc_html( $uni['advantage'] ); ?></td>
     <?php endif; ?>
-    <td class="course-table-compare-cell">
+    <td class="course-table-compare-cell course-table-col-desktop-only">
         <button type="button"
             class="uni-compare-toggle-btn"
             data-uni-name="<?php echo esc_attr( $uni_name ); ?>"
@@ -196,10 +207,11 @@ function course_table_shortcode( $atts ) {
             <table class="course-fees-table" id="<?php echo esc_attr( $unique_id ); ?>">
                 <thead>
                     <tr>
+                        <th class="course-table-th-compare course-table-col-mobile-only">COMPARE</th>
                         <?php foreach ( $columns as $col_label ) : ?>
                             <th><?php echo esc_html( strtoupper( $col_label ) ); ?></th>
                         <?php endforeach; ?>
-                        <th class="course-table-th-compare">COMPARE</th>
+                        <th class="course-table-th-compare course-table-col-desktop-only">COMPARE</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -352,6 +364,14 @@ function course_table_shortcode( $atts ) {
             background-color: #1d4ed8;
         }
         
+        /* Column Display Toggle for Desktop vs Mobile */
+        .course-table-col-mobile-only {
+            display: none !important;
+        }
+        .course-table-col-desktop-only {
+            display: table-cell !important;
+        }
+
         /* COMPARE BUTTON IN ROW */
         .course-table-compare-cell {
             text-align: center;
@@ -394,7 +414,7 @@ function course_table_shortcode( $atts ) {
             bottom: 24px;
             left: 50%;
             transform: translateX(-50%) translateY(0);
-            z-index: 999999;
+            z-index: 99999999 !important;
             width: calc(100% - 32px);
             max-width: 900px;
             background: rgba(15, 23, 42, 0.94);
@@ -558,7 +578,7 @@ function course_table_shortcode( $atts ) {
             font-size: 13px;
             font-weight: 600;
             box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
-            z-index: 1000000;
+            z-index: 999999999 !important;
             animation: uniToastFade 0.25s ease-out;
         }
         @keyframes uniToastFade {
@@ -567,11 +587,60 @@ function course_table_shortcode( $atts ) {
         }
 
         @media (max-width: 768px) {
+            /* 1. Mobile pe Compare column First aayega */
+            .course-table-col-mobile-only {
+                display: table-cell !important;
+            }
+            .course-table-col-desktop-only {
+                display: none !important;
+            }
+
+            /* 2. Table Width Compact & Headings in 2 Lines */
+            .course-fees-table {
+                min-width: 520px;
+                font-size: 12px;
+            }
+            .course-fees-table thead th {
+                padding: 10px 8px;
+                white-space: normal !important;
+                line-height: 1.3;
+                font-size: 11.5px;
+                vertical-align: middle;
+                max-width: 105px;
+                text-align: left;
+            }
+            .course-fees-table thead th.course-table-th-compare {
+                width: 86px;
+                min-width: 86px;
+                max-width: 86px;
+                text-align: center;
+                padding: 10px 4px;
+            }
+            .course-fees-table tbody td {
+                padding: 10px 8px;
+                font-size: 12px;
+                line-height: 1.35;
+                vertical-align: middle;
+            }
+            .course-table-compare-cell {
+                padding: 8px 4px !important;
+                text-align: center;
+            }
+            .uni-compare-toggle-btn {
+                padding: 5px 9px;
+                font-size: 11px;
+                gap: 3px;
+                border-radius: 14px;
+            }
+
+            /* 3. Floating Compare Dock - Higher Z-Index than WhatsApp & Floating Widgets */
             .uni-compare-dock {
                 bottom: 12px;
                 padding: 12px 14px;
                 width: calc(100% - 20px);
                 border-radius: 14px;
+                z-index: 99999999 !important;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15);
             }
             .uni-compare-dock-container {
                 flex-direction: column;
@@ -595,6 +664,7 @@ function course_table_shortcode( $atts ) {
                 width: calc(100% - 32px);
                 text-align: center;
                 box-sizing: border-box;
+                z-index: 999999999 !important;
             }
         }
         </style>
