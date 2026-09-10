@@ -68,22 +68,37 @@ $mime_type = finfo_file($finfo, $tmp_path);
 finfo_close($finfo);
 
 // Year/Month Folder Structure
+$uploads_root = ADMIN_PATH . '/uploads';
+if (!is_dir($uploads_root)) {
+    @mkdir($uploads_root, 0777, true);
+    @chmod($uploads_root, 0777);
+}
+
 $sub_dir = date('Y') . '/' . date('m');
-$target_dir = ADMIN_PATH . '/uploads/' . $sub_dir;
+$target_dir = $uploads_root . '/' . $sub_dir;
 
 if (!is_dir($target_dir)) {
-    mkdir($target_dir, 0777, true);
+    @mkdir($target_dir, 0777, true);
+    @chmod($target_dir, 0777);
 }
 
 // Clean filename
 $clean_name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', pathinfo($original_name, PATHINFO_FILENAME));
+$clean_name = trim($clean_name, '_');
 $final_name = $clean_name . '_' . time() . '.' . $extension;
 $dest_path = $target_dir . '/' . $final_name;
 
-if (!move_uploaded_file($tmp_path, $dest_path)) {
-    echo json_encode(['success' => false, 'message' => 'Failed to save uploaded file to disk.']);
-    exit;
+if (!@move_uploaded_file($tmp_path, $dest_path)) {
+    // Fallback attempt: copy + unlink if move_uploaded_file had temporary stream restriction
+    if (!@copy($tmp_path, $dest_path)) {
+        $last_err = error_get_last();
+        $err_msg = !empty($last_err['message']) ? $last_err['message'] : 'Permission denied. Please ensure the uploads/ directory on server is writable (chmod 777 or 775).';
+        echo json_encode(['success' => false, 'message' => 'Failed to save uploaded file to disk: ' . $err_msg]);
+        exit;
+    }
+    @unlink($tmp_path);
 }
+@chmod($dest_path, 0644);
 
 // Generate Path & Dynamic URL
 $relative_path = 'uploads/' . $sub_dir . '/' . $final_name;
