@@ -246,16 +246,23 @@ function edu_banner_shortcode( $atts ) {
         'university'         => '',
     ), $atts, 'edu_banner' );
 
-    $heading            = esc_html( $atts['heading'] );
-    $subheading         = esc_html( $atts['subheading'] );
-    $description        = esc_html( $atts['description'] );
-    $audio_url          = esc_url( $atts['audio_url'] );
-    $video_url          = esc_url( $atts['video_url'] );
+    $heading            = stripslashes( trim( (string)( $atts['heading'] ?? '' ) ) );
+    $subheading         = stripslashes( trim( (string)( $atts['subheading'] ?? '' ) ) );
+    $description        = stripslashes( trim( (string)( $atts['description'] ?? '' ) ) );
+    $audio_url          = ! empty( $atts['audio_url'] ) ? esc_url( $atts['audio_url'] ) : '';
+    $video_url          = ! empty( $atts['video_url'] ) ? esc_url( $atts['video_url'] ) : '';
     $brochure_btn_class = ! empty( $atts['brochure_btn_class'] ) ? sanitize_html_class( $atts['brochure_btn_class'] ) : 'download-brochure';
 
     // 1. Resolve university data from Admin Panel
-    $uni_slug = sode_detect_university_slug( $atts['university'] );
+    $uni_slug = sode_detect_university_slug( $atts['university'] ?? '' );
     $uni_data = sode_get_university_banner_data( $uni_slug );
+
+    if ( empty( $heading ) ) {
+        $heading = 'Distance Education Course, Fees, Admission ' . ( ! empty( $uni_data['global_keys']['$YEAR$'] ) ? $uni_data['global_keys']['$YEAR$'] : date('Y') );
+    }
+    if ( empty( $description ) ) {
+        $description = 'Earn your degree without attending regular college with our Distance Education programs.';
+    }
 
     // Fallbacks from Admin Data if not supplied in shortcode attributes
     $full_uni_name       = ! empty( $uni_data['full_name'] ) ? $uni_data['full_name'] : 'Dayananda Sagar University';

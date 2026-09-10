@@ -72,22 +72,34 @@ if (!function_exists('sode_fetch_remote_component')) {
 
         $admin_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/');
         
-        // Primary endpoint: /admin/api/render_component.php
-        $primary_url = add_query_arg($args, $admin_url . '/admin/api/render_component.php');
-        $resp = wp_remote_get($primary_url, [
-            'timeout'   => 10,
+        // Primary endpoint: /admin/api/render_component.php (POST transmits long text/symbols cleanly)
+        $primary_url = $admin_url . '/admin/api/render_component.php';
+        $resp = wp_remote_post($primary_url, [
+            'body'      => $args,
+            'timeout'   => 12,
             'sslverify' => false,
             'headers'   => ['Cache-Control' => 'no-cache']
         ]);
 
-        // Fallback endpoint: /api/render_component.php
+        // Fallback endpoint: /api/render_component.php or GET fallback
         if (is_wp_error($resp) || wp_remote_retrieve_response_code($resp) !== 200) {
-            $fallback_url = add_query_arg($args, $admin_url . '/api/render_component.php');
-            $resp = wp_remote_get($fallback_url, [
-                'timeout'   => 10,
+            $fallback_url = $admin_url . '/api/render_component.php';
+            $resp = wp_remote_post($fallback_url, [
+                'body'      => $args,
+                'timeout'   => 12,
                 'sslverify' => false,
                 'headers'   => ['Cache-Control' => 'no-cache']
             ]);
+
+            // Final fallback to GET if POST was blocked by security firewall
+            if (is_wp_error($resp) || wp_remote_retrieve_response_code($resp) !== 200) {
+                $get_url = add_query_arg($args, $primary_url);
+                $resp = wp_remote_get($get_url, [
+                    'timeout'   => 12,
+                    'sslverify' => false,
+                    'headers'   => ['Cache-Control' => 'no-cache']
+                ]);
+            }
         }
 
         if (is_wp_error($resp)) {
