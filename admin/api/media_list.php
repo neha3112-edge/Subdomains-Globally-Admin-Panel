@@ -68,10 +68,14 @@ function format_bytes($bytes, $precision = 1) {
 
 $items = [];
 foreach ($rows as $r) {
+    $path = !empty($r['file_path']) ? $r['file_path'] : $r['file_url'];
+    $clean_path = get_relative_asset_path($path);
     $items[] = [
         'id' => (int)$r['id'],
         'file_name' => $r['file_name'],
-        'file_url' => $r['file_url'],
+        'file_path' => $clean_path,
+        'file_url' => $clean_path,
+        'display_url' => get_asset_url($clean_path),
         'file_type' => $r['file_type'],
         'mime_type' => $r['mime_type'],
         'file_size' => (int)$r['file_size'],

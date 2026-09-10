@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save') {
         $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
         $title = trim($_POST['title'] ?? '');
-        $image_url = trim($_POST['image_url'] ?? '');
+        $image_url = get_relative_asset_path(trim($_POST['image_url'] ?? ''));
         $official_link = trim($_POST['official_link'] ?? '');
         $description = trim($_POST['description'] ?? '');
 
@@ -97,7 +97,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     </div>
                     <div class="media-preview-inline" id="preview_acc_logo" style="margin-top:6px; <?php echo empty($edit_acc['image_url']) ? 'display:none;' : ''; ?>">
                         <?php if (!empty($edit_acc['image_url'])): ?>
-                            <img src="<?php echo htmlspecialchars($edit_acc['image_url']); ?>" alt="thumb" style="height:34px; width:34px; object-fit:contain; background:#fff; border-radius:4px; padding:2px; border:1px solid var(--border-color);">
+                            <img src="<?php echo htmlspecialchars(get_asset_url($edit_acc['image_url'])); ?>" alt="thumb" style="height:34px; width:34px; object-fit:contain; background:#fff; border-radius:4px; padding:2px; border:1px solid var(--border-color);">
                         <?php endif; ?>
                     </div>
                 </div>

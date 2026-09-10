@@ -42,12 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $location = trim($_POST['location'] ?? '');
     $official_url = trim($_POST['official_url'] ?? '');
     $advantage_text = trim($_POST['advantage_text'] ?? '');
-    $logo_url = trim($_POST['logo_url'] ?? '');
-    $desktop_banner_bg = trim($_POST['desktop_banner_bg'] ?? '');
-    $mobile_banner_bg = trim($_POST['mobile_banner_bg'] ?? '');
-    $campus_mobile_img = trim($_POST['campus_mobile_img'] ?? '');
-    $brochure_pdf_url = trim($_POST['brochure_pdf_url'] ?? '');
-    $podcast_audio_url = trim($_POST['podcast_audio_url'] ?? '');
+    $logo_url = get_relative_asset_path(trim($_POST['logo_url'] ?? ''));
+    $desktop_banner_bg = get_relative_asset_path(trim($_POST['desktop_banner_bg'] ?? ''));
+    $mobile_banner_bg = get_relative_asset_path(trim($_POST['mobile_banner_bg'] ?? ''));
+    $campus_mobile_img = get_relative_asset_path(trim($_POST['campus_mobile_img'] ?? ''));
+    $brochure_pdf_url = get_relative_asset_path(trim($_POST['brochure_pdf_url'] ?? ''));
+    $podcast_audio_url = get_relative_asset_path(trim($_POST['podcast_audio_url'] ?? ''));
     $youtube_video_url = trim($_POST['youtube_video_url'] ?? '');
     $exam_date = trim($_POST['exam_date'] ?? '');
     $extended_exam_date = trim($_POST['extended_exam_date'] ?? '');
@@ -248,7 +248,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                             <div class="media-preview-inline" id="preview_logo" style="margin-top:6px; <?php echo empty($uni['logo_url']) ? 'display:none;' : ''; ?>">
                                 <?php if (!empty($uni['logo_url'])): ?>
-                                    <img src="<?php echo htmlspecialchars($uni['logo_url']); ?>" alt="thumb" style="height:38px; width:38px; object-fit:contain; background:#fff; border-radius:6px; padding:2px; border:1px solid var(--border-color);">
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['logo_url'])); ?>" alt="thumb" style="height:38px; width:38px; object-fit:contain; background:#fff; border-radius:6px; padding:2px; border:1px solid var(--border-color);">
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -264,7 +264,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                             <div class="media-preview-inline" id="preview_brochure" style="margin-top:6px; <?php echo empty($uni['brochure_pdf_url']) ? 'display:none;' : ''; ?>">
                                 <?php if (!empty($uni['brochure_pdf_url'])): ?>
-                                    <a href="<?php echo htmlspecialchars($uni['brochure_pdf_url']); ?>" target="_blank" class="badge badge-info" style="text-decoration:none;">PDF Attached &rarr;</a>
+                                    <a href="<?php echo htmlspecialchars(get_asset_url($uni['brochure_pdf_url'])); ?>" target="_blank" class="badge badge-info" style="text-decoration:none;">PDF Attached &rarr;</a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -282,7 +282,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                             <div class="media-preview-inline" id="preview_desktop_banner" style="margin-top:6px; <?php echo empty($uni['desktop_banner_bg']) ? 'display:none;' : ''; ?>">
                                 <?php if (!empty($uni['desktop_banner_bg'])): ?>
-                                    <img src="<?php echo htmlspecialchars($uni['desktop_banner_bg']); ?>" alt="thumb" style="height:38px; width:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['desktop_banner_bg'])); ?>" alt="thumb" style="height:38px; width:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -298,7 +298,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                             <div class="media-preview-inline" id="preview_mobile_banner" style="margin-top:6px; <?php echo empty($uni['mobile_banner_bg']) ? 'display:none;' : ''; ?>">
                                 <?php if (!empty($uni['mobile_banner_bg'])): ?>
-                                    <img src="<?php echo htmlspecialchars($uni['mobile_banner_bg']); ?>" alt="thumb" style="height:38px; width:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['mobile_banner_bg'])); ?>" alt="thumb" style="height:38px; width:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -315,7 +315,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                             <div class="media-preview-inline" id="preview_campus_img" style="margin-top:6px; <?php echo empty($uni['campus_mobile_img']) ? 'display:none;' : ''; ?>">
                                 <?php if (!empty($uni['campus_mobile_img'])): ?>
-                                    <img src="<?php echo htmlspecialchars($uni['campus_mobile_img']); ?>" alt="thumb" style="height:34px; width:34px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['campus_mobile_img'])); ?>" alt="thumb" style="height:34px; width:34px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
                                 <?php endif; ?>
                             </div>
                         </div>

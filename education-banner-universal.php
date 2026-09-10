@@ -70,15 +70,24 @@ if ( ! function_exists( 'shortcode_atts' ) ) {
 if ( ! function_exists( 'sode_normalize_asset_url' ) ) {
     function sode_normalize_asset_url( $url ) {
         if ( empty( $url ) ) return '';
-        $url = trim( $url );
-        if ( strpos( $url, 'localhost' ) !== false ) {
-            $url = preg_replace( '#https?://localhost[^/]*/subdomain_universal_codes/admin/#i', 'https://admin.distanceeducationschool.com/admin/', $url );
-            $url = preg_replace( '#https?://localhost[^/]*/subdomain_universal_codes/#i', 'https://admin.distanceeducationschool.com/admin/', $url );
+        $url = trim( (string)$url );
+        
+        // External URLs not on localhost or admin domain
+        if ( preg_match( '#^https?://#i', $url ) && strpos( $url, 'localhost' ) === false && strpos( $url, 'admin.distanceeducationschool.com' ) === false ) {
+            return $url;
         }
-        if ( strpos( $url, 'http://' ) !== 0 && strpos( $url, 'https://' ) !== 0 && strpos( $url, '//' ) !== 0 ) {
-            $url = 'https://admin.distanceeducationschool.com/admin/' . ltrim( $url, '/' );
+        
+        // Strip domain to get clean relative path
+        $clean = preg_replace( '#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', 'uploads/', $url );
+        $clean = ltrim( $clean, '/' );
+        if ( strpos( $clean, 'uploads/' ) !== 0 && strpos( $clean, 'assets/' ) !== 0 ) {
+            if ( strpos( $clean, '202' ) === 0 ) {
+                $clean = 'uploads/' . $clean;
+            }
         }
-        return $url;
+        
+        $base = defined( 'BASE_URL' ) ? BASE_URL : 'https://admin.distanceeducationschool.com/admin';
+        return rtrim( $base, '/' ) . '/' . ltrim( $clean, '/' );
     }
 }
 

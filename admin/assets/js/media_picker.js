@@ -133,8 +133,9 @@
             card.dataset.id = item.id;
 
             let iconHtml = '';
+            const previewUrl = item.display_url || item.file_url;
             if (item.file_type === 'image') {
-                iconHtml = `<img src="${item.file_url}" alt="${item.file_name}" class="media-thumb-img" loading="lazy">`;
+                iconHtml = `<img src="${previewUrl}" alt="${item.file_name}" class="media-thumb-img" loading="lazy">`;
             } else if (item.file_type === 'audio') {
                 iconHtml = `<div class="media-type-icon audio-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>`;
             } else if (item.file_type === 'pdf') {
@@ -176,17 +177,20 @@
         const infoEl = document.getElementById('media-detail-info');
         const urlInput = document.getElementById('media-detail-url-input');
 
+        const previewUrl = item.display_url || item.file_url;
+        const insertPath = item.file_path || item.file_url;
+
         if (nameEl) nameEl.textContent = item.file_name;
         if (infoEl) infoEl.innerHTML = `${item.formatted_size} &bull; ${item.file_type.toUpperCase()} &bull; ${item.created_at}`;
-        if (urlInput) urlInput.value = item.file_url;
+        if (urlInput) urlInput.value = insertPath;
 
         if (previewBox) {
             if (item.file_type === 'image') {
-                previewBox.innerHTML = `<img src="${item.file_url}" alt="preview" style="max-height:160px; max-width:100%; border-radius:6px; object-fit:contain;">`;
+                previewBox.innerHTML = `<img src="${previewUrl}" alt="preview" style="max-height:160px; max-width:100%; border-radius:6px; object-fit:contain;">`;
             } else if (item.file_type === 'audio') {
-                previewBox.innerHTML = `<audio controls style="width:100%; margin-top:10px;"><source src="${item.file_url}" type="${item.mime_type}">Your browser does not support audio.</audio>`;
+                previewBox.innerHTML = `<audio controls style="width:100%; margin-top:10px;"><source src="${previewUrl}" type="${item.mime_type}">Your browser does not support audio.</audio>`;
             } else if (item.file_type === 'video') {
-                previewBox.innerHTML = `<video controls style="max-height:150px; max-width:100%; border-radius:6px;"><source src="${item.file_url}">Your browser does not support video.</video>`;
+                previewBox.innerHTML = `<video controls style="max-height:150px; max-width:100%; border-radius:6px;"><source src="${previewUrl}">Your browser does not support video.</video>`;
             } else {
                 previewBox.innerHTML = `<div style="padding:20px; font-weight:700; color:var(--text-muted);">${item.file_name}</div>`;
             }
@@ -203,10 +207,13 @@
     }
 
     function useMediaItem(item) {
+        const insertPath = item.file_path || item.file_url;
+        const previewUrl = item.display_url || item.file_url;
+
         if (currentTargetInputId) {
             const targetInput = document.getElementById(currentTargetInputId);
             if (targetInput) {
-                targetInput.value = item.file_url;
+                targetInput.value = insertPath;
                 targetInput.dispatchEvent(new Event('change', { bubbles: true }));
                 targetInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
@@ -216,7 +223,7 @@
             const previewEl = document.getElementById(currentPreviewTargetId);
             if (previewEl) {
                 if (item.file_type === 'image') {
-                    previewEl.innerHTML = `<img src="${item.file_url}" alt="thumb" style="height:38px; width:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">`;
+                    previewEl.innerHTML = `<img src="${previewUrl}" alt="thumb" style="height:38px; width:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">`;
                     previewEl.style.display = 'block';
                 } else {
                     previewEl.innerHTML = `<span class="badge badge-info" style="font-size:11px;">${item.file_type.toUpperCase()} Attached</span>`;

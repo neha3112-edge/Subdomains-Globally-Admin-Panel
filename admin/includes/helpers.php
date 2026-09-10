@@ -72,3 +72,49 @@ function json_response($data, $status = 200) {
     echo json_encode($data);
     exit;
 }
+
+/**
+ * Dynamic Asset URL Resolver
+ * Automatically resolves relative paths (e.g., uploads/2026/09/image.png)
+ * to current environment base URL (localhost or live domain)
+ */
+function get_asset_url($path) {
+    if (empty($path)) return '';
+    $path = trim((string)$path);
+    
+    // External URLs not on localhost or admin domain
+    if (preg_match('#^https?://#i', $path) && strpos($path, 'localhost') === false && strpos($path, 'admin.distanceeducationschool.com') === false) {
+        return $path;
+    }
+    
+    // Normalize to relative uploads path
+    $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', 'uploads/', $path);
+    $clean = ltrim($clean, '/');
+    if (strpos($clean, 'uploads/') !== 0 && strpos($clean, 'assets/') !== 0) {
+        if (strpos($clean, '202') === 0) {
+            $clean = 'uploads/' . $clean;
+        }
+    }
+    
+    $base = defined('BASE_URL') ? BASE_URL : 'https://admin.distanceeducationschool.com/admin';
+    return rtrim($base, '/') . '/' . ltrim($clean, '/');
+}
+
+/**
+ * Convert any full URL or mixed path to clean relative path for database storage
+ */
+function get_relative_asset_path($path) {
+    if (empty($path)) return '';
+    $path = trim((string)$path);
+    if (preg_match('#^https?://#i', $path) && strpos($path, 'localhost') === false && strpos($path, 'admin.distanceeducationschool.com') === false) {
+        return $path; // preserve external CDN URLs
+    }
+    $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', 'uploads/', $path);
+    $clean = ltrim($clean, '/');
+    if (strpos($clean, 'uploads/') !== 0 && strpos($clean, 'assets/') !== 0) {
+        if (strpos($clean, '202') === 0) {
+            $clean = 'uploads/' . $clean;
+        }
+    }
+    return $clean;
+}

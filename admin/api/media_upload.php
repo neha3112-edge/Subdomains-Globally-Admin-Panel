@@ -85,9 +85,9 @@ if (!move_uploaded_file($tmp_path, $dest_path)) {
     exit;
 }
 
-// Generate URL
-$relative_path = $sub_dir . '/' . $final_name;
-$file_url = BASE_URL . '/uploads/' . $relative_path;
+// Generate Path & Dynamic URL
+$relative_path = 'uploads/' . $sub_dir . '/' . $final_name;
+$display_url = get_asset_url($relative_path);
 
 $db = get_db_connection();
 
@@ -112,14 +112,16 @@ $stmt = $db->prepare("
     INSERT INTO media_library (file_name, file_path, file_url, file_type, mime_type, file_size, uploaded_by) 
     VALUES (?, ?, ?, ?, ?, ?, ?)
 ");
-$stmt->execute([$original_name, $relative_path, $file_url, $file_type, $mime_type, $file_size, $user_id]);
+$stmt->execute([$original_name, $relative_path, $relative_path, $file_type, $mime_type, $file_size, $user_id]);
 $media_id = $db->lastInsertId();
 
 echo json_encode([
     'success' => true,
     'id' => (int)$media_id,
     'file_name' => $original_name,
-    'file_url' => $file_url,
+    'file_path' => $relative_path,
+    'file_url' => $relative_path,
+    'display_url' => $display_url,
     'file_type' => $file_type,
     'mime_type' => $mime_type,
     'file_size' => $file_size,
