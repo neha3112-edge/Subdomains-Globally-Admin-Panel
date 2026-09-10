@@ -7,15 +7,56 @@
  * ====================================================================
  */
 
-if ( ! function_exists( 'add_action' ) ) {
-    http_response_code( 403 );
-    exit;
-}
-
 if ( defined( 'SODE_LEAD_FORM_UNIVERSAL_LOADED' ) ) {
     return;
 }
 define( 'SODE_LEAD_FORM_UNIVERSAL_LOADED', true );
+
+// Safe polyfills for WP helpers
+if ( ! function_exists( 'sanitize_title' ) ) {
+    function sanitize_title( $title ) {
+        return strtolower( trim( preg_replace( '/[^A-Za-z0-9-]+/', '-', (string)$title ), '-' ) );
+    }
+}
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+    function sanitize_text_field( $str ) {
+        return trim( strip_tags( (string)$str ) );
+    }
+}
+if ( ! function_exists( 'sanitize_email' ) ) {
+    function sanitize_email( $email ) {
+        return filter_var( trim( (string)$email ), FILTER_SANITIZE_EMAIL );
+    }
+}
+if ( ! function_exists( 'esc_html' ) ) {
+    function esc_html( $text ) {
+        return htmlspecialchars( (string)$text, ENT_QUOTES, 'UTF-8' );
+    }
+}
+if ( ! function_exists( 'esc_attr' ) ) {
+    function esc_attr( $text ) {
+        return htmlspecialchars( (string)$text, ENT_QUOTES, 'UTF-8' );
+    }
+}
+if ( ! function_exists( 'esc_url' ) ) {
+    function esc_url( $url ) {
+        return filter_var( (string)$url, FILTER_SANITIZE_URL );
+    }
+}
+if ( ! function_exists( 'shortcode_atts' ) ) {
+    function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
+        $atts = (array)$atts;
+        $out = array();
+        foreach ( $pairs as $name => $default ) {
+            if ( array_key_exists( $name, $atts ) ) {
+                $out[ $name ] = $atts[ $name ];
+            } else {
+                $out[ $name ] = $default;
+            }
+        }
+        return $out;
+    }
+}
 
 // ---------- CONFIGURATION: Central Admin API Endpoint ----------
 if ( ! defined( 'SODE_FORM_CONFIG_API_URL' ) ) {
@@ -131,54 +172,39 @@ if ( ! function_exists( 'sode_get_university_form_config' ) ) {
 }
 
 
-// ====================================================
-// 🔥 STEP 1 — EARLY TOKEN BLOCK (init hook)
-// ====================================================
-add_action('init', function () {
+if ( function_exists('add_action') ) {
+    // ====================================================
+    // 🔥 STEP 1 — EARLY TOKEN BLOCK (init hook)
+    // ====================================================
+    add_action('init', function () {
 
-    if (
-        isset($_POST['action']) &&
-        $_POST['action'] === 'send_lead'
-    ) {
-        $token = $_SERVER['HTTP_X_LEAD_TOKEN'] ?? '';
+        if (
+            isset($_POST['action']) &&
+            $_POST['action'] === 'send_lead'
+        ) {
+            $token = $_SERVER['HTTP_X_LEAD_TOKEN'] ?? '';
 
-        if (!$token || !function_exists('get_transient') || !get_transient('lead_token_' . $token)) {
-            http_response_code(403);
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'data' => 'Forbidden - Invalid Token']);
-            exit();
+            if (!$token || !function_exists('get_transient') || !get_transient('lead_token_' . $token)) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'data' => 'Forbidden - Invalid Token']);
+                exit();
+            }
         }
-    }
-});
+    });
 
+    // ====================================================
+    // ✅ STEP 2 — TOKEN GENERATOR
+    // ====================================================
+    add_action('wp_ajax_get_lead_token', 'sode_generate_lead_token');
+    add_action('wp_ajax_nopriv_get_lead_token', 'sode_generate_lead_token');
 
-// ====================================================
-// ✅ STEP 2 — TOKEN GENERATOR
-// ====================================================
-add_action('wp_ajax_get_lead_token', 'sode_generate_lead_token');
-add_action('wp_ajax_nopriv_get_lead_token', 'sode_generate_lead_token');
-
-function sode_generate_lead_token()
-{
-    $token = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : md5(uniqid(rand(), true));
-    if ( function_exists('set_transient') ) {
-        set_transient('lead_token_' . $token, true, (defined('DAY_IN_SECONDS') ? DAY_IN_SECONDS : 86400));
-    }
-    if ( function_exists('wp_send_json_success') ) {
-        wp_send_json_success($token);
-    } else {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'data' => $token]);
-        exit;
-    }
+    // ====================================================
+    // ✅ STEP 3 — LEAD SENDER (Connected to Admin Integrations)
+    // ====================================================
+    add_action('wp_ajax_send_lead', 'sode_send_lead_to_crm');
+    add_action('wp_ajax_nopriv_send_lead', 'sode_send_lead_to_crm');
 }
-
-
-// ====================================================
-// ✅ STEP 3 — LEAD SENDER (Connected to Admin Integrations)
-// ====================================================
-add_action('wp_ajax_send_lead', 'sode_send_lead_to_crm');
-add_action('wp_ajax_nopriv_send_lead', 'sode_send_lead_to_crm');
 
 function sode_send_lead_to_crm()
 {
@@ -906,7 +932,9 @@ function custom_lead_form_shortcode($atts = [])
     <?php
     return ob_get_clean();
 }
-add_shortcode('custom_lead_form', 'custom_lead_form_shortcode');
+if ( function_exists('add_shortcode') ) {
+    add_shortcode('custom_lead_form', 'custom_lead_form_shortcode');
+}
 
 
 // ====================================================
@@ -927,14 +955,20 @@ function compare_universities_form_shortcode($atts = [])
     ], $atts);
     return custom_lead_form_shortcode($atts);
 }
-add_shortcode('compare_universities_form', 'compare_universities_form_shortcode');
+if ( function_exists('add_shortcode') ) {
+    add_shortcode('compare_universities_form', 'compare_universities_form_shortcode');
+}
 
 
 // ====================================================
 // ✅ STEP 6 — POPUP MODAL SYSTEM (Compare)
 // Class: .open-compare-form
 // ====================================================
-add_action('wp_footer', 'sode_compare_form_popup_modal');
+if ( function_exists('add_action') ) {
+    add_action('wp_footer', 'sode_compare_form_popup_modal');
+    add_action('wp_footer', 'sode_auto_open_brochure_on_thankyou');
+    add_action('wp_footer', 'sode_brochure_form_popup_modal');
+}
 
 function sode_compare_form_popup_modal()
 {
@@ -1038,8 +1072,6 @@ function sode_compare_form_popup_modal()
 // ✅ STEP 7 — AUTO OPEN BROCHURE ON THANK YOU PAGE
 // Dynamically pulls brochure URL from Admin Panel
 // ====================================================
-add_action('wp_footer', 'sode_auto_open_brochure_on_thankyou');
-
 function sode_auto_open_brochure_on_thankyou() {
     $uni_slug = sode_form_detect_uni_slug();
     $cfg = sode_get_university_form_config($uni_slug);
@@ -1087,7 +1119,9 @@ function brochure_download_form_shortcode($atts = [])
     ], $atts);
     return custom_lead_form_shortcode($atts);
 }
-add_shortcode('brochure_download_form', 'brochure_download_form_shortcode');
+if ( function_exists('add_shortcode') ) {
+    add_shortcode('brochure_download_form', 'brochure_download_form_shortcode');
+}
 
 
 // ====================================================
@@ -1110,7 +1144,9 @@ function scholarship_coupon_form_shortcode($atts = [])
 
     return custom_lead_form_shortcode($atts);
 }
-add_shortcode('scholarship_coupon_form', 'scholarship_coupon_form_shortcode');
+if ( function_exists('add_shortcode') ) {
+    add_shortcode('scholarship_coupon_form', 'scholarship_coupon_form_shortcode');
+}
 
 
 // ====================================================
@@ -1118,8 +1154,6 @@ add_shortcode('scholarship_coupon_form', 'scholarship_coupon_form_shortcode');
 // Class: .open-brochure-form
 // Class: .get-scholarship
 // ====================================================
-add_action('wp_footer', 'sode_brochure_form_popup_modal');
-
 function sode_brochure_form_popup_modal()
 {
     static $rendered = false;

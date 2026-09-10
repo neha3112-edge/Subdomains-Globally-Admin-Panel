@@ -19,11 +19,6 @@
  * ====================================================================
  */
 
-if ( ! function_exists( 'add_shortcode' ) ) {
-    http_response_code( 403 );
-    exit;
-}
-
 if ( defined( 'EDUCATION_BANNER_UNIVERSAL_LOADED' ) ) {
     return;
 }
@@ -56,10 +51,39 @@ if ( ! function_exists( 'esc_url' ) ) {
         return filter_var( (string)$url, FILTER_SANITIZE_URL );
     }
 }
+if ( ! function_exists( 'shortcode_atts' ) ) {
+    function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
+        $atts = (array)$atts;
+        $out = array();
+        foreach ( $pairs as $name => $default ) {
+            if ( array_key_exists( $name, $atts ) ) {
+                $out[ $name ] = $atts[ $name ];
+            } else {
+                $out[ $name ] = $default;
+            }
+        }
+        return $out;
+    }
+}
+
+// Asset URL normalizer
+if ( ! function_exists( 'sode_normalize_asset_url' ) ) {
+    function sode_normalize_asset_url( $url ) {
+        if ( empty( $url ) ) return '';
+        $url = trim( $url );
+        if ( strpos( $url, 'localhost' ) !== false ) {
+            $url = preg_replace( '#https?://localhost[^/]*/subdomain_universal_codes/admin/#i', 'https://admin.distanceeducationschool.com/admin/', $url );
+            $url = preg_replace( '#https?://localhost[^/]*/subdomain_universal_codes/#i', 'https://admin.distanceeducationschool.com/admin/', $url );
+        }
+        if ( strpos( $url, 'http://' ) !== 0 && strpos( $url, 'https://' ) !== 0 && strpos( $url, '//' ) !== 0 ) {
+            $url = 'https://admin.distanceeducationschool.com/admin/' . ltrim( $url, '/' );
+        }
+        return $url;
+    }
+}
 
 // ---------- CONFIGURATION: Central Admin API Endpoint ----------
 if ( ! defined( 'SODE_BANNER_API_URL' ) ) {
-    // Production Admin Panel URL (deploy hone ke baad automatic ye chalega)
     define( 'SODE_BANNER_API_URL', 'https://admin.distanceeducationschool.com/api/get_university_banner.php' );
 }
 
@@ -237,10 +261,10 @@ function edu_banner_shortcode( $atts ) {
     $full_uni_name       = ! empty( $uni_data['full_name'] ) ? $uni_data['full_name'] : 'Dayananda Sagar University';
     $short_uni_name      = ! empty( $uni_data['short_name'] ) ? $uni_data['short_name'] : 'DSU';
     $mode_text           = ! empty( $uni_data['mode'] ) ? $uni_data['mode'] : 'Online';
-    $desktop_bg          = ! empty( $uni_data['desktop_banner_bg'] ) ? $uni_data['desktop_banner_bg'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU_Desktop.png';
-    $mobile_bg           = ! empty( $uni_data['mobile_banner_bg'] ) ? $uni_data['mobile_banner_bg'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/07/mobile_new_bg_main.png';
-    $logo_url            = ! empty( $uni_data['logo_url'] ) ? $uni_data['logo_url'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU-online-Logo-2.png';
-    $campus_mobile_img   = ! empty( $uni_data['campus_mobile_img'] ) ? $uni_data['campus_mobile_img'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU-Mobile-Image-2.png';
+    $desktop_bg          = sode_normalize_asset_url(! empty( $uni_data['desktop_banner_bg'] ) ? $uni_data['desktop_banner_bg'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU_Desktop.png');
+    $mobile_bg           = sode_normalize_asset_url(! empty( $uni_data['mobile_banner_bg'] ) ? $uni_data['mobile_banner_bg'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/07/mobile_new_bg_main.png');
+    $logo_url            = sode_normalize_asset_url(! empty( $uni_data['logo_url'] ) ? $uni_data['logo_url'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU-online-Logo-2.png');
+    $campus_mobile_img   = sode_normalize_asset_url(! empty( $uni_data['campus_mobile_img'] ) ? $uni_data['campus_mobile_img'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU-Mobile-Image-2.png');
     $db_admission_date   = ! empty( $uni_data['admission_last_date'] ) ? $uni_data['admission_last_date'] : '';
 
     // Global keys & Dynamic replacements
@@ -897,7 +921,7 @@ function edu_banner_shortcode( $atts ) {
                             ></iframe>
                         </div>
                     <?php else : ?>
-                        <?php echo function_exists('do_shortcode') ? do_shortcode('[custom_lead_form]') : ''; ?>
+                        <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['university' => $uni_slug]) : (function_exists('do_shortcode') ? do_shortcode('[custom_lead_form university="' . esc_attr($uni_slug) . '"]') : ''); ?>
                     <?php endif; ?>
                 </div>
             </div>
@@ -913,7 +937,7 @@ function edu_banner_shortcode( $atts ) {
                 <div class="edu-approvals-grid">
                     <?php foreach ( $uni_data['accreditations'] as $acc ) : ?>
                         <div class="edu-approval-card">
-                            <?php $acc_img = ! empty( $acc['image_url'] ) ? $acc['image_url'] : ( ! empty( $acc['badge_image_url'] ) ? $acc['badge_image_url'] : '' ); ?>
+                            <?php $acc_img = sode_normalize_asset_url( ! empty( $acc['image_url'] ) ? $acc['image_url'] : ( ! empty( $acc['badge_image_url'] ) ? $acc['badge_image_url'] : '' ) ); ?>
                             <?php if ( ! empty( $acc_img ) ) : ?>
                                 <div class="edu-approval-logo-wrap">
                                     <img src="<?php echo esc_url( $acc_img ); ?>" alt="<?php echo esc_attr( $acc['title'] ); ?>" />
@@ -1008,7 +1032,7 @@ function edu_banner_shortcode( $atts ) {
                     <div class="edu-approvals-grid">
                         <?php foreach ( $uni_data['accreditations'] as $acc ) : ?>
                             <div class="edu-approval-card">
-                                <?php $acc_img = ! empty( $acc['image_url'] ) ? $acc['image_url'] : ( ! empty( $acc['badge_image_url'] ) ? $acc['badge_image_url'] : '' ); ?>
+                                <?php $acc_img = sode_normalize_asset_url( ! empty( $acc['image_url'] ) ? $acc['image_url'] : ( ! empty( $acc['badge_image_url'] ) ? $acc['badge_image_url'] : '' ) ); ?>
                                 <?php if ( ! empty( $acc_img ) ) : ?>
                                     <div class="edu-approval-logo-wrap">
                                         <img src="<?php echo esc_url( $acc_img ); ?>" alt="<?php echo esc_attr( $acc['title'] ); ?>" />
@@ -1030,7 +1054,7 @@ function edu_banner_shortcode( $atts ) {
             <!-- Form section -->
             <div class="edu-mobile-form-section">
                 <div class="edu-banner-right is-form" id="edu-form-mobile">
-                    <?php echo function_exists('do_shortcode') ? do_shortcode('[custom_lead_form]') : ''; ?>
+                    <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['university' => $uni_slug]) : (function_exists('do_shortcode') ? do_shortcode('[custom_lead_form university="' . esc_attr($uni_slug) . '"]') : ''); ?>
                 </div>
             </div>
         </div>
@@ -1096,4 +1120,6 @@ function edu_banner_shortcode( $atts ) {
     <?php
     return ob_get_clean();
 }
-add_shortcode( 'edu_banner', 'edu_banner_shortcode' );
+if ( function_exists( 'add_shortcode' ) ) {
+    add_shortcode( 'edu_banner', 'edu_banner_shortcode' );
+}
