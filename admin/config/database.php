@@ -36,23 +36,9 @@ function get_db_connection()
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         
-        // Auto-migrate schema on initial connect if tables missing
-        static $checked_schema = false;
-        if (!$checked_schema) {
-            $checked_schema = true;
-            try {
-                $check = $pdo->query("SHOW TABLES LIKE 'universities'")->fetch();
-                if (!$check) {
-                    $schema_path = dirname(ADMIN_PATH) . '/schema.sql';
-                    if (file_exists($schema_path)) {
-                        $sql = file_get_contents($schema_path);
-                        $pdo->exec($sql);
-                    }
-                }
-            } catch (Exception $ex) {
-                // Ignore schema auto-check error
-            }
-        }
+        // Execute automatic schema migrations
+        require_once __DIR__ . '/migrations.php';
+        sode_run_auto_migrations($pdo);
         
         return $pdo;
     } catch (PDOException $e) {
