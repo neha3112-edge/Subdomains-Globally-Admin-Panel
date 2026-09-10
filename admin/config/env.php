@@ -4,14 +4,27 @@
  */
 if (!function_exists('sode_load_env')) {
     function sode_load_env($file_path = null) {
-        if ($file_path === null) {
-            $file_path = dirname(__DIR__, 2) . '/.env';
+        $paths_to_check = array_filter([
+            $file_path,
+            dirname(__DIR__, 2) . '/.env',
+            dirname(__DIR__) . '/.env',
+            __DIR__ . '/.env',
+            (!empty($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] . '/.env' : null)
+        ]);
+
+        $loaded_file = null;
+        foreach ($paths_to_check as $p) {
+            if (file_exists($p) && is_readable($p)) {
+                $loaded_file = $p;
+                break;
+            }
         }
-        if (!file_exists($file_path)) {
+
+        if (!$loaded_file) {
             return;
         }
 
-        $lines = file($file_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $lines = file($loaded_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($lines === false) {
             return;
         }
@@ -27,18 +40,32 @@ if (!function_exists('sode_load_env')) {
                 $key = trim($key);
                 $val = trim($val);
 
-                // Strip outer quotes if any
+                // Strip outer quotes
                 if (strlen($val) >= 2 && (($val[0] === '"' && substr($val, -1) === '"') || ($val[0] === "'" && substr($val, -1) === "'"))) {
                     $val = substr($val, 1, -1);
                 }
 
-                if (!array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV)) {
-                    putenv("{$key}={$val}");
-                    $_ENV[$key] = $val;
-                    $_SERVER[$key] = $val;
-                }
+                putenv("{$key}={$val}");
+                $_ENV[$key] = $val;
+                $_SERVER[$key] = $val;
             }
         }
+    }
+}
+
+if (!function_exists('sode_env')) {
+    function sode_env($key, $default = '') {
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return $_ENV[$key];
+        }
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return $_SERVER[$key];
+        }
+        $val = getenv($key);
+        if ($val !== false && $val !== '') {
+            return $val;
+        }
+        return $default;
     }
 }
 

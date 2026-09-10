@@ -7,17 +7,17 @@
 require_once __DIR__ . '/env.php';
 
 if (!defined('DB_HOST'))
-    define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+    define('DB_HOST', sode_env('DB_HOST', 'localhost'));
 if (!defined('DB_PORT'))
-    define('DB_PORT', (int)(getenv('DB_PORT') ?: 3307));
+    define('DB_PORT', (int)sode_env('DB_PORT', 3306));
 if (!defined('DB_NAME'))
-    define('DB_NAME', getenv('DB_NAME') ?: 'admin_glob_db');
+    define('DB_NAME', sode_env('DB_NAME', 'admin_glob_db'));
 if (!defined('DB_USER'))
-    define('DB_USER', getenv('DB_USER') ?: 'root');
+    define('DB_USER', sode_env('DB_USER', 'admin_glob_db'));
 if (!defined('DB_PASS'))
-    define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
+    define('DB_PASS', sode_env('DB_PASS', ''));
 if (!defined('DB_CHARSET'))
-    define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
+    define('DB_CHARSET', sode_env('DB_CHARSET', 'utf8mb4'));
 
 function get_db_connection()
 {
