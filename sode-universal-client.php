@@ -57,8 +57,11 @@ if (!function_exists('sode_fetch_remote_component')) {
         // Build unique cache key
         $cache_key = 'sode_ssr_' . md5($component . '_' . $uni . '_' . serialize($args));
         
-        // Check if admin is previewing or cache bypass requested
-        $bypass_cache = isset($_GET['nocache']) || isset($_GET['preview']) || current_user_can('manage_options');
+        // Check if admin is previewing or cache bypass requested (including Elementor editor)
+        $bypass_cache = isset($_GET['nocache']) || 
+                        isset($_GET['preview']) || 
+                        isset($_GET['elementor-preview']) || 
+                        (function_exists('is_user_logged_in') && is_user_logged_in() && current_user_can('edit_posts'));
 
         if (!$bypass_cache) {
             $cached_html = get_transient($cache_key);
@@ -67,16 +70,33 @@ if (!function_exists('sode_fetch_remote_component')) {
             }
         }
 
-        // Fetch from Central Admin SSR API
-        $api_url = add_query_arg($args, SODE_CENTRAL_ADMIN_URL . '/api/render_component.php');
-        $resp = wp_remote_get($api_url, [
-            'timeout' => 8,
-            'headers' => ['Cache-Control' => 'no-cache']
+        $admin_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/');
+        
+        // Primary endpoint: /admin/api/render_component.php
+        $primary_url = add_query_arg($args, $admin_url . '/admin/api/render_component.php');
+        $resp = wp_remote_get($primary_url, [
+            'timeout'   => 10,
+            'sslverify' => false,
+            'headers'   => ['Cache-Control' => 'no-cache']
         ]);
 
+        // Fallback endpoint: /api/render_component.php
         if (is_wp_error($resp) || wp_remote_retrieve_response_code($resp) !== 200) {
-            // If remote unreachable, return graceful fallback or error notice
-            return '<!-- SODE Central SSR API Unavailable -->';
+            $fallback_url = add_query_arg($args, $admin_url . '/api/render_component.php');
+            $resp = wp_remote_get($fallback_url, [
+                'timeout'   => 10,
+                'sslverify' => false,
+                'headers'   => ['Cache-Control' => 'no-cache']
+            ]);
+        }
+
+        if (is_wp_error($resp)) {
+            return '<!-- SODE Central SSR API Connection Error: ' . esc_html($resp->get_error_message()) . ' -->';
+        }
+
+        $code = wp_remote_retrieve_response_code($resp);
+        if ($code !== 200) {
+            return '<!-- SODE Central SSR API HTTP Error: ' . esc_html($code) . ' -->';
         }
 
         $html = wp_remote_retrieve_body($resp);

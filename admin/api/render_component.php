@@ -134,9 +134,25 @@ if ($component === 'banner') {
     }
     $heading = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$uni['full_name'], $uni['short_name'], $uni['short_name']], $heading);
 
-    $banner_desktop = !empty($uni['desktop_banner_bg']) ? $uni['desktop_banner_bg'] : '';
-    $banner_mobile  = !empty($uni['mobile_banner_bg']) ? $uni['mobile_banner_bg'] : $banner_desktop;
-    $campus_img     = !empty($uni['campus_mobile_img']) ? $uni['campus_mobile_img'] : '';
+    // Normalize asset URLs
+    if (!function_exists('sode_normalize_asset_url')) {
+        function sode_normalize_asset_url($url) {
+            if (empty($url)) return '';
+            $url = trim($url);
+            if (strpos($url, 'localhost') !== false) {
+                $url = preg_replace('#https?://localhost[^/]*/subdomain_universal_codes/admin/#i', 'https://admin.distanceeducationschool.com/admin/', $url);
+                $url = preg_replace('#https?://localhost[^/]*/subdomain_universal_codes/#i', 'https://admin.distanceeducationschool.com/admin/', $url);
+            }
+            if (strpos($url, 'http://') !== 0 && strpos($url, 'https://') !== 0 && strpos($url, '//') !== 0) {
+                $url = 'https://admin.distanceeducationschool.com/admin/' . ltrim($url, '/');
+            }
+            return $url;
+        }
+    }
+
+    $banner_desktop = sode_normalize_asset_url(!empty($uni['desktop_banner_bg']) ? $uni['desktop_banner_bg'] : '');
+    $banner_mobile  = sode_normalize_asset_url(!empty($uni['mobile_banner_bg']) ? $uni['mobile_banner_bg'] : $banner_desktop);
+    $campus_img     = sode_normalize_asset_url(!empty($uni['campus_mobile_img']) ? $uni['campus_mobile_img'] : '');
     $last_date      = !empty($uni['admission_last_date']) ? $uni['admission_last_date'] : '30th Sept 2026';
     $year           = $global_keys['$YEAR$'] ?? '2026';
     $top_bar_text   = !empty($top_heading) ? $top_heading : ($global_keys['$BANNER_TOP_TEXT$'] ?? ('Welcome to SODE™ (School of Online and Distance Education) - ' . $year));
@@ -361,7 +377,7 @@ if ($component === 'banner') {
                         <?php foreach ($accreditations as $acc): ?>
                             <div class="edu-accred-single-item">
                                 <?php if (!empty($acc['image_url'])): ?>
-                                    <img src="<?php echo htmlspecialchars($acc['image_url']); ?>" alt="<?php echo htmlspecialchars($acc['title']); ?>">
+                                    <img src="<?php echo htmlspecialchars(sode_normalize_asset_url($acc['image_url'])); ?>" alt="<?php echo htmlspecialchars($acc['title']); ?>">
                                 <?php endif; ?>
                                 <span><?php echo htmlspecialchars($acc['title']); ?></span>
                             </div>
