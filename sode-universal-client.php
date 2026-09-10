@@ -23,6 +23,117 @@ if (!defined('SODE_CENTRAL_ADMIN_URL')) {
     define('SODE_CENTRAL_ADMIN_URL', 'https://admin.distanceeducationschool.com');
 }
 
+// ====================================================
+// ⚙️ GLOBAL KEYS ENGINE
+// Auto-replaces $KEY$ / {KEY} / {{KEY}} in all WordPress
+// content (Elementor, Widgets, Titles, Shortcodes, Yoast)
+// without any code when new keys are added in Admin Panel.
+// ====================================================
+
+if (!function_exists('sode_client_get_global_keys')) {
+    function sode_client_get_global_keys() {
+        static $mem = null;
+        if ($mem !== null) return $mem;
+
+        $cache_key = 'sode_global_keys_map';
+        $force = isset($_GET['refresh_cache']) || (function_exists('is_user_logged_in') && is_user_logged_in() && isset($_GET['preview']));
+
+        if (!$force) {
+            $cached = get_transient($cache_key);
+            if (!empty($cached) && is_array($cached)) {
+                $mem = $cached;
+                return $mem;
+            }
+        }
+
+        $api_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php?t=' . time();
+        $resp = wp_remote_get($api_url, ['timeout' => 5, 'headers' => ['Cache-Control' => 'no-cache']]);
+
+        $keys = [];
+        if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
+            $json = json_decode(wp_remote_retrieve_body($resp), true);
+            if (!empty($json['keys']) && is_array($json['keys'])) {
+                $keys = $json['keys'];
+            }
+        }
+
+        // Fallback defaults if API unreachable
+        if (empty($keys)) {
+            $y = date('Y');
+            $keys = [
+                '$YEAR$'             => $y,
+                '$session$'          => $y . '-' . substr((string)((int)$y + 1), -2),
+                '$nextyear$'         => (string)((int)$y + 1),
+                '$BANNER_TOP_TEXT$'  => 'Welcome to SODE™ (School of Online and Distance Education)',
+            ];
+        }
+
+        set_transient($cache_key, $keys, 600);
+        $mem = $keys;
+        return $mem;
+    }
+}
+
+if (!function_exists('sode_client_replace_keys')) {
+    function sode_client_replace_keys($text) {
+        if (!is_string($text) || empty($text)) return $text;
+
+        // Quick bail — if none of the dollar signs or braces present
+        if (strpos($text, '$') === false && strpos($text, '{') === false) return $text;
+
+        $keys = sode_client_get_global_keys();
+        if (empty($keys)) return $text;
+
+        foreach ($keys as $code => $val) {
+            $val = (string)$val;
+            $raw = trim($code, '$');
+
+            // All pattern variants — double curly first to avoid partial replace
+            $patterns = [
+                '{{' . $raw . '}}',
+                '{{' . strtoupper($raw) . '}}',
+                '{{' . strtolower($raw) . '}}',
+                $code,
+                '$' . strtoupper($raw) . '$',
+                '$' . strtolower($raw) . '$',
+                '{' . $raw . '}',
+                '{' . strtoupper($raw) . '}',
+                '{' . strtolower($raw) . '}',
+            ];
+
+            foreach ($patterns as $p) {
+                if (strpos($text, $p) !== false) {
+                    $text = str_replace($p, $val, $text);
+                }
+            }
+        }
+        return $text;
+    }
+}
+
+// Hook into every WordPress content filter so $YEAR$ etc.
+// works in Elementor, Classic Editor, Widgets, Titles, Yoast SEO
+add_filter('the_content',            'sode_client_replace_keys', 20);
+add_filter('the_title',              'sode_client_replace_keys', 20);
+add_filter('widget_text',            'sode_client_replace_keys', 20);
+add_filter('widget_text_content',    'sode_client_replace_keys', 20);
+add_filter('widget_block_content',   'sode_client_replace_keys', 20);
+add_filter('get_the_excerpt',        'sode_client_replace_keys', 20);
+add_filter('the_excerpt',            'sode_client_replace_keys', 20);
+
+// Elementor dynamic content
+add_filter('elementor/frontend/the_content',       'sode_client_replace_keys', 20);
+add_filter('elementor/widget/render_content',      'sode_client_replace_keys', 20);
+
+// Yoast SEO title & meta description
+add_filter('wpseo_title',            'sode_client_replace_keys', 20);
+add_filter('wpseo_metadesc',         'sode_client_replace_keys', 20);
+add_filter('wpseo_opengraph_title',  'sode_client_replace_keys', 20);
+
+// ACF & shortcode output
+add_filter('acf/format_value',       'sode_client_replace_keys', 20);
+add_filter('do_shortcode_tag',       'sode_client_replace_keys', 20);
+
 /**
  * Helper: Detect current university slug from subdomain or constant
  */
