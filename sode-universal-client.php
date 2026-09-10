@@ -496,3 +496,11 @@ add_action('wp_footer', function() {
     </script>
     <?php
 });
+
+// ====================================================
+// 8. GLOBAL KEYS & SITE YEAR DYNAMIC INTEGRATION
+// ====================================================
+if (file_exists(__DIR__ . '/site-year-universal.php')) {
+    require_once __DIR__ . '/site-year-universal.php';
+}
+

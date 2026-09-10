@@ -15,5 +15,6 @@ foreach ($keys as $k) {
 
 echo json_encode([
     'success' => true,
-    'keys' => $map
+    'keys' => $map,
+    'data' => $map
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -377,8 +377,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-               DESKTOP  (≥ 769px)
-               ===================================================== */
+                   DESKTOP  (≥ 769px)
+                   ===================================================== */
         @media (min-width: 769px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -414,7 +414,7 @@ function edu_banner_shortcode($atts)
             #<?php echo $uid; ?> .top_heading {
                 font-size: 15px;
                 font-weight: 600;
-                color: #1a2e5a;
+                color: #000;
                 margin-bottom: 2px;
             }
 
@@ -605,8 +605,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-               DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
-               ===================================================== */
+                   DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
+                   ===================================================== */
         #<?php echo $uid; ?> .edu-banner-approvals-bar {
             width: 100%;
             background: #ffc800;
@@ -693,8 +693,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-               MOBILE  (≤ 768px)
-               ===================================================== */
+                   MOBILE  (≤ 768px)
+                   ===================================================== */
         @media (max-width: 768px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -728,7 +728,7 @@ function edu_banner_shortcode($atts)
                 width: 95%;
                 font-size: 13.5px;
                 font-weight: 600;
-                color: #1a2e5a;
+                color: #000;
                 line-height: 1.35;
             }
 
@@ -792,6 +792,7 @@ function edu_banner_shortcode($atts)
                 color: #d90429;
                 margin: 4px 0;
             }
+
             #<?php echo $uid; ?> .edu-admission-date-text .admission-date {
                 font-weight: 600;
             }
@@ -873,8 +874,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-               PODCAST & BROCHURE POPUPS (shared)
-               ===================================================== */
+                   PODCAST & BROCHURE POPUPS (shared)
+                   ===================================================== */
         .edu-podcast-overlay,
         .edu-brochure-overlay {
             display: none;
@@ -968,7 +969,8 @@ function edu_banner_shortcode($atts)
 
                     <!-- Dynamic Last date of Admission from Admin Panel -->
                     <p class="edu-admission-date-text">
-                        Last date of Admission : <span class="admission-date"><?php echo esc_html($db_admission_date); ?></span>
+                        Last date of Admission : <span
+                            class="admission-date"><?php echo esc_html($db_admission_date); ?></span>
                     </p>
 
                     <!-- Dynamic WhatsApp Download Brochure Link -->
@@ -1028,8 +1030,7 @@ function edu_banner_shortcode($atts)
                                     <?php $acc_img = sode_normalize_asset_url(!empty($acc['image_url']) ? $acc['image_url'] : (!empty($acc['badge_image_url']) ? $acc['badge_image_url'] : '')); ?>
                                     <?php if (!empty($acc_img)): ?>
                                         <div class="edu-approval-logo-wrap">
-                                            <img src="<?php echo esc_url($acc_img); ?>"
-                                                alt="<?php echo esc_attr($acc['title']); ?>" />
+                                            <img src="<?php echo esc_url($acc_img); ?>" alt="<?php echo esc_attr($acc['title']); ?>" />
                                         </div>
                                     <?php endif; ?>
                                     <div class="edu-approval-info">
@@ -1066,10 +1067,10 @@ function edu_banner_shortcode($atts)
 
                 <!-- Top Heading -->
                 <?php
-                    $mobile_top_heading = esc_html($top_heading_text);
-                    if (strpos($mobile_top_heading, '(') !== false) {
-                        $mobile_top_heading = preg_replace('/\s*\((.*?)\)/', '<br>($1)', $mobile_top_heading);
-                    }
+                $mobile_top_heading = esc_html($top_heading_text);
+                if (strpos($mobile_top_heading, '(') !== false) {
+                    $mobile_top_heading = preg_replace('/\s*\((.*?)\)/', '<br>($1)', $mobile_top_heading);
+                }
                 ?>
                 <p class="top_heading"><?php echo $mobile_top_heading; ?></p>
 
@@ -1125,8 +1126,7 @@ function edu_banner_shortcode($atts)
                                     <?php $acc_img = sode_normalize_asset_url(!empty($acc['image_url']) ? $acc['image_url'] : (!empty($acc['badge_image_url']) ? $acc['badge_image_url'] : '')); ?>
                                     <?php if (!empty($acc_img)): ?>
                                         <div class="edu-approval-logo-wrap">
-                                            <img src="<?php echo esc_url($acc_img); ?>"
-                                                alt="<?php echo esc_attr($acc['title']); ?>" />
+                                            <img src="<?php echo esc_url($acc_img); ?>" alt="<?php echo esc_attr($acc['title']); ?>" />
                                         </div>
                                     <?php endif; ?>
                                     <div class="edu-approval-info">
@@ -1164,7 +1164,8 @@ function edu_banner_shortcode($atts)
                 ">&#x2715;</button>
 
                 <p class="edu-pm-title" style="font-size:18px; font-weight:700; color:#1a2e5a; margin-bottom:6px;">
-                    <?php echo $heading; ?></p>
+                    <?php echo $heading; ?>
+                </p>
                 <p style="font-size:13px; color:#777; margin-bottom:20px;">Listen to our podcast for more information</p>
 
                 <audio id="<?php echo $uid; ?>-audio" controls preload="metadata" style="width:100%;">
