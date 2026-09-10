@@ -65,17 +65,7 @@ if (!function_exists('sode_get_all_global_keys')) {
             }
         }
 
-        // 2. Check WordPress Transient Cache
-        $cache_key = 'sode_global_keys_map';
-        $force_refresh = isset($_GET['refresh_cache']) || (function_exists('is_user_logged_in') && is_user_logged_in() && isset($_GET['preview']));
-        
-        if (!$force_refresh && function_exists('get_transient')) {
-            $cached = get_transient($cache_key);
-            if (!empty($cached) && is_array($cached)) {
-                $memory_cache = $cached;
-                return $memory_cache;
-            }
-        }
+        // No transient caching — always fetch fresh so Admin Panel changes reflect instantly
 
         // 3. Remote HTTP API Call
         $keys = [];
@@ -110,9 +100,7 @@ if (!function_exists('sode_get_all_global_keys')) {
             ];
         }
 
-        if (function_exists('set_transient')) {
-            set_transient($cache_key, $keys, 600); // 10 minutes cache
-        }
+        // (transient cache removed — no delay on key updates)
 
         $memory_cache = $keys;
         return $memory_cache;

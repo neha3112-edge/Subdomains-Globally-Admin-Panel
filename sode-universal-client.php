@@ -148,6 +148,8 @@ add_action('template_redirect', function() {
 add_action('init', function() {
     $token = $_GET['sode_flush'] ?? '';
     if ($token === 'sode_flush_2026') {
+        // Delete any old stale transients (from previous cache versions)
+        delete_transient('sode_global_keys_map');
         // Clear Elementor CSS cache if installed
         if (class_exists('\Elementor\Plugin')) {
             \Elementor\Plugin::$instance->files_manager->clear_cache();
@@ -156,6 +158,7 @@ add_action('init', function() {
         exit;
     }
 }, 1);
+
 
 
 /**
