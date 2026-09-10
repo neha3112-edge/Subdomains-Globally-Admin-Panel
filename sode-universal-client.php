@@ -126,16 +126,29 @@ add_filter('acf/format_value',       'sode_client_replace_keys', 20);
 add_filter('do_shortcode_tag',       'sode_client_replace_keys', 20);
 
 // ====================================================
+// 🔥 FULL PAGE OUTPUT BUFFER
+// Runs AFTER all WordPress + Elementor rendering.
+// Replaces $KEY$ in the complete final HTML output.
+// This is the most reliable method — catches everything.
+// ====================================================
+add_action('template_redirect', function() {
+    ob_start(function($html) {
+        // Only process front-end HTML pages
+        if (empty($html) || !is_string($html)) return $html;
+        if (strpos($html, '$') === false && strpos($html, '{') === false) return $html;
+        return sode_client_replace_keys($html);
+    });
+}, 0);
+
+// ====================================================
 // ⚡ CACHE BUST HANDLER
-// When Admin Panel saves a global key, it pings
-// ?sode_flush=sode_flush_2026 on this subdomain
-// and we delete the transient so fresh keys load instantly.
+// Visit /?sode_flush=sode_flush_2026 to clear any
+// server-side or Elementor cache on this subdomain.
 // ====================================================
 add_action('init', function() {
     $token = $_GET['sode_flush'] ?? '';
     if ($token === 'sode_flush_2026') {
-        delete_transient('sode_global_keys_map');
-        // Also clear Elementor CSS cache if installed
+        // Clear Elementor CSS cache if installed
         if (class_exists('\Elementor\Plugin')) {
             \Elementor\Plugin::$instance->files_manager->clear_cache();
         }
