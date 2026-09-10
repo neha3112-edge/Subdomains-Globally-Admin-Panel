@@ -1,0 +1,15 @@
+# Environment Variables (Secrets)
+.env
+.env.*
+!.env.example
+
+# Temporary / Scratch Files
+scratch/
+*.tmp
+*.log
+
+# IDE & OS Configuration
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

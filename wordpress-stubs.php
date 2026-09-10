@@ -93,7 +93,15 @@ if ( ! function_exists( 'shortcode_atts' ) ) {
      * @return array
      */
     function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
-        return array();
+        $atts = (array)$atts;
+        $out = array();
+        foreach ( $pairs as $name => $default ) {
+            if ( array_key_exists( $name, $atts ) )
+                $out[$name] = $atts[$name];
+            else
+                $out[$name] = $default;
+        }
+        return $out;
     }
 }
 
