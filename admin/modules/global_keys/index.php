@@ -39,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$key_code, $key_value, $description, $is_active]);
                 set_flash_message('Global key created successfully!', 'success');
             }
+            // Auto-flush cache on all active subdomains
+            sode_bust_all_subdomain_caches($db);
             redirect(BASE_URL . '/modules/global_keys/index.php');
         }
     } elseif ($action === 'delete') {
@@ -46,9 +48,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id) {
             $stmt = $db->prepare("DELETE FROM global_keys WHERE id = ?");
             $stmt->execute([$id]);
+            // Auto-flush cache on all active subdomains
+            sode_bust_all_subdomain_caches($db);
             set_flash_message('Global key deleted successfully!', 'success');
             redirect(BASE_URL . '/modules/global_keys/index.php');
         }
+    }
+}
+
+/**
+ * Pings each active university subdomain to clear its global keys cache.
+ * Fire-and-forget async HTTP calls so admin doesn't wait.
+ */
+function sode_bust_all_subdomain_caches(PDO $db) {
+    try {
+        $unis = $db->query("SELECT slug FROM universities WHERE is_active = 1")->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($unis as $slug) {
+            // Derive subdomain URL from slug
+            $subdomain_url = 'https://' . $slug . '.distanceeducationschool.com/?sode_flush=sode_flush_2026';
+            // Fire async non-blocking request (doesn't wait for response)
+            @file_get_contents($subdomain_url, false, stream_context_create([
+                'http' => [
+                    'timeout'         => 2,
+                    'ignore_errors'   => true,
+                    'method'          => 'GET'
+                ],
+                'ssl' => [
+                    'verify_peer'     => false,
+                    'verify_peer_name' => false,
+                ]
+            ]));
+        }
+    } catch (Exception $e) {
+        // Non-critical — cache will auto-expire anyway
+        error_log('SODE cache bust failed: ' . $e->getMessage());
     }
 }
 

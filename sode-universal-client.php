@@ -32,19 +32,10 @@ if (!defined('SODE_CENTRAL_ADMIN_URL')) {
 
 if (!function_exists('sode_client_get_global_keys')) {
     function sode_client_get_global_keys() {
+        // Per-request memory only (no cross-request caching)
+        // Fresh API call on every page load = always up-to-date values
         static $mem = null;
         if ($mem !== null) return $mem;
-
-        $cache_key = 'sode_global_keys_map';
-        $force = isset($_GET['refresh_cache']) || (function_exists('is_user_logged_in') && is_user_logged_in() && isset($_GET['preview']));
-
-        if (!$force) {
-            $cached = get_transient($cache_key);
-            if (!empty($cached) && is_array($cached)) {
-                $mem = $cached;
-                return $mem;
-            }
-        }
 
         $api_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php?t=' . time();
         $resp = wp_remote_get($api_url, ['timeout' => 5, 'headers' => ['Cache-Control' => 'no-cache']]);
@@ -68,11 +59,11 @@ if (!function_exists('sode_client_get_global_keys')) {
             ];
         }
 
-        set_transient($cache_key, $keys, 600);
         $mem = $keys;
         return $mem;
     }
 }
+
 
 if (!function_exists('sode_client_replace_keys')) {
     function sode_client_replace_keys($text) {
@@ -133,6 +124,26 @@ add_filter('wpseo_opengraph_title',  'sode_client_replace_keys', 20);
 // ACF & shortcode output
 add_filter('acf/format_value',       'sode_client_replace_keys', 20);
 add_filter('do_shortcode_tag',       'sode_client_replace_keys', 20);
+
+// ====================================================
+// ⚡ CACHE BUST HANDLER
+// When Admin Panel saves a global key, it pings
+// ?sode_flush=sode_flush_2026 on this subdomain
+// and we delete the transient so fresh keys load instantly.
+// ====================================================
+add_action('init', function() {
+    $token = $_GET['sode_flush'] ?? '';
+    if ($token === 'sode_flush_2026') {
+        delete_transient('sode_global_keys_map');
+        // Also clear Elementor CSS cache if installed
+        if (class_exists('\Elementor\Plugin')) {
+            \Elementor\Plugin::$instance->files_manager->clear_cache();
+        }
+        wp_send_json_success(['message' => 'SODE Cache flushed', 'time' => time()]);
+        exit;
+    }
+}, 1);
+
 
 /**
  * Helper: Detect current university slug from subdomain or constant
