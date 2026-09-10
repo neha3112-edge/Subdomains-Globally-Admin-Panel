@@ -143,7 +143,7 @@ add_shortcode('edu_banner', function($atts) {
 add_shortcode('custom_lead_form', function($atts) {
     $atts = shortcode_atts([
         'heading'     => 'Book 100% Free Counseling',
-        'subheading'  => 'Get 1 to 1 Expert Guidance from SODE&trade;',
+        'subheading'  => 'Get 1 to 1 Expert Guidance from SODE™',
         'form_name'   => '',
         'button_text' => 'Submit',
         'university'  => ''

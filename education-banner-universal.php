@@ -188,6 +188,7 @@ if ( ! function_exists( 'sode_get_university_banner_data' ) ) {
                             'admission_start_date' => $uni['admission_start_date'] ?? '',
                             'assignment_date' => $uni['assignment_date'] ?? '',
                             'rating' => (float)$uni['rating'],
+                            'whatsapp_btn_intent' => $uni['whatsapp_btn_intent'] ?? '',
                             'accreditations' => $accreditations,
                             'global_keys' => $global_keys
                         );
@@ -277,10 +278,10 @@ function edu_banner_shortcode( $atts ) {
     $full_uni_name       = ! empty( $uni_data['full_name'] ) ? $uni_data['full_name'] : 'Dayananda Sagar University';
     $short_uni_name      = ! empty( $uni_data['short_name'] ) ? $uni_data['short_name'] : 'DSU';
     $mode_text           = ! empty( $uni_data['mode'] ) ? $uni_data['mode'] : 'Online';
-    $desktop_bg          = sode_normalize_asset_url(! empty( $uni_data['desktop_banner_bg'] ) ? $uni_data['desktop_banner_bg'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU_Desktop.png');
-    $mobile_bg           = sode_normalize_asset_url(! empty( $uni_data['mobile_banner_bg'] ) ? $uni_data['mobile_banner_bg'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/07/mobile_new_bg_main.png');
-    $logo_url            = sode_normalize_asset_url(! empty( $uni_data['logo_url'] ) ? $uni_data['logo_url'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU-online-Logo-2.png');
-    $campus_mobile_img   = sode_normalize_asset_url(! empty( $uni_data['campus_mobile_img'] ) ? $uni_data['campus_mobile_img'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/DSU-Mobile-Image-2.png');
+    $desktop_bg          = sode_normalize_asset_url(! empty( $uni_data['desktop_banner_bg'] ) ? $uni_data['desktop_banner_bg'] : 'uploads/2026/08/DSU_Desktop.png');
+    $mobile_bg           = sode_normalize_asset_url(! empty( $uni_data['mobile_banner_bg'] ) ? $uni_data['mobile_banner_bg'] : 'uploads/2026/07/mobile_new_bg_main.png');
+    $logo_url            = sode_normalize_asset_url(! empty( $uni_data['logo_url'] ) ? $uni_data['logo_url'] : 'uploads/2026/08/DSU-online-Logo-2.png');
+    $campus_mobile_img   = sode_normalize_asset_url(! empty( $uni_data['campus_mobile_img'] ) ? $uni_data['campus_mobile_img'] : 'uploads/2026/08/DSU-Mobile-Image-2.png');
     $db_admission_date   = ! empty( $uni_data['admission_last_date'] ) ? $uni_data['admission_last_date'] : '';
 
     // Global keys & Dynamic replacements
@@ -311,9 +312,11 @@ function edu_banner_shortcode( $atts ) {
         $video_url = esc_url( $uni_data['youtube_video_url'] );
     }
 
-    // WhatsApp Dynamic Details
+    // WhatsApp Dynamic Details & Custom Intent Support
     $wa_phone = ! empty( $uni_data['global_keys']['whatsapp_number'] ) ? preg_replace('/[^0-9+]/', '', $uni_data['global_keys']['whatsapp_number']) : '+917065777755';
-    $wa_text  = 'I want to Download ' . $full_uni_name . ' ' . $mode_text . ' Brochure';
+    $wa_default_text = 'I want to Download ' . $full_uni_name . ' ' . $mode_text . ' Brochure';
+    $wa_text  = ! empty( $uni_data['whatsapp_btn_intent'] ) ? $uni_data['whatsapp_btn_intent'] : $wa_default_text;
+    $wa_text  = str_replace( ['{UNIVERSITY_NAME}', '{UNI}', '{MODE}'], [$full_uni_name, $short_uni_name, $mode_text], $wa_text );
     $wa_url   = 'https://api.whatsapp.com/send/?phone=' . urlencode( $wa_phone ) . '&text=' . urlencode( $wa_text );
 
     /* ---- Convert YouTube URL to embed URL ---- */
@@ -416,8 +419,11 @@ function edu_banner_shortcode( $atts ) {
                 color: #1a2e5a;
                 line-height: 1.25;
                 text-align: left;
-                width: 85%;
+                width: 100%;
+                max-width: 580px;
                 font-size: 32px;
+                padding: 0;
+                margin: 0;
             }
 
             /* Subheading */
@@ -445,6 +451,11 @@ function edu_banner_shortcode( $atts ) {
             }
 
             /* Green WhatsApp Button */
+            #<?php echo $uid; ?> .custom_whatsapp_brochure_btn {
+                display: inline-block;
+                padding: 0;
+                margin: 2px 0 0 0;
+            }
             #<?php echo $uid; ?> .custom_whatsapp_brochure_btn a {
                 display: inline-flex;
                 align-items: center;
@@ -698,8 +709,10 @@ function edu_banner_shortcode( $atts ) {
                 color: #1a2e5a;
                 line-height: 1.25;
                 text-align: center;
-                padding: 0px 10px;
+                padding: 0;
+                width: 100%;
                 font-size: 24px;
+                margin: 0;
             }
 
             #<?php echo $uid; ?> .edu-banner-logo {
@@ -713,18 +726,20 @@ function edu_banner_shortcode( $atts ) {
             }
 
             #<?php echo $uid; ?> .edu-mobile-img-wrap {
-                width: 100%;
-                margin: 6px 0;
+                width: calc(100% + 28px);
+                margin: 8px -14px 12px -14px;
                 padding: 0;
                 line-height: 0;
+                overflow: hidden;
             }
             #<?php echo $uid; ?> .edu-mobile-img-wrap img {
                 width: 100%;
-                max-width: 420px;
-                margin: 0 auto;
+                max-width: 100%;
+                margin: 0;
                 height: auto;
                 display: block;
-                border-radius: 8px;
+                border-radius: 0;
+                object-fit: cover;
             }
 
             #<?php echo $uid; ?> .edu-banner-subheading {
@@ -738,7 +753,7 @@ function edu_banner_shortcode( $atts ) {
                 color: #333;
                 line-height: 1.55;
                 text-align: center;
-                padding: 0 10px;
+                padding: 0 4px;
             }
 
             #<?php echo $uid; ?> .edu-admission-date-text {
@@ -749,13 +764,18 @@ function edu_banner_shortcode( $atts ) {
             }
 
             /* Green WhatsApp Button Mobile */
+            #<?php echo $uid; ?> .custom_whatsapp_brochure_btn {
+                display: inline-block;
+                padding: 0;
+                margin: 2px 0 0 0;
+            }
             #<?php echo $uid; ?> .custom_whatsapp_brochure_btn a {
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
                 background: #189823;
                 color: #ffffff;
-                padding: 10px 22px;
+                padding: 9px 20px;
                 border-radius: 6px;
                 font-weight: 600;
                 font-size: 14px;
@@ -941,36 +961,36 @@ function edu_banner_shortcode( $atts ) {
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
 
-        <!-- =====================================================
-             DESKTOP DYNAMIC ACCREDITATIONS GOLDEN BAR
-             ===================================================== -->
-        <?php if ( ! empty( $uni_data['accreditations'] ) && is_array( $uni_data['accreditations'] ) ) : ?>
-        <div class="edu-banner-approvals-bar">
-            <div class="edu-banner-approvals-container">
-                <h3 class="edu-approvals-title"><?php echo esc_html( $full_uni_name . ' ' . $mode_text ); ?> Approvals & Accreditations</h3>
-                <div class="edu-approvals-grid">
-                    <?php foreach ( $uni_data['accreditations'] as $acc ) : ?>
-                        <div class="edu-approval-card">
-                            <?php $acc_img = sode_normalize_asset_url( ! empty( $acc['image_url'] ) ? $acc['image_url'] : ( ! empty( $acc['badge_image_url'] ) ? $acc['badge_image_url'] : '' ) ); ?>
-                            <?php if ( ! empty( $acc_img ) ) : ?>
-                                <div class="edu-approval-logo-wrap">
-                                    <img src="<?php echo esc_url( $acc_img ); ?>" alt="<?php echo esc_attr( $acc['title'] ); ?>" />
-                                </div>
-                            <?php endif; ?>
-                            <div class="edu-approval-info">
-                                <div class="edu-approval-name"><?php echo esc_html( $acc['title'] ); ?></div>
-                                <?php if ( ! empty( $acc['description'] ) ) : ?>
-                                    <div class="edu-approval-desc"><?php echo esc_html( $acc['description'] ); ?></div>
+            <!-- =====================================================
+                 DESKTOP DYNAMIC ACCREDITATIONS GOLDEN BAR
+                 ===================================================== -->
+            <?php if ( ! empty( $uni_data['accreditations'] ) && is_array( $uni_data['accreditations'] ) ) : ?>
+            <div class="edu-banner-approvals-bar">
+                <div class="edu-banner-approvals-container">
+                    <h3 class="edu-approvals-title"><?php echo esc_html( $full_uni_name . ' ' . $mode_text ); ?> Approvals & Accreditations</h3>
+                    <div class="edu-approvals-grid">
+                        <?php foreach ( $uni_data['accreditations'] as $acc ) : ?>
+                            <div class="edu-approval-card">
+                                <?php $acc_img = sode_normalize_asset_url( ! empty( $acc['image_url'] ) ? $acc['image_url'] : ( ! empty( $acc['badge_image_url'] ) ? $acc['badge_image_url'] : '' ) ); ?>
+                                <?php if ( ! empty( $acc_img ) ) : ?>
+                                    <div class="edu-approval-logo-wrap">
+                                        <img src="<?php echo esc_url( $acc_img ); ?>" alt="<?php echo esc_attr( $acc['title'] ); ?>" />
+                                    </div>
                                 <?php endif; ?>
+                                <div class="edu-approval-info">
+                                    <div class="edu-approval-name"><?php echo esc_html( $acc['title'] ); ?></div>
+                                    <?php if ( ! empty( $acc['description'] ) ) : ?>
+                                        <div class="edu-approval-desc"><?php echo esc_html( $acc['description'] ); ?></div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
+            <?php endif; ?>
         </div>
-        <?php endif; ?>
 
         <!-- ===========================================================
              MOBILE MARKUP
@@ -1044,7 +1064,7 @@ function edu_banner_shortcode( $atts ) {
             <?php if ( ! empty( $uni_data['accreditations'] ) && is_array( $uni_data['accreditations'] ) ) : ?>
             <div class="edu-banner-approvals-bar">
                 <div class="edu-banner-approvals-container">
-                    <h3 class="edu-approvals-title"><?php echo esc_html( $full_uni_name . ' ' . $mode_text ); ?><br>Approvals & Accreditations</h3>
+                    <h3 class="edu-approvals-title"><?php echo esc_html( $full_uni_name . ' ' . $mode_text ); ?> Approvals & Accreditations</h3>
                     <div class="edu-approvals-grid">
                         <?php foreach ( $uni_data['accreditations'] as $acc ) : ?>
                             <div class="edu-approval-card">

@@ -450,7 +450,8 @@ function custom_lead_form_shortcode($atts = [])
 
     $atts = shortcode_atts([
         'heading'     => 'Book 100% Free Counseling',
-        'sub-heading' => 'Get 1 to 1 Expert Guidance from SODE&trade;',
+        'sub-heading' => 'Get 1 to 1 Expert Guidance from SODE™',
+        'subheading'  => 'Get 1 to 1 Expert Guidance from SODE™',
         'form_name'   => $short_uni_name . ' Lead Form',
         'button_text' => 'Submit',
         'university'  => $uni_slug
@@ -458,7 +459,9 @@ function custom_lead_form_shortcode($atts = [])
 
     // Dynamic key replacements in heading & form name
     $heading = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $atts['heading']);
-    $subheading = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $atts['sub-heading']);
+    $sub_val = !empty($atts['subheading']) && $atts['subheading'] !== 'Get 1 to 1 Expert Guidance from SODE™' ? $atts['subheading'] : ($atts['sub-heading'] ?? 'Get 1 to 1 Expert Guidance from SODE™');
+    $sub_val = str_replace(['&trade;', '&TRADE;', '&#8482;', '&#x2122;'], '™', $sub_val);
+    $subheading = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $sub_val);
     $form_name = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $atts['form_name']);
 
     // Allowed courses list

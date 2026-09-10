@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $brochure_pdf_url = get_relative_asset_path(trim($_POST['brochure_pdf_url'] ?? ''));
     $podcast_audio_url = get_relative_asset_path(trim($_POST['podcast_audio_url'] ?? ''));
     $youtube_video_url = trim($_POST['youtube_video_url'] ?? '');
+    $whatsapp_btn_intent = trim($_POST['whatsapp_btn_intent'] ?? '');
     $exam_date = trim($_POST['exam_date'] ?? '');
     $extended_exam_date = trim($_POST['extended_exam_date'] ?? '');
     $admission_last_date = trim($_POST['admission_last_date'] ?? '');
@@ -66,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 UPDATE universities SET
                     full_name = ?, short_name = ?, slug = ?, mode = ?, location = ?, official_url = ?, advantage_text = ?,
                     logo_url = ?, desktop_banner_bg = ?, mobile_banner_bg = ?, campus_mobile_img = ?,
-                    brochure_pdf_url = ?, podcast_audio_url = ?, youtube_video_url = ?,
+                    brochure_pdf_url = ?, podcast_audio_url = ?, youtube_video_url = ?, whatsapp_btn_intent = ?,
                     exam_date = ?, extended_exam_date = ?, admission_last_date = ?, admission_start_date = ?, assignment_date = ?,
                     rating = ?, is_active = ?
                 WHERE id = ?
@@ -74,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $full_name, $short_name, $slug, $mode, $location, $official_url, $advantage_text,
                 $logo_url, $desktop_banner_bg, $mobile_banner_bg, $campus_mobile_img,
-                $brochure_pdf_url, $podcast_audio_url, $youtube_video_url,
+                $brochure_pdf_url, $podcast_audio_url, $youtube_video_url, $whatsapp_btn_intent,
                 $exam_date, $extended_exam_date, $admission_last_date, $admission_start_date, $assignment_date,
                 $rating, $is_active,
                 $id
@@ -339,6 +340,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <label class="form-label">YouTube Video Embed URL</label>
                             <input type="text" name="youtube_video_url" class="form-control" value="<?php echo htmlspecialchars($uni['youtube_video_url'] ?? ''); ?>">
                         </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:16px;">
+                        <label class="form-label">WhatsApp Brochure Button Intent / Message</label>
+                        <input type="text" name="whatsapp_btn_intent" class="form-control" value="<?php echo htmlspecialchars($uni['whatsapp_btn_intent'] ?? ''); ?>" placeholder="I want to Download {UNIVERSITY_NAME} {MODE} Brochure">
+                        <small style="color:var(--text-muted); font-size:12px; margin-top:4px; display:block;">
+                            Placeholders available: <code>{UNIVERSITY_NAME}</code>, <code>{UNI}</code>, <code>{MODE}</code>. If left empty, default message will be used.
+                        </small>
                     </div>
                 </div>
             </div>
