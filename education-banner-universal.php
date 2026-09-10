@@ -788,9 +788,12 @@ function edu_banner_shortcode($atts)
 
             #<?php echo $uid; ?> .edu-admission-date-text {
                 font-size: 13.5px;
-                font-weight: 700;
+                font-weight: 600;
                 color: #d90429;
                 margin: 4px 0;
+            }
+            #<?php echo $uid; ?> .edu-admission-date-text .admission-date {
+                font-weight: 600;
             }
 
             /* Green WhatsApp Button Mobile */
@@ -965,8 +968,7 @@ function edu_banner_shortcode($atts)
 
                     <!-- Dynamic Last date of Admission from Admin Panel -->
                     <p class="edu-admission-date-text">
-                        Last date of Admission : <strong
-                            class="admission-date"><?php echo esc_html($db_admission_date); ?></strong>
+                        Last date of Admission : <span class="admission-date"><?php echo esc_html($db_admission_date); ?></span>
                     </p>
 
                     <!-- Dynamic WhatsApp Download Brochure Link -->
@@ -1095,8 +1097,7 @@ function edu_banner_shortcode($atts)
 
                 <!-- Dynamic Last date of Admission from Admin Panel -->
                 <p class="edu-admission-date-text">
-                    Last date of Admission : <strong
-                        class="admission-date"><?php echo esc_html($db_admission_date); ?></strong>
+                    Last date of Admission : <span class="admission-date"><?php echo esc_html($db_admission_date); ?></span>
                 </p>
 
                 <div class="custom_whatsapp_brochure_btn">
