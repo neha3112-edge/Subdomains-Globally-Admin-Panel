@@ -55,14 +55,14 @@ foreach ($global_keys as $k => $v) {
     $rep_map[$k] = $v;
 }
 
-// Query news items: Global news + University-specific news
+// Query news items: Global news first, then University-specific news
 $uni_id = $uni ? (int)$uni['id'] : 0;
 if ($uni_id > 0) {
     $stmt = $db->prepare("
         SELECT id, is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order
         FROM news_items
         WHERE is_active = 1 AND (is_global = 1 OR university_id = ?)
-        ORDER BY sort_order ASC, id DESC
+        ORDER BY is_global DESC, sort_order ASC, id ASC
     ");
     $stmt->execute([$uni_id]);
 } else {
@@ -70,7 +70,7 @@ if ($uni_id > 0) {
         SELECT id, is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order
         FROM news_items
         WHERE is_active = 1 AND is_global = 1
-        ORDER BY sort_order ASC, id DESC
+        ORDER BY is_global DESC, sort_order ASC, id ASC
     ");
 }
 $raw_news = $stmt->fetchAll(PDO::FETCH_ASSOC);

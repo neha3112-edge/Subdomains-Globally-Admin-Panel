@@ -13,10 +13,25 @@ if (!function_exists('sode_news_marquee_render')) {
             'university' => '',
             'uni'        => '',
             'heading'    => 'Latest News',
-            'speed'      => '16s',
-            'height'     => '240px',
-            'limit'      => 10,
+            'speed'      => '',
+            'height'     => '100%',
+            'limit'      => 20,
         ], $atts);
+
+        // Auto-include DB config if available locally
+        if (!function_exists('get_db_connection')) {
+            $possible_configs = [
+                __DIR__ . '/admin/config/config.php',
+                dirname(__DIR__) . '/admin/config/config.php',
+                dirname(__DIR__, 2) . '/admin/config/config.php',
+            ];
+            foreach ($possible_configs as $cfg) {
+                if (file_exists($cfg)) {
+                    require_once $cfg;
+                    break;
+                }
+            }
+        }
 
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
 
@@ -53,14 +68,14 @@ if (!function_exists('sode_news_marquee_render')) {
                         $stmt = $db->prepare("
                             SELECT * FROM news_items 
                             WHERE is_active = 1 AND (is_global = 1 OR university_id = ?)
-                            ORDER BY sort_order ASC, id DESC
+                            ORDER BY is_global DESC, sort_order ASC, id ASC
                         ");
                         $stmt->execute([$uni_id]);
                     } else {
                         $stmt = $db->query("
                             SELECT * FROM news_items 
                             WHERE is_active = 1 AND is_global = 1
-                            ORDER BY sort_order ASC, id DESC
+                            ORDER BY is_global DESC, sort_order ASC, id ASC
                         ");
                     }
                     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -110,34 +125,6 @@ if (!function_exists('sode_news_marquee_render')) {
             }
         }
 
-        // Default Fallback items if empty
-        if (empty($news_items)) {
-            $uni_display_name = $uni_info['full_name'] ?? 'Dayananda Sagar University Online';
-            $uni_short_name   = $uni_info['short_name'] ?? 'DSU';
-            $y = date('Y');
-
-            $news_items = [
-                [
-                    'text'       => "For the latest notifications regarding student support, access the {$uni_short_name} Student Support Page.",
-                    'link'       => '#student-support',
-                    'has_badge'  => true,
-                    'badge_text' => 'New'
-                ],
-                [
-                    'text'       => "Get notifications for the latest placement drives at {$uni_display_name} {$y}",
-                    'link'       => '#placement-drives',
-                    'has_badge'  => true,
-                    'badge_text' => 'New'
-                ],
-                [
-                    'text'       => "Upcoming News & Events at {$uni_display_name} {$y}",
-                    'link'       => '#news-events',
-                    'has_badge'  => true,
-                    'badge_text' => 'New'
-                ]
-            ];
-        }
-
         // Apply Placeholders Replacement on client side
         $uni_name  = $uni_info['full_name'] ?? ($uni_slug ? ucwords(str_replace('-', ' ', $uni_slug)) : 'University');
         $uni_short = $uni_info['short_name'] ?? strtoupper($uni_slug ?: 'UNI');
@@ -173,9 +160,13 @@ if (!function_exists('sode_news_marquee_render')) {
             ];
         }
 
-        // Calculate dynamic animation speed based on item count
+        // Calculate fast and smooth dynamic animation speed
         $count = count($processed_news);
-        $anim_duration = max(12, $count * 4.5) . 's';
+        if (!empty($atts['speed'])) {
+            $anim_duration = $atts['speed'];
+        } else {
+            $anim_duration = max(6, (int)($count * 2.2)) . 's';
+        }
         $unique_id = 'sode_news_' . substr(md5(uniqid(rand(), true)), 0, 8);
 
         ob_start();
@@ -188,7 +179,7 @@ if (!function_exists('sode_news_marquee_render')) {
                     <div class="sode-news-divider"></div>
                 </div>
 
-                <div class="sode-news-viewport" style="height: <?php echo esc_attr($atts['height']); ?>;">
+                <div class="sode-news-viewport">
                     <div class="sode-news-track" style="animation-duration: <?php echo esc_attr($anim_duration); ?>;">
                         <?php 
                         // Duplicate items twice to achieve seamless infinite loop
@@ -224,26 +215,34 @@ if (!function_exists('sode_news_marquee_render')) {
         <style>
         #<?php echo esc_attr($unique_id); ?>.sode-news-card-wrapper {
             width: 100%;
-            max-width: 440px;
+            height: 100%;
+            max-width: 100%;
             margin: 0 auto;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-card {
             background-color: #dbeafe;
             background: linear-gradient(180deg, #e4efff 0%, #d8e8fe 100%);
             border-radius: 20px;
-            padding: 24px 20px 20px 20px;
+            padding: 24px 22px 20px 22px;
             box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(191, 219, 254, 0.8);
+            border: 1px solid rgba(191, 219, 254, 0.85);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: #1e3a8a;
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
+            height: 100%;
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-header {
             text-align: center;
             margin-bottom: 16px;
+            flex-shrink: 0;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-title {
             margin: 0 0 14px 0;
@@ -262,8 +261,10 @@ if (!function_exists('sode_news_marquee_render')) {
         #<?php echo esc_attr($unique_id); ?> .sode-news-viewport {
             overflow: hidden;
             position: relative;
-            mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+            flex: 1;
+            min-height: 280px;
+            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-track {
             display: flex;

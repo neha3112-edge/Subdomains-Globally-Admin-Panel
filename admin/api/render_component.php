@@ -19,8 +19,14 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit;
 }
 
-// 1. Require Core Modular Components
-$root_dir = dirname(__DIR__, 2);
+// 1. Require Core Modular Components & DB Config
+$admin_dir = dirname(__DIR__);
+$root_dir = dirname($admin_dir);
+
+if (file_exists($admin_dir . '/config/config.php')) {
+    require_once $admin_dir . '/config/config.php';
+}
+
 require_once $root_dir . '/lead-form-universal.php';
 require_once $root_dir . '/education-banner-universal.php';
 require_once $root_dir . '/news-marquee-universal.php';
