@@ -258,7 +258,7 @@ function edu_banner_shortcode($atts)
 {
 
     $atts = shortcode_atts(array(
-        'heading' => 'Distance Education Course, Fees, Admission 2026',
+        'heading' => 'Distance Education Course, Fees, Admission $YEAR$',
         'subheading' => '',
         'description' => 'Earn your degree without attending regular college with our Distance Education programs.',
         'audio_url' => '',
@@ -279,7 +279,14 @@ function edu_banner_shortcode($atts)
     $uni_data = sode_get_university_banner_data($uni_slug);
 
     if (empty($heading)) {
-        $heading = 'Distance Education Course, Fees, Admission ' . (!empty($uni_data['global_keys']['$YEAR$']) ? $uni_data['global_keys']['$YEAR$'] : date('Y'));
+        $heading = 'Distance Education Course, Fees, Admission $YEAR$';
+    }
+
+    // Ensure main heading always ends with the dynamic year global key ($YEAR$)
+    if (preg_match('/\b20\d{2}\b\s*$/i', $heading)) {
+        $heading = preg_replace('/\b20\d{2}\b\s*$/i', '$YEAR$', $heading);
+    } elseif (strpos($heading, '$YEAR$') === false && strpos($heading, '{{YEAR}}') === false && strpos($heading, '{YEAR}') === false && strpos($heading, '{year}') === false) {
+        $heading = rtrim($heading) . ' $YEAR$';
     }
     if (empty($description)) {
         $description = 'Earn your degree without attending regular college with our Distance Education programs.';
