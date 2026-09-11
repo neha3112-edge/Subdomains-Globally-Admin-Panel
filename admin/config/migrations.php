@@ -253,6 +253,26 @@ function sode_run_auto_migrations(PDO $pdo) {
                 foreach ($roles as $r_id) {
                     $rsa_stmt->execute([$r_id, $sidebar_id]);
                 }
+            },
+
+            '2026_09_11_003_add_mode_to_course_mappings' => function(PDO $db) {
+                $has_mode = $db->query("SHOW COLUMNS FROM university_course_mappings LIKE 'mode'")->fetch();
+                if (!$has_mode) {
+                    $db->exec("ALTER TABLE university_course_mappings ADD COLUMN mode VARCHAR(50) NOT NULL DEFAULT 'Online' AFTER course_id");
+                }
+                // Update unique index to include mode so same course can be offered in Online and Distance
+                try {
+                    $indexes = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course'")->fetchAll();
+                    if (!empty($indexes)) {
+                        $db->exec("ALTER TABLE university_course_mappings DROP INDEX uniq_uni_course");
+                    }
+                } catch (Exception $e) {}
+                try {
+                    $indexes_new = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course_mode'")->fetchAll();
+                    if (empty($indexes_new)) {
+                        $db->exec("ALTER TABLE university_course_mappings ADD UNIQUE KEY uniq_uni_course_mode (university_id, course_id, mode)");
+                    }
+                } catch (Exception $e) {}
             }
         ];
 

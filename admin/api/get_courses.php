@@ -59,6 +59,7 @@ try {
             ucm.id AS mapping_id,
             ucm.university_id,
             ucm.course_id,
+            ucm.mode,
             ucm.course_description,
             ucm.course_link,
             ucm.eligibility_text,
@@ -75,6 +76,10 @@ try {
         WHERE ucm.university_id = ?
         ORDER BY 
             CASE 
+                WHEN ucm.mode = 'Online' THEN 1 
+                ELSE 2 
+            END ASC,
+            CASE 
                 WHEN c.level = 'PG' THEN 1 
                 WHEN c.level = 'UG' THEN 2 
                 ELSE 3 
@@ -85,7 +90,14 @@ try {
     $mappings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $courses_data = [];
+    $has_online = false;
+    $has_distance = false;
+
     foreach ($mappings as $m) {
+        $course_mode = (!empty($m['mode']) && strtolower($m['mode']) === 'distance') ? 'Distance' : 'Online';
+        if ($course_mode === 'Online') $has_online = true;
+        if ($course_mode === 'Distance') $has_distance = true;
+
         $level_raw = strtoupper(trim($m['level'] ?? 'UG'));
         $tab_category = ($level_raw === 'PG' || stripos($m['course_name'], 'Master') !== false) ? 'Master' : 'Bachelor';
         $duration = ($tab_category === 'Master') ? '2 Year' : '3 Year';
@@ -99,6 +111,7 @@ try {
             'short_name'     => $m['course_short'],
             'full_name'      => $m['course_name'],
             'slug'           => $m['course_slug'],
+            'mode'           => $course_mode,
             'level'          => $m['level'],
             'tab'            => $tab_category,
             'duration'       => $duration,
@@ -118,6 +131,8 @@ try {
             'short_name' => $uni['short_name'],
             'full_name'  => $uni['full_name'],
         ],
+        'has_online'   => $has_online,
+        'has_distance' => $has_distance,
         'total'        => count($courses_data),
         'courses'      => $courses_data,
         'short_names'  => array_column($courses_data, 'short_name'),

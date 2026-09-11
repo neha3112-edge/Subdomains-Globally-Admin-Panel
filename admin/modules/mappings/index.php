@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 // Fetch all mappings
 $mappings = $db->query("
     SELECT ucm.*, 
-           u.full_name AS uni_name, u.short_name AS uni_short, u.logo_url, u.mode,
+           u.full_name AS uni_name, u.short_name AS uni_short, u.logo_url,
            c.full_name AS course_name, c.short_name AS course_short, c.level,
            (SELECT COUNT(*) FROM course_specializations WHERE mapping_id = ucm.id) AS specs_count
     FROM university_course_mappings ucm
@@ -53,6 +53,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <tr>
                     <th>University</th>
                     <th>Course</th>
+                    <th>Mode</th>
                     <th>Level</th>
                     <th>Per Sem Fee</th>
                     <th>Total Fee</th>
@@ -63,7 +64,7 @@ require_once ADMIN_PATH . '/includes/header.php';
             <tbody>
                 <?php if (empty($mappings)): ?>
                     <tr>
-                        <td colspan="7" style="text-align:center; padding:40px; color:var(--text-dim);">
+                        <td colspan="8" style="text-align:center; padding:40px; color:var(--text-dim);">
                             No mappings configured. Click "Map New Course" to link a university to a course.
                         </td>
                     </tr>
@@ -72,11 +73,15 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <tr>
                             <td>
                                 <strong><?php echo htmlspecialchars($m['uni_short']); ?></strong>
-                                <div style="font-size:11.5px; color:var(--text-dim);"><?php echo htmlspecialchars($m['mode']); ?></div>
                             </td>
                             <td>
                                 <strong><?php echo htmlspecialchars($m['course_name']); ?></strong>
                                 <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;"><?php echo htmlspecialchars($m['course_short']); ?></div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background:<?php echo ($m['mode'] === 'Online') ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)'; ?>; color:<?php echo ($m['mode'] === 'Online') ? '#3b82f6' : '#f59e0b'; ?>; font-weight:700;">
+                                    <?php echo htmlspecialchars($m['mode'] ?? 'Online'); ?>
+                                </span>
                             </td>
                             <td>
                                 <span class="badge badge-info"><?php echo htmlspecialchars($m['level']); ?></span>

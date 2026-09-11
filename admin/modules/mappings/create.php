@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $university_id = (int)($_POST['university_id'] ?? 0);
     $course_id = (int)($_POST['course_id'] ?? 0);
+    $mode = in_array($_POST['mode'] ?? '', ['Online', 'Distance']) ? $_POST['mode'] : 'Online';
     $course_description = trim($_POST['course_description'] ?? '');
     $course_link = trim($_POST['course_link'] ?? '');
     $eligibility_text = trim($_POST['eligibility_text'] ?? '');
@@ -36,12 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare("
                 INSERT INTO university_course_mappings (
-                    university_id, course_id, course_description, course_link, eligibility_text,
+                    university_id, course_id, mode, course_description, course_link, eligibility_text,
                     one_time_processing_fee, tuition_fee, examination_fee, per_semester_fee, total_program_fee
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
-                $university_id, $course_id, $course_description, $course_link, $eligibility_text,
+                $university_id, $course_id, $mode, $course_description, $course_link, $eligibility_text,
                 $one_time_processing_fee, $tuition_fee, $examination_fee, $per_semester_fee, $total_program_fee
             ]);
             $mapping_id = $db->lastInsertId();
@@ -90,7 +91,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <span class="card-title">1. University & Course Selection</span>
                 </div>
                 <div class="card-body">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div style="display:grid; grid-template-columns: 1.2fr 1.2fr 1fr; gap:16px;">
                         <div class="form-group">
                             <label class="form-label">University *</label>
                             <select name="university_id" class="form-select" required>
@@ -108,6 +109,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 <?php foreach ($courses as $c): ?>
                                     <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['full_name'] . ' (' . $c['short_name'] . ')'); ?></option>
                                 <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Course Mode *</label>
+                            <select name="mode" class="form-select" required>
+                                <option value="Online" selected>Online</option>
+                                <option value="Distance">Distance</option>
                             </select>
                         </div>
                     </div>
