@@ -803,7 +803,14 @@ function sode_client_send_lead() {
 // 5. GLOBAL FOOTER: POPUP MODALS & JS HANDLER
 // ====================================================
 add_action('wp_footer', function() {
-    // 1. Output Modals from Central Admin
+    // 1. Output Legal Popups (Disclaimer, Privacy Policy, Terms) from Central Admin
+    if (function_exists('sode_legal_popups_render')) {
+        echo sode_legal_popups_render();
+    } else {
+        echo sode_fetch_remote_component('legal_popups');
+    }
+
+    // 2. Output Modals from Central Admin
     echo sode_fetch_remote_component('popup_modals');
 
     // 2. Output Unified Form & Popup Client JS
@@ -993,3 +1000,6 @@ if (file_exists(__DIR__ . '/admission-process-universal.php')) {
     require_once __DIR__ . '/admission-process-universal.php';
 }
 
+if (file_exists(__DIR__ . '/legal-pages-universal.php')) {
+    require_once __DIR__ . '/legal-pages-universal.php';
+}

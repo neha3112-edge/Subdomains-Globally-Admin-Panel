@@ -355,6 +355,75 @@ function sode_run_auto_migrations(PDO $pdo) {
                         $rsa->execute([$rid, $sidebar_id]);
                     }
                 }
+            },
+
+            '2026_09_11_005_create_legal_pages_table' => function(PDO $db) {
+                // 1. Create table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS legal_pages (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        page_type VARCHAR(50) NOT NULL UNIQUE,
+                        heading VARCHAR(255) NOT NULL,
+                        content_html LONGTEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // 2. Seed default content if table is empty
+                $count = (int)$db->query("SELECT COUNT(*) FROM legal_pages")->fetchColumn();
+                if ($count === 0) {
+                    $stmt = $db->prepare("INSERT INTO legal_pages (page_type, heading, content_html) VALUES (?, ?, ?)");
+
+                    $stmt->execute(['disclaimer', 'Disclaimer', '<p>The information provided on DistanceEducationSchool.com, operated by <strong>SODE&trade; Counselling Services LLP</strong>, registered with the Ministry of Corporate Affairs, is intended solely for educational information, guidance, and counselling purposes. Working as an independent education guidance platform, not a university, regulatory body, degree-awarding institution, or admission authority. University and programme details, including approvals, eligibility, fees, and admissions, are subject to change. It is advisable to verify all such information directly with the respective university\'s official website.</p>
+<h3>Essential Points &amp; Guidance Policy</h3>
+<ul>
+    <li><strong>Independent Entity:</strong> DistanceEducationSchool.com, operated by SODE&trade; Counselling Services LLP, is an independent education information and counselling platform.</li>
+    <li><strong>Official University Verification:</strong> Users are advised to verify updated admissions, fees, eligibility, program structure, approvals, and other official information through the respective university\'s official website.</li>
+    <li><strong>Trademarks &amp; Copyrights:</strong> All University names, logos, trademarks, and other brand assets displayed on our platform are used solely for identification, informational, educational, and guidance purposes and remain the intellectual property of their respective university owners.</li>
+    <li><strong>Free Counselling:</strong> We offer free educational information and counselling to help students understand and compare suitable academic opportunities. We do not charge students any fees for counselling or guidance regarding university applications.</li>
+    <li><strong>No Degree Authorization:</strong> We do not issue degrees, certificates, marksheets, or academic credentials, nor do we have the authority to grant admissions on behalf of any university.</li>
+    <li><strong>Information Integrity:</strong> We strive to provide accurate, relevant, and up-to-date educational information, career guidance, and student support while maintaining and respecting the credibility and reputation of all higher education institutions.</li>
+    <li><strong>Transparency:</strong> Our objective is to provide transparent educational guidance and student support and help learners make informed decisions regarding online and distance education opportunities.</li>
+</ul>']);
+
+                    $stmt->execute(['privacy_policy', 'Privacy Policy', '<p>All information on this platform is provided by <strong>DistanceEducationSchool.com</strong>, under the legal name of <strong>SODE&trade; Counselling Services LLP</strong>. We are an educational counselling platform that helps students find trusted distance and online courses from UGC-DEB-approved universities. Our goal is to provide accurate information and personalised support to help you choose the right program.</p>
+<h3>1. No Personal Data Collected by Default</h3>
+<p>You can freely browse our website without sharing any personal information. We do not collect your name, phone number, or email address unless you choose to fill out a form or contact us directly.</p>
+<h3>2. How We Use It</h3>
+<p>Your information is used to guide you in choosing the right university or course, provide counselling support, and share admission-related updates. We may send you important updates via WhatsApp and email. You can opt out anytime.</p>
+<h3>3. Scope</h3>
+<p>This privacy policy applies to visitors who access this specific platform operated under DistanceEducationSchool.com by SODE&trade; Counselling Services LLP. It covers how we collect, use, and protect data when you explore course information, compare universities, or fill out enquiry forms on this platform.</p>
+<h3>4. Data Sharing</h3>
+<p>We share your details only with trusted university partners, and only for the purpose of counselling or admission. We do not sell or share data with third-party advertisers.</p>
+<h3>5. External Links</h3>
+<p>Our website may include links to official university portals. We are not responsible for the content or privacy policies of those external sites.</p>
+<h3>6. Cookies and Analytics</h3>
+<p>Our website uses cookies to improve the user experience. These help us understand how visitors use our site (e.g., most viewed pages, time spent, etc.). These cookies do not identify you personally.</p>']);
+
+                    $stmt->execute(['terms_conditions', 'Terms &amp; Conditions', '<p>This page outlines the terms and conditions that apply when you access or use services provided on this platform, operated by <strong>SODE&trade; Counselling Services LLP</strong> under <strong>DistanceEducationSchool.com</strong>.</p>
+<p>We help students and working professionals explore distance and online education options offered by UGC-DEB-approved universities.</p>
+<h3>1. Our Role</h3>
+<p>We provide information and counselling services only. We are not a university and do not collect any university fees directly. All academic or admission-related payments must be made to the respective university.</p>
+<h3>2. Unauthorised Use or Fraud</h3>
+<p>If you suspect any unauthorised transaction linked to a service on our platform, report it immediately. We will coordinate with the respective payment partner for further action.</p>
+<h3>3. Updates to These Terms</h3>
+<p>These terms may be updated as services evolve. Continued use of this platform implies your agreement to the latest version of these terms.</p>
+<h3>4. Contact Us</h3>
+<p>For support, email us at: <strong>support@distanceeducationschool.com</strong></p>']);
+                }
+
+                // 3. Register sidebar item if missing
+                $check = $db->query("SELECT id FROM sidebar_items WHERE rbac_module_key = 'legal_pages' LIMIT 1")->fetch();
+                if (!$check) {
+                    $svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
+                    $s = $db->prepare("INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)");
+                    $s->execute(['Legal Popups', 'modules/legal_pages/index.php', 15, 'legal_pages', 'legal_pages', 'SETTINGS', $svg]);
+                    $sid = $db->lastInsertId();
+                    $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                    $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                    foreach ($roles as $rid) { $rsa->execute([$rid, $sid]); }
+                }
             }
         ];
 
