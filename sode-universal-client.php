@@ -126,14 +126,12 @@ add_filter('acf/format_value',       'sode_client_replace_keys', 20);
 add_filter('do_shortcode_tag',       'sode_client_replace_keys', 20);
 
 // ====================================================
-// 🔥 FULL PAGE OUTPUT BUFFER
-// Runs AFTER all WordPress + Elementor rendering.
-// Replaces $KEY$ in the complete final HTML output.
-// This is the most reliable method — catches everything.
+// 🔥 FULL PAGE OUTPUT BUFFER (PHP-level)
+// Runs when WP Rocket/Redis cache MISS (first visit).
+// For cache HITs, the JS engine below handles replacement.
 // ====================================================
 add_action('template_redirect', function() {
     ob_start(function($html) {
-        // Only process front-end HTML pages
         if (empty($html) || !is_string($html)) return $html;
         if (strpos($html, '$') === false && strpos($html, '{') === false) return $html;
         return sode_client_replace_keys($html);
@@ -141,24 +139,164 @@ add_action('template_redirect', function() {
 }, 0);
 
 // ====================================================
-// ⚡ CACHE BUST HANDLER
-// Visit /?sode_flush=sode_flush_2026 to clear any
-// server-side or Elementor cache on this subdomain.
+// ⚡ JS GLOBAL KEYS ENGINE (Client-Side)
+// Injected into <head> — runs in browser AFTER page loads.
+// Bypasses WP Rocket HTML cache, Redis, ALL server caches.
+// Fetches fresh keys from Admin API every page load.
+// Works even on WP Rocket cached pages!
+// ====================================================
+add_action('wp_head', function() {
+    $api_url = esc_js(rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php');
+    ?>
+<script id="sode-global-keys-engine">
+(function() {
+    'use strict';
+    // Fetch fresh global keys — no browser cache
+    fetch('<?php echo $api_url; ?>?t=' + Date.now(), {
+        method: 'GET',
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var keys = data.keys || {};
+        if (!Object.keys(keys).length) return;
+
+        // Build a flat map of ALL pattern variants → value
+        var replacements = {};
+        Object.entries(keys).forEach(function([code, val]) {
+            var raw = code.replace(/^\$|\$$/g, '');
+            [
+                code,
+                '$' + raw.toUpperCase() + '$',
+                '$' + raw.toLowerCase() + '$',
+                '{{' + raw + '}}',
+                '{{' + raw.toUpperCase() + '}}',
+                '{{' + raw.toLowerCase() + '}}',
+                '{' + raw + '}',
+                '{' + raw.toUpperCase() + '}',
+                '{' + raw.toLowerCase() + '}',
+            ].forEach(function(p) { replacements[p] = String(val); });
+        });
+
+        var patterns = Object.keys(replacements);
+        if (!patterns.length) return;
+
+        // Walk all text nodes in the DOM and replace
+        function walk(node) {
+            if (!node) return;
+            if (node.nodeType === 3) { // TEXT_NODE
+                var t = node.textContent;
+                var changed = false;
+                patterns.forEach(function(p) {
+                    if (t.indexOf(p) !== -1) {
+                        t = t.split(p).join(replacements[p]);
+                        changed = true;
+                    }
+                });
+                if (changed) node.textContent = t;
+            } else if (node.nodeType === 1) {
+                var tag = node.tagName;
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
+                // Replace placeholder in attribute values (title, alt, placeholder, etc.)
+                ['title','alt','placeholder','data-title','content'].forEach(function(attr) {
+                    if (node.hasAttribute(attr)) {
+                        var a = node.getAttribute(attr);
+                        var ac = false;
+                        patterns.forEach(function(p) {
+                            if (a.indexOf(p) !== -1) { a = a.split(p).join(replacements[p]); ac = true; }
+                        });
+                        if (ac) node.setAttribute(attr, a);
+                    }
+                });
+                node.childNodes.forEach(walk);
+            }
+        }
+
+        // Run immediately on current DOM
+        if (document.body) walk(document.body);
+
+        // Also observe future DOM changes (Elementor animations, AJAX loads)
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(m) {
+                    m.addedNodes.forEach(walk);
+                });
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+    })
+    .catch(function() {}); // Silent fail — PHP output buffer is the fallback
+})();
+</script>
+    <?php
+}, 999);
+
+// ====================================================
+// 🧹 COMPREHENSIVE CACHE FLUSH HANDLER
+// Visit /?sode_flush=sode_flush_2026
+// Clears: Redis object cache, WP Rocket page cache,
+//         Elementor CSS cache, WordPress transients
 // ====================================================
 add_action('init', function() {
     $token = $_GET['sode_flush'] ?? '';
-    if ($token === 'sode_flush_2026') {
-        // Delete any old stale transients (from previous cache versions)
-        delete_transient('sode_global_keys_map');
-        // Clear Elementor CSS cache if installed
-        if (class_exists('\Elementor\Plugin')) {
-            \Elementor\Plugin::$instance->files_manager->clear_cache();
-        }
-        wp_send_json_success(['message' => 'SODE Cache flushed', 'time' => time()]);
-        exit;
-    }
-}, 1);
+    if ($token !== 'sode_flush_2026') return;
 
+    $cleared = [];
+
+    // 1. WordPress Transients (DB + Redis)
+    delete_transient('sode_global_keys_map');
+    if (function_exists('wp_cache_delete')) {
+        wp_cache_delete('sode_global_keys_map', 'transient');
+        wp_cache_delete('_transient_sode_global_keys_map', 'options');
+    }
+    $cleared[] = 'transients';
+
+    // 2. Redis Object Cache — flush entire object cache group
+    if (function_exists('wp_cache_flush')) {
+        // Only flush if it's a Redis/Memcached object cache (not persistent DB)
+        if (defined('WP_REDIS_VERSION') || defined('WP_CACHE') && class_exists('Redis')) {
+            wp_cache_flush();
+            $cleared[] = 'redis';
+        }
+    }
+
+    // 3. WP Rocket page cache
+    if (function_exists('rocket_clean_domain')) {
+        rocket_clean_domain();
+        $cleared[] = 'wp_rocket_domain';
+    }
+    if (function_exists('rocket_clean_post')) {
+        global $post;
+        if ($post) rocket_clean_post($post->ID);
+        $cleared[] = 'wp_rocket_post';
+    }
+
+    // 4. Elementor CSS & data cache
+    if (class_exists('\Elementor\Plugin')) {
+        \Elementor\Plugin::$instance->files_manager->clear_cache();
+        $cleared[] = 'elementor';
+    }
+
+    // 5. W3 Total Cache (if installed)
+    if (function_exists('w3tc_flush_all')) {
+        w3tc_flush_all();
+        $cleared[] = 'w3tc';
+    }
+
+    // 6. WP Super Cache
+    if (function_exists('wp_cache_clear_cache')) {
+        wp_cache_clear_cache();
+        $cleared[] = 'wp_super_cache';
+    }
+
+    wp_send_json_success([
+        'message' => 'SODE Cache flushed',
+        'cleared' => $cleared,
+        'time'    => time()
+    ]);
+    exit;
+}, 1);
 
 
 /**
