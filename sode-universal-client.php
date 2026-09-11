@@ -37,7 +37,21 @@ if (!function_exists('sode_client_get_global_keys')) {
         static $mem = null;
         if ($mem !== null) return $mem;
 
+        // Detect university slug from subdomain or SODE_UNIVERSITY_SLUG constant
+        $uni = '';
+        if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+            $uni = sanitize_title(SODE_UNIVERSITY_SLUG);
+        } else {
+            $host  = strtolower($_SERVER['HTTP_HOST'] ?? '');
+            $parts = explode('.', $host);
+            if (count($parts) >= 3 && !in_array($parts[0], ['www', 'mail', 'admin', 'cpanel', 'webmail'])) {
+                $uni = sanitize_title($parts[0]);
+            }
+        }
+
         $api_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php?t=' . time();
+        if ($uni) $api_url .= '&uni=' . urlencode($uni);
+
         $resp = wp_remote_get($api_url, ['timeout' => 5, 'headers' => ['Cache-Control' => 'no-cache']]);
 
         $keys = [];
@@ -63,6 +77,7 @@ if (!function_exists('sode_client_get_global_keys')) {
         return $mem;
     }
 }
+
 
 
 if (!function_exists('sode_client_replace_keys')) {
@@ -146,13 +161,27 @@ add_action('template_redirect', function() {
 // Works even on WP Rocket cached pages!
 // ====================================================
 add_action('wp_head', function() {
-    $api_url = esc_js(rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php');
+    // Detect university slug for university-specific keys
+    $uni = '';
+    if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+        $uni = sanitize_title(SODE_UNIVERSITY_SLUG);
+    } else {
+        $host  = strtolower($_SERVER['HTTP_HOST'] ?? '');
+        $parts = explode('.', $host);
+        if (count($parts) >= 3 && !in_array($parts[0], ['www','mail','admin','cpanel','webmail'])) {
+            $uni = sanitize_title($parts[0]);
+        }
+    }
+    $api_base = esc_js(rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php');
+    $uni_js   = esc_js($uni);
     ?>
 <script id="sode-global-keys-engine">
 (function() {
     'use strict';
+    var uniSlug = '<?php echo $uni_js; ?>';
+    var apiUrl  = '<?php echo $api_base; ?>?t=' + Date.now() + (uniSlug ? '&uni=' + encodeURIComponent(uniSlug) : '');
     // Fetch fresh global keys — no browser cache
-    fetch('<?php echo $api_url; ?>?t=' + Date.now(), {
+    fetch(apiUrl, {
         method: 'GET',
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
