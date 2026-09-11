@@ -572,6 +572,52 @@ add_shortcode('courses_list', function($atts) {
 });
 
 // ====================================================
+// 2.8. UNIVERSITY COURSES ELIGIBILITY TABLE SHORTCODES
+// [university_eligibility_table], [uni_eligibility_table], [eligibility_table], [courses_eligibility_table], [university_eligibility]
+// ====================================================
+add_shortcode('university_eligibility_table', function($atts) {
+    if (function_exists('sode_courses_eligibility_table_render')) {
+        return sode_courses_eligibility_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_table', $atts);
+});
+
+add_shortcode('uni_eligibility_table', function($atts) {
+    if (function_exists('sode_courses_eligibility_table_render')) {
+        return sode_courses_eligibility_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_table', $atts);
+});
+
+add_shortcode('eligibility_table', function($atts) {
+    if (function_exists('sode_courses_eligibility_table_render')) {
+        return sode_courses_eligibility_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_table', $atts);
+});
+
+add_shortcode('courses_eligibility_table', function($atts) {
+    if (function_exists('sode_courses_eligibility_table_render')) {
+        return sode_courses_eligibility_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_table', $atts);
+});
+
+add_shortcode('university_eligibility', function($atts) {
+    if (function_exists('sode_courses_eligibility_table_render')) {
+        return sode_courses_eligibility_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_table', $atts);
+});
+
+add_shortcode('uni_eligibility', function($atts) {
+    if (function_exists('sode_courses_eligibility_table_render')) {
+        return sode_courses_eligibility_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_table', $atts);
+});
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 add_shortcode('site_year', function($atts) {
