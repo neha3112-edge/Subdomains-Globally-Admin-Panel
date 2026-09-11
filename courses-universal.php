@@ -498,7 +498,6 @@ if (!function_exists('sode_courses_tabs_render')) {
             margin: 0 auto;
             box-sizing: border-box;
             padding: 10px 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             position: relative;
         }
 
@@ -508,7 +507,7 @@ if (!function_exists('sode_courses_tabs_render')) {
             align-items: center;
             justify-content: center;
             gap: 14px;
-            margin-bottom: 34px;
+            margin-bottom: 30px;
             flex-wrap: wrap;
         }
 
@@ -556,18 +555,20 @@ if (!function_exists('sode_courses_tabs_render')) {
             align-items: center;
             justify-content: center;
             width: 100%;
+            box-sizing: border-box;
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
             overflow: hidden;
             width: 100%;
             padding: 10px 4px 14px 4px;
+            box-sizing: border-box;
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
             display: flex;
             align-items: stretch;
-            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: transform;
             gap: 24px;
         }
@@ -599,7 +600,7 @@ if (!function_exists('sode_courses_tabs_render')) {
         /* Course Card */
         #<?php echo esc_attr($unique_id); ?> .sode-course-card {
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 14px;
             box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
             border: 1px solid #edf2f7;
             transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -617,7 +618,7 @@ if (!function_exists('sode_courses_tabs_render')) {
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-course-card-inner {
-            padding: 26px 24px 20px 24px;
+            padding: 26px 24px 22px 24px;
             display: flex;
             flex-direction: column;
             flex: 1 1 auto;
@@ -630,20 +631,20 @@ if (!function_exists('sode_courses_tabs_render')) {
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-course-short-name {
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 700;
             color: #0f172a;
             margin: 0 0 6px 0;
-            line-height: 1.1;
+            line-height: 1.15;
             letter-spacing: -0.5px;
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-course-full-name {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 15.5px;
+            font-weight: 500;
             color: #1e293b;
             margin: 0;
-            line-height: 1.35;
+            line-height: 1.4;
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-course-body {
@@ -654,7 +655,7 @@ if (!function_exists('sode_courses_tabs_render')) {
         #<?php echo esc_attr($unique_id); ?> .sode-course-desc {
             font-size: 13.5px;
             line-height: 1.6;
-            color: #334155;
+            color: #475569;
             margin: 0;
             text-align: left;
         }
@@ -724,7 +725,7 @@ if (!function_exists('sode_courses_tabs_render')) {
             justify-content: center;
             cursor: pointer;
             z-index: 10;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
             transition: all 0.2s ease;
             outline: none;
         }
@@ -739,15 +740,6 @@ if (!function_exists('sode_courses_tabs_render')) {
             color: #ffffff;
             border-color: #0b3b82;
             box-shadow: 0 6px 18px rgba(11, 59, 130, 0.25);
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-            background: #f8fafc;
-            color: #94a3b8;
-            border-color: #e2e8f0;
-            box-shadow: none;
         }
 
         #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
@@ -796,15 +788,22 @@ if (!function_exists('sode_courses_tabs_render')) {
         }
 
         @media (max-width: 768px) {
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
+                padding: 0 20px;
+                box-sizing: border-box;
+            }
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                padding: 10px 0 14px 0;
+            }
             #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
-                left: -10px;
+                left: -6px;
+                width: 34px;
+                height: 34px;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-slider-next {
-                right: -10px;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn {
-                width: 36px;
-                height: 36px;
+                right: -6px;
+                width: 34px;
+                height: 34px;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn svg {
                 width: 16px;
@@ -814,14 +813,21 @@ if (!function_exists('sode_courses_tabs_render')) {
             /* Mobile Slider Mode (>= 2 courses) */
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-slider-track {
                 display: flex !important;
-                gap: 16px;
+                gap: 0px !important;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-course-card-slide {
                 flex: 0 0 100% !important;
+                width: 100% !important;
                 max-width: 100% !important;
+                min-width: 100% !important;
+                padding: 0 6px;
+                box-sizing: border-box;
             }
 
             /* Mobile Single Item (1 course) */
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-shell {
+                padding: 0;
+            }
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-track {
                 display: block !important;
                 transform: none !important;
@@ -829,6 +835,7 @@ if (!function_exists('sode_courses_tabs_render')) {
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-course-card-slide {
                 flex: 1 1 100% !important;
                 max-width: 100% !important;
+                padding: 0;
             }
 
             #<?php echo esc_attr($unique_id); ?> .sode-course-card-inner {
@@ -863,6 +870,7 @@ if (!function_exists('sode_courses_tabs_render')) {
             // Mode Tabs Switcher
             var tabBtns = root.querySelectorAll('.sode-mode-tab-btn');
             var panes   = root.querySelectorAll('.sode-courses-pane');
+            var activeSliderController = null;
 
             tabBtns.forEach(function(btn) {
                 btn.addEventListener('click', function() {
@@ -870,10 +878,14 @@ if (!function_exists('sode_courses_tabs_render')) {
                     tabBtns.forEach(function(b) { b.classList.remove('active'); });
                     this.classList.add('active');
 
+                    if (activeSliderController && typeof activeSliderController.stopAutoplay === 'function') {
+                        activeSliderController.stopAutoplay();
+                    }
+
                     panes.forEach(function(p) {
                         if (p.getAttribute('data-pane-mode') === targetMode) {
                             p.classList.add('active');
-                            initSliderForPane(p);
+                            activeSliderController = initSliderForPane(p);
                         } else {
                             p.classList.remove('active');
                         }
@@ -883,7 +895,7 @@ if (!function_exists('sode_courses_tabs_render')) {
 
             // Universal Responsive Slider Controller for Panes
             function initSliderForPane(pane) {
-                if (!pane) return;
+                if (!pane) return null;
                 var viewport = pane.querySelector('.sode-slider-viewport');
                 var track    = pane.querySelector('.sode-slider-track');
                 var slides   = pane.querySelectorAll('.sode-course-card-slide');
@@ -891,10 +903,11 @@ if (!function_exists('sode_courses_tabs_render')) {
                 var nextBtn  = pane.querySelector('.sode-slider-next');
                 var dotsWrap = pane.querySelector('.sode-slider-dots');
 
-                if (!viewport || !track || slides.length === 0) return;
+                if (!viewport || !track || slides.length === 0) return null;
 
                 var totalSlides = slides.length;
                 var currentIndex = 0;
+                var autoplayTimer = null;
 
                 function getVisibleCount() {
                     var w = window.innerWidth;
@@ -921,6 +934,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                         if (prevBtn) prevBtn.style.display = 'none';
                         if (nextBtn) nextBtn.style.display = 'none';
                         if (dotsWrap) dotsWrap.style.display = 'none';
+                        stopAutoplay();
                         return;
                     }
 
@@ -928,19 +942,23 @@ if (!function_exists('sode_courses_tabs_render')) {
                     if (nextBtn) nextBtn.style.display = 'flex';
                     if (dotsWrap) dotsWrap.style.display = 'flex';
 
-                    if (currentIndex > maxIndex) currentIndex = maxIndex;
-                    if (currentIndex < 0) currentIndex = 0;
+                    if (currentIndex > maxIndex) currentIndex = 0;
+                    if (currentIndex < 0) currentIndex = maxIndex;
 
                     // Calculate translation
-                    var slideWidth = slides[0].getBoundingClientRect().width;
-                    var gap = (window.innerWidth <= 768) ? 16 : 24;
-                    var moveAmount = currentIndex * (slideWidth + gap);
+                    var isMobile = (window.innerWidth <= 768);
+                    var moveAmount = 0;
+
+                    if (isMobile) {
+                        var vWidth = viewport.clientWidth;
+                        moveAmount = currentIndex * vWidth;
+                    } else {
+                        var slideWidth = slides[0].getBoundingClientRect().width;
+                        var gap = 24;
+                        moveAmount = currentIndex * (slideWidth + gap);
+                    }
 
                     track.style.transform = 'translateX(-' + moveAmount + 'px)';
-
-                    // Update button states
-                    if (prevBtn) prevBtn.disabled = (currentIndex === 0);
-                    if (nextBtn) nextBtn.disabled = (currentIndex >= maxIndex);
 
                     // Rebuild dots
                     if (dotsWrap) {
@@ -955,6 +973,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                                 dot.addEventListener('click', function() {
                                     currentIndex = idx;
                                     updateSlider();
+                                    restartAutoplay();
                                 });
                                 dotsWrap.appendChild(dot);
                             })(i);
@@ -962,30 +981,71 @@ if (!function_exists('sode_courses_tabs_render')) {
                     }
                 }
 
+                function goNext() {
+                    var visible = getVisibleCount();
+                    var maxIndex = Math.max(0, totalSlides - visible);
+                    if (currentIndex >= maxIndex) {
+                        currentIndex = 0; // Loop back to start
+                    } else {
+                        currentIndex++;
+                    }
+                    updateSlider();
+                }
+
+                function goPrev() {
+                    var visible = getVisibleCount();
+                    var maxIndex = Math.max(0, totalSlides - visible);
+                    if (currentIndex <= 0) {
+                        currentIndex = maxIndex; // Loop to end
+                    } else {
+                        currentIndex--;
+                    }
+                    updateSlider();
+                }
+
+                function startAutoplay() {
+                    stopAutoplay();
+                    if (!shouldEnableSlider()) return;
+                    autoplayTimer = setInterval(function() {
+                        goNext();
+                    }, 2000);
+                }
+
+                function stopAutoplay() {
+                    if (autoplayTimer) {
+                        clearInterval(autoplayTimer);
+                        autoplayTimer = null;
+                    }
+                }
+
+                function restartAutoplay() {
+                    stopAutoplay();
+                    startAutoplay();
+                }
+
                 if (prevBtn) {
                     prevBtn.onclick = function() {
-                        if (currentIndex > 0) {
-                            currentIndex--;
-                            updateSlider();
-                        }
+                        goPrev();
+                        restartAutoplay();
                     };
                 }
 
                 if (nextBtn) {
                     nextBtn.onclick = function() {
-                        var visible = getVisibleCount();
-                        var maxIndex = Math.max(0, totalSlides - visible);
-                        if (currentIndex < maxIndex) {
-                            currentIndex++;
-                            updateSlider();
-                        }
+                        goNext();
+                        restartAutoplay();
                     };
                 }
 
-                // Touch Swipe Support
+                // Hover Pause & Resume
+                pane.addEventListener('mouseenter', stopAutoplay);
+                pane.addEventListener('mouseleave', startAutoplay);
+
+                // Touch Swipe Support with Pause & Resume
                 var startX = 0;
                 var isDragging = false;
                 viewport.addEventListener('touchstart', function(e) {
+                    stopAutoplay();
                     startX = e.touches[0].clientX;
                     isDragging = true;
                 }, { passive: true });
@@ -995,27 +1055,34 @@ if (!function_exists('sode_courses_tabs_render')) {
                     isDragging = false;
                     var endX = e.changedTouches[0].clientX;
                     var diffX = startX - endX;
-                    if (Math.abs(diffX) > 40) {
-                        var visible = getVisibleCount();
-                        var maxIndex = Math.max(0, totalSlides - visible);
-                        if (diffX > 0 && currentIndex < maxIndex) {
-                            currentIndex++;
-                            updateSlider();
-                        } else if (diffX < 0 && currentIndex > 0) {
-                            currentIndex--;
-                            updateSlider();
+                    if (Math.abs(diffX) > 35) {
+                        if (diffX > 0) {
+                            goNext();
+                        } else {
+                            goPrev();
                         }
                     }
+                    setTimeout(startAutoplay, 1500);
                 }, { passive: true });
 
                 updateSlider();
-                window.addEventListener('resize', updateSlider);
+                startAutoplay();
+
+                window.addEventListener('resize', function() {
+                    updateSlider();
+                });
+
+                return {
+                    stopAutoplay: stopAutoplay,
+                    startAutoplay: startAutoplay,
+                    updateSlider: updateSlider
+                };
             }
 
             // Init for active pane on load
             var activePane = root.querySelector('.sode-courses-pane.active') || panes[0];
             if (activePane) {
-                initSliderForPane(activePane);
+                activeSliderController = initSliderForPane(activePane);
             }
         })();
         </script>
