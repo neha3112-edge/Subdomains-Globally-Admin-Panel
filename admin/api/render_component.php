@@ -31,6 +31,7 @@ require_once $root_dir . '/lead-form-universal.php';
 require_once $root_dir . '/education-banner-universal.php';
 require_once $root_dir . '/news-marquee-universal.php';
 require_once $root_dir . '/courses-universal.php';
+require_once $root_dir . '/admission-process-universal.php';
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -70,6 +71,15 @@ switch ($component) {
     case 'university_eligibility':
     case 'uni_eligibility':
         echo sode_courses_eligibility_table_render($params);
+        break;
+
+    case 'application_process':
+    case 'university_application_process':
+    case 'uni_application_process':
+    case 'idol_application_process':
+    case 'admission_process':
+    case 'sode_application_process':
+        echo sode_application_process_render($params);
         break;
 
     case 'latest_news':

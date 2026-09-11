@@ -355,4 +355,33 @@ INSERT INTO `global_keys` (`key_code`, `key_value`, `description`) VALUES
 ('$BANNER_TOP_TEXT$', 'Welcome to SODE™ (School of Online and Distance Education)', 'Universal top banner banner text')
 ON DUPLICATE KEY UPDATE `key_value`=VALUES(`key_value`);
 
+-- Admission Process Steps Table
+-- university_id NULL = Universal default (shown to all)
+-- university_id SET = University-specific override (replaces universal for that uni)
+CREATE TABLE IF NOT EXISTS `admission_process_steps` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `university_id` INT UNSIGNED NULL DEFAULT NULL,
+  `step_number` TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  `color_hex` VARCHAR(20) NOT NULL DEFAULT '#3B7FD1',
+  `title` VARCHAR(255) NOT NULL,
+  `description` TEXT NOT NULL,
+  `icon_svg` TEXT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_aps_university` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE CASCADE,
+  INDEX `idx_aps_uni_step` (`university_id`, `step_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed Default Universal Steps (university_id = NULL)
+INSERT INTO `admission_process_steps` (`university_id`, `step_number`, `color_hex`, `title`, `description`, `icon_svg`) VALUES
+(NULL, 1, '#E23F73', 'Visit the University Online website', 'Go to the official university online admission portal to register yourself.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a13.7 13.7 0 0 1 3.5 9A13.7 13.7 0 0 1 12 21a13.7 13.7 0 0 1-3.5-9A13.7 13.7 0 0 1 12 3z"></path></svg>'),
+(NULL, 2, '#E8622F', 'Verify the Registration', 'Confirm the registered email and mobile number via OTP-based secure access.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6M22 11h-6"></path></svg>'),
+(NULL, 3, '#EFA23C', 'Pay Application Fee', 'Complete the one-time, non-refundable application fee through its secure payment gateways.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>'),
+(NULL, 4, '#2FB897', 'Fill the Application Form', 'Mention personal, academic and professional information accurately.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="6" y1="15" x2="10" y2="15"></line></svg>'),
+(NULL, 5, '#2FA0B8', 'Upload the Documents', 'Submit the scanned copies of the photographs, certificates and identity proofs.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>'),
+(NULL, 6, '#3B7FD1', 'Submit Application', 'Review all details and submit your application for processing.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>'),
+(NULL, 7, '#4A5FC7', 'Document Verification', 'The university will verify your details and the originality of your documents.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>'),
+(NULL, 8, '#2C3E7A', 'Admission Confirmation', 'You will get a confirmation email once your admission is successfully verified.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path><polyline points="9 11 11 13 15 9"></polyline><path d="M8.5 14.5L7 22l5-3 5 3-1.5-7.5"></path></svg>')
+ON DUPLICATE KEY UPDATE `title`=VALUES(`title`);
+
 SET FOREIGN_KEY_CHECKS = 1;

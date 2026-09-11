@@ -618,6 +618,52 @@ add_shortcode('uni_eligibility', function($atts) {
 });
 
 // ====================================================
+// 2.9. UNIVERSITY ADMISSION & APPLICATION PROCESS SHORTCODES
+// [university_application_process], [idol_application_process], [uni_application_process], [admission_process], [application_process]
+// ====================================================
+add_shortcode('university_application_process', function($atts) {
+    if (function_exists('sode_application_process_render')) {
+        return sode_application_process_render($atts);
+    }
+    return sode_fetch_remote_component('application_process', $atts);
+});
+
+add_shortcode('idol_application_process', function($atts) {
+    if (function_exists('sode_application_process_render')) {
+        return sode_application_process_render($atts);
+    }
+    return sode_fetch_remote_component('application_process', $atts);
+});
+
+add_shortcode('uni_application_process', function($atts) {
+    if (function_exists('sode_application_process_render')) {
+        return sode_application_process_render($atts);
+    }
+    return sode_fetch_remote_component('application_process', $atts);
+});
+
+add_shortcode('admission_process', function($atts) {
+    if (function_exists('sode_application_process_render')) {
+        return sode_application_process_render($atts);
+    }
+    return sode_fetch_remote_component('application_process', $atts);
+});
+
+add_shortcode('application_process', function($atts) {
+    if (function_exists('sode_application_process_render')) {
+        return sode_application_process_render($atts);
+    }
+    return sode_fetch_remote_component('application_process', $atts);
+});
+
+add_shortcode('sode_application_process', function($atts) {
+    if (function_exists('sode_application_process_render')) {
+        return sode_application_process_render($atts);
+    }
+    return sode_fetch_remote_component('application_process', $atts);
+});
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 add_shortcode('site_year', function($atts) {
@@ -941,5 +987,9 @@ if (file_exists(__DIR__ . '/news-marquee-universal.php')) {
 
 if (file_exists(__DIR__ . '/courses-universal.php')) {
     require_once __DIR__ . '/courses-universal.php';
+}
+
+if (file_exists(__DIR__ . '/admission-process-universal.php')) {
+    require_once __DIR__ . '/admission-process-universal.php';
 }
 
