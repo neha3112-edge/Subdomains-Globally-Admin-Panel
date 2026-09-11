@@ -174,20 +174,20 @@ if (!function_exists('sode_get_university_courses_data')) {
                             $link = !empty($m['course_link']) ? trim($m['course_link']) : '#';
 
                             $courses_data[] = [
-                                'id'          => (int) $m['mapping_id'],
-                                'course_id'   => (int) $m['course_id'],
-                                'short_name'  => $m['course_short'],
-                                'full_name'   => $m['course_name'],
-                                'slug'        => $m['course_slug'],
-                                'mode'        => $course_mode,
-                                'level'       => $m['level'],
-                                'tab'         => $tab_category,
-                                'duration'    => $duration,
+                                'id' => (int) $m['mapping_id'],
+                                'course_id' => (int) $m['course_id'],
+                                'short_name' => $m['course_short'],
+                                'full_name' => $m['course_name'],
+                                'slug' => $m['course_slug'],
+                                'mode' => $course_mode,
+                                'level' => $m['level'],
+                                'tab' => $tab_category,
+                                'duration' => $duration,
                                 'description' => $desc,
                                 'eligibility' => $elig,
-                                'link'        => $link,
+                                'link' => $link,
                                 'per_sem_fee' => $m['per_semester_fee'],
-                                'total_fee'   => $m['total_program_fee'],
+                                'total_fee' => $m['total_program_fee'],
                                 'specs_count' => (int) $m['specializations_count']
                             ];
                         }
@@ -217,7 +217,7 @@ if (!function_exists('sode_get_university_courses_data')) {
                 $ch = curl_init($api_url);
                 curl_setopt_array($ch, [
                     CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_TIMEOUT        => 6,
+                    CURLOPT_TIMEOUT => 6,
                     CURLOPT_SSL_VERIFYPEER => false,
                 ]);
                 $body = curl_exec($ch);
@@ -235,36 +235,66 @@ if (!function_exists('sode_get_university_courses_data')) {
         if (empty($courses_data)) {
             $courses_data = [
                 [
-                    'id' => 1, 'course_id' => 1, 'short_name' => 'MBA', 'full_name' => 'Master of Business Administration',
-                    'mode' => 'Online', 'tab' => 'Master', 'level' => 'PG', 'duration' => '2 Year',
+                    'id' => 1,
+                    'course_id' => 1,
+                    'short_name' => 'MBA',
+                    'full_name' => 'Master of Business Administration',
+                    'mode' => 'Online',
+                    'tab' => 'Master',
+                    'level' => 'PG',
+                    'duration' => '2 Year',
                     'description' => 'Learners have access to higher knowledge of business and management that aligns with modern learners\' demands.',
                     'eligibility' => "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
-                    'id' => 2, 'course_id' => 2, 'short_name' => 'MCA', 'full_name' => 'Master of Computer Applications',
-                    'mode' => 'Online', 'tab' => 'Master', 'level' => 'PG', 'duration' => '2 Year',
+                    'id' => 2,
+                    'course_id' => 2,
+                    'short_name' => 'MCA',
+                    'full_name' => 'Master of Computer Applications',
+                    'mode' => 'Online',
+                    'tab' => 'Master',
+                    'level' => 'PG',
+                    'duration' => '2 Year',
                     'description' => 'The Master of Computer Applications program offers learners advanced technical and computing skills that align with current IT industry trends.',
                     'eligibility' => "Bachelor's degree from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
-                    'id' => 3, 'course_id' => 10, 'short_name' => 'BCA', 'full_name' => 'Bachelor of Computer Applications',
-                    'mode' => 'Online', 'tab' => 'Bachelor', 'level' => 'UG', 'duration' => '3 Year',
+                    'id' => 3,
+                    'course_id' => 10,
+                    'short_name' => 'BCA',
+                    'full_name' => 'Bachelor of Computer Applications',
+                    'mode' => 'Online',
+                    'tab' => 'Bachelor',
+                    'level' => 'UG',
+                    'duration' => '3 Year',
                     'description' => 'This program offers a structured curriculum in computer applications and technology.',
                     'eligibility' => "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
-                    'id' => 4, 'course_id' => 9, 'short_name' => 'BBA', 'full_name' => 'Bachelor of Business Administration',
-                    'mode' => 'Online', 'tab' => 'Bachelor', 'level' => 'UG', 'duration' => '3 Year',
+                    'id' => 4,
+                    'course_id' => 9,
+                    'short_name' => 'BBA',
+                    'full_name' => 'Bachelor of Business Administration',
+                    'mode' => 'Online',
+                    'tab' => 'Bachelor',
+                    'level' => 'UG',
+                    'duration' => '3 Year',
                     'description' => 'BBA offers foundational knowledge of business administration and includes learning areas such as digital marketing and business analytics.',
                     'eligibility' => "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
-                    'id' => 5, 'course_id' => 11, 'short_name' => 'BCom', 'full_name' => 'Bachelor of Commerce',
-                    'mode' => 'Online', 'tab' => 'Bachelor', 'level' => 'UG', 'duration' => '3 Year',
+                    'id' => 5,
+                    'course_id' => 11,
+                    'short_name' => 'BCom',
+                    'full_name' => 'Bachelor of Commerce',
+                    'mode' => 'Online',
+                    'tab' => 'Bachelor',
+                    'level' => 'UG',
+                    'duration' => '3 Year',
                     'description' => 'This program provides access to basic knowledge of finance, accounting and emerging Business technologies.',
                     'eligibility' => "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.",
                     'link' => '#'
@@ -287,8 +317,8 @@ if (!function_exists('sode_courses_tabs_render')) {
     {
         $atts = shortcode_atts([
             'university' => '',
-            'uni'        => '',
-            'btn_text'   => 'Know More',
+            'uni' => '',
+            'btn_text' => 'Know More',
             'btn_action' => '',
         ], $atts);
 
@@ -308,9 +338,9 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
         }
 
-        $has_online   = !empty($online_courses);
+        $has_online = !empty($online_courses);
         $has_distance = !empty($distance_courses);
-        $show_tabs    = ($has_online && $has_distance);
+        $show_tabs = ($has_online && $has_distance);
 
         // Active mode: default Online if available, else Distance
         $active_mode = $has_online ? 'online' : ($has_distance ? 'distance' : 'online');
@@ -324,10 +354,12 @@ if (!function_exists('sode_courses_tabs_render')) {
             <?php if ($show_tabs): ?>
                 <!-- Mode Tabs Navigation (Rendered ONLY when BOTH Online & Distance courses exist) -->
                 <div class="sode-courses-mode-tabs">
-                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === 'online') ? 'active' : ''; ?>" data-mode="online">
+                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === 'online') ? 'active' : ''; ?>"
+                        data-mode="online">
                         Online Mode
                     </button>
-                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === 'distance') ? 'active' : ''; ?>" data-mode="distance">
+                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === 'distance') ? 'active' : ''; ?>"
+                        data-mode="distance">
                         Distance Mode
                     </button>
                 </div>
@@ -337,30 +369,34 @@ if (!function_exists('sode_courses_tabs_render')) {
             <div class="sode-courses-panes-wrapper">
 
                 <!-- 1. ONLINE COURSES PANE -->
-                <?php if ($has_online): 
+                <?php if ($has_online):
                     $on_count = count($online_courses);
                     $on_is_slider_desktop = ($on_count > 3);
-                    $on_is_slider_mobile  = ($on_count >= 2);
+                    $on_is_slider_mobile = ($on_count >= 2);
                     $pane_class = 'sode-courses-pane ' . ($active_mode === 'online' ? 'active' : '') . ($on_is_slider_desktop ? ' has-slider-desktop' : ' is-static-desktop') . ($on_is_slider_mobile ? ' has-slider-mobile' : ' is-static-mobile');
-                ?>
-                    <div class="<?php echo esc_attr($pane_class); ?>" id="<?php echo esc_attr($unique_id); ?>_pane_online" data-pane-mode="online">
+                    ?>
+                    <div class="<?php echo esc_attr($pane_class); ?>" id="<?php echo esc_attr($unique_id); ?>_pane_online"
+                        data-pane-mode="online">
                         <div class="sode-slider-shell">
                             <?php if ($on_is_slider_desktop || $on_is_slider_mobile): ?>
                                 <button type="button" class="sode-slider-nav-btn sode-slider-prev" aria-label="Previous Courses">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
                                 </button>
                             <?php endif; ?>
 
                             <div class="sode-slider-viewport">
                                 <div class="sode-slider-track">
-                                    <?php foreach ($online_courses as $c): 
+                                    <?php foreach ($online_courses as $c):
                                         $btn_link = !empty($c['link']) && $c['link'] !== '#' ? $c['link'] : '#';
-                                    ?>
+                                        ?>
                                         <div class="sode-course-card-slide">
                                             <div class="sode-course-card">
                                                 <div class="sode-course-card-inner">
                                                     <div class="sode-course-head">
-                                                        <h3 class="sode-course-short-name"><?php echo esc_html($c['short_name']); ?></h3>
+                                                        <h3 class="sode-course-short-name"><?php echo esc_html($c['short_name']); ?>
+                                                        </h3>
                                                         <h4 class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></h4>
                                                     </div>
 
@@ -370,22 +406,27 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                                                     <div class="sode-course-footer">
                                                         <div class="sode-course-meta">
-                                                            <svg class="sode-course-cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <svg class="sode-course-cal-icon" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                                stroke-linejoin="round">
                                                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                                                 <line x1="16" y1="2" x2="16" y2="6"></line>
                                                                 <line x1="8" y1="2" x2="8" y2="6"></line>
                                                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                                                             </svg>
-                                                            <span class="sode-course-duration-text"><?php echo esc_html($c['duration']); ?></span>
+                                                            <span
+                                                                class="sode-course-duration-text"><?php echo esc_html($c['duration']); ?></span>
                                                         </div>
 
                                                         <div class="sode-course-action">
                                                             <?php if (!empty($atts['btn_action']) && $atts['btn_action'] === 'counseling'): ?>
-                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn" data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn"
+                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
                                                             <?php elseif (!empty($atts['btn_action']) && $atts['btn_action'] === 'brochure'): ?>
-                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn" data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn"
+                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
                                                             <?php elseif ($btn_link !== '#'): ?>
@@ -393,7 +434,8 @@ if (!function_exists('sode_courses_tabs_render')) {
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php else: ?>
-                                                                <a href="#custom_lead_form" class="sode-course-btn" onclick="if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
+                                                                <a href="#custom_lead_form" class="sode-course-btn"
+                                                                    onclick="if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php endif; ?>
@@ -408,7 +450,9 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                             <?php if ($on_is_slider_desktop || $on_is_slider_mobile): ?>
                                 <button type="button" class="sode-slider-nav-btn sode-slider-next" aria-label="Next Courses">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -421,30 +465,34 @@ if (!function_exists('sode_courses_tabs_render')) {
 
 
                 <!-- 2. DISTANCE COURSES PANE -->
-                <?php if ($has_distance): 
+                <?php if ($has_distance):
                     $dist_count = count($distance_courses);
                     $dist_is_slider_desktop = ($dist_count > 3);
-                    $dist_is_slider_mobile  = ($dist_count >= 2);
+                    $dist_is_slider_mobile = ($dist_count >= 2);
                     $pane_class = 'sode-courses-pane ' . ($active_mode === 'distance' ? 'active' : '') . ($dist_is_slider_desktop ? ' has-slider-desktop' : ' is-static-desktop') . ($dist_is_slider_mobile ? ' has-slider-mobile' : ' is-static-mobile');
-                ?>
-                    <div class="<?php echo esc_attr($pane_class); ?>" id="<?php echo esc_attr($unique_id); ?>_pane_distance" data-pane-mode="distance">
+                    ?>
+                    <div class="<?php echo esc_attr($pane_class); ?>" id="<?php echo esc_attr($unique_id); ?>_pane_distance"
+                        data-pane-mode="distance">
                         <div class="sode-slider-shell">
                             <?php if ($dist_is_slider_desktop || $dist_is_slider_mobile): ?>
                                 <button type="button" class="sode-slider-nav-btn sode-slider-prev" aria-label="Previous Courses">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
                                 </button>
                             <?php endif; ?>
 
                             <div class="sode-slider-viewport">
                                 <div class="sode-slider-track">
-                                    <?php foreach ($distance_courses as $c): 
+                                    <?php foreach ($distance_courses as $c):
                                         $btn_link = !empty($c['link']) && $c['link'] !== '#' ? $c['link'] : '#';
-                                    ?>
+                                        ?>
                                         <div class="sode-course-card-slide">
                                             <div class="sode-course-card">
                                                 <div class="sode-course-card-inner">
                                                     <div class="sode-course-head">
-                                                        <h3 class="sode-course-short-name"><?php echo esc_html($c['short_name']); ?></h3>
+                                                        <h3 class="sode-course-short-name"><?php echo esc_html($c['short_name']); ?>
+                                                        </h3>
                                                         <h4 class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></h4>
                                                     </div>
 
@@ -454,22 +502,27 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                                                     <div class="sode-course-footer">
                                                         <div class="sode-course-meta">
-                                                            <svg class="sode-course-cal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <svg class="sode-course-cal-icon" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                                stroke-linejoin="round">
                                                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                                                 <line x1="16" y1="2" x2="16" y2="6"></line>
                                                                 <line x1="8" y1="2" x2="8" y2="6"></line>
                                                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                                                             </svg>
-                                                            <span class="sode-course-duration-text"><?php echo esc_html($c['duration']); ?></span>
+                                                            <span
+                                                                class="sode-course-duration-text"><?php echo esc_html($c['duration']); ?></span>
                                                         </div>
 
                                                         <div class="sode-course-action">
                                                             <?php if (!empty($atts['btn_action']) && $atts['btn_action'] === 'counseling'): ?>
-                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn" data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn"
+                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
                                                             <?php elseif (!empty($atts['btn_action']) && $atts['btn_action'] === 'brochure'): ?>
-                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn" data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn"
+                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
                                                             <?php elseif ($btn_link !== '#'): ?>
@@ -477,7 +530,8 @@ if (!function_exists('sode_courses_tabs_render')) {
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php else: ?>
-                                                                <a href="#custom_lead_form" class="sode-course-btn" onclick="if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
+                                                                <a href="#custom_lead_form" class="sode-course-btn"
+                                                                    onclick="if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php endif; ?>
@@ -492,7 +546,9 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                             <?php if ($dist_is_slider_desktop || $dist_is_slider_mobile): ?>
                                 <button type="button" class="sode-slider-nav-btn sode-slider-next" aria-label="Next Courses">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -507,679 +563,697 @@ if (!function_exists('sode_courses_tabs_render')) {
         </div>
 
         <style>
-        #<?php echo esc_attr($unique_id); ?>.sode-courses-wrapper {
-            width: 100%;
-            max-width: 1240px;
-            margin: 0 auto;
-            box-sizing: border-box;
-            padding: 10px 0;
-            position: relative;
-        }
-
-        /* Mode Tabs Navigation */
-        #<?php echo esc_attr($unique_id); ?> .sode-courses-mode-tabs {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn {
-            background: #f1f5f9;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            padding: 10px 28px;
-            font-size: 15.5px;
-            font-weight: 700;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            outline: none;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn.active {
-            background: #0b3b82;
-            color: #ffffff;
-            border-color: #0b3b82;
-            box-shadow: 0 4px 14px rgba(11, 59, 130, 0.25);
-        }
-
-        /* Panes Visibility */
-        #<?php echo esc_attr($unique_id); ?> .sode-courses-pane {
-            display: none;
-            width: 100%;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.active {
-            display: block;
-            animation: sodeCoursePaneFadeIn 0.35s ease;
-        }
-
-        /* Slider Shell & Alignment */
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
-            overflow: hidden;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
-            display: flex;
-            align-items: stretch;
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            will-change: transform;
-            width: 100%;
-        }
-
-        /* Course Card Base */
-        #<?php echo esc_attr($unique_id); ?> .sode-course-card {
-            background: #ffffff;
-            border-radius: 14px;
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-            border: 1px solid #edf2f7;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-            height: 100%;
-            width: 100%;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
-            border-color: #cbd5e1;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-card-inner {
-            padding: 26px 24px 22px 24px;
-            display: flex;
-            flex-direction: column;
-            flex: 1 1 auto;
-            height: 100%;
-            box-sizing: border-box;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-head {
-            margin-bottom: 12px;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-short-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0 0 6px 0;
-            line-height: 1.15;
-            letter-spacing: -0.5px;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-full-name {
-            font-size: 15.5px;
-            font-weight: 500;
-            color: #1e293b;
-            margin: 0;
-            line-height: 1.4;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-body {
-            flex-grow: 1;
-            margin-bottom: 18px;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-desc {
-            font-size: 13.5px;
-            line-height: 1.6;
-            color: #475569;
-            margin: 0;
-            text-align: left;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-footer {
-            margin-top: auto;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-            color: #0f172a;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-cal-icon {
-            width: 15px;
-            height: 15px;
-            stroke: #0f172a;
-            flex-shrink: 0;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-duration-text {
-            font-size: 13px;
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-btn {
-            display: block;
-            width: 100%;
-            background: #ffcc00;
-            color: #111827;
-            font-size: 14.5px;
-            font-weight: 600;
-            text-align: center;
-            padding: 10px 18px;
-            border-radius: 6px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            box-sizing: border-box;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-course-btn:hover {
-            transform: scale(1.015);
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
-            color: #000000;
-        }
-
-        /* Slider Navigation Buttons */
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 44px;
-            height: 44px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 50%;
-            color: #0b3b82;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-            transition: all 0.2s ease;
-            outline: none;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn:hover {
-            background: #0b3b82;
-            color: #ffffff;
-            border-color: #0b3b82;
-            box-shadow: 0 6px 18px rgba(11, 59, 130, 0.25);
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
-            left: -22px;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-next {
-            right: -22px;
-        }
-
-        /* Dots Pagination */
-        #<?php echo esc_attr($unique_id); ?> .sode-slider-dots {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-dot-btn {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #cbd5e1;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            transition: all 0.25s ease;
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-dot-btn.active {
-            background: #0b3b82;
-            width: 24px;
-            border-radius: 12px;
-        }
-
-        /* =========================================
-           DESKTOP (> 1024px)
-           ========================================= */
-        @media (min-width: 1025px) {
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
-                padding: 10px 4px 14px 4px;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
-                gap: 24px;
-            }
-            /* Slider mode (> 3 courses) */
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-desktop .sode-course-card-slide {
+            #<?php echo esc_attr($unique_id); ?>.sode-courses-wrapper {
+                width: 100%;
+                max-width: 1240px;
+                margin: 0 auto;
                 box-sizing: border-box;
-                display: flex;
-                flex-direction: column;
-                flex: 0 0 calc((100% - 48px) / 3);
-                max-width: calc((100% - 48px) / 3);
+                padding: 10px 0;
+                position: relative;
             }
-            /* Static Grid Mode (<= 3 courses) */
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 24px;
-                transform: none !important;
+
+            /* Mode Tabs Navigation */
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-mode-tabs {
+                display: flex;
+                align-items: center;
                 justify-content: center;
+                gap: 14px;
+                margin-bottom: 30px;
+                flex-wrap: wrap;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn {
+                background: #f1f5f9;
+                color: #334155;
+                border: 1px solid #e2e8f0;
+                padding: 10px 28px;
+                font-size: 15.5px;
+                font-weight: 700;
+                border-radius: 50px;
+                cursor: pointer;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                outline: none;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn:hover {
+                background: #e2e8f0;
+                color: #0f172a;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn.active {
+                background: #0b3b82;
+                color: #ffffff;
+                border-color: #0b3b82;
+                box-shadow: 0 4px 14px rgba(11, 59, 130, 0.25);
+            }
+
+            /* Panes Visibility */
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane {
+                display: none;
                 width: 100%;
             }
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
-                flex: 1 1 auto;
-                max-width: 100%;
-            }
-        }
 
-        /* =========================================
-           TABLET (769px - 1024px)
-           ========================================= */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
-                padding: 10px 4px 14px 4px;
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.active {
+                display: block;
+                animation: sodeCoursePaneFadeIn 0.35s ease;
             }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
-                gap: 20px;
-            }
-            /* Slider mode */
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-desktop .sode-course-card-slide {
-                box-sizing: border-box;
-                display: flex;
-                flex-direction: column;
-                flex: 0 0 calc((100% - 20px) / 2);
-                max-width: calc((100% - 20px) / 2);
-            }
-            /* Static Grid Mode (<= 2 courses) */
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
-                transform: none !important;
-                justify-content: center;
-                width: 100%;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
-                flex: 1 1 auto;
-                max-width: 100%;
-            }
-        }
 
-        /* =========================================
-           MOBILE (<= 768px)
-           ========================================= */
-        @media (max-width: 768px) {
+            /* Slider Shell & Alignment */
             #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
-                padding: 0 20px;
-                box-sizing: border-box;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
-                padding: 10px 0 14px 0;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 width: 100%;
-                overflow: hidden;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
-                left: -6px;
-                width: 34px;
-                height: 34px;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-next {
-                right: -6px;
-                width: 34px;
-                height: 34px;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn svg {
-                width: 16px;
-                height: 16px;
-            }
-
-            /* Mobile Slider Mode (>= 2 courses) */
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-slider-track {
-                display: flex !important;
-                grid-template-columns: none !important;
-                gap: 0px !important;
-                width: 100% !important;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-course-card-slide {
-                flex: 0 0 100% !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                min-width: 100% !important;
-                padding: 0 6px;
                 box-sizing: border-box;
             }
 
-            /* Mobile Single Item (1 course) */
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-shell {
-                padding: 0 !important;
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                overflow: hidden;
+                width: 100%;
+                box-sizing: border-box;
             }
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-track {
-                display: block !important;
-                transform: none !important;
-                grid-template-columns: none !important;
-                width: 100% !important;
+
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
+                display: flex;
+                align-items: stretch;
+                transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+                will-change: transform;
+                width: 100%;
             }
-            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-course-card-slide {
-                flex: 1 1 100% !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 0 !important;
+
+            /* Course Card Base */
+            #<?php echo esc_attr($unique_id); ?> .sode-course-card {
+                background: #ffffff;
+                border-radius: 14px;
+                box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+                border: 1px solid #edf2f7;
+                transition: transform 0.25s ease, box-shadow 0.25s ease;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
+                height: 100%;
+                width: 100%;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+                border-color: #cbd5e1;
             }
 
             #<?php echo esc_attr($unique_id); ?> .sode-course-card-inner {
-                padding: 22px 18px 18px 18px;
+                padding: 26px 24px 22px 24px;
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                height: 100%;
+                box-sizing: border-box;
             }
-            #<?php echo esc_attr($unique_id); ?> .sode-course-short-name {
-                font-size: 26px;
-            }
-            #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn {
-                padding: 8px 22px;
-                font-size: 14px;
-            }
-        }
 
-        @keyframes sodeCoursePaneFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
+            #<?php echo esc_attr($unique_id); ?> .sode-course-head {
+                margin-bottom: 12px;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-short-name {
+                font-size: 28px;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0 0 6px 0;
+                line-height: 1.15;
+                letter-spacing: -0.5px;
             }
-        }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-full-name {
+                font-size: 15.5px;
+                font-weight: 500;
+                color: #1e293b;
+                margin: 0;
+                line-height: 1.4;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-body {
+                flex-grow: 1;
+                margin-bottom: 18px;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-desc {
+                font-size: 13.5px;
+                line-height: 1.6;
+                color: #475569;
+                margin: 0;
+                text-align: left;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-footer {
+                margin-top: auto;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-meta {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 14px;
+                color: #0f172a;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-cal-icon {
+                width: 15px;
+                height: 15px;
+                stroke: #0f172a;
+                flex-shrink: 0;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-duration-text {
+                font-size: 13px;
+                font-weight: 600;
+                color: #0f172a;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-btn {
+                display: block;
+                width: 100%;
+                background: #ffcc00;
+                color: #111827;
+                font-size: 14.5px;
+                font-weight: 600;
+                text-align: center;
+                padding: 10px 18px;
+                border-radius: 6px;
+                text-decoration: none;
+                border: none;
+                cursor: pointer;
+                box-sizing: border-box;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-course-btn:hover {
+                transform: scale(1.015);
+                box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+                color: #000000;
+            }
+
+            /* Slider Navigation Buttons */
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 44px;
+                height: 44px;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 50%;
+                color: #0b3b82;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 10;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+                transition: all 0.2s ease;
+                outline: none;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn:hover {
+                background: #0b3b82;
+                color: #ffffff;
+                border-color: #0b3b82;
+                box-shadow: 0 6px 18px rgba(11, 59, 130, 0.25);
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
+                left: -22px;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-next {
+                right: -22px;
+            }
+
+            /* Dots Pagination */
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-dots {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 20px;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-dot-btn {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                background: #cbd5e1;
+                border: none;
+                cursor: pointer;
+                padding: 0;
+                transition: all 0.25s ease;
+            }
+
+            #<?php echo esc_attr($unique_id); ?> .sode-dot-btn.active {
+                background: #0b3b82;
+                width: 24px;
+                border-radius: 12px;
+            }
+
+            /* =========================================
+                                   DESKTOP (> 1024px)
+                                   ========================================= */
+            @media (min-width: 1025px) {
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                    padding: 10px 4px 14px 4px;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
+                    gap: 24px;
+                }
+
+                /* Slider mode (> 3 courses) */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-desktop .sode-course-card-slide {
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                    flex: 0 0 calc((100% - 48px) / 3);
+                    max-width: calc((100% - 48px) / 3);
+                }
+
+                /* Static Grid Mode (<= 3 courses) */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 24px;
+                    transform: none !important;
+                    justify-content: center;
+                    width: 100%;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
+                    flex: 1 1 auto;
+                    max-width: 100%;
+                }
+            }
+
+            /* =========================================
+                                   TABLET (769px - 1024px)
+                                   ========================================= */
+            @media (min-width: 769px) and (max-width: 1024px) {
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                    padding: 10px 4px 14px 4px;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
+                    gap: 20px;
+                }
+
+                /* Slider mode */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-desktop .sode-course-card-slide {
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                    flex: 0 0 calc((100% - 20px) / 2);
+                    max-width: calc((100% - 20px) / 2);
+                }
+
+                /* Static Grid Mode (<= 2 courses) */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 20px;
+                    transform: none !important;
+                    justify-content: center;
+                    width: 100%;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
+                    flex: 1 1 auto;
+                    max-width: 100%;
+                }
+            }
+
+            /* =========================================
+                                   MOBILE (<= 768px)
+                                   ========================================= */
+            @media (max-width: 768px) {
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
+                    padding: 0 20px;
+                    box-sizing: border-box;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                    padding: 10px 0 14px 0;
+                    width: 100%;
+                    overflow: hidden;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
+                    left: -6px;
+                    width: 34px;
+                    height: 34px;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-next {
+                    right: -6px;
+                    width: 34px;
+                    height: 34px;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-slider-nav-btn svg {
+                    width: 16px;
+                    height: 16px;
+                }
+
+                /* Mobile Slider Mode (>= 2 courses) */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-slider-track {
+                    display: flex !important;
+                    grid-template-columns: none !important;
+                    gap: 0px !important;
+                    width: 100% !important;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-course-card-slide {
+                    flex: 0 0 100% !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    min-width: 100% !important;
+                    padding: 0 6px;
+                    box-sizing: border-box;
+                }
+
+                /* Mobile Single Item (1 course) */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-shell {
+                    padding: 0 !important;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-track {
+                    display: block !important;
+                    transform: none !important;
+                    grid-template-columns: none !important;
+                    width: 100% !important;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-course-card-slide {
+                    flex: 1 1 100% !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    padding: 0 !important;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-course-card-inner {
+                    padding: 22px 18px 18px 18px;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-course-short-name {
+                    font-size: 26px;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-mode-tab-btn {
+                    padding: 8px 22px;
+                    font-size: 14px;
+                }
+            }
+
+            @keyframes sodeCoursePaneFadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
         </style>
 
         <script>
-        (function() {
-            var root = document.getElementById('<?php echo esc_js($unique_id); ?>');
-            if (!root) return;
+            (function () {
+                var root = document.getElementById('<?php echo esc_js($unique_id); ?>');
+                if (!root) return;
 
-            var tabBtns = root.querySelectorAll('.sode-mode-tab-btn');
-            var panes   = root.querySelectorAll('.sode-courses-pane');
-            var sliderControllers = {};
+                var tabBtns = root.querySelectorAll('.sode-mode-tab-btn');
+                var panes = root.querySelectorAll('.sode-courses-pane');
+                var sliderControllers = {};
 
-            // Universal Responsive Slider Controller for Panes
-            function initSliderForPane(pane) {
-                if (!pane) return null;
-                var viewport = pane.querySelector('.sode-slider-viewport');
-                var track    = pane.querySelector('.sode-slider-track');
-                var slides   = pane.querySelectorAll('.sode-course-card-slide');
-                var prevBtn  = pane.querySelector('.sode-slider-prev');
-                var nextBtn  = pane.querySelector('.sode-slider-next');
-                var dotsWrap = pane.querySelector('.sode-slider-dots');
+                // Universal Responsive Slider Controller for Panes
+                function initSliderForPane(pane) {
+                    if (!pane) return null;
+                    var viewport = pane.querySelector('.sode-slider-viewport');
+                    var track = pane.querySelector('.sode-slider-track');
+                    var slides = pane.querySelectorAll('.sode-course-card-slide');
+                    var prevBtn = pane.querySelector('.sode-slider-prev');
+                    var nextBtn = pane.querySelector('.sode-slider-next');
+                    var dotsWrap = pane.querySelector('.sode-slider-dots');
 
-                if (!viewport || !track || slides.length === 0) return null;
+                    if (!viewport || !track || slides.length === 0) return null;
 
-                var totalSlides = slides.length;
-                var currentIndex = 0;
-                var autoplayTimer = null;
-                var isHovered = false;
+                    var totalSlides = slides.length;
+                    var currentIndex = 0;
+                    var autoplayTimer = null;
+                    var isHovered = false;
 
-                function getVisibleCount() {
-                    var w = window.innerWidth;
-                    if (w <= 768) return 1;
-                    if (w <= 1024) return 2;
-                    return 3;
-                }
-
-                function shouldEnableSlider() {
-                    var w = window.innerWidth;
-                    if (w <= 768) {
-                        return totalSlides >= 2;
+                    function getVisibleCount() {
+                        var w = window.innerWidth;
+                        if (w <= 768) return 1;
+                        if (w <= 1024) return 2;
+                        return 3;
                     }
-                    return totalSlides > 3;
-                }
 
-                function updateSlider() {
-                    var enabled = shouldEnableSlider();
-                    var visible = getVisibleCount();
-                    var maxIndex = Math.max(0, totalSlides - visible);
+                    function shouldEnableSlider() {
+                        var w = window.innerWidth;
+                        if (w <= 768) {
+                            return totalSlides >= 2;
+                        }
+                        return totalSlides > 3;
+                    }
 
-                    if (!enabled) {
-                        track.style.transform = 'none';
-                        if (prevBtn) prevBtn.style.display = 'none';
-                        if (nextBtn) nextBtn.style.display = 'none';
-                        if (dotsWrap) dotsWrap.style.display = 'none';
+                    function updateSlider() {
+                        var enabled = shouldEnableSlider();
+                        var visible = getVisibleCount();
+                        var maxIndex = Math.max(0, totalSlides - visible);
+
+                        if (!enabled) {
+                            track.style.transform = 'none';
+                            if (prevBtn) prevBtn.style.display = 'none';
+                            if (nextBtn) nextBtn.style.display = 'none';
+                            if (dotsWrap) dotsWrap.style.display = 'none';
+                            stopAutoplay();
+                            return;
+                        }
+
+                        if (prevBtn) prevBtn.style.display = 'flex';
+                        if (nextBtn) nextBtn.style.display = 'flex';
+                        if (dotsWrap) dotsWrap.style.display = 'flex';
+
+                        if (currentIndex > maxIndex) currentIndex = 0;
+                        if (currentIndex < 0) currentIndex = maxIndex;
+
+                        // Calculate translation accurately
+                        var isMobile = (window.innerWidth <= 768);
+                        var moveAmount = 0;
+
+                        if (isMobile) {
+                            var vWidth = viewport.clientWidth || viewport.getBoundingClientRect().width;
+                            moveAmount = currentIndex * vWidth;
+                        } else {
+                            var firstSlide = slides[0];
+                            var slideWidth = firstSlide ? firstSlide.getBoundingClientRect().width : 0;
+                            var gap = (window.innerWidth <= 1024) ? 20 : 24;
+                            moveAmount = currentIndex * (slideWidth + gap);
+                        }
+
+                        track.style.transform = 'translateX(-' + moveAmount + 'px)';
+
+                        // Rebuild dots
+                        if (dotsWrap) {
+                            dotsWrap.innerHTML = '';
+                            var totalPages = maxIndex + 1;
+                            for (var i = 0; i < totalPages; i++) {
+                                (function (idx) {
+                                    var dot = document.createElement('button');
+                                    dot.type = 'button';
+                                    dot.className = 'sode-dot-btn' + (idx === currentIndex ? ' active' : '');
+                                    dot.setAttribute('aria-label', 'Go to slide ' + (idx + 1));
+                                    dot.addEventListener('click', function (e) {
+                                        e.preventDefault();
+                                        currentIndex = idx;
+                                        updateSlider();
+                                    });
+                                    dotsWrap.appendChild(dot);
+                                })(i);
+                            }
+                        }
+                    }
+
+                    function goNext() {
+                        var visible = getVisibleCount();
+                        var maxIndex = Math.max(0, totalSlides - visible);
+                        if (currentIndex >= maxIndex) {
+                            currentIndex = 0; // Loop back to start
+                        } else {
+                            currentIndex++;
+                        }
+                        updateSlider();
+                    }
+
+                    function goPrev() {
+                        var visible = getVisibleCount();
+                        var maxIndex = Math.max(0, totalSlides - visible);
+                        if (currentIndex <= 0) {
+                            currentIndex = maxIndex; // Loop to end
+                        } else {
+                            currentIndex--;
+                        }
+                        updateSlider();
+                    }
+
+                    function startAutoplay() {
                         stopAutoplay();
-                        return;
+                        if (isHovered) return;
+                        if (!shouldEnableSlider()) return;
+                        autoplayTimer = setInterval(function () {
+                            if (!isHovered) {
+                                goNext();
+                            }
+                        }, 2000);
                     }
 
-                    if (prevBtn) prevBtn.style.display = 'flex';
-                    if (nextBtn) nextBtn.style.display = 'flex';
-                    if (dotsWrap) dotsWrap.style.display = 'flex';
-
-                    if (currentIndex > maxIndex) currentIndex = 0;
-                    if (currentIndex < 0) currentIndex = maxIndex;
-
-                    // Calculate translation accurately
-                    var isMobile = (window.innerWidth <= 768);
-                    var moveAmount = 0;
-
-                    if (isMobile) {
-                        var vWidth = viewport.clientWidth || viewport.getBoundingClientRect().width;
-                        moveAmount = currentIndex * vWidth;
-                    } else {
-                        var firstSlide = slides[0];
-                        var slideWidth = firstSlide ? firstSlide.getBoundingClientRect().width : 0;
-                        var gap = (window.innerWidth <= 1024) ? 20 : 24;
-                        moveAmount = currentIndex * (slideWidth + gap);
-                    }
-
-                    track.style.transform = 'translateX(-' + moveAmount + 'px)';
-
-                    // Rebuild dots
-                    if (dotsWrap) {
-                        dotsWrap.innerHTML = '';
-                        var totalPages = maxIndex + 1;
-                        for (var i = 0; i < totalPages; i++) {
-                            (function(idx) {
-                                var dot = document.createElement('button');
-                                dot.type = 'button';
-                                dot.className = 'sode-dot-btn' + (idx === currentIndex ? ' active' : '');
-                                dot.setAttribute('aria-label', 'Go to slide ' + (idx + 1));
-                                dot.addEventListener('click', function(e) {
-                                    e.preventDefault();
-                                    currentIndex = idx;
-                                    updateSlider();
-                                });
-                                dotsWrap.appendChild(dot);
-                            })(i);
+                    function stopAutoplay() {
+                        if (autoplayTimer) {
+                            clearInterval(autoplayTimer);
+                            autoplayTimer = null;
                         }
                     }
-                }
 
-                function goNext() {
-                    var visible = getVisibleCount();
-                    var maxIndex = Math.max(0, totalSlides - visible);
-                    if (currentIndex >= maxIndex) {
-                        currentIndex = 0; // Loop back to start
-                    } else {
-                        currentIndex++;
+                    if (prevBtn) {
+                        prevBtn.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            goPrev();
+                        });
                     }
-                    updateSlider();
-                }
 
-                function goPrev() {
-                    var visible = getVisibleCount();
-                    var maxIndex = Math.max(0, totalSlides - visible);
-                    if (currentIndex <= 0) {
-                        currentIndex = maxIndex; // Loop to end
-                    } else {
-                        currentIndex--;
-                    }
-                    updateSlider();
-                }
-
-                function startAutoplay() {
-                    stopAutoplay();
-                    if (isHovered) return;
-                    if (!shouldEnableSlider()) return;
-                    autoplayTimer = setInterval(function() {
-                        if (!isHovered) {
+                    if (nextBtn) {
+                        nextBtn.addEventListener('click', function (e) {
+                            e.preventDefault();
                             goNext();
-                        }
-                    }, 2000);
-                }
-
-                function stopAutoplay() {
-                    if (autoplayTimer) {
-                        clearInterval(autoplayTimer);
-                        autoplayTimer = null;
+                        });
                     }
-                }
 
-                if (prevBtn) {
-                    prevBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        goPrev();
-                    });
-                }
-
-                if (nextBtn) {
-                    nextBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        goNext();
-                    });
-                }
-
-                // Robust Hover Pause & Resume on entire pane, viewport and cards
-                pane.addEventListener('mouseenter', function() {
-                    isHovered = true;
-                    stopAutoplay();
-                });
-                pane.addEventListener('mouseleave', function() {
-                    isHovered = false;
-                    startAutoplay();
-                });
-
-                var interactiveEls = pane.querySelectorAll('.sode-course-card, .sode-slider-nav-btn, .sode-dot-btn, .sode-slider-viewport');
-                interactiveEls.forEach(function(el) {
-                    el.addEventListener('mouseenter', function() {
+                    // Robust Hover Pause & Resume on entire pane, viewport and cards
+                    pane.addEventListener('mouseenter', function () {
                         isHovered = true;
                         stopAutoplay();
                     });
-                    el.addEventListener('mouseleave', function() {
+                    pane.addEventListener('mouseleave', function () {
                         isHovered = false;
                         startAutoplay();
                     });
-                });
 
-                // Touch Swipe Support with Pause & Resume
-                var startX = 0;
-                var isDragging = false;
-                viewport.addEventListener('touchstart', function(e) {
-                    isHovered = true;
-                    stopAutoplay();
-                    startX = e.touches[0].clientX;
-                    isDragging = true;
-                }, { passive: true });
+                    var interactiveEls = pane.querySelectorAll('.sode-course-card, .sode-slider-nav-btn, .sode-dot-btn, .sode-slider-viewport');
+                    interactiveEls.forEach(function (el) {
+                        el.addEventListener('mouseenter', function () {
+                            isHovered = true;
+                            stopAutoplay();
+                        });
+                        el.addEventListener('mouseleave', function () {
+                            isHovered = false;
+                            startAutoplay();
+                        });
+                    });
 
-                viewport.addEventListener('touchend', function(e) {
-                    if (!isDragging) return;
-                    isDragging = false;
-                    var endX = e.changedTouches[0].clientX;
-                    var diffX = startX - endX;
-                    if (Math.abs(diffX) > 35) {
-                        if (diffX > 0) {
-                            goNext();
-                        } else {
-                            goPrev();
+                    // Touch Swipe Support with Pause & Resume
+                    var startX = 0;
+                    var isDragging = false;
+                    viewport.addEventListener('touchstart', function (e) {
+                        isHovered = true;
+                        stopAutoplay();
+                        startX = e.touches[0].clientX;
+                        isDragging = true;
+                    }, { passive: true });
+
+                    viewport.addEventListener('touchend', function (e) {
+                        if (!isDragging) return;
+                        isDragging = false;
+                        var endX = e.changedTouches[0].clientX;
+                        var diffX = startX - endX;
+                        if (Math.abs(diffX) > 35) {
+                            if (diffX > 0) {
+                                goNext();
+                            } else {
+                                goPrev();
+                            }
                         }
-                    }
-                    setTimeout(function() {
-                        isHovered = false;
-                        startAutoplay();
-                    }, 1500);
-                }, { passive: true });
+                        setTimeout(function () {
+                            isHovered = false;
+                            startAutoplay();
+                        }, 1500);
+                    }, { passive: true });
 
-                updateSlider();
-                startAutoplay();
+                    updateSlider();
+                    startAutoplay();
 
-                return {
-                    stopAutoplay: stopAutoplay,
-                    startAutoplay: startAutoplay,
-                    updateSlider: updateSlider
-                };
-            }
-
-            // Initialize all panes
-            panes.forEach(function(p) {
-                var mode = p.getAttribute('data-pane-mode');
-                if (mode) {
-                    sliderControllers[mode] = initSliderForPane(p);
+                    return {
+                        stopAutoplay: stopAutoplay,
+                        startAutoplay: startAutoplay,
+                        updateSlider: updateSlider
+                    };
                 }
-            });
 
-            // Tab Switching Event
-            tabBtns.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var targetMode = this.getAttribute('data-mode');
-                    tabBtns.forEach(function(b) { b.classList.remove('active'); });
-                    this.classList.add('active');
-
-                    // Stop all autoplays across all panes
-                    Object.keys(sliderControllers).forEach(function(k) {
-                        if (sliderControllers[k] && typeof sliderControllers[k].stopAutoplay === 'function') {
-                            sliderControllers[k].stopAutoplay();
-                        }
-                    });
-
-                    panes.forEach(function(p) {
-                        var mode = p.getAttribute('data-pane-mode');
-                        if (mode === targetMode) {
-                            p.classList.add('active');
-                            // Delay slightly for display:block rendering
-                            setTimeout(function() {
-                                if (sliderControllers[mode]) {
-                                    sliderControllers[mode].updateSlider();
-                                    sliderControllers[mode].startAutoplay();
-                                } else {
-                                    sliderControllers[mode] = initSliderForPane(p);
-                                }
-                            }, 40);
-                        } else {
-                            p.classList.remove('active');
-                        }
-                    });
-                });
-            });
-
-            window.addEventListener('resize', function() {
-                Object.keys(sliderControllers).forEach(function(k) {
-                    if (sliderControllers[k] && typeof sliderControllers[k].updateSlider === 'function') {
-                        sliderControllers[k].updateSlider();
+                // Initialize all panes
+                panes.forEach(function (p) {
+                    var mode = p.getAttribute('data-pane-mode');
+                    if (mode) {
+                        sliderControllers[mode] = initSliderForPane(p);
                     }
                 });
-            });
-        })();
+
+                // Tab Switching Event
+                tabBtns.forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var targetMode = this.getAttribute('data-mode');
+                        tabBtns.forEach(function (b) { b.classList.remove('active'); });
+                        this.classList.add('active');
+
+                        // Stop all autoplays across all panes
+                        Object.keys(sliderControllers).forEach(function (k) {
+                            if (sliderControllers[k] && typeof sliderControllers[k].stopAutoplay === 'function') {
+                                sliderControllers[k].stopAutoplay();
+                            }
+                        });
+
+                        panes.forEach(function (p) {
+                            var mode = p.getAttribute('data-pane-mode');
+                            if (mode === targetMode) {
+                                p.classList.add('active');
+                                // Delay slightly for display:block rendering
+                                setTimeout(function () {
+                                    if (sliderControllers[mode]) {
+                                        sliderControllers[mode].updateSlider();
+                                        sliderControllers[mode].startAutoplay();
+                                    } else {
+                                        sliderControllers[mode] = initSliderForPane(p);
+                                    }
+                                }, 40);
+                            } else {
+                                p.classList.remove('active');
+                            }
+                        });
+                    });
+                });
+
+                window.addEventListener('resize', function () {
+                    Object.keys(sliderControllers).forEach(function (k) {
+                        if (sliderControllers[k] && typeof sliderControllers[k].updateSlider === 'function') {
+                            sliderControllers[k].updateSlider();
+                        }
+                    });
+                });
+            })();
         </script>
         <?php
         return ob_get_clean();
@@ -1196,33 +1270,37 @@ if (!function_exists('sode_courses_list_render')) {
     {
         $atts = shortcode_atts([
             'university' => '',
-            'uni'        => '',
-            'mode'       => 'all',       // 'all', 'online', 'distance'
-            'format'     => 'short',     // 'short' (e.g. MBA) or 'full' (e.g. Master of Business Administration)
-            'level'      => 'all',       // 'all', 'pg', 'ug', 'master', 'bachelor'
-            'and'        => 'false',     // 'true' or 'false' (adds "and" before last item)
-            'separator'  => ', ',        // delimiter between items
-            'bold'       => 'false',     // 'true' wraps each item in <strong>
-            'link'       => 'false',     // 'true' wraps each item in <a> link
+            'uni' => '',
+            'mode' => 'all',       // 'all', 'online', 'distance'
+            'format' => 'short',     // 'short' (e.g. MBA) or 'full' (e.g. Master of Business Administration)
+            'level' => 'all',       // 'all', 'pg', 'ug', 'master', 'bachelor'
+            'and' => 'false',     // 'true' or 'false' (adds "and" before last item)
+            'separator' => ', ',        // delimiter between items
+            'bold' => 'false',     // 'true' wraps each item in <strong>
+            'link' => 'false',     // 'true' wraps each item in <a> link
         ], $atts);
 
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
         $courses = sode_get_university_courses_data($uni_slug);
 
-        $mode_filter  = strtolower($atts['mode']);
+        $mode_filter = strtolower($atts['mode']);
         $level_filter = strtolower($atts['level']);
         $filtered = [];
 
         foreach ($courses as $c) {
             $course_mode = strtolower($c['mode'] ?? 'online');
-            if ($mode_filter === 'online' && $course_mode !== 'online') continue;
-            if ($mode_filter === 'distance' && $course_mode !== 'distance') continue;
+            if ($mode_filter === 'online' && $course_mode !== 'online')
+                continue;
+            if ($mode_filter === 'distance' && $course_mode !== 'distance')
+                continue;
 
             $is_master = ($c['tab'] === 'Master' || strtoupper($c['level'] ?? '') === 'PG');
             if ($level_filter === 'master' || $level_filter === 'pg') {
-                if (!$is_master) continue;
+                if (!$is_master)
+                    continue;
             } elseif ($level_filter === 'bachelor' || $level_filter === 'ug') {
-                if ($is_master) continue;
+                if ($is_master)
+                    continue;
             }
 
             $label = ($atts['format'] === 'full') ? $c['full_name'] : $c['short_name'];
@@ -1264,13 +1342,13 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
     function sode_courses_eligibility_table_render($atts = [])
     {
         $atts = shortcode_atts([
-            'university'      => '',
-            'uni'             => '',
-            'mode'            => 'all',      // 'all', 'online', 'distance'
-            'format'          => 'short',    // 'short' (e.g. BBA), 'full', 'both'
-            'course_col'      => 'COURSE',
+            'university' => '',
+            'uni' => '',
+            'mode' => 'all',      // 'all', 'online', 'distance'
+            'format' => 'short',    // 'short' (e.g. BBA), 'full', 'both'
+            'course_col' => 'COURSE',
             'eligibility_col' => 'ELIGIBILITY',
-            'class'           => '',
+            'class' => '',
         ], $atts);
 
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
@@ -1282,11 +1360,14 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
 
         foreach ($all_courses as $c) {
             $m = strtolower($c['mode'] ?? 'online');
-            if ($mode_filter === 'online' && $m !== 'online') continue;
-            if ($mode_filter === 'distance' && $m !== 'distance') continue;
+            if ($mode_filter === 'online' && $m !== 'online')
+                continue;
+            if ($mode_filter === 'distance' && $m !== 'distance')
+                continue;
 
             $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
-            if (isset($seen_courses[$key])) continue;
+            if (isset($seen_courses[$key]))
+                continue;
             $seen_courses[$key] = true;
 
             $filtered[] = $c;
@@ -1300,7 +1381,8 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
 
         ob_start();
         ?>
-        <div class="sode-eligibility-table-wrapper <?php echo esc_attr($atts['class']); ?>" id="<?php echo esc_attr($table_id); ?>">
+        <div class="sode-eligibility-table-wrapper <?php echo esc_attr($atts['class']); ?>"
+            id="<?php echo esc_attr($table_id); ?>">
             <table class="sode-eligibility-table">
                 <thead>
                     <tr>
@@ -1309,7 +1391,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($filtered as $item): 
+                    <?php foreach ($filtered as $item):
                         $c_name = $item['short_name'];
                         if ($atts['format'] === 'full') {
                             $c_name = $item['full_name'];
@@ -1317,7 +1399,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                             $c_name = $item['short_name'] . ' (' . $item['full_name'] . ')';
                         }
                         $elig_text = !empty($item['eligibility']) ? $item['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
-                    ?>
+                        ?>
                         <tr>
                             <td class="sode-elig-cell-course">
                                 <strong><?php echo esc_html($c_name); ?></strong>
@@ -1332,106 +1414,109 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
         </div>
 
         <style>
-        #<?php echo esc_attr($table_id); ?>.sode-eligibility-table-wrapper {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin: 16px 0;
-            background: #ffffff;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
+            #<?php echo esc_attr($table_id); ?>.sode-eligibility-table-wrapper {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                background: #ffffff;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
 
-        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table {
-            width: 100%;
-            border-collapse: collapse;
-            border-spacing: 0;
-            text-align: left;
-            background: #ffffff;
-            border: none;
-        }
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table {
+                width: 100%;
+                border-collapse: collapse;
+                border-spacing: 0;
+                text-align: left;
+                background: #ffffff;
+                border: none;
+                margin: 0px;
+            }
 
-        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table thead tr {
-            background-color: #e0f2fe;
-        }
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table thead tr {
+                background-color: #e0f2fe;
+            }
 
-        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table th {
-            padding: 14px 20px;
-            font-size: 15px;
-            font-weight: 800;
-            color: #000000;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            border: none;
-            vertical-align: middle;
-            line-height: 1.3;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
-            width: 22%;
-            min-width: 120px;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-elig-col-desc {
-            width: 78%;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr {
-            border-bottom: 1px solid #e2e8f0;
-            transition: background-color 0.15s ease;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr:last-child {
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
-            padding: 16px 20px;
-            font-size: 15.5px;
-            font-weight: 700;
-            color: #000000;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course strong {
-            font-weight: 700;
-            color: #000000;
-        }
-
-        #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
-            padding: 16px 20px;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #1e293b;
-            font-weight: 400;
-            vertical-align: middle;
-        }
-
-        @media (max-width: 768px) {
             #<?php echo esc_attr($table_id); ?> .sode-eligibility-table th {
-                padding: 12px 14px;
-                font-size: 13.5px;
+                padding: 14px 20px;
+                font-size: 15px;
+                font-weight: 700;
+                color: #000000;
+                letter-spacing: 0.3px;
+                text-transform: uppercase;
+                border: none;
+                vertical-align: middle;
+                line-height: 1.3;
             }
+
             #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
-                width: 25%;
-                min-width: 85px;
+                width: 22%;
+                min-width: 120px;
             }
+
+            #<?php echo esc_attr($table_id); ?> .sode-elig-col-desc {
+                width: 78%;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr {
+                border-bottom: 1px solid #e2e8f0;
+                transition: background-color 0.15s ease;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr:last-child {
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr:hover {
+                background-color: #f8fafc;
+            }
+
             #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
-                padding: 12px 14px;
-                font-size: 14px;
+                padding: 12px 20px;
+                font-size: 15.5px;
+                font-weight: 600;
+                color: #000000;
+                vertical-align: middle;
+                white-space: nowrap;
             }
+
+            #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course strong {
+                font-weight: 700;
+                color: #000000;
+            }
+
             #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
-                padding: 12px 14px;
-                font-size: 13px;
-                line-height: 1.5;
+                padding: 12px 20px;
+                font-size: 14px;
+                line-height: 1.6;
+                color: #1e293b;
+                font-weight: 400;
+                vertical-align: middle;
             }
-        }
+
+            @media (max-width: 768px) {
+                #<?php echo esc_attr($table_id); ?> .sode-eligibility-table th {
+                    padding: 12px 14px;
+                    font-size: 13.5px;
+                }
+
+                #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
+                    width: 25%;
+                    min-width: 85px;
+                }
+
+                #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
+                    padding: 12px 14px;
+                    font-size: 14px;
+                }
+
+                #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
+                    padding: 12px 14px;
+                    font-size: 13px;
+                    line-height: 1.5;
+                }
+            }
         </style>
         <?php
         return ob_get_clean();
