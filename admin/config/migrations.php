@@ -117,6 +117,108 @@ function sode_run_auto_migrations(PDO $pdo) {
                         $update->execute([$new_logo, $new_desk, $new_mob, $new_camp, $new_broc, $new_pod, $u['id']]);
                     }
                 }
+            },
+
+            '2026_09_11_001_create_news_items_table' => function(PDO $db) {
+                // 1. Create or ensure news_items table exists
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS news_items (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        is_global TINYINT(1) DEFAULT 1,
+                        university_id INT UNSIGNED NULL,
+                        news_text TEXT NOT NULL,
+                        news_link TEXT NULL,
+                        has_badge TINYINT(1) DEFAULT 1,
+                        badge_text VARCHAR(50) DEFAULT 'New',
+                        sort_order INT DEFAULT 0,
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_news_global (is_global),
+                        INDEX idx_news_uni (university_id),
+                        INDEX idx_news_active (is_active)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // 2. Add any missing columns if table existed from old schema
+                $existing_cols = $db->query("SHOW COLUMNS FROM news_items")->fetchAll(PDO::FETCH_COLUMN);
+                $cols_map = array_flip($existing_cols);
+
+                if (!isset($cols_map['has_badge'])) {
+                    $db->exec("ALTER TABLE news_items ADD COLUMN has_badge TINYINT(1) DEFAULT 1 AFTER news_link");
+                }
+                if (!isset($cols_map['badge_text'])) {
+                    $db->exec("ALTER TABLE news_items ADD COLUMN badge_text VARCHAR(50) DEFAULT 'New' AFTER has_badge");
+                }
+                if (!isset($cols_map['sort_order'])) {
+                    $db->exec("ALTER TABLE news_items ADD COLUMN sort_order INT DEFAULT 0 AFTER badge_text");
+                }
+                if (!isset($cols_map['is_active'])) {
+                    $db->exec("ALTER TABLE news_items ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER sort_order");
+                }
+
+                // 3. Register Sidebar Item for Latest News
+                $check_sidebar = $db->query("SELECT id FROM sidebar_items WHERE rbac_module_key = 'news' LIMIT 1")->fetch();
+                if (!$check_sidebar) {
+                    $sidebar_svg = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z\"/></svg>';
+                    $stmt = $db->prepare("
+                        INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
+                    ");
+                    $stmt->execute(['Universal News', 'modules/news/index.php', 5, 'news', 'news', 'MANAGE', $sidebar_svg]);
+                    $sidebar_id = $db->lastInsertId();
+
+                    // Grant permission to all existing roles
+                    $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                    $rsa_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                    foreach ($roles as $r_id) {
+                        $rsa_stmt->execute([$r_id, $sidebar_id]);
+                    }
+                }
+
+                // 4. Seed initial news items if table is empty
+                $count = (int)$db->query("SELECT COUNT(*) FROM news_items")->fetchColumn();
+                if ($count === 0) {
+                    // Find DSU university ID if present
+                    $dsu_id = $db->query("SELECT id FROM universities WHERE LOWER(slug) IN ('dsu', 'dayananda-sagar-university') OR LOWER(short_name) = 'dsu' LIMIT 1")->fetchColumn();
+                    $dsu_id = $dsu_id ? (int)$dsu_id : null;
+
+                    $seed_stmt = $db->prepare("
+                        INSERT INTO news_items (is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                    ");
+
+                    // Seed Universal items
+                    $seed_stmt->execute([
+                        1,
+                        null,
+                        'For the latest notifications regarding student support, access the {UNIVERSITY_SHORT_NAME} Student Support Page.',
+                        '#student-support',
+                        1,
+                        'New',
+                        1
+                    ]);
+
+                    $seed_stmt->execute([
+                        1,
+                        null,
+                        'Get notifications for the latest placement drives at {UNIVERSITY_NAME} $YEAR$',
+                        '#placement-drives',
+                        1,
+                        'New',
+                        2
+                    ]);
+
+                    $seed_stmt->execute([
+                        1,
+                        null,
+                        'Upcoming News & Events at {UNIVERSITY_NAME} $YEAR$',
+                        '#news-events',
+                        1,
+                        'New',
+                        3
+                    ]);
+                }
             }
         ];
 

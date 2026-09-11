@@ -492,6 +492,39 @@ add_shortcode('scholarship_coupon_form', function($atts) {
 });
 
 // ====================================================
+// 2.5. LATEST NEWS & MARQUEE SHORTCODES
+// [latest_news], [universal_news], [sode_news]
+// ====================================================
+add_shortcode('latest_news', function($atts) {
+    if (function_exists('sode_news_marquee_render')) {
+        return sode_news_marquee_render($atts);
+    }
+    $atts = shortcode_atts([
+        'university' => '',
+        'heading'    => 'Latest News',
+        'speed'      => '16s',
+        'height'     => '240px',
+        'limit'      => 10
+    ], $atts, 'latest_news');
+
+    return sode_fetch_remote_component('latest_news', $atts);
+});
+
+add_shortcode('universal_news', function($atts) {
+    if (function_exists('sode_news_marquee_render')) {
+        return sode_news_marquee_render($atts);
+    }
+    return sode_fetch_remote_component('latest_news', $atts);
+});
+
+add_shortcode('sode_news', function($atts) {
+    if (function_exists('sode_news_marquee_render')) {
+        return sode_news_marquee_render($atts);
+    }
+    return sode_fetch_remote_component('latest_news', $atts);
+});
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 add_shortcode('site_year', function($atts) {
@@ -807,5 +840,9 @@ add_action('wp_footer', function() {
 // ====================================================
 if (file_exists(__DIR__ . '/site-year-universal.php')) {
     require_once __DIR__ . '/site-year-universal.php';
+}
+
+if (file_exists(__DIR__ . '/news-marquee-universal.php')) {
+    require_once __DIR__ . '/news-marquee-universal.php';
 }
 

@@ -32,6 +32,14 @@ $assigned_accs = $stmt->fetchAll(PDO::FETCH_COLUMN);
 // Fetch all accreditations
 $all_accreditations = $db->query("SELECT * FROM accreditations ORDER BY title ASC")->fetchAll();
 
+// Fetch news items count for this university
+$stmt = $db->prepare("SELECT COUNT(*) FROM news_items WHERE is_global = 0 AND university_id = ?");
+$stmt->execute([$id]);
+$uni_news_count = (int)$stmt->fetchColumn();
+
+// Fetch global news count
+$global_news_count = (int)$db->query("SELECT COUNT(*) FROM news_items WHERE is_global = 1 AND is_active = 1")->fetchColumn();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
@@ -513,6 +521,21 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- University News Card -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <span class="card-title">News & Announcements</span>
+                </div>
+                <div class="card-body">
+                    <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px;">
+                        This university currently displays <strong><?php echo $uni_news_count; ?> specific</strong> and <strong><?php echo $global_news_count; ?> universal</strong> announcements in the scrolling marquee.
+                    </div>
+                    <a href="<?php echo BASE_URL; ?>/modules/news/index.php?filter_uni=<?php echo $id; ?>" class="btn-secondary" style="display:block; text-align:center; text-decoration:none; font-size:13px; padding:8px 12px; border-radius:6px;">
+                        📢 Manage News for this University &rarr;
+                    </a>
                 </div>
             </div>
         </div>

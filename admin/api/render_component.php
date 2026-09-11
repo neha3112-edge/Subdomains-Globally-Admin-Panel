@@ -23,6 +23,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 $root_dir = dirname(__DIR__, 2);
 require_once $root_dir . '/lead-form-universal.php';
 require_once $root_dir . '/education-banner-universal.php';
+require_once $root_dir . '/news-marquee-universal.php';
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -39,6 +40,13 @@ switch ($component) {
     case 'banner':
     case 'edu_banner':
         echo edu_banner_shortcode($params);
+        break;
+
+    case 'latest_news':
+    case 'news':
+    case 'news_marquee':
+    case 'universal_news':
+        echo sode_news_marquee_render($params);
         break;
 
     case 'lead_form':
