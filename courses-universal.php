@@ -561,7 +561,6 @@ if (!function_exists('sode_courses_tabs_render')) {
         #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
             overflow: hidden;
             width: 100%;
-            padding: 10px 4px 14px 4px;
             box-sizing: border-box;
         }
 
@@ -570,34 +569,10 @@ if (!function_exists('sode_courses_tabs_render')) {
             align-items: stretch;
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: transform;
-            gap: 24px;
-        }
-
-        /* Static Grid Mode (when <= 3 on Desktop) */
-        #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            transform: none !important;
-            justify-content: center;
             width: 100%;
         }
 
-        /* Slide Card Wrapper */
-        #<?php echo esc_attr($unique_id); ?> .sode-course-card-slide {
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            flex: 0 0 calc((100% - 48px) / 3);
-            max-width: calc((100% - 48px) / 3);
-        }
-
-        #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
-            flex: 1 1 auto;
-            max-width: 100%;
-        }
-
-        /* Course Card */
+        /* Course Card Base */
         #<?php echo esc_attr($unique_id); ?> .sode-course-card {
             background: #ffffff;
             border-radius: 14px;
@@ -776,17 +751,75 @@ if (!function_exists('sode_courses_tabs_render')) {
             border-radius: 12px;
         }
 
-        /* Responsive Breakpoints */
-        @media (max-width: 1024px) {
-            #<?php echo esc_attr($unique_id); ?> .sode-course-card-slide {
-                flex: 0 0 calc((100% - 24px) / 2);
-                max-width: calc((100% - 24px) / 2);
+        /* =========================================
+           DESKTOP (> 1024px)
+           ========================================= */
+        @media (min-width: 1025px) {
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                padding: 10px 4px 14px 4px;
             }
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
+                gap: 24px;
+            }
+            /* Slider mode (> 3 courses) */
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-desktop .sode-course-card-slide {
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                flex: 0 0 calc((100% - 48px) / 3);
+                max-width: calc((100% - 48px) / 3);
+            }
+            /* Static Grid Mode (<= 3 courses) */
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
-                grid-template-columns: repeat(2, 1fr);
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+                transform: none !important;
+                justify-content: center;
+                width: 100%;
+            }
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
+                flex: 1 1 auto;
+                max-width: 100%;
             }
         }
 
+        /* =========================================
+           TABLET (769px - 1024px)
+           ========================================= */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
+                padding: 10px 4px 14px 4px;
+            }
+            #<?php echo esc_attr($unique_id); ?> .sode-slider-track {
+                gap: 20px;
+            }
+            /* Slider mode */
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-desktop .sode-course-card-slide {
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                flex: 0 0 calc((100% - 20px) / 2);
+                max-width: calc((100% - 20px) / 2);
+            }
+            /* Static Grid Mode (<= 2 courses) */
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                transform: none !important;
+                justify-content: center;
+                width: 100%;
+            }
+            #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
+                flex: 1 1 auto;
+                max-width: 100%;
+            }
+        }
+
+        /* =========================================
+           MOBILE (<= 768px)
+           ========================================= */
         @media (max-width: 768px) {
             #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
                 padding: 0 20px;
@@ -794,6 +827,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
             #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
                 padding: 10px 0 14px 0;
+                width: 100%;
+                overflow: hidden;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-slider-prev {
                 left: -6px;
@@ -813,7 +848,9 @@ if (!function_exists('sode_courses_tabs_render')) {
             /* Mobile Slider Mode (>= 2 courses) */
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-slider-track {
                 display: flex !important;
+                grid-template-columns: none !important;
                 gap: 0px !important;
+                width: 100% !important;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.has-slider-mobile .sode-course-card-slide {
                 flex: 0 0 100% !important;
@@ -826,16 +863,19 @@ if (!function_exists('sode_courses_tabs_render')) {
 
             /* Mobile Single Item (1 course) */
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-shell {
-                padding: 0;
+                padding: 0 !important;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-slider-track {
                 display: block !important;
                 transform: none !important;
+                grid-template-columns: none !important;
+                width: 100% !important;
             }
             #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-mobile .sode-course-card-slide {
                 flex: 1 1 100% !important;
+                width: 100% !important;
                 max-width: 100% !important;
-                padding: 0;
+                padding: 0 !important;
             }
 
             #<?php echo esc_attr($unique_id); ?> .sode-course-card-inner {
@@ -867,31 +907,9 @@ if (!function_exists('sode_courses_tabs_render')) {
             var root = document.getElementById('<?php echo esc_js($unique_id); ?>');
             if (!root) return;
 
-            // Mode Tabs Switcher
             var tabBtns = root.querySelectorAll('.sode-mode-tab-btn');
             var panes   = root.querySelectorAll('.sode-courses-pane');
-            var activeSliderController = null;
-
-            tabBtns.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var targetMode = this.getAttribute('data-mode');
-                    tabBtns.forEach(function(b) { b.classList.remove('active'); });
-                    this.classList.add('active');
-
-                    if (activeSliderController && typeof activeSliderController.stopAutoplay === 'function') {
-                        activeSliderController.stopAutoplay();
-                    }
-
-                    panes.forEach(function(p) {
-                        if (p.getAttribute('data-pane-mode') === targetMode) {
-                            p.classList.add('active');
-                            activeSliderController = initSliderForPane(p);
-                        } else {
-                            p.classList.remove('active');
-                        }
-                    });
-                });
-            });
+            var sliderControllers = {};
 
             // Universal Responsive Slider Controller for Panes
             function initSliderForPane(pane) {
@@ -908,6 +926,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                 var totalSlides = slides.length;
                 var currentIndex = 0;
                 var autoplayTimer = null;
+                var isHovered = false;
 
                 function getVisibleCount() {
                     var w = window.innerWidth;
@@ -945,16 +964,17 @@ if (!function_exists('sode_courses_tabs_render')) {
                     if (currentIndex > maxIndex) currentIndex = 0;
                     if (currentIndex < 0) currentIndex = maxIndex;
 
-                    // Calculate translation
+                    // Calculate translation accurately
                     var isMobile = (window.innerWidth <= 768);
                     var moveAmount = 0;
 
                     if (isMobile) {
-                        var vWidth = viewport.clientWidth;
+                        var vWidth = viewport.clientWidth || viewport.getBoundingClientRect().width;
                         moveAmount = currentIndex * vWidth;
                     } else {
-                        var slideWidth = slides[0].getBoundingClientRect().width;
-                        var gap = 24;
+                        var firstSlide = slides[0];
+                        var slideWidth = firstSlide ? firstSlide.getBoundingClientRect().width : 0;
+                        var gap = (window.innerWidth <= 1024) ? 20 : 24;
                         moveAmount = currentIndex * (slideWidth + gap);
                     }
 
@@ -970,10 +990,10 @@ if (!function_exists('sode_courses_tabs_render')) {
                                 dot.type = 'button';
                                 dot.className = 'sode-dot-btn' + (idx === currentIndex ? ' active' : '');
                                 dot.setAttribute('aria-label', 'Go to slide ' + (idx + 1));
-                                dot.addEventListener('click', function() {
+                                dot.addEventListener('click', function(e) {
+                                    e.preventDefault();
                                     currentIndex = idx;
                                     updateSlider();
-                                    restartAutoplay();
                                 });
                                 dotsWrap.appendChild(dot);
                             })(i);
@@ -1005,9 +1025,12 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                 function startAutoplay() {
                     stopAutoplay();
+                    if (isHovered) return;
                     if (!shouldEnableSlider()) return;
                     autoplayTimer = setInterval(function() {
-                        goNext();
+                        if (!isHovered) {
+                            goNext();
+                        }
                     }, 2000);
                 }
 
@@ -1018,33 +1041,47 @@ if (!function_exists('sode_courses_tabs_render')) {
                     }
                 }
 
-                function restartAutoplay() {
-                    stopAutoplay();
-                    startAutoplay();
-                }
-
                 if (prevBtn) {
-                    prevBtn.onclick = function() {
+                    prevBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
                         goPrev();
-                        restartAutoplay();
-                    };
+                    });
                 }
 
                 if (nextBtn) {
-                    nextBtn.onclick = function() {
+                    nextBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
                         goNext();
-                        restartAutoplay();
-                    };
+                    });
                 }
 
-                // Hover Pause & Resume
-                pane.addEventListener('mouseenter', stopAutoplay);
-                pane.addEventListener('mouseleave', startAutoplay);
+                // Robust Hover Pause & Resume on entire pane, viewport and cards
+                pane.addEventListener('mouseenter', function() {
+                    isHovered = true;
+                    stopAutoplay();
+                });
+                pane.addEventListener('mouseleave', function() {
+                    isHovered = false;
+                    startAutoplay();
+                });
+
+                var interactiveEls = pane.querySelectorAll('.sode-course-card, .sode-slider-nav-btn, .sode-dot-btn, .sode-slider-viewport');
+                interactiveEls.forEach(function(el) {
+                    el.addEventListener('mouseenter', function() {
+                        isHovered = true;
+                        stopAutoplay();
+                    });
+                    el.addEventListener('mouseleave', function() {
+                        isHovered = false;
+                        startAutoplay();
+                    });
+                });
 
                 // Touch Swipe Support with Pause & Resume
                 var startX = 0;
                 var isDragging = false;
                 viewport.addEventListener('touchstart', function(e) {
+                    isHovered = true;
                     stopAutoplay();
                     startX = e.touches[0].clientX;
                     isDragging = true;
@@ -1062,15 +1099,14 @@ if (!function_exists('sode_courses_tabs_render')) {
                             goPrev();
                         }
                     }
-                    setTimeout(startAutoplay, 1500);
+                    setTimeout(function() {
+                        isHovered = false;
+                        startAutoplay();
+                    }, 1500);
                 }, { passive: true });
 
                 updateSlider();
                 startAutoplay();
-
-                window.addEventListener('resize', function() {
-                    updateSlider();
-                });
 
                 return {
                     stopAutoplay: stopAutoplay,
@@ -1079,11 +1115,55 @@ if (!function_exists('sode_courses_tabs_render')) {
                 };
             }
 
-            // Init for active pane on load
-            var activePane = root.querySelector('.sode-courses-pane.active') || panes[0];
-            if (activePane) {
-                activeSliderController = initSliderForPane(activePane);
-            }
+            // Initialize all panes
+            panes.forEach(function(p) {
+                var mode = p.getAttribute('data-pane-mode');
+                if (mode) {
+                    sliderControllers[mode] = initSliderForPane(p);
+                }
+            });
+
+            // Tab Switching Event
+            tabBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var targetMode = this.getAttribute('data-mode');
+                    tabBtns.forEach(function(b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+
+                    // Stop all autoplays across all panes
+                    Object.keys(sliderControllers).forEach(function(k) {
+                        if (sliderControllers[k] && typeof sliderControllers[k].stopAutoplay === 'function') {
+                            sliderControllers[k].stopAutoplay();
+                        }
+                    });
+
+                    panes.forEach(function(p) {
+                        var mode = p.getAttribute('data-pane-mode');
+                        if (mode === targetMode) {
+                            p.classList.add('active');
+                            // Delay slightly for display:block rendering
+                            setTimeout(function() {
+                                if (sliderControllers[mode]) {
+                                    sliderControllers[mode].updateSlider();
+                                    sliderControllers[mode].startAutoplay();
+                                } else {
+                                    sliderControllers[mode] = initSliderForPane(p);
+                                }
+                            }, 40);
+                        } else {
+                            p.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            window.addEventListener('resize', function() {
+                Object.keys(sliderControllers).forEach(function(k) {
+                    if (sliderControllers[k] && typeof sliderControllers[k].updateSlider === 'function') {
+                        sliderControllers[k].updateSlider();
+                    }
+                });
+            });
         })();
         </script>
         <?php
