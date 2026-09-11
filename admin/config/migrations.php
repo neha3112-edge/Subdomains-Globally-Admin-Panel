@@ -424,6 +424,138 @@ function sode_run_auto_migrations(PDO $pdo) {
                     $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
                     foreach ($roles as $rid) { $rsa->execute([$rid, $sid]); }
                 }
+            },
+
+            '2026_09_11_006_create_footer_config_table' => function(PDO $db) {
+                // 1. Create footer_config table with all fields
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS footer_config (
+                        id INT UNSIGNED NOT NULL DEFAULT 1,
+                        -- CTA Bar
+                        cta_heading VARCHAR(255) NOT NULL DEFAULT 'Having Doubts ? Talk to Experts',
+                        cta_subtext VARCHAR(255) NOT NULL DEFAULT 'Get 100% Free Counseling on Online Degree Courses & Distance Education Programs',
+                        cta_btn_text VARCHAR(100) NOT NULL DEFAULT 'Book Free 1:1 Counseling',
+                        cta_btn_link VARCHAR(500) NOT NULL DEFAULT '#',
+                        cta_btn_phone VARCHAR(50) NOT NULL DEFAULT '',
+                        -- AI Tools
+                        ai_tools_heading VARCHAR(255) NOT NULL DEFAULT 'Explore AI Powered Tools',
+                        ai_tools_subtext VARCHAR(255) NOT NULL DEFAULT 'Make smarter education decisions with AI-powered tools',
+                        ai_tools_cards_json LONGTEXT NOT NULL DEFAULT '[]',
+                        -- About SODE
+                        about_logo_url VARCHAR(500) NOT NULL DEFAULT '',
+                        about_title VARCHAR(255) NOT NULL DEFAULT 'About SODE™',
+                        about_subtitle VARCHAR(255) NOT NULL DEFAULT '(School of Online and Distance Education)',
+                        about_sode_text TEXT NOT NULL DEFAULT '',
+                        -- Legal Notice
+                        legal_notice_heading VARCHAR(255) NOT NULL DEFAULT 'Legal Notice',
+                        legal_notice_text LONGTEXT NOT NULL DEFAULT '',
+                        -- Footer Links & Copyright
+                        footer_links_json LONGTEXT NOT NULL DEFAULT '[]',
+                        copyright_text VARCHAR(255) NOT NULL DEFAULT '© 2026 SODE™ Counselling Services LLP',
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // Add new columns if table existed from old schema (without CTA fields)
+                $existing_cols = $db->query("SHOW COLUMNS FROM footer_config")->fetchAll(PDO::FETCH_COLUMN);
+                $cols_map = array_flip($existing_cols);
+                $alter_cols = [
+                    'cta_heading'          => "VARCHAR(255) NOT NULL DEFAULT 'Having Doubts ? Talk to Experts'",
+                    'cta_subtext'          => "VARCHAR(255) NOT NULL DEFAULT 'Get 100% Free Counseling on Online Degree Courses & Distance Education Programs'",
+                    'cta_btn_text'         => "VARCHAR(100) NOT NULL DEFAULT 'Book Free 1:1 Counseling'",
+                    'cta_btn_link'         => "VARCHAR(500) NOT NULL DEFAULT '#'",
+                    'cta_btn_phone'        => "VARCHAR(50) NOT NULL DEFAULT ''",
+                    'ai_tools_heading'     => "VARCHAR(255) NOT NULL DEFAULT 'Explore AI Powered Tools'",
+                    'ai_tools_subtext'     => "VARCHAR(255) NOT NULL DEFAULT 'Make smarter education decisions with AI-powered tools'",
+                    'about_logo_url'       => "VARCHAR(500) NOT NULL DEFAULT ''",
+                    'about_title'          => "VARCHAR(255) NOT NULL DEFAULT 'About SODE™'",
+                    'about_subtitle'       => "VARCHAR(255) NOT NULL DEFAULT '(School of Online and Distance Education)'",
+                    'legal_notice_heading' => "VARCHAR(255) NOT NULL DEFAULT 'Legal Notice'",
+                    'footer_links_json'    => "LONGTEXT NOT NULL DEFAULT '[]'",
+                ];
+                foreach ($alter_cols as $col => $def) {
+                    if (!isset($cols_map[$col])) {
+                        try {
+                            $db->exec("ALTER TABLE footer_config ADD COLUMN `$col` $def");
+                        } catch (Exception $e) {}
+                    }
+                }
+
+                // 2. Seed default row if empty
+                $count = (int)$db->query("SELECT COUNT(*) FROM footer_config")->fetchColumn();
+                if ($count === 0) {
+                    $default_ai_tools = json_encode([
+                        [
+                            'icon_svg' => '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="32" fill="#E8F4FD"/><path d="M32 18C24.27 18 18 24.27 18 32s6.27 14 14 14 14-6.27 14-14S39.73 18 32 18zm0 4c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 20c-3.71 0-6.99-1.9-8.94-4.78C23.16 35.19 27.45 34 32 34s8.84 1.19 10.94 3.22C40.99 40.1 37.71 42 34 42h-2z" fill="#1565C0"/></svg>',
+                            'title' => 'Suggest University',
+                            'desc'  => 'Find universities that match your goals, preferences, and career plans.',
+                            'btn_text' => 'Suggest Me A University →',
+                            'btn_link' => '#suggest-university'
+                        ],
+                        [
+                            'icon_svg' => '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="32" fill="#F3E8FD"/><path d="M32 20a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm-2 18l-5-5 2-2 3 3 7-7 2 2-9 9z" fill="#7B1FA2"/><path d="M24 44h16v2H24z" fill="#7B1FA2"/></svg>',
+                            'title' => 'Eligibility Checker',
+                            'desc'  => 'Instantly check which courses and universities you\'re eligible for.',
+                            'btn_text' => 'Check Eligibility →',
+                            'btn_link' => '#eligibility-checker'
+                        ],
+                        [
+                            'icon_svg' => '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="32" fill="#E8F5E9"/><path d="M20 32a12 12 0 1 1 24 0A12 12 0 0 1 20 32zm2 0a10 10 0 1 0 20 0 10 10 0 0 0-20 0z" fill="#2E7D32"/><path d="M29 27l8 5-8 5V27z" fill="#2E7D32"/></svg>',
+                            'title' => 'Compare University',
+                            'desc'  => 'Compare universities based on fees, accreditation, rankings, placements, and more.',
+                            'btn_text' => 'Compare University →',
+                            'btn_link' => '#compare-university'
+                        ],
+                        [
+                            'icon_svg' => '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="32" fill="#FCE4EC"/><path d="M20 20h24v4H20zm0 8h24v4H20zm0 8h16v4H20z" fill="#C62828"/><path d="M44 38l-8 8-4-4 2-2 2 2 6-6 2 2z" fill="#C62828"/></svg>',
+                            'title' => 'Suggest Course',
+                            'desc'  => 'Find the right course based on your interests, qualifications, and career goals.',
+                            'btn_text' => 'Suggest Course →',
+                            'btn_link' => '#suggest-course'
+                        ]
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                    $default_footer_links = json_encode([
+                        ['label' => 'About Us',       'url' => '/about-us/',       'class' => ''],
+                        ['label' => 'Contact Us',     'url' => '/contact-us/',     'class' => ''],
+                        ['label' => 'Disclaimer',     'url' => '#disclaimer-popup','class' => 'disclaimer-main-popup'],
+                        ['label' => 'Privacy Policy', 'url' => '#privacy-popup',   'class' => 'privacy-main-popup'],
+                        ['label' => 'Terms & Conditions','url' => '#terms-popup',  'class' => 'term-main-popup'],
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                    $default_about = 'SODE™ is India\'s top educational platform, transforming the way learners engage with higher education. We make higher education easier without compromising on the quality. We help students and working professionals find the right online and distance degree programs. We simplify every step with expert guidance and personalised support.';
+
+                    $default_legal = 'This information is provided by DistanceEducationSchool.com, operating under the registered legal entity SODE™ Counselling Services LLP (registered with the Ministry of Corporate Affairs, Government of India), with the primary objective of providing information, guidance, and counselling for UGC-DEB-approved universities and programs). We do not act as a university or an official admission authority. For official updates, direct admissions, and fee payments, please visit dsuonline.com.';
+
+                    $stmt = $db->prepare("
+                        INSERT INTO footer_config 
+                            (id, cta_heading, cta_subtext, cta_btn_text, cta_btn_link, cta_btn_phone,
+                             ai_tools_heading, ai_tools_subtext, ai_tools_cards_json,
+                             about_logo_url, about_title, about_subtitle, about_sode_text,
+                             legal_notice_heading, legal_notice_text,
+                             footer_links_json, copyright_text)
+                        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ");
+                    $stmt->execute([
+                        'Having Doubts ? Talk to Experts',
+                        'Get 100% Free Counseling on Online Degree Courses & Distance Education Programs',
+                        'Book Free 1:1 Counseling',
+                        '#',
+                        '',
+                        'Explore AI Powered Tools',
+                        'Make smarter education decisions with AI-powered tools',
+                        $default_ai_tools,
+                        '',
+                        'About SODE™',
+                        '(School of Online and Distance Education)',
+                        $default_about,
+                        'Legal Notice',
+                        $default_legal,
+                        $default_footer_links,
+                        '© ' . date('Y') . ' SODE™ Counselling Services LLP'
+                    ]);
+                }
             }
         ];
 

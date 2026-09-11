@@ -35,6 +35,9 @@ require_once $root_dir . '/admission-process-universal.php';
 if (file_exists($root_dir . '/legal-pages-universal.php')) {
     require_once $root_dir . '/legal-pages-universal.php';
 }
+if (file_exists($root_dir . '/footer-universal.php')) {
+    require_once $root_dir . '/footer-universal.php';
+}
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -83,6 +86,12 @@ switch ($component) {
     case 'admission_process':
     case 'sode_application_process':
         echo sode_application_process_render($params);
+        break;
+
+    case 'footer':
+    case 'universal_footer':
+    case 'sode_footer':
+        echo sode_footer_render($params);
         break;
 
     case 'legal_popups':

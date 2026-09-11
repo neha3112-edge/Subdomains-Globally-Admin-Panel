@@ -1003,3 +1003,7 @@ if (file_exists(__DIR__ . '/admission-process-universal.php')) {
 if (file_exists(__DIR__ . '/legal-pages-universal.php')) {
     require_once __DIR__ . '/legal-pages-universal.php';
 }
+
+if (file_exists(__DIR__ . '/footer-universal.php')) {
+    require_once __DIR__ . '/footer-universal.php';
+}
