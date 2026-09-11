@@ -162,6 +162,15 @@ if (!function_exists('sode_get_university_courses_data')) {
                             $duration = ($tab_category === 'Master') ? '2 Year' : '3 Year';
 
                             $desc = !empty($m['course_description']) ? trim($m['course_description']) : (!empty($m['default_description']) ? trim($m['default_description']) : '');
+                            $elig = !empty($m['eligibility_text']) ? trim($m['eligibility_text']) : '';
+                            if (empty($elig)) {
+                                if ($tab_category === 'Master' || $level_raw === 'PG') {
+                                    $elig = "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.";
+                                } else {
+                                    $elig = "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.";
+                                }
+                            }
+
                             $link = !empty($m['course_link']) ? trim($m['course_link']) : '#';
 
                             $courses_data[] = [
@@ -175,6 +184,7 @@ if (!function_exists('sode_get_university_courses_data')) {
                                 'tab'         => $tab_category,
                                 'duration'    => $duration,
                                 'description' => $desc,
+                                'eligibility' => $elig,
                                 'link'        => $link,
                                 'per_sem_fee' => $m['per_semester_fee'],
                                 'total_fee'   => $m['total_program_fee'],
@@ -228,30 +238,35 @@ if (!function_exists('sode_get_university_courses_data')) {
                     'id' => 1, 'course_id' => 1, 'short_name' => 'MBA', 'full_name' => 'Master of Business Administration',
                     'mode' => 'Online', 'tab' => 'Master', 'level' => 'PG', 'duration' => '2 Year',
                     'description' => 'Learners have access to higher knowledge of business and management that aligns with modern learners\' demands.',
+                    'eligibility' => "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
                     'id' => 2, 'course_id' => 2, 'short_name' => 'MCA', 'full_name' => 'Master of Computer Applications',
                     'mode' => 'Online', 'tab' => 'Master', 'level' => 'PG', 'duration' => '2 Year',
                     'description' => 'The Master of Computer Applications program offers learners advanced technical and computing skills that align with current IT industry trends.',
+                    'eligibility' => "Bachelor's degree from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
                     'id' => 3, 'course_id' => 10, 'short_name' => 'BCA', 'full_name' => 'Bachelor of Computer Applications',
                     'mode' => 'Online', 'tab' => 'Bachelor', 'level' => 'UG', 'duration' => '3 Year',
                     'description' => 'This program offers a structured curriculum in computer applications and technology.',
+                    'eligibility' => "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
                     'id' => 4, 'course_id' => 9, 'short_name' => 'BBA', 'full_name' => 'Bachelor of Business Administration',
                     'mode' => 'Online', 'tab' => 'Bachelor', 'level' => 'UG', 'duration' => '3 Year',
                     'description' => 'BBA offers foundational knowledge of business administration and includes learning areas such as digital marketing and business analytics.',
+                    'eligibility' => "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.",
                     'link' => '#'
                 ],
                 [
                     'id' => 5, 'course_id' => 11, 'short_name' => 'BCom', 'full_name' => 'Bachelor of Commerce',
                     'mode' => 'Online', 'tab' => 'Bachelor', 'level' => 'UG', 'duration' => '3 Year',
                     'description' => 'This program provides access to basic knowledge of finance, accounting and emerging Business technologies.',
+                    'eligibility' => "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.",
                     'link' => '#'
                 ]
             ];
@@ -1240,6 +1255,189 @@ if (!function_exists('sode_courses_list_render')) {
     }
 }
 
+/**
+ * 3. UNIVERSAL COURSES ELIGIBILITY TABLE COMPONENT
+ * Renders modern responsive table with Course and Eligibility columns
+ * Shortcodes: [university_eligibility_table], [uni_eligibility_table], [courses_eligibility_table], [university_eligibility], [uni_eligibility], [eligibility_table]
+ */
+if (!function_exists('sode_courses_eligibility_table_render')) {
+    function sode_courses_eligibility_table_render($atts = [])
+    {
+        $atts = shortcode_atts([
+            'university'      => '',
+            'uni'             => '',
+            'mode'            => 'all',      // 'all', 'online', 'distance'
+            'format'          => 'short',    // 'short' (e.g. BBA), 'full', 'both'
+            'course_col'      => 'COURSE',
+            'eligibility_col' => 'ELIGIBILITY',
+            'class'           => '',
+        ], $atts);
+
+        $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
+        $all_courses = sode_get_university_courses_data($uni_slug);
+
+        $mode_filter = strtolower(trim($atts['mode']));
+        $filtered = [];
+        $seen_courses = [];
+
+        foreach ($all_courses as $c) {
+            $m = strtolower($c['mode'] ?? 'online');
+            if ($mode_filter === 'online' && $m !== 'online') continue;
+            if ($mode_filter === 'distance' && $m !== 'distance') continue;
+
+            $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
+            if (isset($seen_courses[$key])) continue;
+            $seen_courses[$key] = true;
+
+            $filtered[] = $c;
+        }
+
+        if (empty($filtered)) {
+            return '';
+        }
+
+        $table_id = 'sode_elig_tbl_' . substr(md5(uniqid(rand(), true)), 0, 8);
+
+        ob_start();
+        ?>
+        <div class="sode-eligibility-table-wrapper <?php echo esc_attr($atts['class']); ?>" id="<?php echo esc_attr($table_id); ?>">
+            <table class="sode-eligibility-table">
+                <thead>
+                    <tr>
+                        <th class="sode-elig-col-course"><?php echo esc_html($atts['course_col']); ?></th>
+                        <th class="sode-elig-col-desc"><?php echo esc_html($atts['eligibility_col']); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($filtered as $item): 
+                        $c_name = $item['short_name'];
+                        if ($atts['format'] === 'full') {
+                            $c_name = $item['full_name'];
+                        } elseif ($atts['format'] === 'both') {
+                            $c_name = $item['short_name'] . ' (' . $item['full_name'] . ')';
+                        }
+                        $elig_text = !empty($item['eligibility']) ? $item['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
+                    ?>
+                        <tr>
+                            <td class="sode-elig-cell-course">
+                                <strong><?php echo esc_html($c_name); ?></strong>
+                            </td>
+                            <td class="sode-elig-cell-desc">
+                                <?php echo esc_html($elig_text); ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <style>
+        #<?php echo esc_attr($table_id); ?>.sode-eligibility-table-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 16px 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            text-align: left;
+            background: #ffffff;
+            border: none;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table thead tr {
+            background-color: #e0f2fe;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table th {
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #000000;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            border: none;
+            vertical-align: middle;
+            line-height: 1.3;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
+            width: 22%;
+            min-width: 120px;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-elig-col-desc {
+            width: 78%;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.15s ease;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr:last-child {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
+            padding: 16px 20px;
+            font-size: 15.5px;
+            font-weight: 700;
+            color: #000000;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course strong {
+            font-weight: 700;
+            color: #000000;
+        }
+
+        #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
+            padding: 16px 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1e293b;
+            font-weight: 400;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table th {
+                padding: 12px 14px;
+                font-size: 13.5px;
+            }
+            #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
+                width: 25%;
+                min-width: 85px;
+            }
+            #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
+                padding: 12px 14px;
+                font-size: 14px;
+            }
+            #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
+                padding: 12px 14px;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+        }
+        </style>
+        <?php
+        return ob_get_clean();
+    }
+}
+
 // Register Shortcodes
 if (function_exists('add_shortcode')) {
     add_shortcode('university_courses', 'sode_courses_tabs_render');
@@ -1252,4 +1450,11 @@ if (function_exists('add_shortcode')) {
     add_shortcode('courses_list', 'sode_courses_list_render');
     add_shortcode('sode_courses_list', 'sode_courses_list_render');
     add_shortcode('uni_courses_text', 'sode_courses_list_render');
+
+    add_shortcode('university_eligibility_table', 'sode_courses_eligibility_table_render');
+    add_shortcode('uni_eligibility_table', 'sode_courses_eligibility_table_render');
+    add_shortcode('courses_eligibility_table', 'sode_courses_eligibility_table_render');
+    add_shortcode('university_eligibility', 'sode_courses_eligibility_table_render');
+    add_shortcode('uni_eligibility', 'sode_courses_eligibility_table_render');
+    add_shortcode('eligibility_table', 'sode_courses_eligibility_table_render');
 }

@@ -102,8 +102,14 @@ try {
         $tab_category = ($level_raw === 'PG' || stripos($m['course_name'], 'Master') !== false) ? 'Master' : 'Bachelor';
         $duration = ($tab_category === 'Master') ? '2 Year' : '3 Year';
 
-        $desc = !empty($m['course_description']) ? trim($m['course_description']) : (!empty($m['default_description']) ? trim($m['default_description']) : '');
-        $link = !empty($m['course_link']) ? trim($m['course_link']) : '#';
+        $elig = !empty($m['eligibility_text']) ? trim($m['eligibility_text']) : '';
+        if (empty($elig)) {
+            if ($tab_category === 'Master' || $level_raw === 'PG') {
+                $elig = "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.";
+            } else {
+                $elig = "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.";
+            }
+        }
 
         $courses_data[] = [
             'id'             => (int)$m['mapping_id'],
@@ -116,6 +122,7 @@ try {
             'tab'            => $tab_category,
             'duration'       => $duration,
             'description'    => $desc,
+            'eligibility'    => $elig,
             'link'           => $link,
             'per_sem_fee'    => $m['per_semester_fee'],
             'total_fee'      => $m['total_program_fee'],
