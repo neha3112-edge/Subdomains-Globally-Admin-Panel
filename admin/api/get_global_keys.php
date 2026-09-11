@@ -21,13 +21,21 @@ $uni       = null;
 $all_slugs = [];
 
 if (!empty($uni_slug)) {
-    // Case-insensitive slug match
+    // Primary: Case-insensitive slug match
     $stmt = $db->prepare("SELECT * FROM universities WHERE LOWER(slug) = LOWER(?) AND is_active = 1 LIMIT 1");
     $stmt->execute([$uni_slug]);
     $uni = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Debug: get all slugs so we can identify mismatch
-    $all_slugs = $db->query("SELECT slug, full_name, is_active FROM universities ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+    // Fallback: match by short_name (e.g. subdomain='dsu', short_name='DSU')
+    if (!$uni) {
+        $stmt = $db->prepare("SELECT * FROM universities WHERE LOWER(short_name) = LOWER(?) AND is_active = 1 LIMIT 1");
+        $stmt->execute([$uni_slug]);
+        $uni = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Debug: get all slugs
+    $all_slugs = $db->query("SELECT slug, short_name, full_name, is_active FROM universities ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+
 
     if ($uni) {
         $uni_keys = [
