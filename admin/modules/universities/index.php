@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 // Fetch all universities
 $universities = $db->query("
     SELECT u.*, 
-           (SELECT COUNT(*) FROM university_course_mappings WHERE university_id = u.id) AS mapped_courses_count
+           (SELECT COUNT(*) FROM university_course_mappings WHERE university_id = u.id) AS mapped_courses_count,
+           (SELECT COUNT(*) FROM news_items WHERE university_id = u.id AND is_global = 0) AS news_count
     FROM universities u
     ORDER BY u.id DESC
 ")->fetchAll();
@@ -101,6 +102,10 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </td>
                             <td>
                                 <div class="table-actions">
+                                    <a href="<?php echo BASE_URL; ?>/modules/universities/edit.php?id=<?php echo $uni['id']; ?>#uni-news-section" class="action-btn" title="Manage News Announcements (<?php echo $uni['news_count']; ?>)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                                    </a>
+
                                     <a href="<?php echo BASE_URL; ?>/modules/universities/edit.php?id=<?php echo $uni['id']; ?>" class="action-btn" title="Edit University">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     </a>

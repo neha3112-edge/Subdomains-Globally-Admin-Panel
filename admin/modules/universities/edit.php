@@ -32,15 +32,84 @@ $assigned_accs = $stmt->fetchAll(PDO::FETCH_COLUMN);
 // Fetch all accreditations
 $all_accreditations = $db->query("SELECT * FROM accreditations ORDER BY title ASC")->fetchAll();
 
-// Fetch news items count for this university
-$stmt = $db->prepare("SELECT COUNT(*) FROM news_items WHERE is_global = 0 AND university_id = ?");
-$stmt->execute([$id]);
-$uni_news_count = (int)$stmt->fetchColumn();
+// Handle University News Actions (Save, Delete, Toggle Active)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
+    $post_action = $_POST['action'] ?? 'update_university';
+
+    if ($post_action === 'save_university_news') {
+        $news_id = !empty($_POST['news_id']) ? (int)$_POST['news_id'] : null;
+        $news_text = trim($_POST['news_text'] ?? '');
+        $news_link = trim($_POST['news_link'] ?? '');
+        $has_badge = isset($_POST['has_badge']) ? 1 : 0;
+        $badge_text = trim($_POST['badge_text'] ?? 'New');
+        if (empty($badge_text)) $badge_text = 'New';
+        $sort_order = (int)($_POST['sort_order'] ?? 0);
+        $is_active = isset($_POST['is_active']) ? 1 : 0;
+
+        if (empty($news_text)) {
+            set_flash_message('News text is required.', 'error');
+        } else {
+            if ($news_id) {
+                $stmt = $db->prepare("
+                    UPDATE news_items 
+                    SET news_text = ?, news_link = ?, has_badge = ?, badge_text = ?, sort_order = ?, is_active = ?, is_global = 0, university_id = ?
+                    WHERE id = ? AND university_id = ?
+                ");
+                $stmt->execute([$news_text, $news_link, $has_badge, $badge_text, $sort_order, $is_active, $id, $news_id, $id]);
+                set_flash_message('University news updated successfully!', 'success');
+            } else {
+                $stmt = $db->prepare("
+                    INSERT INTO news_items (is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order, is_active)
+                    VALUES (0, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([$id, $news_text, $news_link, $has_badge, $badge_text, $sort_order, $is_active]);
+                set_flash_message('University news added successfully!', 'success');
+            }
+
+            sode_bust_all_subdomain_caches($db);
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        }
+    } elseif ($post_action === 'delete_university_news') {
+        $news_id = (int)($_POST['news_id'] ?? 0);
+        if ($news_id) {
+            $stmt = $db->prepare("DELETE FROM news_items WHERE id = ? AND university_id = ?");
+            $stmt->execute([$news_id, $id]);
+            sode_bust_all_subdomain_caches($db);
+            set_flash_message('University news deleted successfully!', 'success');
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        }
+    } elseif ($post_action === 'toggle_university_news') {
+        $news_id = (int)($_POST['news_id'] ?? 0);
+        if ($news_id) {
+            $stmt = $db->prepare("UPDATE news_items SET is_active = IF(is_active=1, 0, 1) WHERE id = ? AND university_id = ?");
+            $stmt->execute([$news_id, $id]);
+            sode_bust_all_subdomain_caches($db);
+            set_flash_message('News status updated!', 'success');
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        }
+    }
+}
+
+// Fetch all news items for this university
+$uni_news_stmt = $db->prepare("SELECT * FROM news_items WHERE is_global = 0 AND university_id = ? ORDER BY sort_order ASC, id DESC");
+$uni_news_stmt->execute([$id]);
+$uni_news_list = $uni_news_stmt->fetchAll();
+$uni_news_count = count($uni_news_list);
+
+// Check if editing a specific news item
+$edit_uni_news = null;
+if (isset($_GET['edit_news_id'])) {
+    $edit_nid = (int)$_GET['edit_news_id'];
+    $stmt = $db->prepare("SELECT * FROM news_items WHERE id = ? AND university_id = ?");
+    $stmt->execute([$edit_nid, $id]);
+    $edit_uni_news = $stmt->fetch();
+}
 
 // Fetch global news count
 $global_news_count = (int)$db->query("SELECT COUNT(*) FROM news_items WHERE is_global = 1 AND is_active = 1")->fetchColumn();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_university') {
     verify_csrf();
 
     $full_name = trim($_POST['full_name'] ?? '');
@@ -182,6 +251,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
 <form method="POST" action="">
     <?php echo csrf_field(); ?>
+    <input type="hidden" name="action" value="update_university">
 
     <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px; align-items:start;">
         <!-- Left Column -->
@@ -524,17 +594,17 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
             </div>
 
-            <!-- University News Card -->
+            <!-- University News Summary Card -->
             <div class="admin-card">
                 <div class="card-header">
-                    <span class="card-title">News & Announcements</span>
+                    <span class="card-title">News & Marquee Status</span>
                 </div>
                 <div class="card-body">
                     <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px;">
                         This university currently displays <strong><?php echo $uni_news_count; ?> specific</strong> and <strong><?php echo $global_news_count; ?> universal</strong> announcements in the scrolling marquee.
                     </div>
-                    <a href="<?php echo BASE_URL; ?>/modules/news/index.php?filter_uni=<?php echo $id; ?>" class="btn-secondary" style="display:block; text-align:center; text-decoration:none; font-size:13px; padding:8px 12px; border-radius:6px;">
-                        📢 Manage News for this University &rarr;
+                    <a href="#uni-news-section" class="btn-secondary" style="display:block; text-align:center; text-decoration:none; font-size:13px; padding:8px 12px; border-radius:6px;">
+                        📢 Jump to News Section Below &darr;
                     </a>
                 </div>
             </div>
@@ -542,7 +612,192 @@ require_once ADMIN_PATH . '/includes/header.php';
     </div>
 </form>
 
+<!-- ==================================================== -->
+<!-- 6. UNIVERSITY-SPECIFIC NEWS & MARQUEE ANNOUNCEMENTS  -->
+<!-- ==================================================== -->
+<div class="admin-card" id="uni-news-section" style="margin-top: 28px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+            <span class="card-title">6. University-Specific News & Marquee (<?php echo htmlspecialchars($uni['short_name']); ?>)</span>
+            <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">
+                Announcements added here will display specifically on <strong><?php echo htmlspecialchars($uni['slug']); ?>.distanceeducationschool.com</strong> alongside universal news.
+            </div>
+        </div>
+        <span class="badge badge-info"><?php echo $uni_news_count; ?> Specific Announcements</span>
+    </div>
+
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px;">
+            <!-- Left: Add / Edit University News Form -->
+            <div style="background: var(--bg-card); padding: 18px; border: 1px solid var(--border-color); border-radius: 8px;">
+                <h4 style="margin: 0 0 14px 0; font-size: 14.5px; font-weight: 600; color: var(--text-color);">
+                    <?php echo $edit_uni_news ? 'Edit Announcement' : 'Add Announcement for ' . htmlspecialchars($uni['short_name']); ?>
+                </h4>
+
+                <form method="POST" action="#uni-news-section">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="save_university_news">
+                    <input type="hidden" name="news_id" value="<?php echo $edit_uni_news['id'] ?? ''; ?>">
+
+                    <div class="form-group">
+                        <label class="form-label">Announcement Text *</label>
+                        <textarea name="news_text" id="field_uni_news_text" class="form-textarea" rows="3" placeholder="e.g. For the latest notifications regarding student support, access the <?php echo htmlspecialchars($uni['short_name']); ?> Student Support Page." required><?php echo htmlspecialchars($edit_uni_news['news_text'] ?? ''); ?></textarea>
+                        
+                        <div style="margin-top: 6px; font-size: 11.5px; color: var(--text-dim);">
+                            <span>Tags:</span>
+                            <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('{UNIVERSITY_NAME}')">{UNIVERSITY_NAME}</button>
+                            <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('{UNIVERSITY_SHORT_NAME}')">{UNIVERSITY_SHORT_NAME}</button>
+                            <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('$YEAR$')">$YEAR$</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Link URL (Optional)</label>
+                        <input type="text" name="news_link" class="form-control" value="<?php echo htmlspecialchars($edit_uni_news['news_link'] ?? ''); ?>" placeholder="https://... or #">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label class="form-label">Badge</label>
+                            <label style="display:flex; align-items:center; gap:6px; margin-top:6px; cursor:pointer; font-size:13px;">
+                                <input type="checkbox" name="has_badge" value="1" <?php echo (!$edit_uni_news || !empty($edit_uni_news['has_badge'])) ? 'checked' : ''; ?>>
+                                <span>Show Badge</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Badge Text</label>
+                            <input type="text" name="badge_text" class="form-control" value="<?php echo htmlspecialchars($edit_uni_news['badge_text'] ?? 'New'); ?>" placeholder="New">
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label class="form-label">Sort Order</label>
+                            <input type="number" name="sort_order" class="form-control" value="<?php echo htmlspecialchars($edit_uni_news['sort_order'] ?? 0); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <label style="display:flex; align-items:center; gap:6px; margin-top:6px; cursor:pointer; font-size:13px;">
+                                <input type="checkbox" name="is_active" value="1" <?php echo (!$edit_uni_news || !empty($edit_uni_news['is_active'])) ? 'checked' : ''; ?>>
+                                <span>Active</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 14px; display:flex; gap:8px;">
+                        <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 13px;">
+                            <?php echo $edit_uni_news ? 'Update Announcement' : 'Add Announcement'; ?>
+                        </button>
+                        <?php if ($edit_uni_news): ?>
+                            <a href="<?php echo BASE_URL; ?>/modules/universities/edit.php?id=<?php echo $id; ?>#uni-news-section" class="btn-secondary" style="text-decoration:none; padding:8px 14px; font-size:13px;">Cancel</a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right: Table of University News -->
+            <div>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Announcement</th>
+                                <th>Badge</th>
+                                <th>Order</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($uni_news_list)): ?>
+                                <tr>
+                                    <td colspan="5" style="text-align:center; padding:30px; color:var(--text-dim);">
+                                        No specific news added for <?php echo htmlspecialchars($uni['short_name']); ?> yet.<br>
+                                        <small>(Universal announcements from Settings &rarr; Universal News will still display on the website)</small>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($uni_news_list as $un): ?>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: 500; font-size: 13px;">
+                                                <?php echo htmlspecialchars($un['news_text']); ?>
+                                            </div>
+                                            <?php if (!empty($un['news_link'])): ?>
+                                                <div style="font-size: 11px; color: var(--accent-color); margin-top: 2px;">
+                                                    <a href="<?php echo htmlspecialchars($un['news_link']); ?>" target="_blank" style="color: inherit; text-decoration: underline;">
+                                                        <?php echo htmlspecialchars(substr($un['news_link'], 0, 35)); ?><?php echo strlen($un['news_link']) > 35 ? '...' : ''; ?> ↗
+                                                    </a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($un['has_badge'])): ?>
+                                                <span style="background: #f3b23e; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
+                                                    <?php echo htmlspecialchars($un['badge_text'] ?: 'New'); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span style="color: var(--text-dim); font-size: 11px;">None</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background: var(--bg-input); color: var(--text-color); font-size: 11px;">
+                                                <?php echo (int)$un['sort_order']; ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <form method="POST" action="#uni-news-section" style="display:inline;">
+                                                <?php echo csrf_field(); ?>
+                                                <input type="hidden" name="action" value="toggle_university_news">
+                                                <input type="hidden" name="news_id" value="<?php echo $un['id']; ?>">
+                                                <button type="submit" style="background:none; border:none; cursor:pointer; padding:0;">
+                                                    <?php if (!empty($un['is_active'])): ?>
+                                                        <span class="badge badge-success" style="cursor:pointer;" title="Click to disable">Active</span>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-danger" style="cursor:pointer;" title="Click to activate">Inactive</span>
+                                                    <?php endif; ?>
+                                                </button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a href="<?php echo BASE_URL; ?>/modules/universities/edit.php?id=<?php echo $id; ?>&edit_news_id=<?php echo $un['id']; ?>#uni-news-section" class="action-btn" title="Edit">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                </a>
+
+                                                <form method="POST" action="#uni-news-section" class="confirm-delete" style="display:inline;">
+                                                    <?php echo csrf_field(); ?>
+                                                    <input type="hidden" name="action" value="delete_university_news">
+                                                    <input type="hidden" name="news_id" value="<?php echo $un['id']; ?>">
+                                                    <button type="submit" class="action-btn delete-btn" title="Delete">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+function insertUniTag(tag) {
+    var textarea = document.getElementById('field_uni_news_text');
+    if (!textarea) return;
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var text = textarea.value;
+    textarea.value = text.substring(0, start) + tag + text.substring(end);
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const fullNameInput = document.getElementById('field_full_name');
     const shortNameInput = document.getElementById('field_short_name');

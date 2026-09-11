@@ -157,15 +157,23 @@ function sode_run_auto_migrations(PDO $pdo) {
                     $db->exec("ALTER TABLE news_items ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER sort_order");
                 }
 
-                // 3. Register Sidebar Item for Latest News
-                $check_sidebar = $db->query("SELECT id FROM sidebar_items WHERE rbac_module_key = 'news' LIMIT 1")->fetch();
-                if (!$check_sidebar) {
-                    $sidebar_svg = '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z\"/></svg>';
+                // 3. Register Sidebar Item for Universal News in SETTINGS
+                $check_sidebar = $db->query("SELECT id FROM sidebar_items WHERE rbac_module_key IN ('news', 'universal_news') LIMIT 1")->fetch();
+                $sidebar_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>';
+                
+                if ($check_sidebar) {
+                    $db->prepare("
+                        UPDATE sidebar_items 
+                        SET display_name = 'Universal News', page_route = 'modules/universal_news/index.php',
+                            active_page_key = 'universal_news', rbac_module_key = 'universal_news', menu_section = 'SETTINGS', sort_order = 13, icon_svg = ?
+                        WHERE id = ?
+                    ")->execute([$sidebar_svg, $check_sidebar['id']]);
+                } else {
                     $stmt = $db->prepare("
                         INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
                     ");
-                    $stmt->execute(['Universal News', 'modules/news/index.php', 5, 'news', 'news', 'MANAGE', $sidebar_svg]);
+                    $stmt->execute(['Universal News', 'modules/universal_news/index.php', 13, 'universal_news', 'universal_news', 'SETTINGS', $sidebar_svg]);
                     $sidebar_id = $db->lastInsertId();
 
                     // Grant permission to all existing roles
@@ -179,10 +187,6 @@ function sode_run_auto_migrations(PDO $pdo) {
                 // 4. Seed initial news items if table is empty
                 $count = (int)$db->query("SELECT COUNT(*) FROM news_items")->fetchColumn();
                 if ($count === 0) {
-                    // Find DSU university ID if present
-                    $dsu_id = $db->query("SELECT id FROM universities WHERE LOWER(slug) IN ('dsu', 'dayananda-sagar-university') OR LOWER(short_name) = 'dsu' LIMIT 1")->fetchColumn();
-                    $dsu_id = $dsu_id ? (int)$dsu_id : null;
-
                     $seed_stmt = $db->prepare("
                         INSERT INTO news_items (is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order, is_active)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
@@ -218,6 +222,36 @@ function sode_run_auto_migrations(PDO $pdo) {
                         'New',
                         3
                     ]);
+                }
+            },
+
+            '2026_09_11_002_move_universal_news_to_settings' => function(PDO $db) {
+                // Ensure sidebar item is properly updated to SETTINGS
+                $sidebar_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>';
+                
+                $check = $db->query("SELECT id FROM sidebar_items WHERE rbac_module_key IN ('news', 'universal_news') LIMIT 1")->fetch();
+                if ($check) {
+                    $db->prepare("
+                        UPDATE sidebar_items 
+                        SET display_name = 'Universal News', page_route = 'modules/universal_news/index.php',
+                            active_page_key = 'universal_news', rbac_module_key = 'universal_news', menu_section = 'SETTINGS', sort_order = 13, icon_svg = ?
+                        WHERE id = ?
+                    ")->execute([$sidebar_svg, $check['id']]);
+                    $sidebar_id = $check['id'];
+                } else {
+                    $stmt = $db->prepare("
+                        INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
+                    ");
+                    $stmt->execute(['Universal News', 'modules/universal_news/index.php', 13, 'universal_news', 'universal_news', 'SETTINGS', $sidebar_svg]);
+                    $sidebar_id = $db->lastInsertId();
+                }
+
+                // Ensure all roles have access
+                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                $rsa_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                foreach ($roles as $r_id) {
+                    $rsa_stmt->execute([$r_id, $sidebar_id]);
                 }
             }
         ];
