@@ -7,6 +7,52 @@
  * Shortcodes: [latest_news], [universal_news], [sode_news]
  */
 
+if (defined('SODE_NEWS_MARQUEE_UNIVERSAL_LOADED')) {
+    return;
+}
+define('SODE_NEWS_MARQUEE_UNIVERSAL_LOADED', true);
+
+// Safe polyfills for WP helpers (standalone / central SSR safe)
+if (!function_exists('sanitize_title')) {
+    function sanitize_title($title) {
+        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string)$title), '-'));
+    }
+}
+if (!function_exists('esc_html')) {
+    function esc_html($text) {
+        return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+    }
+}
+if (!function_exists('esc_attr')) {
+    function esc_attr($text) {
+        return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+    }
+}
+if (!function_exists('esc_url')) {
+    function esc_url($url) {
+        return filter_var((string)$url, FILTER_SANITIZE_URL);
+    }
+}
+if (!function_exists('esc_js')) {
+    function esc_js($text) {
+        return addslashes((string)$text);
+    }
+}
+if (!function_exists('shortcode_atts')) {
+    function shortcode_atts($pairs, $atts, $shortcode = '') {
+        $atts = (array)$atts;
+        $out = [];
+        foreach ($pairs as $name => $default) {
+            if (array_key_exists($name, $atts)) {
+                $out[$name] = $atts[$name];
+            } else {
+                $out[$name] = $default;
+            }
+        }
+        return $out;
+    }
+}
+
 if (!function_exists('sode_news_marquee_render')) {
     function sode_news_marquee_render($atts = []) {
         $atts = shortcode_atts([
@@ -123,6 +169,17 @@ if (!function_exists('sode_news_marquee_render')) {
                     }
                 }
             }
+        }
+
+        // Fallback default items if DB and API returned empty (ensures it never displays blank)
+        if (empty($news_items)) {
+            $news_items = [
+                ['text' => 'Admissions Open for Academic Session $session$ - Apply Now!', 'link' => '#', 'has_badge' => 1, 'badge_text' => 'New'],
+                ['text' => '{UNIVERSITY_NAME} Online Degree Programs are UGC-DEB Entitled & NAAC Accredited', 'link' => '#', 'has_badge' => 1, 'badge_text' => 'New'],
+                ['text' => 'Avail Up to 30% Exclusive Academic Scholarship on {UNIVERSITY_SHORT_NAME} Programs', 'link' => '#', 'has_badge' => 1, 'badge_text' => 'New'],
+                ['text' => '100% Placement Assistance & Dedicated Career Support for Online Students', 'link' => '#', 'has_badge' => 0, 'badge_text' => ''],
+                ['text' => 'Flexible Weekend Live Lectures & 24/7 E-Library LMS Access', 'link' => '#', 'has_badge' => 0, 'badge_text' => ''],
+            ];
         }
 
         // Apply Placeholders Replacement on client side
