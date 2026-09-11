@@ -30,6 +30,7 @@ if (file_exists($admin_dir . '/config/config.php')) {
 require_once $root_dir . '/lead-form-universal.php';
 require_once $root_dir . '/education-banner-universal.php';
 require_once $root_dir . '/news-marquee-universal.php';
+require_once $root_dir . '/courses-universal.php';
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -46,6 +47,20 @@ switch ($component) {
     case 'banner':
     case 'edu_banner':
         echo edu_banner_shortcode($params);
+        break;
+
+    case 'courses':
+    case 'university_courses':
+    case 'uni_courses':
+    case 'university_programs':
+        echo sode_courses_tabs_render($params);
+        break;
+
+    case 'courses_list':
+    case 'university_courses_list':
+    case 'uni_courses_list':
+    case 'uni_courses_text':
+        echo sode_courses_list_render($params);
         break;
 
     case 'latest_news':

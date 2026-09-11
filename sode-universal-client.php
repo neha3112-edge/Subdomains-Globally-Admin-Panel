@@ -525,6 +525,53 @@ add_shortcode('sode_news', function($atts) {
 });
 
 // ====================================================
+// 2.7. UNIVERSITY COURSES & MAPPINGS SHORTCODES
+// [university_courses], [uni_courses], [sode_courses]
+// [university_courses_list], [uni_courses_list], [courses_list]
+// ====================================================
+add_shortcode('university_courses', function($atts) {
+    if (function_exists('sode_courses_tabs_render')) {
+        return sode_courses_tabs_render($atts);
+    }
+    return sode_fetch_remote_component('university_courses', $atts);
+});
+
+add_shortcode('uni_courses', function($atts) {
+    if (function_exists('sode_courses_tabs_render')) {
+        return sode_courses_tabs_render($atts);
+    }
+    return sode_fetch_remote_component('university_courses', $atts);
+});
+
+add_shortcode('sode_courses', function($atts) {
+    if (function_exists('sode_courses_tabs_render')) {
+        return sode_courses_tabs_render($atts);
+    }
+    return sode_fetch_remote_component('university_courses', $atts);
+});
+
+add_shortcode('university_courses_list', function($atts) {
+    if (function_exists('sode_courses_list_render')) {
+        return sode_courses_list_render($atts);
+    }
+    return sode_fetch_remote_component('university_courses_list', $atts);
+});
+
+add_shortcode('uni_courses_list', function($atts) {
+    if (function_exists('sode_courses_list_render')) {
+        return sode_courses_list_render($atts);
+    }
+    return sode_fetch_remote_component('university_courses_list', $atts);
+});
+
+add_shortcode('courses_list', function($atts) {
+    if (function_exists('sode_courses_list_render')) {
+        return sode_courses_list_render($atts);
+    }
+    return sode_fetch_remote_component('university_courses_list', $atts);
+});
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 add_shortcode('site_year', function($atts) {
@@ -844,5 +891,9 @@ if (file_exists(__DIR__ . '/site-year-universal.php')) {
 
 if (file_exists(__DIR__ . '/news-marquee-universal.php')) {
     require_once __DIR__ . '/news-marquee-universal.php';
+}
+
+if (file_exists(__DIR__ . '/courses-universal.php')) {
+    require_once __DIR__ . '/courses-universal.php';
 }
 
