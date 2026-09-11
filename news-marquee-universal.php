@@ -14,7 +14,7 @@ if (!function_exists('sode_news_marquee_render')) {
             'uni'        => '',
             'heading'    => 'Latest News',
             'speed'      => '',
-            'height'     => '100%',
+            'height'     => '',
             'limit'      => 20,
         ], $atts);
 
@@ -215,8 +215,7 @@ if (!function_exists('sode_news_marquee_render')) {
         <style>
         #<?php echo esc_attr($unique_id); ?>.sode-news-card-wrapper {
             width: 100%;
-            height: 100%;
-            max-width: 100%;
+            max-width: 440px;
             margin: 0 auto;
             box-sizing: border-box;
             display: flex;
@@ -226,7 +225,7 @@ if (!function_exists('sode_news_marquee_render')) {
             background-color: #dbeafe;
             background: linear-gradient(180deg, #e4efff 0%, #d8e8fe 100%);
             border-radius: 20px;
-            padding: 24px 22px 20px 22px;
+            padding: 22px 20px 18px 20px;
             box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
             border: 1px solid rgba(191, 219, 254, 0.85);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -234,19 +233,17 @@ if (!function_exists('sode_news_marquee_render')) {
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
-            height: 100%;
-            min-height: 380px;
             display: flex;
             flex-direction: column;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-header {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             flex-shrink: 0;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-title {
-            margin: 0 0 14px 0;
-            font-size: 22px;
+            margin: 0 0 12px 0;
+            font-size: 21px;
             font-weight: 700;
             color: #0f3b82;
             letter-spacing: -0.3px;
@@ -261,8 +258,9 @@ if (!function_exists('sode_news_marquee_render')) {
         #<?php echo esc_attr($unique_id); ?> .sode-news-viewport {
             overflow: hidden;
             position: relative;
-            flex: 1;
-            min-height: 280px;
+            height: 250px;
+            min-height: 200px;
+            max-height: 340px;
             mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
             -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
         }
@@ -279,11 +277,11 @@ if (!function_exists('sode_news_marquee_render')) {
             animation-play-state: paused !important;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-item {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             box-sizing: border-box;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-item:last-child {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-link {
             text-decoration: none;
@@ -301,8 +299,8 @@ if (!function_exists('sode_news_marquee_render')) {
             color: #243c7c;
         }
         #<?php echo esc_attr($unique_id); ?> .sode-news-text {
-            font-size: 14.5px;
-            line-height: 1.55;
+            font-size: 14px;
+            line-height: 1.5;
             font-weight: 500;
             color: #243c7c;
             display: inline;
@@ -312,9 +310,9 @@ if (!function_exists('sode_news_marquee_render')) {
             background: #f3b23e;
             background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
             color: #ffffff;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: 4px;
             margin-left: 6px;
             vertical-align: 1px;
@@ -322,6 +320,24 @@ if (!function_exists('sode_news_marquee_render')) {
             letter-spacing: 0.2px;
             animation: sodeBadgePulse 2.4s ease-in-out infinite;
         }
+
+        /* Mobile specific height and styling */
+        @media (max-width: 768px) {
+            #<?php echo esc_attr($unique_id); ?>.sode-news-card-wrapper {
+                max-width: 100%;
+                margin-top: 20px;
+            }
+            #<?php echo esc_attr($unique_id); ?> .sode-news-card {
+                padding: 20px 16px 16px 16px;
+                border-radius: 16px;
+            }
+            #<?php echo esc_attr($unique_id); ?> .sode-news-viewport {
+                height: 220px !important;
+                min-height: 180px;
+                max-height: 240px;
+            }
+        }
+
         @keyframes sodeNewsMarqueeAnim {
             0% {
                 transform: translateY(0);
@@ -341,6 +357,41 @@ if (!function_exists('sode_news_marquee_render')) {
             }
         }
         </style>
+
+        <script>
+        (function() {
+            function adjustNewsHeight() {
+                var el = document.getElementById('<?php echo esc_js($unique_id); ?>');
+                if (!el || window.innerWidth <= 768) return;
+                
+                // Find adjacent left content column in Elementor
+                var container = el.closest('.elementor-widget-wrap') || el.closest('.elementor-column') || el.parentElement;
+                if (!container || !container.parentElement) return;
+
+                var sibling = container.parentElement.querySelector('.elementor-column:first-child') || container.previousElementSibling;
+                if (sibling) {
+                    var sibHeight = sibling.offsetHeight;
+                    if (sibHeight > 220 && sibHeight < 650) {
+                        var headerEl = el.querySelector('.sode-news-header');
+                        var headerH = headerEl ? headerEl.offsetHeight : 55;
+                        var vp = el.querySelector('.sode-news-viewport');
+                        if (vp) {
+                            var targetH = Math.max(190, sibHeight - headerH - 45);
+                            vp.style.height = targetH + 'px';
+                        }
+                    }
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', adjustNewsHeight);
+            } else {
+                adjustNewsHeight();
+            }
+            window.addEventListener('resize', adjustNewsHeight);
+            setTimeout(adjustNewsHeight, 500);
+        })();
+        </script>
         <?php
         return ob_get_clean();
     }
