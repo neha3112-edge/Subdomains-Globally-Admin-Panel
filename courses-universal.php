@@ -439,7 +439,6 @@ if (!function_exists('sode_courses_tabs_render')) {
             #<?php echo esc_attr($unique_id); ?> .sode-course-tab-btn:hover {
                 background: #e2e8f0;
                 color: #0f172a;
-                transform: translateY(-1px);
             }
 
             #<?php echo esc_attr($unique_id); ?> .sode-course-tab-btn.active {
@@ -447,7 +446,6 @@ if (!function_exists('sode_courses_tabs_render')) {
                 color: #ffffff;
                 border-color: #0b3b82;
                 box-shadow: 0 4px 14px rgba(11, 59, 130, 0.25);
-                transform: translateY(-1px);
             }
 
             /* Grid */
