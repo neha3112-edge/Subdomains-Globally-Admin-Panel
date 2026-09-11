@@ -15,25 +15,33 @@ foreach ($global_rows as $k) {
     $map[$k['key_code']] = $k['key_value'];
 }
 
-// ── 2. University-Specific Keys (returned when ?uni=slug passed) ──────
-$uni_slug = trim($_GET['uni'] ?? '');
+// ── 2. University-Specific Keys (returned when ?uni=slug passed) ───────
+$uni_slug  = trim($_GET['uni'] ?? '');
+$uni       = null;
+$all_slugs = [];
+
 if (!empty($uni_slug)) {
-    $stmt = $db->prepare("SELECT * FROM universities WHERE slug = ? AND is_active = 1 LIMIT 1");
+    // Case-insensitive slug match
+    $stmt = $db->prepare("SELECT * FROM universities WHERE LOWER(slug) = LOWER(?) AND is_active = 1 LIMIT 1");
     $stmt->execute([$uni_slug]);
     $uni = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // Debug: get all slugs so we can identify mismatch
+    $all_slugs = $db->query("SELECT slug, full_name, is_active FROM universities ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+
     if ($uni) {
-        // Map university DB fields → placeholder keys (all pattern variants)
         $uni_keys = [
-            // Name variants
+            // University Name
             '{UNIVERSITY_NAME}'          => $uni['full_name']  ?? '',
             '{university_name}'          => $uni['full_name']  ?? '',
             '$UNIVERSITY_NAME$'          => $uni['full_name']  ?? '',
 
+            // Short Name
             '{UNIVERSITY_SHORT_NAME}'    => $uni['short_name'] ?? '',
             '{university_short_name}'    => $uni['short_name'] ?? '',
             '$UNIVERSITY_SHORT_NAME$'    => $uni['short_name'] ?? '',
 
+            // Slug
             '{UNIVERSITY_SLUG}'          => $uni['slug']       ?? '',
             '$UNIVERSITY_SLUG$'          => $uni['slug']       ?? '',
 
@@ -63,8 +71,8 @@ if (!empty($uni_slug)) {
             '$ASSIGNMENT_DATE$'          => $uni['assignment_date']      ?? '',
 
             // Rating
-            '{UNIVERSITY_RATING}'        => $uni['rating']     ?? '',
-            '$RATING$'                   => $uni['rating']     ?? '',
+            '{UNIVERSITY_RATING}'        => $uni['rating'] ?? '',
+            '$RATING$'                   => $uni['rating'] ?? '',
         ];
 
         // Merge — university keys override global keys if same code
@@ -73,9 +81,11 @@ if (!empty($uni_slug)) {
 }
 
 echo json_encode([
-    'success' => true,
-    'uni'     => $uni_slug ?: null,
-    'keys'    => $map,
-    'data'    => $map,
-    'count'   => count($map),
+    'success'   => true,
+    'uni'       => $uni_slug ?: null,
+    'uni_found' => !empty($uni),     // debug: was university found in DB?
+    'all_slugs' => $all_slugs,       // debug: all slugs available in DB
+    'keys'      => $map,
+    'data'      => $map,
+    'count'     => count($map),
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
