@@ -56,61 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/**
- * Pings each active university subdomain to clear WP Rocket + Redis + Elementor cache.
- * TRUE fire-and-forget — admin save page does NOT wait for responses.
- */
-function sode_bust_all_subdomain_caches(PDO $db) {
-    try {
-        $unis = $db->query("SELECT slug FROM universities WHERE is_active = 1")->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($unis as $slug) {
-            $url = 'https://' . $slug . '.distanceeducationschool.com/?sode_flush=sode_flush_2026';
-            sode_fire_and_forget($url);
-        }
-    } catch (Exception $e) {
-        error_log('SODE cache bust failed: ' . $e->getMessage());
-    }
-}
-
-/**
- * Truly non-blocking HTTP GET — sends request, does NOT wait for response.
- * Admin page loads instantly regardless of subdomain response time.
- */
-function sode_fire_and_forget($url) {
-    // Method 1: Background shell process (fastest, zero wait)
-    if (function_exists('exec') && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
-        @exec("curl -k -s --max-time 5 '" . addslashes($url) . "' > /dev/null 2>&1 &");
-        return;
-    }
-
-    // Method 2: cURL with 100ms timeout (effectively fire-and-forget)
-    if (function_exists('curl_init')) {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT_MS     => 100,   // 100ms max wait — then move on
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_NOBODY         => true,   // Don't download body
-            CURLOPT_FOLLOWLOCATION => true,
-        ]);
-        @curl_exec($ch);
-        curl_close($ch);
-        return;
-    }
-
-    // Method 3: fsockopen (non-blocking socket, no wait for response)
-    $parts = parse_url($url);
-    $host  = $parts['host'] ?? '';
-    $path  = ($parts['path'] ?? '/') . '?' . ($parts['query'] ?? '');
-    $fp = @fsockopen('ssl://' . $host, 443, $errno, $errstr, 1);
-    if ($fp) {
-        @fwrite($fp, "GET $path HTTP/1.1\r\nHost: $host\r\nConnection: close\r\n\r\n");
-        @fclose($fp); // Close immediately — don't wait for response
-    }
-}
-
-
 // Edit Mode
 $edit_key = null;
 if (isset($_GET['edit_id'])) {
