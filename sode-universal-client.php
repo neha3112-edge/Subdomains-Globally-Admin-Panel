@@ -671,6 +671,31 @@ add_shortcode('site_year', function($atts) {
 });
 
 // ====================================================
+// 3.5. UNIVERSAL FOOTER SHORTCODES
+// [footer_section], [universal_footer], [sode_footer]
+// ====================================================
+add_shortcode('footer_section', function($atts) {
+    if (function_exists('sode_footer_render')) {
+        return sode_footer_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('footer', $atts ?: []);
+});
+
+add_shortcode('universal_footer', function($atts) {
+    if (function_exists('sode_footer_render')) {
+        return sode_footer_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('footer', $atts ?: []);
+});
+
+add_shortcode('sode_footer', function($atts) {
+    if (function_exists('sode_footer_render')) {
+        return sode_footer_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('footer', $atts ?: []);
+});
+
+// ====================================================
 // 4. SECURITY TOKEN & AJAX LEAD HANDLER
 // ====================================================
 add_action('init', function () {

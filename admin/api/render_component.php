@@ -91,6 +91,7 @@ switch ($component) {
     case 'footer':
     case 'universal_footer':
     case 'sode_footer':
+    case 'footer_section':
         echo sode_footer_render($params);
         break;
 

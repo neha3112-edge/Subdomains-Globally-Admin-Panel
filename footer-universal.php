@@ -681,10 +681,10 @@ if (!function_exists('sode_footer_render')) {
 <script>
 (function(){
     var uid = '<?php echo $uid; ?>';
-    var sliderIds = <?php echo json_encode(array_filter([
+    var sliderIds = <?php echo json_encode(array_values(array_filter([
         $use_slider_desktop ? $uid . '_desk' : null,
         $use_slider_mobile  ? $uid . '_mob'  : null,
-    ])); ?>;
+    ]))); ?>;
 
     sliderIds.forEach(function(sid) {
         if (!sid) return;
