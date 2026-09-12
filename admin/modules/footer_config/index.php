@@ -63,6 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'cta_btn_text'         => trim($_POST['cta_btn_text']         ?? 'Book Free 1:1 Counseling'),
         'cta_btn_link'         => trim($_POST['cta_btn_link']         ?? '#'),
         'cta_btn_phone'        => trim($_POST['cta_btn_phone']        ?? ''),
+        'cta_btn_class'        => trim($_POST['cta_btn_class']        ?? ''),
+        'cta_btn_newtab'       => !empty($_POST['cta_btn_newtab']) ? 1 : 0,
         'ai_tools_heading'     => trim($_POST['ai_tools_heading']     ?? 'Explore AI Powered Tools'),
         'ai_tools_subtext'     => trim($_POST['ai_tools_subtext']     ?? ''),
         'ai_tools_cards_json'  => json_encode($ai_cards,      JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -77,6 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     $db->exec("CREATE TABLE IF NOT EXISTS footer_config (id INT UNSIGNED NOT NULL DEFAULT 1, PRIMARY KEY(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_class` VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
+    try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_newtab` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $e) {}
     $set_parts = []; $vals = [];
     foreach ($fields as $k => $v) { $set_parts[] = "`$k` = ?"; $vals[] = $v; }
     $db->prepare("INSERT INTO footer_config (id) VALUES(1) ON DUPLICATE KEY UPDATE id=1")->execute();
@@ -86,6 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch config
+try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_class` VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_newtab` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $e) {}
 $config = $db->query("SELECT * FROM footer_config WHERE id = 1")->fetch(PDO::FETCH_ASSOC) ?: [];
 
 // Parse JSON
@@ -243,12 +249,12 @@ require_once ADMIN_PATH . '/includes/header.php';
 
     <?php
     // Preserve other tabs' scalar fields
-    $all_scalar = ['cta_heading','cta_subtext','cta_btn_text','cta_btn_link','cta_btn_phone',
+    $all_scalar = ['cta_heading','cta_subtext','cta_btn_text','cta_btn_link','cta_btn_phone','cta_btn_class','cta_btn_newtab',
                    'ai_tools_heading','ai_tools_subtext',
                    'about_logo_url','about_title','about_subtitle','about_sode_text',
                    'legal_notice_heading','legal_notice_text','copyright_text'];
     $tab_scalars = [
-        'cta'      => ['cta_heading','cta_subtext','cta_btn_text','cta_btn_link','cta_btn_phone'],
+        'cta'      => ['cta_heading','cta_subtext','cta_btn_text','cta_btn_link','cta_btn_phone','cta_btn_class','cta_btn_newtab'],
         'ai_tools' => ['ai_tools_heading','ai_tools_subtext'],
         'about'    => ['about_logo_url','about_title','about_subtitle','about_sode_text'],
         'legal'    => ['legal_notice_heading','legal_notice_text','copyright_text'],
@@ -303,12 +309,24 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label">Button Link</label>
-                    <input type="text" name="cta_btn_link" class="form-control" value="<?php echo fc_val($config,'cta_btn_link'); ?>">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" name="cta_btn_link" class="form-control" value="<?php echo fc_val($config,'cta_btn_link'); ?>" style="flex:1;">
+                        <label style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim); white-space:nowrap; cursor:pointer; margin:0; padding:7px 10px; background:rgba(255,255,255,0.04); border:1px solid var(--border-subtle, #2a3550); border-radius:6px; user-select:none;" title="Open link in new tab">
+                            <input type="checkbox" name="cta_btn_newtab" value="1" <?php echo !empty($config['cta_btn_newtab']) ? 'checked' : ''; ?> style="accent-color:var(--primary, #6366f1); width:15px; height:15px; cursor:pointer; margin:0;">
+                            New Tab
+                        </label>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Phone Number <span style="color:var(--text-dim); font-weight:400;">(optional — overrides Button Link with tel:)</span></label>
-                <input type="text" name="cta_btn_phone" class="form-control" value="<?php echo fc_val($config,'cta_btn_phone'); ?>" placeholder="+91XXXXXXXXXX">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Button Class <span style="color:var(--text-dim); font-weight:400;">(optional — for popup trigger or custom styling)</span></label>
+                    <input type="text" name="cta_btn_class" class="form-control" value="<?php echo fc_val($config,'cta_btn_class'); ?>" placeholder="e.g. open-counseling-popup">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number <span style="color:var(--text-dim); font-weight:400;">(optional — overrides Button Link with tel:)</span></label>
+                    <input type="text" name="cta_btn_phone" class="form-control" value="<?php echo fc_val($config,'cta_btn_phone'); ?>" placeholder="+91XXXXXXXXXX">
+                </div>
             </div>
         </div>
     </div>

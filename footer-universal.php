@@ -84,7 +84,7 @@ if (!function_exists('sode_get_footer_config')) {
         // Ensure all keys exist using fallback defaults
         $fallback = sode_footer_fallback_config();
         foreach ($fallback as $k => $v) {
-            if (!isset($cfg[$k]) || ($cfg[$k] === '' && $k !== 'cta_btn_phone' && $k !== 'about_logo_url')) {
+            if (!isset($cfg[$k]) || ($cfg[$k] === '' && $k !== 'cta_btn_phone' && $k !== 'cta_btn_class' && $k !== 'cta_btn_newtab' && $k !== 'about_logo_url')) {
                 $cfg[$k] = $v;
             }
         }
@@ -142,6 +142,8 @@ if (!function_exists('sode_footer_fallback_config')) {
             'cta_btn_text'         => 'Book Free 1:1 Counseling',
             'cta_btn_link'         => '#',
             'cta_btn_phone'        => '',
+            'cta_btn_class'        => '',
+            'cta_btn_newtab'       => 0,
             'ai_tools_heading'     => 'Explore AI Powered Tools',
             'ai_tools_subtext'     => 'Make smarter education decisions with AI-powered tools',
             'ai_tools'             => [
@@ -225,9 +227,11 @@ if (!function_exists('sode_footer_render')) {
                 <?php endif; ?>
             </div>
             <?php
-            $btn_link = !empty($cfg['cta_btn_phone']) ? 'tel:' . preg_replace('/\s+/', '', $cfg['cta_btn_phone']) : ($cfg['cta_btn_link'] ?: '#');
+            $btn_link   = !empty($cfg['cta_btn_phone']) ? 'tel:' . preg_replace('/\s+/', '', $cfg['cta_btn_phone']) : ($cfg['cta_btn_link'] ?: '#');
+            $cta_cls    = 'sf-cta-btn' . (!empty($cfg['cta_btn_class']) ? ' ' . htmlspecialchars(trim($cfg['cta_btn_class'])) : '');
+            $cta_target = !empty($cfg['cta_btn_newtab']) ? ' target="_blank" rel="noopener"' : '';
             ?>
-            <a href="<?php echo htmlspecialchars($btn_link); ?>" class="sf-cta-btn">
+            <a href="<?php echo htmlspecialchars($btn_link); ?>" class="<?php echo $cta_cls; ?>"<?php echo $cta_target; ?>>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.36 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.79a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 <?php echo htmlspecialchars($cfg['cta_btn_text']); ?>
             </a>

@@ -466,6 +466,8 @@ function sode_run_auto_migrations(PDO $pdo) {
                     'cta_btn_text'         => "VARCHAR(100) NOT NULL DEFAULT 'Book Free 1:1 Counseling'",
                     'cta_btn_link'         => "VARCHAR(500) NOT NULL DEFAULT '#'",
                     'cta_btn_phone'        => "VARCHAR(50) NOT NULL DEFAULT ''",
+                    'cta_btn_class'        => "VARCHAR(255) NOT NULL DEFAULT ''",
+                    'cta_btn_newtab'       => "TINYINT(1) NOT NULL DEFAULT 0",
                     'ai_tools_heading'     => "VARCHAR(255) NOT NULL DEFAULT 'Explore AI Powered Tools'",
                     'ai_tools_subtext'     => "VARCHAR(255) NOT NULL DEFAULT 'Make smarter education decisions with AI-powered tools'",
                     'about_logo_url'       => "VARCHAR(500) NOT NULL DEFAULT ''",
