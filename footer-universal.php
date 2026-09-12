@@ -259,7 +259,7 @@ if (!function_exists('sode_footer_render')) {
                             <p class="sf-ai-card-title"><?php echo htmlspecialchars($t['title'] ?? ''); ?></p>
                             <p class="sf-ai-card-desc"><?php echo htmlspecialchars($t['desc'] ?? ''); ?></p>
                             <?php if (!empty($t['btn_link'])): ?>
-                            <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
+                            <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"<?php echo !empty($t['new_tab']) ? ' target="_blank" rel="noopener"' : ''; ?>><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
                             <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
@@ -276,7 +276,7 @@ if (!function_exists('sode_footer_render')) {
                     <p class="sf-ai-card-title"><?php echo htmlspecialchars($t['title'] ?? ''); ?></p>
                     <p class="sf-ai-card-desc"><?php echo htmlspecialchars($t['desc'] ?? ''); ?></p>
                     <?php if (!empty($t['btn_link'])): ?>
-                    <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
+                    <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"<?php echo !empty($t['new_tab']) ? ' target="_blank" rel="noopener"' : ''; ?>><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
@@ -297,7 +297,7 @@ if (!function_exists('sode_footer_render')) {
                             <p class="sf-ai-card-title"><?php echo htmlspecialchars($t['title'] ?? ''); ?></p>
                             <p class="sf-ai-card-desc"><?php echo htmlspecialchars($t['desc'] ?? ''); ?></p>
                             <?php if (!empty($t['btn_link'])): ?>
-                            <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
+                            <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"<?php echo !empty($t['new_tab']) ? ' target="_blank" rel="noopener"' : ''; ?>><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
                             <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
@@ -314,7 +314,7 @@ if (!function_exists('sode_footer_render')) {
                     <p class="sf-ai-card-title"><?php echo htmlspecialchars($t['title'] ?? ''); ?></p>
                     <p class="sf-ai-card-desc"><?php echo htmlspecialchars($t['desc'] ?? ''); ?></p>
                     <?php if (!empty($t['btn_link'])): ?>
-                    <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
+                    <a href="<?php echo htmlspecialchars($t['btn_link']); ?>" class="sf-ai-btn"<?php echo !empty($t['new_tab']) ? ' target="_blank" rel="noopener"' : ''; ?>><?php echo htmlspecialchars($t['btn_text'] ?? 'Learn More'); ?></a>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>

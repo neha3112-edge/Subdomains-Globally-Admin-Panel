@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tool_btn_links = $_POST['tool_btn_link'] ?? [];
     $tool_svgs      = $_POST['tool_svg']      ?? [];
     $tool_orders    = $_POST['tool_order']    ?? [];
+    $tool_newtabs   = $_POST['tool_newtab']   ?? [];
     foreach ($tool_titles as $i => $title) {
         $title = trim($title);
         if ($title === '') continue;
@@ -31,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'desc'       => trim($tool_descs[$i]     ?? ''),
             'btn_text'   => trim($tool_btn_texts[$i] ?? ''),
             'btn_link'   => trim($tool_btn_links[$i] ?? ''),
+            'new_tab'    => !empty($tool_newtabs[$i]) ? 1 : 0,
         ];
     }
     usort($ai_cards, fn($a, $b) => $a['sort_order'] <=> $b['sort_order']);
@@ -266,6 +268,7 @@ require_once ADMIN_PATH . '/includes/header.php';
             echo '<input type="hidden" name="tool_btn_text['.$i.']" value="'.htmlspecialchars($t['btn_text']??'').'">';
             echo '<input type="hidden" name="tool_btn_link['.$i.']" value="'.htmlspecialchars($t['btn_link']??'').'">';
             echo '<input type="hidden" name="tool_svg['.$i.']" value="'.htmlspecialchars($t['icon_svg']??'').'">';
+            if (!empty($t['new_tab'])) echo '<input type="hidden" name="tool_newtab['.$i.']" value="1">';
         }
     }
     // Preserve links when not on links tab
@@ -369,7 +372,13 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label class="form-label" style="font-size:11.5px;">Button Link</label>
-                                <input type="text" name="tool_btn_link[]" class="form-control" value="<?php echo htmlspecialchars($tool['btn_link']??''); ?>" placeholder="#suggest-university">
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input type="text" name="tool_btn_link[]" class="form-control" value="<?php echo htmlspecialchars($tool['btn_link']??''); ?>" placeholder="#suggest-university" style="flex:1;">
+                                    <label style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim); white-space:nowrap; cursor:pointer; margin:0; padding:7px 10px; background:rgba(255,255,255,0.04); border:1px solid var(--border-subtle, #2a3550); border-radius:6px; user-select:none;" title="Open link in new tab">
+                                        <input type="checkbox" class="tool-newtab-cb" name="tool_newtab[<?php echo $i; ?>]" value="1" <?php echo !empty($tool['new_tab']) ? 'checked' : ''; ?> style="accent-color:var(--primary, #6366f1); width:15px; height:15px; cursor:pointer; margin:0;">
+                                        New Tab
+                                    </label>
+                                </div>
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label class="form-label" style="font-size:11.5px;">Icon SVG <span style="color:var(--text-dim); font-weight:400;">(optional)</span></label>
@@ -541,7 +550,13 @@ function addToolCard() {
             </div>
             <div class="form-group" style="margin:0;">
                 <label class="form-label" style="font-size:11.5px;">Button Link</label>
-                <input type="text" name="tool_btn_link[]" class="form-control" placeholder="#suggest-university">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" name="tool_btn_link[]" class="form-control" placeholder="#suggest-university" style="flex:1;">
+                    <label style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim); white-space:nowrap; cursor:pointer; margin:0; padding:7px 10px; background:rgba(255,255,255,0.04); border:1px solid var(--border-subtle, #2a3550); border-radius:6px; user-select:none;" title="Open link in new tab">
+                        <input type="checkbox" class="tool-newtab-cb" name="tool_newtab[new_${toolCount}]" value="1" style="accent-color:var(--primary, #6366f1); width:15px; height:15px; cursor:pointer; margin:0;">
+                        New Tab
+                    </label>
+                </div>
             </div>
             <div class="form-group" style="margin:0;">
                 <label class="form-label" style="font-size:11.5px;">Icon SVG <span style="color:var(--text-dim); font-weight:400;">(optional)</span></label>
@@ -564,11 +579,28 @@ function addFooterLink() {
         <input type="text" name="link_class[]" class="form-control" placeholder="css-class (optional)">
         <div class="fc-newtab-wrap">
             <label style="font-size:10px; color:var(--text-dim);">New Tab</label>
-            <input type="checkbox" name="link_newtab[new_${linkCount}]" value="1" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);">
+            <input type="checkbox" class="link-newtab-cb" name="link_newtab[new_${linkCount}]" value="1" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);">
         </div>
         <button type="button" class="fc-remove-btn" onclick="this.closest('.fc-link-row').remove()" style="padding:5px 8px;">✕</button>`;
     list.appendChild(div);
     div.querySelector('input[name="link_label[]"]').focus();
+}
+
+// Re-index all checkboxes sequentially on form submit to ensure exact 1-to-1 array alignment
+var fcForm = document.getElementById('fc-form');
+if (fcForm) {
+    fcForm.addEventListener('submit', function() {
+        var toolCards = document.querySelectorAll('#ai-tools-list .fc-tool-card');
+        toolCards.forEach(function(card, idx) {
+            var cb = card.querySelector('input.tool-newtab-cb');
+            if (cb) cb.name = 'tool_newtab[' + idx + ']';
+        });
+        var linkRows = document.querySelectorAll('#links-list .fc-link-row');
+        linkRows.forEach(function(row, idx) {
+            var cb = row.querySelector('input[type="checkbox"]');
+            if (cb) cb.name = 'link_newtab[' + idx + ']';
+        });
+    });
 }
 </script>
 
