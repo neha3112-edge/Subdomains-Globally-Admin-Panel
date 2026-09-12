@@ -100,6 +100,40 @@ if (!function_exists('sode_get_footer_config')) {
     }
 }
 
+// Helper: get official_url for the current university (from DB via slug constant)
+if (!function_exists('sode_footer_get_official_url')) {
+    function sode_footer_get_official_url() {
+        static $url = null;
+        if ($url !== null) return $url;
+        $url = '';
+        try {
+            if (function_exists('get_db_connection')) {
+                $db = get_db_connection();
+                if ($db) {
+                    $slug = null;
+                    // 1. Use SODE_UNIVERSITY_SLUG constant (set by WordPress plugin)
+                    if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+                        $slug = SODE_UNIVERSITY_SLUG;
+                    }
+                    // 2. Fallback: global_settings table
+                    if (!$slug) {
+                        $gk = $db->query("SELECT setting_value FROM global_settings WHERE setting_key = 'university_slug' LIMIT 1")->fetchColumn();
+                        if ($gk) $slug = $gk;
+                    }
+                    if ($slug) {
+                        $stmt = $db->prepare("SELECT official_url FROM universities WHERE slug = ? LIMIT 1");
+                        $stmt->execute([$slug]);
+                        $uni = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if ($uni) $url = $uni['official_url'] ?? '';
+                    }
+                }
+            }
+        } catch (Exception $e) {}
+        return $url;
+    }
+}
+
+
 if (!function_exists('sode_footer_fallback_config')) {
     function sode_footer_fallback_config() {
         return [
@@ -140,15 +174,33 @@ if (!function_exists('sode_footer_fallback_config')) {
 
 if (!function_exists('sode_footer_render')) {
     function sode_footer_render($atts = []) {
-        $cfg       = sode_get_footer_config();
-        $tools     = $cfg['ai_tools']     ?? [];
-        $links     = $cfg['footer_links'] ?? [];
-        $tool_count = count($tools);
-        $uid       = 'sode_footer_' . substr(md5(uniqid()), 0, 6);
+        $cfg        = sode_get_footer_config();
+        $tools      = $cfg['ai_tools']     ?? [];
+        $links      = $cfg['footer_links'] ?? [];
 
-        // Slider thresholds: desktop >4, mobile >1
+        // Sort by sort_order
+        if (!empty($tools)) {
+            usort($tools, fn($a, $b) => (int)($a['sort_order']??99) <=> (int)($b['sort_order']??99));
+        }
+        if (!empty($links)) {
+            usort($links, fn($a, $b) => (int)($a['sort_order']??99) <=> (int)($b['sort_order']??99));
+        }
+
+        $tool_count         = count($tools);
+        $uid                = 'sode_footer_' . substr(md5(uniqid()), 0, 6);
         $use_slider_desktop = $tool_count > 4;
         $use_slider_mobile  = $tool_count > 1;
+
+        // Resolve {official_url} placeholder for legal notice
+        $official_url      = sode_footer_get_official_url();
+        $legal_text        = $cfg['legal_notice_text'] ?? '';
+        if (!empty($official_url) && strpos($legal_text, '{official_url}') !== false) {
+            $domain = preg_replace('#^https?://#', '', rtrim($official_url, '/'));
+            $linked = '<a href="' . htmlspecialchars($official_url) . '" target="_blank" rel="nofollow" style="color:#F5C518;text-decoration:underline;">' . htmlspecialchars($domain) . '</a>';
+            $legal_text = str_replace('{official_url}', $linked, $legal_text);
+        } else {
+            $legal_text = htmlspecialchars($legal_text);
+        }
 
         ob_start();
         ?>
@@ -313,19 +365,20 @@ if (!function_exists('sode_footer_render')) {
         <?php if (!empty($cfg['legal_notice_heading'])): ?>
             <p class="sf-legal-heading"><?php echo htmlspecialchars($cfg['legal_notice_heading']); ?></p>
         <?php endif; ?>
-        <?php if (!empty($cfg['legal_notice_text'])): ?>
-            <p class="sf-legal-text"><?php echo htmlspecialchars($cfg['legal_notice_text']); ?></p>
+        <?php if (!empty($legal_text)): ?>
+            <p class="sf-legal-text"><?php echo $legal_text; ?></p>
         <?php endif; ?>
 
         <?php if (!empty($links)): ?>
         <div class="sf-footer-links">
             <?php foreach ($links as $i => $lnk):
-                $label = htmlspecialchars($lnk['label'] ?? '');
-                $href  = htmlspecialchars($lnk['url']   ?? '#');
-                $cls   = htmlspecialchars($lnk['class'] ?? '');
+                $label  = htmlspecialchars($lnk['label'] ?? '');
+                $href   = htmlspecialchars($lnk['url']   ?? '#');
+                $cls    = htmlspecialchars($lnk['class'] ?? '');
+                $target = !empty($lnk['new_tab']) ? ' target="_blank" rel="noopener"' : '';
             ?>
                 <?php if ($i > 0): ?><span class="sf-link-sep">|</span><?php endif; ?>
-                <a href="<?php echo $href; ?>" class="sf-footer-link <?php echo $cls; ?>"><?php echo $label; ?></a>
+                <a href="<?php echo $href; ?>" class="sf-footer-link <?php echo $cls; ?>"<?php echo $target; ?>><?php echo $label; ?></a>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
@@ -731,4 +784,5 @@ if (!function_exists('sode_footer_render')) {
 if (function_exists('add_shortcode')) {
     add_shortcode('universal_footer', 'sode_footer_render');
     add_shortcode('sode_footer',      'sode_footer_render');
+    add_shortcode('footer_section',   'sode_footer_render');
 }

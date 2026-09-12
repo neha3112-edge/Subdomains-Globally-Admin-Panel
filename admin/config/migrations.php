@@ -526,7 +526,7 @@ function sode_run_auto_migrations(PDO $pdo) {
 
                     $default_about = 'SODE™ is India\'s top educational platform, transforming the way learners engage with higher education. We make higher education easier without compromising on the quality. We help students and working professionals find the right online and distance degree programs. We simplify every step with expert guidance and personalised support.';
 
-                    $default_legal = 'This information is provided by DistanceEducationSchool.com, operating under the registered legal entity SODE™ Counselling Services LLP (registered with the Ministry of Corporate Affairs, Government of India), with the primary objective of providing information, guidance, and counselling for UGC-DEB-approved universities and programs). We do not act as a university or an official admission authority. For official updates, direct admissions, and fee payments, please visit dsuonline.com.';
+                    $default_legal = 'This information is provided by DistanceEducationSchool.com, operating under the registered legal entity SODE™ Counselling Services LLP (registered with the Ministry of Corporate Affairs, Government of India), with the primary objective of providing information, guidance, and counselling for UGC-DEB-approved universities and programs. We do not act as a university or an official admission authority. For official updates, direct admissions, and fee payments, please visit {official_url}.';
 
                     $stmt = $db->prepare("
                         INSERT INTO footer_config 
