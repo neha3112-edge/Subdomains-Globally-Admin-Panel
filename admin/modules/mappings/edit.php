@@ -252,9 +252,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <p style="font-size:12px; color:var(--text-dim); margin:3px 0 0;">Add semester boxes (4 for Masters, 6 for Bachelors). Inside each box, add subjects with optional links.</p>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <button type="button" class="btn-sm" id="preset-4sem-btn" style="background:#e0e7ff; color:#3730a3; border:1px solid #c7d2fe; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700;">+ 4 Semesters (Master)</button>
-                        <button type="button" class="btn-sm" id="preset-6sem-btn" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700;">+ 6 Semesters (Bachelor)</button>
-                        <button type="button" class="btn-primary btn-sm" id="add-sem-box-btn" style="width:auto; padding:6px 14px; font-size:12px; font-weight:700;">+ Add Semester Box</button>
+                        <button type="button" class="btn-sm" id="preset-4sem-btn" style="background:rgba(59, 130, 246, 0.15); color:#93c5fd; border:1px solid rgba(59, 130, 246, 0.35); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;">+ 4 Semesters (Master)</button>
+                        <button type="button" class="btn-sm" id="preset-6sem-btn" style="background:rgba(245, 158, 11, 0.15); color:#fcd34d; border:1px solid rgba(245, 158, 11, 0.35); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;">+ 6 Semesters (Bachelor)</button>
+                        <button type="button" class="btn-primary btn-sm" id="add-sem-box-btn" style="background:var(--primary-gradient); color:#fff; border:none; padding:7px 16px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 10px rgba(79, 70, 229, 0.35);">+ Add Semester Box</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -278,13 +278,147 @@ require_once ADMIN_PATH . '/includes/header.php';
                         Update Mapping & Syllabus
                     </button>
                     <p style="font-size:12px; color:var(--text-dim); margin:12px 0 0; text-align:center;">
-                        Changes will reflect globally on all client subdomains.
+                        Saved in database under <code>university_course_mappings.syllabus_json</code>.
                     </p>
                 </div>
             </div>
         </div>
     </div>
 </form>
+
+<style>
+.sode-sem-card {
+    background: var(--bg-input, #151f32);
+    border: 1px solid var(--border-color, #1e2b45);
+    border-radius: var(--radius-md, 12px);
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.sode-sem-card:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+}
+.sode-sem-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color, #1e2b45);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.sode-sem-badge {
+    background: rgba(79, 70, 229, 0.18);
+    color: #a5b4fc;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.8px;
+    border: 1px solid rgba(79, 70, 229, 0.3);
+    white-space: nowrap;
+}
+.sode-sem-title-input {
+    background: var(--bg-card, #0f172a) !important;
+    border: 1px solid var(--border-color, #1e2b45) !important;
+    color: var(--text-main, #f8fafc) !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    max-width: 360px;
+    border-radius: 8px !important;
+}
+.sode-sem-title-input:focus {
+    border-color: var(--primary, #4f46e5) !important;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25) !important;
+}
+.sode-del-sem-btn {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    padding: 7px 14px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.sode-del-sem-btn:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+    color: #fff !important;
+}
+.sode-sub-header-cols {
+    display: grid;
+    grid-template-columns: 2fr 2fr 44px;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding: 0 4px;
+}
+.sode-sub-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 44px;
+    gap: 12px;
+    align-items: center;
+}
+.sode-sub-row .form-control {
+    background: var(--bg-card, #0f172a) !important;
+    border: 1px solid var(--border-color, #1e2b45) !important;
+    color: var(--text-main, #f8fafc) !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+}
+.sode-sub-row .form-control:focus {
+    border-color: var(--primary, #4f46e5) !important;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25) !important;
+}
+.sode-del-sub-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    cursor: pointer;
+    font-size: 18px !important;
+    transition: all 0.2s ease;
+}
+.sode-del-sub-btn:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+    color: #fff !important;
+}
+.sode-add-sub-btn {
+    background: rgba(79, 70, 229, 0.12) !important;
+    border: 1px dashed rgba(79, 70, 229, 0.45) !important;
+    color: #a5b4fc !important;
+    padding: 8px 18px !important;
+    border-radius: 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.sode-add-sub-btn:hover {
+    background: rgba(79, 70, 229, 0.25) !important;
+    color: #fff !important;
+    border-color: var(--primary, #4f46e5) !important;
+}
+</style>
 
 <script>
 // --- Specializations Repeater ---
@@ -325,41 +459,36 @@ document.addEventListener('click', function(e) {
         subjects = subjects || [];
 
         var box = document.createElement('div');
-        box.className = 'semester-box';
-        box.style.background = '#f8fafc';
-        box.style.border = '1px solid #cbd5e1';
-        box.style.borderRadius = '10px';
-        box.style.padding = '18px';
-        box.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+        box.className = 'sode-sem-card semester-box';
 
         var semCount = semContainer.querySelectorAll('.semester-box').length + 1;
         var defaultTitle = (romanNumerals[semCount - 1] || ('SEMESTER ' + semCount)) + ' SEMESTER';
         if (!title) title = defaultTitle;
 
         box.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
+            <div class="sode-sem-header">
                 <div style="display:flex; align-items:center; gap:10px; flex:1; max-width:480px;">
-                    <span class="badge" style="background:#1e3a8a; color:#fff; font-weight:700; font-size:11px; padding:6px 10px; border-radius:6px; letter-spacing:0.5px;">BOX</span>
-                    <input type="text" class="form-control semester-title-input" value="${escapeHtml(title)}" placeholder="e.g. FIRST SEMESTER" style="font-weight:700; font-size:13.5px; text-transform:uppercase; letter-spacing:0.5px;">
+                    <span class="sode-sem-badge">SEM ${semCount}</span>
+                    <input type="text" class="form-control sode-sem-title-input semester-title-input" value="${escapeHtml(title)}" placeholder="e.g. FIRST SEMESTER">
                 </div>
-                <button type="button" class="action-btn delete-btn remove-sem-box-btn" style="width:auto; padding:5px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px; font-weight:600;" title="Delete this semester box">
+                <button type="button" class="sode-del-sem-btn remove-sem-box-btn" title="Delete this semester box">
                     &times; Delete Semester
                 </button>
             </div>
 
-            <div style="margin-bottom:10px;">
-                <div style="display:grid; grid-template-columns: 2fr 2fr 40px; gap:10px; font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; padding:0 4px;">
+            <div style="margin-bottom:12px;">
+                <div class="sode-sub-header-cols">
                     <span>Subject Name *</span>
                     <span>Link URL (Optional)</span>
                     <span></span>
                 </div>
-                <div class="subjects-list" style="display:flex; flex-direction:column; gap:8px;">
+                <div class="subjects-list" style="display:flex; flex-direction:column; gap:10px;">
                 </div>
             </div>
 
-            <div style="margin-top:12px; display:flex; justify-content:flex-start;">
-                <button type="button" class="btn-sm add-subject-btn" style="background:#fff; border:1px dashed #94a3b8; color:#1e293b; padding:7px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-                    <span style="font-size:14px; font-weight:bold;">+</span> Add Subject
+            <div style="margin-top:14px; display:flex; justify-content:flex-start;">
+                <button type="button" class="sode-add-sub-btn add-subject-btn">
+                    <span style="font-size:15px; font-weight:bold;">+</span> Add Subject
                 </button>
             </div>
         `;
@@ -381,26 +510,31 @@ document.addEventListener('click', function(e) {
 
         // Remove semester button event
         box.querySelector('.remove-sem-box-btn').addEventListener('click', function() {
-            if (confirm('Delete this semester box and its subjects?')) {
+            if (confirm('Delete this semester box and all its subjects?')) {
                 box.remove();
+                renumberBadges();
             }
         });
 
         return box;
     }
 
+    function renumberBadges() {
+        var boxes = semContainer.querySelectorAll('.semester-box');
+        boxes.forEach(function(b, idx) {
+            var badge = b.querySelector('.sode-sem-badge');
+            if (badge) badge.textContent = 'SEM ' + (idx + 1);
+        });
+    }
+
     function createSubjectRow(name, link) {
         var row = document.createElement('div');
-        row.className = 'subject-row';
-        row.style.display = 'grid';
-        row.style.gridTemplateColumns = '2fr 2fr 40px';
-        row.style.gap = '10px';
-        row.style.alignItems = 'center';
+        row.className = 'sode-sub-row subject-row';
 
         row.innerHTML = `
             <input type="text" class="form-control subject-name-input" placeholder="e.g. Accounting for Managers" value="${escapeHtml(name)}">
-            <input type="url" class="form-control subject-link-input" placeholder="https://... (optional)" value="${escapeHtml(link)}">
-            <button type="button" class="action-btn delete-btn remove-subject-btn" title="Remove Subject" style="width:34px; height:34px; font-size:16px;">&times;</button>
+            <input type="url" class="form-control subject-link-input" placeholder="https://... (optional link)" value="${escapeHtml(link)}">
+            <button type="button" class="action-btn delete-btn sode-del-sub-btn remove-subject-btn" title="Remove Subject">&times;</button>
         `;
 
         row.querySelector('.remove-subject-btn').addEventListener('click', function() {
