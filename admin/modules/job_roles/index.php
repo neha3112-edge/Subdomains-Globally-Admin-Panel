@@ -106,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $role_links = $_POST['role_link'] ?? [];
         $role_salaries = $_POST['role_salary'] ?? [];
         $role_descriptions = $_POST['role_description'] ?? [];
+        $role_newtabs = $_POST['role_newtab_val'] ?? [];
 
         $formatted_roles = [];
         if (is_array($role_names)) {
@@ -115,6 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $formatted_roles[] = [
                         'role'        => $rname,
                         'link'        => trim($role_links[$i] ?? ''),
+                        'new_tab'     => isset($role_newtabs[$i]) ? (int)$role_newtabs[$i] : 1,
                         'salary'      => trim($role_salaries[$i] ?? ''),
                         'description' => trim($role_descriptions[$i] ?? '')
                     ];
@@ -257,7 +259,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <?php if (empty($current_roles)): ?>
                                 <div class="role-row sode-role-row">
                                     <input type="text" name="role_name[]" class="form-control" placeholder="e.g. Marketing Manager" required>
-                                    <input type="url" name="role_link[]" class="form-control" placeholder="https://... (optional)">
+                                    <div>
+                                        <input type="url" name="role_link[]" class="form-control" placeholder="https://... (optional)">
+                                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:5px; cursor:pointer; user-select:none;">
+                                            <input type="hidden" name="role_newtab_val[]" value="1">
+                                            <input type="checkbox" checked onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:13px; height:13px; cursor:pointer;">
+                                            <span>Open link in new tab</span>
+                                        </label>
+                                    </div>
                                     <input type="text" name="role_salary[]" class="form-control" placeholder="e.g. ₹6–15 LPA" required>
                                     <input type="text" name="role_description[]" class="form-control" placeholder="e.g. Plans marketing strategies">
                                     <button type="button" class="action-btn delete-btn remove-role-btn" title="Remove">&times;</button>
@@ -266,7 +275,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 <?php foreach ($current_roles as $r): ?>
                                     <div class="role-row sode-role-row">
                                         <input type="text" name="role_name[]" class="form-control" value="<?php echo htmlspecialchars($r['role'] ?? ''); ?>" placeholder="Job Role Title" required>
-                                        <input type="url" name="role_link[]" class="form-control" value="<?php echo htmlspecialchars($r['link'] ?? ''); ?>" placeholder="https://... (optional link)">
+                                        <div>
+                                            <input type="url" name="role_link[]" class="form-control" value="<?php echo htmlspecialchars($r['link'] ?? ''); ?>" placeholder="https://... (optional link)">
+                                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:5px; cursor:pointer; user-select:none;">
+                                                <input type="hidden" name="role_newtab_val[]" value="<?php echo (!isset($r['new_tab']) || !empty($r['new_tab'])) ? '1' : '0'; ?>">
+                                                <input type="checkbox" <?php echo (!isset($r['new_tab']) || !empty($r['new_tab'])) ? 'checked' : ''; ?> onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:13px; height:13px; cursor:pointer;">
+                                                <span>Open link in new tab</span>
+                                            </label>
+                                        </div>
                                         <input type="text" name="role_salary[]" class="form-control" value="<?php echo htmlspecialchars($r['salary'] ?? ''); ?>" placeholder="Salary (e.g. ₹6–15 LPA)" required>
                                         <input type="text" name="role_description[]" class="form-control" value="<?php echo htmlspecialchars($r['description'] ?? ''); ?>" placeholder="Role Description">
                                         <button type="button" class="action-btn delete-btn remove-role-btn" title="Remove">&times;</button>
@@ -332,7 +348,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     display: grid;
     grid-template-columns: 1.8fr 1.6fr 1.2fr 2fr 40px;
     gap: 12px;
-    align-items: center;
+    align-items: start;
 }
 .sode-role-row .form-control {
     background: var(--bg-card, #0f172a) !important;
@@ -372,7 +388,14 @@ document.getElementById('add-role-btn').addEventListener('click', function() {
     div.className = 'role-row sode-role-row';
     div.innerHTML = `
         <input type="text" name="role_name[]" class="form-control" placeholder="Job Role Title" required>
-        <input type="url" name="role_link[]" class="form-control" placeholder="https://... (optional link)">
+        <div>
+            <input type="url" name="role_link[]" class="form-control" placeholder="https://... (optional link)">
+            <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:5px; cursor:pointer; user-select:none;">
+                <input type="hidden" name="role_newtab_val[]" value="1">
+                <input type="checkbox" checked onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:13px; height:13px; cursor:pointer;">
+                <span>Open link in new tab</span>
+            </label>
+        </div>
         <input type="text" name="role_salary[]" class="form-control" placeholder="Salary (e.g. ₹6–15 LPA)" required>
         <input type="text" name="role_description[]" class="form-control" placeholder="Role Description">
         <button type="button" class="action-btn delete-btn remove-role-btn" title="Remove">&times;</button>

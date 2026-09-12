@@ -188,8 +188,11 @@ function render_job_roles_table_row_cells($role)
 {
     ?>
     <td class="job-roles-td-title">
-        <?php if (!empty($role['link'])): ?>
-            <a href="<?php echo esc_url($role['link']); ?>" target="_blank" rel="noopener noreferrer"
+        <?php if (!empty($role['link'])): 
+            $is_new_tab = (!isset($role['new_tab']) || !empty($role['new_tab']));
+            $target_attr = $is_new_tab ? ' target="_blank" rel="noopener noreferrer"' : '';
+        ?>
+            <a href="<?php echo esc_url($role['link']); ?>"<?php echo $target_attr; ?>
                 class="job-roles-table-role-link">
                 <?php echo esc_html($role['role']); ?>
             </a>

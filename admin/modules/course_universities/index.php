@@ -109,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $uni_locations = $_POST['uni_location'] ?? [];
         $uni_accreditations = $_POST['uni_accreditation'] ?? [];
         $uni_advantages = $_POST['uni_advantage'] ?? [];
+        $uni_newtabs = $_POST['uni_newtab_val'] ?? [];
 
         $formatted_unis = [];
         if (is_array($uni_names)) {
@@ -121,11 +122,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'location'      => trim($uni_locations[$i] ?? ''),
                         'accreditation' => trim($uni_accreditations[$i] ?? ''),
                         'advantage'     => trim($uni_advantages[$i] ?? ''),
-                        'link'          => trim($uni_links[$i] ?? '')
+                        'link'          => trim($uni_links[$i] ?? ''),
+                        'new_tab'       => isset($uni_newtabs[$i]) ? (int)$uni_newtabs[$i] : 1
                     ];
                 }
             }
         }
+
 
         $columns = ["University Name", $course_name . " Fee (Per Semester)", "Location", "Approvals & Accreditation", "Advantage"];
         $columns_json = json_encode($columns, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -277,6 +280,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">URL Link (Optional)</label>
                                                 <input type="text" name="uni_link[]" class="form-control" value="<?php echo htmlspecialchars($uni['link'] ?? ''); ?>" placeholder="https://distanceeducationschool.com/...">
+                                                <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:5px; cursor:pointer; user-select:none;">
+                                                    <input type="hidden" name="uni_newtab_val[]" value="<?php echo (!isset($uni['new_tab']) || !empty($uni['new_tab'])) ? '1' : '0'; ?>">
+                                                    <input type="checkbox" <?php echo (!isset($uni['new_tab']) || !empty($uni['new_tab'])) ? 'checked' : ''; ?> onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:14px; height:14px; cursor:pointer;">
+                                                    <span>Open link in new tab</span>
+                                                </label>
                                             </div>
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">Fee (Per Semester)</label>
@@ -358,6 +366,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <div>• <strong>Initial 10 Rows:</strong> The first 10 universities are shown by default. Remaining rows are revealed via the <em>View More</em> button.</div>
                         <div>• <strong>Interactive Compare:</strong> Includes <em>+ Compare</em> button for each university, launching the floating compare bar and compare modal.</div>
                         <div>• <strong>Dynamic $YEAR$:</strong> Automatically gets replaced by the current year (e.g. <?php echo date('Y'); ?>).</div>
+                        <div>• <strong>New Tab Option:</strong> Choose whether each university link opens in a new tab (checked by default).</div>
                     </div>
                 </div>
 
@@ -388,6 +397,11 @@ require_once ADMIN_PATH . '/includes/header.php';
             <div>
                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">URL Link (Optional)</label>
                 <input type="text" name="uni_link[]" class="form-control" value="" placeholder="https://distanceeducationschool.com/...">
+                <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:5px; cursor:pointer; user-select:none;">
+                    <input type="hidden" name="uni_newtab_val[]" value="1">
+                    <input type="checkbox" checked onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:14px; height:14px; cursor:pointer;">
+                    <span>Open link in new tab</span>
+                </label>
             </div>
             <div>
                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">Fee (Per Semester)</label>
@@ -411,6 +425,7 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
     </div>
 </template>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

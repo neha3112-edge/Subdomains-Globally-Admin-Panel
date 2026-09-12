@@ -238,8 +238,11 @@ function render_course_table_row_cells( $uni, $course_key = '' ) {
         </button>
     </td>
     <td>
-        <?php if ( ! empty( $uni['link'] ) ) : ?>
-            <a href="<?php echo esc_url( $uni['link'] ); ?>" target="_blank" rel="noopener noreferrer" class="course-table-uni-link">
+        <?php if ( ! empty( $uni['link'] ) ) : 
+            $is_new_tab = (!isset($uni['new_tab']) || !empty($uni['new_tab']));
+            $target_attr = $is_new_tab ? ' target="_blank" rel="noopener noreferrer"' : '';
+        ?>
+            <a href="<?php echo esc_url( $uni['link'] ); ?>"<?php echo $target_attr; ?> class="course-table-uni-link">
                 <?php echo esc_html( $uni_name ); ?>
             </a>
         <?php else : ?>
