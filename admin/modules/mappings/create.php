@@ -12,6 +12,25 @@ $db = get_db_connection();
 $universities = $db->query("SELECT id, full_name, short_name FROM universities ORDER BY short_name ASC")->fetchAll();
 $courses = $db->query("SELECT id, full_name, short_name, level FROM courses ORDER BY full_name ASC")->fetchAll();
 
+// Fetch All Global Master Specializations
+$m_spec_stmt = $db->query("
+    SELECT id, specialization_name 
+    FROM course_specializations_master 
+    WHERE is_active = 1 
+    ORDER BY specialization_name ASC
+");
+$master_specializations = $m_spec_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch All Global Master Syllabus Subjects
+$m_sub_stmt = $db->query("
+    SELECT id, subject_name 
+    FROM course_syllabus_subjects_master 
+    WHERE is_active = 1 
+    ORDER BY subject_name ASC
+");
+$master_subjects = $m_sub_stmt->fetchAll(PDO::FETCH_ASSOC);
+$master_subject_names = array_values(array_filter(array_unique(array_column($master_subjects, 'subject_name'))));
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
@@ -37,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $spec_names = $_POST['spec_name'] ?? [];
+    $spec_name_selects = $_POST['spec_name_select'] ?? [];
     $spec_links = $_POST['spec_link'] ?? [];
     $spec_fees = $_POST['spec_fee'] ?? [];
     $spec_durations = $_POST['spec_duration'] ?? [];
@@ -58,11 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mapping_id = $db->lastInsertId();
 
             // Insert Specializations
-            if (!empty($spec_names)) {
+            if (!empty($spec_name_selects) || !empty($spec_names)) {
+                $count_specs = max(count($spec_name_selects), count($spec_names));
                 $spec_stmt = $db->prepare("INSERT INTO course_specializations (mapping_id, specialization_name, specialization_link, fees_per_sem, duration) VALUES (?, ?, ?, ?, ?)");
-                foreach ($spec_names as $i => $sname) {
-                    $sname = trim($sname);
-                    if (!empty($sname)) {
+                for ($i = 0; $i < $count_specs; $i++) {
+                    $sname = trim($spec_names[$i] ?? '');
+                    $sel_val = trim($spec_name_selects[$i] ?? '');
+                    if ((empty($sname) || $sname === '__custom__') && !empty($sel_val) && $sel_val !== '__custom__') {
+                        $sname = $sel_val;
+                    }
+                    if (!empty($sname) && $sname !== '__custom__') {
                         $slink = trim($spec_links[$i] ?? '');
                         $sfee = trim($spec_fees[$i] ?? '');
                         $sdur = trim($spec_durations[$i] ?? '');
@@ -186,12 +211,17 @@ require_once ADMIN_PATH . '/includes/header.php';
 
             <!-- Specializations Repeater -->
             <div class="admin-card">
-                <div class="card-header">
-                    <span class="card-title">3. Course Specializations</span>
-                    <button type="button" class="btn-primary btn-sm" id="add-spec-btn" style="width:auto; padding:6px 12px;">+ Add Specialization</button>
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <span class="card-title">3. Course Specializations</span>
+                        <p style="font-size:12px; color:var(--text-dim); margin:2px 0 0;">Select specializations from the global master library or enter custom specializations.</p>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <button type="button" class="btn-primary btn-sm" id="add-spec-btn" style="width:auto; padding:6px 14px; font-weight:700;">+ Add Specialization</button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div style="display:grid; grid-template-columns: 2fr 1.8fr 1fr 1fr 40px; gap:12px; font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; padding:0 4px;">
+                    <div style="display:grid; grid-template-columns: 2.2fr 1.6fr 1fr 1fr 40px; gap:12px; font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; padding:0 4px;">
                         <span>Specialization Name *</span>
                         <span>URL / Link (Optional)</span>
                         <span>Fee (1st Sem / Per Sem)</span>
@@ -199,11 +229,22 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <span></span>
                     </div>
                     <div id="specs-container" style="display:flex; flex-direction:column; gap:12px;">
-                        <div class="spec-row" style="display:grid; grid-template-columns: 2fr 1.8fr 1fr 1fr 40px; gap:12px; align-items:center;">
-                            <input type="text" name="spec_name[]" class="form-control" placeholder="Specialization (e.g. Financial Management)">
+                        <div class="spec-row" style="display:grid; grid-template-columns: 2.2fr 1.6fr 1fr 1fr 40px; gap:12px; align-items:start;">
+                            <div class="spec-name-box">
+                                <select name="spec_name_select[]" class="form-control spec-select" onchange="onSpecSelectChanged(this)" style="background:var(--bg-card, #0f172a); font-size:13px;">
+                                    <option value="">-- Select Specialization --</option>
+                                    <?php foreach ($master_specializations as $msp): ?>
+                                        <option value="<?php echo htmlspecialchars($msp['specialization_name']); ?>">
+                                            <?php echo htmlspecialchars($msp['specialization_name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                    <option value="__custom__">+ Enter Custom Specialization...</option>
+                                </select>
+                                <input type="text" name="spec_name[]" class="form-control spec-name-custom" style="display:none; margin-top:5px; background:var(--bg-card, #0f172a); font-size:12.5px;" placeholder="Type custom specialization...">
+                            </div>
                             <input type="url" name="spec_link[]" class="form-control" placeholder="https://... (optional link)">
                             <input type="text" name="spec_fee[]" class="form-control" placeholder="Fee (e.g. INR 32,875)">
-                            <input type="text" name="spec_duration[]" class="form-control" placeholder="Duration (e.g. 2 Years)">
+                            <input type="text" name="spec_duration[]" class="form-control spec-duration-input" placeholder="Duration (e.g. 2 Years)">
                             <button type="button" class="action-btn delete-btn remove-spec-btn" title="Remove">&times;</button>
                         </div>
                     </div>
@@ -226,6 +267,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <div class="card-body">
                     <input type="hidden" name="syllabus_json" id="syllabus_json_input" value="">
                     
+                    <datalist id="global-master-subjects-list">
+                        <?php foreach ($master_subject_names as $msn): ?>
+                            <option value="<?php echo htmlspecialchars($msn); ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+
                     <div id="semesters-container" style="display:flex; flex-direction:column; gap:20px;">
                         <!-- Dynamically populated by JS -->
                     </div>
@@ -387,24 +434,137 @@ require_once ADMIN_PATH . '/includes/header.php';
 </style>
 
 <script>
-// --- Specializations Repeater ---
-document.getElementById('add-spec-btn').addEventListener('click', function() {
-    const container = document.getElementById('specs-container');
-    const div = document.createElement('div');
+// --- Global Utility Functions ---
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// --- Specializations Master Data & Logic ---
+var masterSpecsData = <?php echo json_encode($master_specializations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+var masterSyllabus = <?php echo json_encode($master_syllabus_by_sem, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
+function onSpecSelectChanged(select) {
+    var row = select.closest('.spec-row');
+    var customInput = row.querySelector('.spec-name-custom');
+    var durationInput = row.querySelector('.spec-duration-input');
+    var selectedVal = select.value;
+
+    if (selectedVal === '__custom__') {
+        customInput.style.display = 'block';
+        customInput.value = '';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+        customInput.value = selectedVal;
+        if (durationInput && !durationInput.value.trim()) {
+            durationInput.value = '2 Years';
+        }
+    }
+}
+
+function createSpecRowHtml(name, link, fee, duration) {
+    name = name || '';
+    link = link || '';
+    fee = fee || '';
+    duration = duration || '2 Years';
+
+    var div = document.createElement('div');
     div.className = 'spec-row';
     div.style.display = 'grid';
-    div.style.gridTemplateColumns = '2fr 1.8fr 1fr 1fr 40px';
+    div.style.gridTemplateColumns = '2.2fr 1.6fr 1fr 1fr 40px';
     div.style.gap = '12px';
-    div.style.alignItems = 'center';
+    div.style.alignItems = 'start';
+
+    var foundInMaster = false;
+    var optionsHtml = '<option value="">-- Select Specialization --</option>';
+    if (masterSpecsData && masterSpecsData.length > 0) {
+        masterSpecsData.forEach(function(msp) {
+            var isSel = (msp.specialization_name.trim().toLowerCase() === name.trim().toLowerCase());
+            if (isSel) {
+                foundInMaster = true;
+            }
+            optionsHtml += `<option value="${escapeHtml(msp.specialization_name)}" ${isSel ? 'selected' : ''}>${escapeHtml(msp.specialization_name)}</option>`;
+        });
+    }
+
+    if (name && !foundInMaster) {
+        optionsHtml += `<option value="${escapeHtml(name)}" selected>${escapeHtml(name)} (Custom)</option>`;
+    }
+    optionsHtml += '<option value="__custom__">+ Enter Custom Specialization...</option>';
+
+    var customDisplay = (name && !foundInMaster) ? 'display:block; margin-top:5px;' : 'display:none; margin-top:5px;';
+
     div.innerHTML = `
-        <input type="text" name="spec_name[]" class="form-control" placeholder="Specialization Name">
-        <input type="url" name="spec_link[]" class="form-control" placeholder="https://... (optional link)">
-        <input type="text" name="spec_fee[]" class="form-control" placeholder="Fee">
-        <input type="text" name="spec_duration[]" class="form-control" placeholder="Duration">
+        <div class="spec-name-box">
+            <select name="spec_name_select[]" class="form-control spec-select" onchange="onSpecSelectChanged(this)" style="background:var(--bg-card, #0f172a); font-size:13px;">
+                ${optionsHtml}
+            </select>
+            <input type="text" name="spec_name[]" class="form-control spec-name-custom" value="${escapeHtml(name)}" style="${customDisplay} background:var(--bg-card, #0f172a); font-size:12.5px;" placeholder="Type custom specialization...">
+        </div>
+        <input type="url" name="spec_link[]" class="form-control" value="${escapeHtml(link)}" placeholder="https://... (optional link)">
+        <input type="text" name="spec_fee[]" class="form-control" value="${escapeHtml(fee)}" placeholder="Fee">
+        <input type="text" name="spec_duration[]" class="form-control spec-duration-input" value="${escapeHtml(duration)}" placeholder="Duration">
         <button type="button" class="action-btn delete-btn remove-spec-btn" title="Remove">&times;</button>
     `;
-    container.appendChild(div);
-});
+
+    return div;
+}
+
+// Add single specialization
+var addSpecBtn = document.getElementById('add-spec-btn');
+if (addSpecBtn) {
+    addSpecBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var container = document.getElementById('specs-container');
+        if (container) {
+            container.appendChild(createSpecRowHtml('', '', '', '2 Years'));
+        }
+    });
+}
+
+// Add all master specializations
+var btnAddAllSpecs = document.getElementById('btn-add-all-master-specs');
+if (btnAddAllSpecs) {
+    btnAddAllSpecs.addEventListener('click', function() {
+        if (!masterSpecsData || masterSpecsData.length === 0) {
+            alert('No master specializations available for this course yet.');
+            return;
+        }
+        var container = document.getElementById('specs-container');
+        var existingRows = container.querySelectorAll('.spec-row');
+        if (existingRows.length === 1) {
+            var firstSel = existingRows[0].querySelector('.spec-select');
+            var firstInp = existingRows[0].querySelector('.spec-name-custom');
+            if ((!firstSel || !firstSel.value) && (!firstInp || !firstInp.value)) {
+                container.innerHTML = '';
+            }
+        }
+
+        var addedCount = 0;
+        masterSpecsData.forEach(function(ms) {
+            var already = false;
+            container.querySelectorAll('.spec-select').forEach(function(sel) {
+                if (sel.value.trim().toLowerCase() === ms.specialization_name.trim().toLowerCase()) {
+                    already = true;
+                }
+            });
+            if (!already) {
+                container.appendChild(createSpecRowHtml(ms.specialization_name, '', '', ms.default_duration || '2 Years'));
+                addedCount++;
+            }
+        });
+
+        if (addedCount === 0) {
+            alert('All master specializations are already present in the list.');
+        }
+    });
+}
 
 document.addEventListener('click', function(e) {
     if (e.target && e.target.classList.contains('remove-spec-btn')) {
@@ -413,10 +573,47 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Dynamic course switcher listener
+var courseSelect = document.querySelector('select[name="course_id"]');
+if (courseSelect) {
+    courseSelect.addEventListener('change', function() {
+        var cid = this.value;
+        if (!cid) return;
+        fetch('<?php echo BASE_URL; ?>/api/get_master_course_data.php?course_id=' + cid)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    masterSpecsData = data.specializations || [];
+                    masterSyllabus = {};
+                    (data.syllabus || []).forEach(function(sem) {
+                        masterSyllabus[sem.semester_number] = (sem.subjects || []).map(function(s) { return s.name; });
+                    });
+                    if (btnAddAllSpecs) {
+                        btnAddAllSpecs.textContent = '⚡ Add All Master Specializations (' + masterSpecsData.length + ')';
+                        btnAddAllSpecs.style.display = masterSpecsData.length > 0 ? 'inline-block' : 'none';
+                    }
+                    // Refresh existing empty spec rows if any
+                    var container = document.getElementById('specs-container');
+                    var rows = container.querySelectorAll('.spec-row');
+                    if (rows.length === 1) {
+                        var sel = rows[0].querySelector('.spec-select');
+                        var inp = rows[0].querySelector('.spec-name-custom');
+                        if ((!sel || !sel.value) && (!inp || !inp.value)) {
+                            container.innerHTML = '';
+                            container.appendChild(createSpecRowHtml('', '', '', ''));
+                        }
+                    }
+                }
+            })
+            .catch(function(err) { console.error('Error fetching course master data:', err); });
+    });
+}
+
 // --- Semester & Subject Builder ---
 (function() {
     var semContainer = document.getElementById('semesters-container');
     var syllabusInput = document.getElementById('syllabus_json_input');
+    var masterSubjectNames = <?php echo json_encode($master_subject_names, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     var romanNumerals = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH'];
 
     function createSemesterBox(title, subjects) {
@@ -430,15 +627,21 @@ document.addEventListener('click', function(e) {
         var defaultTitle = (romanNumerals[semCount - 1] || ('SEMESTER ' + semCount)) + ' SEMESTER';
         if (!title) title = defaultTitle;
 
+        var masterOptionsHtml = masterSubjectNames.map(function(s) {
+            return `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`;
+        }).join('');
+
         box.innerHTML = `
             <div class="sode-sem-header">
                 <div style="display:flex; align-items:center; gap:10px; flex:1; max-width:480px;">
                     <span class="sode-sem-badge">SEM ${semCount}</span>
                     <input type="text" class="form-control sode-sem-title-input semester-title-input" value="${escapeHtml(title)}" placeholder="e.g. FIRST SEMESTER">
                 </div>
-                <button type="button" class="sode-del-sem-btn remove-sem-box-btn" title="Delete this semester box">
-                    &times; Delete Semester
-                </button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="sode-del-sem-btn remove-sem-box-btn" title="Delete this semester box">
+                        &times; Delete Semester
+                    </button>
+                </div>
             </div>
 
             <div style="margin-bottom:12px;">
@@ -451,10 +654,18 @@ document.addEventListener('click', function(e) {
                 </div>
             </div>
 
-            <div style="margin-top:14px; display:flex; justify-content:flex-start;">
+            <div style="margin-top:14px; display:flex; justify-content:flex-start; align-items:center; gap:12px; flex-wrap:wrap;">
                 <button type="button" class="sode-add-sub-btn add-subject-btn">
-                    <span style="font-size:15px; font-weight:bold;">+</span> Add Subject
+                    <span style="font-size:15px; font-weight:bold;">+</span> Add Subject Row
                 </button>
+                ${masterSubjectNames.length > 0 ? `
+                    <div style="display:inline-flex; align-items:center;">
+                        <select class="form-control quick-add-master-subject-select" style="background:#1e293b; color:#93c5fd; border:1px solid rgba(59,130,246,0.4); padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; max-width:320px;">
+                            <option value="">⚡ Add Subject from Master Library (${masterSubjectNames.length})...</option>
+                            ${masterOptionsHtml}
+                        </select>
+                    </div>
+                ` : ''}
             </div>
         `;
 
@@ -464,7 +675,6 @@ document.addEventListener('click', function(e) {
                 subjectsList.appendChild(createSubjectRow(sub.name || '', sub.link || ''));
             });
         } else {
-            // Default 1 empty row
             subjectsList.appendChild(createSubjectRow('', ''));
         }
 
@@ -472,6 +682,26 @@ document.addEventListener('click', function(e) {
         box.querySelector('.add-subject-btn').addEventListener('click', function() {
             subjectsList.appendChild(createSubjectRow('', ''));
         });
+
+        // Quick add from master dropdown event
+        var masterSubSelect = box.querySelector('.quick-add-master-subject-select');
+        if (masterSubSelect) {
+            masterSubSelect.addEventListener('change', function() {
+                var chosenSubject = this.value;
+                if (!chosenSubject) return;
+
+                var existingInputs = subjectsList.querySelectorAll('.subject-name-input');
+                var filledExisting = false;
+                if (existingInputs.length === 1 && !existingInputs[0].value.trim()) {
+                    existingInputs[0].value = chosenSubject;
+                    filledExisting = true;
+                }
+                if (!filledExisting) {
+                    subjectsList.appendChild(createSubjectRow(chosenSubject, ''));
+                }
+                this.value = '';
+            });
+        }
 
         // Remove semester button event
         box.querySelector('.remove-sem-box-btn').addEventListener('click', function() {
@@ -497,7 +727,7 @@ document.addEventListener('click', function(e) {
         row.className = 'sode-sub-row subject-row';
 
         row.innerHTML = `
-            <input type="text" class="form-control subject-name-input" placeholder="e.g. Accounting for Managers" value="${escapeHtml(name)}">
+            <input type="text" class="form-control subject-name-input" list="global-master-subjects-list" placeholder="Subject Name (type or choose from master)" value="${escapeHtml(name)}">
             <input type="url" class="form-control subject-link-input" placeholder="https://... (optional link)" value="${escapeHtml(link)}">
             <button type="button" class="action-btn delete-btn sode-del-sub-btn remove-subject-btn" title="Remove Subject">&times;</button>
         `;
@@ -507,6 +737,8 @@ document.addEventListener('click', function(e) {
         });
 
         return row;
+    }
+
     function escapeHtml(str) {
         if (!str) return '';
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

@@ -796,6 +796,224 @@ function sode_run_auto_migrations(PDO $pdo) {
                         }
                     }
                 }
+            },
+
+            '2026_09_12_002_create_specializations_and_syllabus_master' => function(PDO $db) {
+                // 1. Create course_specializations_master table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS course_specializations_master (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        course_id INT NOT NULL,
+                        specialization_name VARCHAR(255) NOT NULL,
+                        default_duration VARCHAR(50) DEFAULT '2 Years',
+                        sort_order INT DEFAULT 0,
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uk_course_spec (course_id, specialization_name),
+                        KEY idx_course_id (course_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+
+                // 2. Create course_syllabus_subjects_master table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS course_syllabus_subjects_master (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        course_id INT NOT NULL,
+                        semester_number INT NOT NULL DEFAULT 1,
+                        semester_title VARCHAR(100) DEFAULT 'FIRST SEMESTER',
+                        subject_name VARCHAR(255) NOT NULL,
+                        sort_order INT DEFAULT 0,
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        KEY idx_course_sem (course_id, semester_number),
+                        KEY idx_course_id (course_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+
+                // 3. Seed initial specializations from existing course_specializations
+                try {
+                    $specs = $db->query("
+                        SELECT ucm.course_id, cs.specialization_name, cs.duration
+                        FROM course_specializations cs
+                        INNER JOIN university_course_mappings ucm ON cs.mapping_id = ucm.id
+                        WHERE cs.specialization_name IS NOT NULL AND cs.specialization_name != ''
+                    ")->fetchAll(PDO::FETCH_ASSOC);
+
+                    $ins_spec = $db->prepare("
+                        INSERT IGNORE INTO course_specializations_master (course_id, specialization_name, default_duration, sort_order)
+                        VALUES (?, ?, ?, ?)
+                    ");
+                    $order = 1;
+                    foreach ($specs as $sp) {
+                        $dur = !empty($sp['duration']) ? $sp['duration'] : '2 Years';
+                        $ins_spec->execute([$sp['course_id'], trim($sp['specialization_name']), $dur, $order++]);
+                    }
+                } catch (Exception $e) {
+                    error_log("Seed specializations error: " . $e->getMessage());
+                }
+
+                // 4. Seed initial syllabus subjects from university_course_mappings
+                try {
+                    $maps = $db->query("
+                        SELECT id, course_id, syllabus_json
+                        FROM university_course_mappings
+                        WHERE syllabus_json IS NOT NULL AND syllabus_json != '' AND syllabus_json != '[]'
+                    ")->fetchAll(PDO::FETCH_ASSOC);
+
+                    $ins_sub = $db->prepare("
+                        INSERT INTO course_syllabus_subjects_master (course_id, semester_number, semester_title, subject_name, sort_order)
+                        VALUES (?, ?, ?, ?, ?)
+                    ");
+
+                    foreach ($maps as $mp) {
+                        $semesters = json_decode($mp['syllabus_json'], true);
+                        if (!is_array($semesters)) continue;
+                        foreach ($semesters as $s_idx => $sem) {
+                            $sem_num = $s_idx + 1;
+                            $sem_title = !empty($sem['semester_title']) ? $sem['semester_title'] : ('SEMESTER ' . $sem_num);
+                            $subjects = $sem['subjects'] ?? [];
+                            if (!is_array($subjects)) continue;
+                            $sub_order = 1;
+                            foreach ($subjects as $sub) {
+                                $sub_name = trim($sub['name'] ?? '');
+                                if (!empty($sub_name)) {
+                                    $check_sub = $db->prepare("SELECT id FROM course_syllabus_subjects_master WHERE course_id = ? AND semester_number = ? AND subject_name = ?");
+                                    $check_sub->execute([$mp['course_id'], $sem_num, $sub_name]);
+                                    if (!$check_sub->fetch()) {
+                                        $ins_sub->execute([$mp['course_id'], $sem_num, $sem_title, $sub_name, $sub_order++]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Seed syllabus error: " . $e->getMessage());
+                }
+
+                // 5. Register Sidebar items
+                $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+
+                // Specializations item
+                $check_spec = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'specializations'")->fetch();
+                if (!$check_spec) {
+                    $db->exec("
+                        INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                        VALUES ('MANAGE', 'Specializations', 'modules/specializations/index.php', 'specializations', 'specializations', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z\"></path></svg>', 4, 1, 0)
+                    ");
+                    $spec_item_id = (int)$db->lastInsertId();
+                    if ($spec_item_id) {
+                        foreach ($roles as $r) {
+                            $acc_stmt->execute([$r['id'], $spec_item_id]);
+                        }
+                    }
+                }
+
+                // Syllabus Subjects item
+                $check_syl = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'syllabus'")->fetch();
+                if (!$check_syl) {
+                    $db->exec("
+                        INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                        VALUES ('MANAGE', 'Syllabus Subjects', 'modules/syllabus/index.php', 'syllabus', 'syllabus', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"></path><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"></path><line x1=\"9\" y1=\"7\" x2=\"15\" y2=\"7\"></line><line x1=\"9\" y1=\"11\" x2=\"15\" y2=\"11\"></line></svg>', 5, 1, 0)
+                    ");
+                    $syl_item_id = (int)$db->lastInsertId();
+                    if ($syl_item_id) {
+                        foreach ($roles as $r) {
+                            $acc_stmt->execute([$r['id'], $syl_item_id]);
+                        }
+                    }
+                }
+            },
+
+            '2026_09_12_003_convert_master_to_global' => function(PDO $db) {
+                // 1. Convert course_specializations_master to global
+                try {
+                    // Deduplicate existing specializations by name
+                    $db->exec("
+                        DELETE t1 FROM course_specializations_master t1
+                        INNER JOIN course_specializations_master t2 
+                        WHERE t1.id > t2.id AND TRIM(LOWER(t1.specialization_name)) = TRIM(LOWER(t2.specialization_name))
+                    ");
+                    // Make course_id nullable
+                    $db->exec("ALTER TABLE course_specializations_master MODIFY course_id INT NULL DEFAULT NULL");
+                    
+                    // Drop old compound unique index if present
+                    try {
+                        $db->exec("ALTER TABLE course_specializations_master DROP INDEX uk_course_spec");
+                    } catch (Exception $e) {}
+                    
+                    // Add global unique key on specialization_name
+                    try {
+                        $db->exec("ALTER TABLE course_specializations_master ADD UNIQUE KEY uk_spec_name (specialization_name)");
+                    } catch (Exception $e) {}
+                } catch (Exception $e) {
+                    error_log("Global spec migration error: " . $e->getMessage());
+                }
+
+                // 2. Convert course_syllabus_subjects_master to global
+                try {
+                    // Deduplicate existing subjects by name
+                    $db->exec("
+                        DELETE t1 FROM course_syllabus_subjects_master t1
+                        INNER JOIN course_syllabus_subjects_master t2 
+                        WHERE t1.id > t2.id AND TRIM(LOWER(t1.subject_name)) = TRIM(LOWER(t2.subject_name))
+                    ");
+                    // Make course_id and semester fields nullable
+                    $db->exec("
+                        ALTER TABLE course_syllabus_subjects_master 
+                        MODIFY course_id INT NULL DEFAULT NULL,
+                        MODIFY semester_number INT NULL DEFAULT NULL,
+                        MODIFY semester_title VARCHAR(100) NULL DEFAULT NULL
+                    ");
+                    
+                    // Drop compound indexes if present
+                    try {
+                        $db->exec("ALTER TABLE course_syllabus_subjects_master DROP INDEX idx_course_sem");
+                    } catch (Exception $e) {}
+                    try {
+                        $db->exec("ALTER TABLE course_syllabus_subjects_master DROP INDEX idx_course_id");
+                    } catch (Exception $e) {}
+
+                    // Add global unique key on subject_name
+                    try {
+                        $db->exec("ALTER TABLE course_syllabus_subjects_master ADD UNIQUE KEY uk_subject_name (subject_name)");
+                    } catch (Exception $e) {}
+                } catch (Exception $e) {
+                    error_log("Global syllabus migration error: " . $e->getMessage());
+                }
+            },
+
+            '2026_09_12_004_drop_course_id_from_masters' => function(PDO $db) {
+                // 1. Alter course_specializations_master: drop course_id and default_duration
+                try {
+                    $cols = $db->query("SHOW COLUMNS FROM course_specializations_master")->fetchAll(PDO::FETCH_COLUMN);
+                    if (in_array('course_id', $cols)) {
+                        $db->exec("ALTER TABLE course_specializations_master DROP COLUMN course_id");
+                    }
+                    if (in_array('default_duration', $cols)) {
+                        $db->exec("ALTER TABLE course_specializations_master DROP COLUMN default_duration");
+                    }
+                } catch (Exception $e) {
+                    error_log("Drop course_id from spec master: " . $e->getMessage());
+                }
+
+                // 2. Alter course_syllabus_subjects_master: drop course_id, semester_number, semester_title
+                try {
+                    $cols = $db->query("SHOW COLUMNS FROM course_syllabus_subjects_master")->fetchAll(PDO::FETCH_COLUMN);
+                    if (in_array('course_id', $cols)) {
+                        $db->exec("ALTER TABLE course_syllabus_subjects_master DROP COLUMN course_id");
+                    }
+                    if (in_array('semester_number', $cols)) {
+                        $db->exec("ALTER TABLE course_syllabus_subjects_master DROP COLUMN semester_number");
+                    }
+                    if (in_array('semester_title', $cols)) {
+                        $db->exec("ALTER TABLE course_syllabus_subjects_master DROP COLUMN semester_title");
+                    }
+                } catch (Exception $e) {
+                    error_log("Drop course_id from syllabus master: " . $e->getMessage());
+                }
             }
         ];
 
