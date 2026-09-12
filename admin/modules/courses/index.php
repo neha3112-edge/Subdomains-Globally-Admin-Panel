@@ -59,14 +59,16 @@ if (isset($_GET['edit_id'])) {
     $edit_course = $stmt->fetch();
 }
 
-// Fetch all courses
+// Fetch all courses with real-time job roles count from course_job_roles
 $courses = $db->query("
     SELECT c.*,
            (SELECT COUNT(*) FROM university_course_mappings WHERE course_id = c.id) AS mapped_unis_count,
-           (SELECT COUNT(*) FROM job_roles WHERE course_id = c.id) AS job_roles_count
+           IFNULL(JSON_LENGTH(cjr.roles_json), 0) AS job_roles_count
     FROM courses c
+    LEFT JOIN course_job_roles cjr ON (LOWER(cjr.course_slug) = LOWER(c.slug) OR LOWER(cjr.course_slug) = LOWER(c.short_name))
     ORDER BY c.id ASC
 ")->fetchAll();
+
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>

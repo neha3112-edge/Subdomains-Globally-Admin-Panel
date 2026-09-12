@@ -9,31 +9,59 @@ $active_page_key = 'job_roles';
 
 $db = get_db_connection();
 
-// 1. Fetch all available courses from course_job_roles
+// 1. Fetch all available courses from courses table joined with course_job_roles
 $all_course_records = $db->query("
-    SELECT id, course_slug, course_name, heading, description, roles_json, updated_at 
-    FROM course_job_roles 
-    ORDER BY id ASC
+    SELECT c.id AS course_id, c.full_name, c.short_name, c.slug AS course_slug,
+           cjr.id AS job_role_record_id,
+           cjr.course_name AS saved_course_name,
+           cjr.heading,
+           cjr.description,
+           cjr.roles_json,
+           cjr.updated_at
+    FROM courses c
+    LEFT JOIN course_job_roles cjr ON (LOWER(cjr.course_slug) = LOWER(c.slug) OR LOWER(cjr.course_slug) = LOWER(c.short_name))
+    ORDER BY c.id ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// If table is empty, run migration
+// If courses table is empty or migration needed
 if (empty($all_course_records)) {
     require_once dirname(__DIR__, 2) . '/config/migrations.php';
     sode_run_auto_migrations($db);
     $all_course_records = $db->query("
-        SELECT id, course_slug, course_name, heading, description, roles_json, updated_at 
-        FROM course_job_roles 
-        ORDER BY id ASC
+        SELECT c.id AS course_id, c.full_name, c.short_name, c.slug AS course_slug,
+               cjr.id AS job_role_record_id,
+               cjr.course_name AS saved_course_name,
+               cjr.heading,
+               cjr.description,
+               cjr.roles_json,
+               cjr.updated_at
+        FROM courses c
+        LEFT JOIN course_job_roles cjr ON (LOWER(cjr.course_slug) = LOWER(c.slug) OR LOWER(cjr.course_slug) = LOWER(c.short_name))
+        ORDER BY c.id ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// 2. Active selected course slug
-$selected_slug = strtolower(trim($_GET['course'] ?? ($_POST['course_slug'] ?? 'mba')));
+// 2. Active selected course (support course_id or course slug)
+$selected_course_id = (int)($_GET['course_id'] ?? 0);
+$selected_slug = strtolower(trim($_GET['course'] ?? ($_POST['course_slug'] ?? '')));
+
 $current_course_data = null;
-foreach ($all_course_records as $c_rec) {
-    if (strtolower($c_rec['course_slug']) === $selected_slug) {
-        $current_course_data = $c_rec;
-        break;
+if ($selected_course_id > 0) {
+    foreach ($all_course_records as $c_rec) {
+        if ((int)$c_rec['course_id'] === $selected_course_id) {
+            $current_course_data = $c_rec;
+            $selected_slug = strtolower($c_rec['course_slug']);
+            break;
+        }
+    }
+}
+if (!$current_course_data && !empty($selected_slug)) {
+    foreach ($all_course_records as $c_rec) {
+        if (strtolower($c_rec['course_slug']) === $selected_slug || strtolower($c_rec['short_name']) === $selected_slug) {
+            $current_course_data = $c_rec;
+            $selected_slug = strtolower($c_rec['course_slug']);
+            break;
+        }
     }
 }
 if (!$current_course_data && !empty($all_course_records)) {
@@ -50,6 +78,11 @@ if (!empty($current_course_data['roles_json'])) {
     }
 }
 
+// Default labels for new or unconfigured courses
+$course_display_title = $current_course_data['short_name'] ?: ($current_course_data['full_name'] ?? strtoupper($selected_slug));
+$default_heading = 'Job Roles and Salary After an Online & Distance ' . $course_display_title . ' Degree';
+$default_description = 'Graduates with an Online & Distance ' . $course_display_title . ' degree can explore career opportunities in various fields. Their salary can differ depending on qualifications, experience, skills, job title, organisation and location. Here are some of the key job roles and their expected salary ranges.';
+
 // 3. Handle Form Save
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -59,6 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $course_slug = strtolower(trim($_POST['course_slug'] ?? ''));
         $heading = trim($_POST['heading'] ?? '');
         $description = trim($_POST['description'] ?? '');
+
+        // Resolve course title from courses master
+        $course_name = strtoupper($course_slug);
+        foreach ($all_course_records as $cr) {
+            if (strtolower($cr['course_slug']) === $course_slug) {
+                $course_name = $cr['short_name'] ?: $cr['full_name'];
+                break;
+            }
+        }
 
         $role_names = $_POST['role_name'] ?? [];
         $role_links = $_POST['role_link'] ?? [];
@@ -84,13 +126,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             $u_stmt = $db->prepare("
-                UPDATE course_job_roles 
-                SET heading = ?, description = ?, roles_json = ?, updated_at = NOW() 
-                WHERE LOWER(course_slug) = LOWER(?)
+                INSERT INTO course_job_roles (course_slug, course_name, heading, description, roles_json, updated_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE 
+                    course_name = VALUES(course_name),
+                    heading = VALUES(heading),
+                    description = VALUES(description),
+                    roles_json = VALUES(roles_json),
+                    updated_at = NOW()
             ");
-            $u_stmt->execute([$heading, $description, $roles_json, $course_slug]);
+            $u_stmt->execute([$course_slug, $course_name, $heading, $description, $roles_json]);
 
-            set_flash_message('Job roles for ' . strtoupper($course_slug) . ' saved successfully!', 'success');
+            set_flash_message('Job roles for ' . htmlspecialchars($course_name) . ' saved successfully!', 'success');
             redirect(BASE_URL . '/modules/job_roles/index.php?course=' . urlencode($course_slug));
         } catch (PDOException $e) {
             set_flash_message('Database Error: ' . $e->getMessage(), 'error');
@@ -109,12 +156,18 @@ require_once ADMIN_PATH . '/includes/header.php';
             <div>
                 <span class="card-title" style="font-size:15px;">Select Course to Manage Job Roles</span>
                 <p style="font-size:12px; color:var(--text-dim); margin:2px 0 0;">
-                    These career roles and salaries are global and reflect on all university subdomains.
+                    Courses are synced directly from Courses Master. These career roles reflect on all university subdomains.
                 </p>
             </div>
-            <span class="badge badge-info" style="font-size:12px; padding:6px 12px;">
-                Total Courses: <?php echo count($all_course_records); ?>
-            </span>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="btn-sm action-btn" style="text-decoration:none; font-size:12px; padding:5px 10px; display:inline-flex; align-items:center; gap:5px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+                    Courses Master
+                </a>
+                <span class="badge badge-info" style="font-size:12px; padding:6px 12px;">
+                    Total Courses: <?php echo count($all_course_records); ?>
+                </span>
+            </div>
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
@@ -126,10 +179,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                     $d = json_decode($c_item['roles_json'], true);
                     if (is_array($d)) $cnt = count($d);
                 }
+                $pill_label = $c_item['short_name'] ?: strtoupper($c_item['course_slug']);
             ?>
                 <a href="<?php echo BASE_URL; ?>/modules/job_roles/index.php?course=<?php echo urlencode($slug); ?>" 
                    style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; font-size:12.5px; font-weight:700; text-decoration:none; transition:all 0.2s ease; <?php echo $is_cur ? 'background:var(--primary, #4f46e5); color:#fff; box-shadow:0 2px 8px rgba(79,70,229,0.35);' : 'background:var(--bg-input, #151f32); color:var(--text-main, #f8fafc); border:1px solid var(--border-color, #1e2b45);'; ?>">
-                    <span><?php echo htmlspecialchars(strtoupper($c_item['course_slug'])); ?></span>
+                    <span><?php echo htmlspecialchars($pill_label); ?></span>
                     <span style="background:<?php echo $is_cur ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'; ?>; padding:2px 7px; border-radius:10px; font-size:11px;">
                         <?php echo $cnt; ?>
                     </span>
@@ -152,25 +206,25 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <div class="admin-card">
                     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <span class="card-title">1. Table Heading & Overview (<?php echo htmlspecialchars(strtoupper($selected_slug)); ?>)</span>
+                            <span class="card-title">1. Table Heading & Overview (<?php echo htmlspecialchars($course_display_title); ?>)</span>
                             <p style="font-size:12px; color:var(--text-dim); margin:2px 0 0;">Displayed above the job roles table on client subdomains. You can use <code>$YEAR$</code> for dynamic year.</p>
                         </div>
                         <span class="badge badge-success" style="font-weight:700; font-size:12px; padding:5px 10px;">
-                            <?php echo htmlspecialchars($current_course_data['course_name'] ?? strtoupper($selected_slug)); ?>
+                            <?php echo htmlspecialchars($course_display_title); ?>
                         </span>
                     </div>
                     <div class="card-body">
                         <div class="form-group">
                             <label class="form-label">Table Section Heading</label>
                             <input type="text" name="heading" class="form-control" 
-                                   value="<?php echo htmlspecialchars($current_course_data['heading'] ?? ('Job Roles and Salary After an Online & Distance ' . strtoupper($selected_slug) . ' Degree')); ?>" 
-                                   placeholder="e.g. Job Roles and Salary After an Online & Distance MBA Degree">
+                                   value="<?php echo htmlspecialchars(!empty($current_course_data['heading']) ? $current_course_data['heading'] : $default_heading); ?>" 
+                                   placeholder="e.g. Job Roles and Salary After an Online & Distance <?php echo htmlspecialchars($course_display_title); ?> Degree">
                         </div>
 
                         <div class="form-group" style="margin-bottom:0;">
                             <label class="form-label">Table Section Description</label>
                             <textarea name="description" class="form-textarea" rows="3" 
-                                      placeholder="Brief overview of career opportunities..."><?php echo htmlspecialchars($current_course_data['description'] ?? ''); ?></textarea>
+                                      placeholder="Brief overview of career opportunities..."><?php echo htmlspecialchars(!empty($current_course_data['description']) ? $current_course_data['description'] : $default_description); ?></textarea>
                         </div>
                     </div>
                 </div>
@@ -178,6 +232,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <!-- 2. Job Roles Repeater -->
                 <div class="admin-card">
                     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+
                         <div>
                             <span class="card-title">2. Job Roles & Salary List</span>
                             <p style="font-size:12px; color:var(--text-dim); margin:2px 0 0;">

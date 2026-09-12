@@ -1208,3 +1208,8 @@ if (file_exists(__DIR__ . '/course-fees-universal.php')) {
 if (file_exists(__DIR__ . '/course-specializations-universal.php')) {
     require_once __DIR__ . '/course-specializations-universal.php';
 }
+
+if (file_exists(__DIR__ . '/job-roles-table-universal.php')) {
+    require_once __DIR__ . '/job-roles-table-universal.php';
+}
+
