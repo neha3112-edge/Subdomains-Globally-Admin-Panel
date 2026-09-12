@@ -366,7 +366,7 @@ if (!function_exists('sode_course_fees_render')) {
             #<?php echo $uid; ?> .sode-fees-table th {
                 padding: 13px 20px;
                 font-size: 13.5px;
-                font-weight: 800;
+                font-weight: 800 !important;
                 color: #0F172A;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
@@ -376,6 +376,7 @@ if (!function_exists('sode_course_fees_render')) {
 
             #<?php echo $uid; ?> .sode-fees-table th.sode-fees-th-component {
                 width: 68%;
+                border-right: 1px solid #CBD5E1;
             }
 
             #<?php echo $uid; ?> .sode-fees-table th.sode-fees-th-amount {
@@ -404,9 +405,10 @@ if (!function_exists('sode_course_fees_render')) {
 
             #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-component {
                 font-size: 13.5px;
-                font-weight: 700;
+                font-weight: 700 !important;
                 color: #0F172A;
                 width: 68%;
+                border-right: 1px solid #E2E8F0;
             }
 
             #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-amount {
@@ -430,6 +432,7 @@ if (!function_exists('sode_course_fees_render')) {
 
                 #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-component {
                     font-size: 12.5px;
+                    font-weight: 700 !important;
                     width: 60%;
                 }
 

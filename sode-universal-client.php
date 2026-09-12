@@ -1116,3 +1116,11 @@ if (file_exists(__DIR__ . '/legal-pages-universal.php')) {
 if (file_exists(__DIR__ . '/footer-universal.php')) {
     require_once __DIR__ . '/footer-universal.php';
 }
+
+if (file_exists(__DIR__ . '/course-syllabus-universal.php')) {
+    require_once __DIR__ . '/course-syllabus-universal.php';
+}
+
+if (file_exists(__DIR__ . '/course-fees-universal.php')) {
+    require_once __DIR__ . '/course-fees-universal.php';
+}
