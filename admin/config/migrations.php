@@ -651,6 +651,68 @@ function sode_run_auto_migrations(PDO $pdo) {
                         $stmt->execute([1, $s[0], $s[1], $s[2], $s[3]]);
                     }
                 }
+            },
+
+            '2026_09_12_003_create_and_seed_course_job_roles' => function(PDO $db) {
+                // 1. Create course_job_roles table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS course_job_roles (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        course_slug VARCHAR(50) NOT NULL UNIQUE,
+                        course_name VARCHAR(150) NOT NULL,
+                        heading VARCHAR(255) NULL,
+                        description TEXT NULL,
+                        roles_json LONGTEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // 2. Seed data from subdomain_job_roles_table_data.json if exists
+                $json_path = dirname(__DIR__, 2) . '/subdomain_job_roles_table_data.json';
+                if (file_exists($json_path)) {
+                    $json_data = json_decode(file_get_contents($json_path), true);
+                    if (is_array($json_data)) {
+                        // Fetch courses map from DB
+                        $courses_rows = $db->query("SELECT id, full_name, short_name, slug FROM courses")->fetchAll(PDO::FETCH_ASSOC);
+                        $courses_map = [];
+                        foreach ($courses_rows as $cr) {
+                            $courses_map[strtolower($cr['slug'])] = $cr['short_name'] ?: $cr['full_name'];
+                        }
+
+                        $stmt = $db->prepare("
+                            INSERT INTO course_job_roles (course_slug, course_name, heading, description, roles_json)
+                            VALUES (?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE 
+                                course_name = VALUES(course_name),
+                                heading = VALUES(heading),
+                                description = VALUES(description),
+                                roles_json = VALUES(roles_json)
+                        ");
+
+                        foreach ($json_data as $slug => $cdata) {
+                            $slug_clean = strtolower(trim($slug));
+                            $cname = $courses_map[$slug_clean] ?? strtoupper($slug_clean);
+                            $heading = $cdata['heading'] ?? ('Job Roles and Salary After an Online & Distance ' . $cname . ' Degree');
+                            $desc = $cdata['description'] ?? '';
+                            $roles = $cdata['roles'] ?? [];
+
+                            // Normalize roles array
+                            $formatted_roles = [];
+                            foreach ($roles as $r) {
+                                $formatted_roles[] = [
+                                    'role'        => trim($r['role'] ?? ''),
+                                    'link'        => trim($r['link'] ?? ''),
+                                    'salary'      => trim($r['salary'] ?? ''),
+                                    'description' => trim($r['description'] ?? '')
+                                ];
+                            }
+
+                            $roles_json = json_encode($formatted_roles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                            $stmt->execute([$slug_clean, $cname, $heading, $desc, $roles_json]);
+                        }
+                    }
+                }
             }
         ];
 

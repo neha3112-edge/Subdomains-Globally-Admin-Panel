@@ -830,6 +830,35 @@ add_shortcode('uni_course_specializations', function($atts) {
     return sode_fetch_remote_component('course_specializations', $atts ?: []);
 });
 
+add_shortcode('job_roles_table', function($atts) {
+    if (function_exists('sode_job_roles_table_render')) {
+        return sode_job_roles_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('job_roles_table', $atts ?: []);
+});
+
+add_shortcode('job_roles', function($atts) {
+    if (function_exists('sode_job_roles_table_render')) {
+        return sode_job_roles_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('job_roles_table', $atts ?: []);
+});
+
+add_shortcode('course_job_roles', function($atts) {
+    if (function_exists('sode_job_roles_table_render')) {
+        return sode_job_roles_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('job_roles_table', $atts ?: []);
+});
+
+add_shortcode('job_roles_salary', function($atts) {
+    if (function_exists('sode_job_roles_table_render')) {
+        return sode_job_roles_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('job_roles_table', $atts ?: []);
+});
+
+
 // ====================================================
 // 4. SECURITY TOKEN & AJAX LEAD HANDLER
 // ====================================================

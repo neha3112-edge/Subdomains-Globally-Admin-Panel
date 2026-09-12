@@ -1,162 +1,248 @@
 <?php
 /**
  * ==========================================================
- * JOB ROLES & SALARY TABLE - UNIVERSAL FILE
+ * JOB ROLES & SALARY TABLE - UNIVERSAL COMPONENT
+ * File: job-roles-table-universal.php
  * ==========================================================
- * YE FILE SIRF "dusol" SUBDOMAIN PAR RAKHNI HAI:
- *   dynamic-data-files/job-roles-table-universal.php
- * (JSON files ke sath wahi folder)
- *
- * Baaki SAARE subdomains isko apni functions.php me copy-paste
- * NAHI karenge - wo bas ek chhota "loader" file use karenge jo
- * is file ko seedha yahin se require karega (dekho: loader file).
- *
- * Isliye ab HTML/CSS/JS sirf EK jagah hai - jo bhi change karna
- * ho (design, columns, "View More" text, wagera) - sirf isi file
- * me karo, sab subdomains par apne aap reflect ho jaayega.
+ * Course-wise global career job roles and salary table.
+ * Data is managed dynamically via Admin Panel and stored in
+ * the 'course_job_roles' database table.
+ * 
+ * Shortcode:
+ *   [job_roles_table course="mba"]
+ *   [job_roles course="mba"]
+ *   [course_job_roles course="mba"]
+ *   [job_roles_salary course="mba"]
  * ==========================================================
  */
 
-// Ye file "dynamic-data-files" folder me hai jo public URL se bhi
-// accessible hai (JSON files ke liye). Agar isko seedha browser me
-// khola jaye (WordPress load kiye bina) to WP functions maujood
-// nahi honge - is case me clean 403 de kar turant ruk jao, taaki
-// raw PHP error (jo file path leak kar sakta hai) na dikhe.
-if (!function_exists('add_shortcode')) {
-    http_response_code(403);
-    exit;
-}
-
-// Ek hi baar load ho - agar kabhi galti se dobara require ho jaye
-// to fatal error (function already declared) na aaye.
+// Ek hi baar load ho - prevent duplicate definition
 if (defined('JOB_ROLES_TABLE_UNIVERSAL_LOADED')) {
     return;
 }
 define('JOB_ROLES_TABLE_UNIVERSAL_LOADED', true);
 
-// ---------- SETTINGS: Universal JSON URL ----------
-if (!defined('JOB_ROLES_TABLE_JSON_URL')) {
-    define('JOB_ROLES_TABLE_JSON_URL', 'https://dusol.distanceeducationschool.com/dynamic-data-files/subdomain_job_roles_table_data.json');
+// Fallback Polyfills for standalone / SSR execution
+if (!function_exists('shortcode_atts')) {
+    function shortcode_atts($pairs, $atts, $shortcode = '')
+    {
+        $atts = (array) $atts;
+        $out = [];
+        foreach ($pairs as $name => $default) {
+            if (array_key_exists($name, $atts)) {
+                $out[$name] = $atts[$name];
+            } else {
+                $out[$name] = $default;
+            }
+        }
+        return $out;
+    }
+}
+if (!function_exists('esc_html')) {
+    function esc_html($text)
+    {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+if (!function_exists('esc_attr')) {
+    function esc_attr($text)
+    {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+if (!function_exists('esc_url')) {
+    function esc_url($url)
+    {
+        return filter_var($url, FILTER_SANITIZE_URL);
+    }
+}
+if (!function_exists('wp_rand')) {
+    function wp_rand($min = 0, $max = 999999)
+    {
+        return mt_rand($min, $max);
+    }
 }
 
-// Initially kitni rows dikhani hain, baaki "View More" ke peeche chhupi rahengi
+// Settings
 if (!defined('JOB_ROLES_TABLE_VISIBLE_ROWS')) {
     define('JOB_ROLES_TABLE_VISIBLE_ROWS', 10);
 }
-
-
-/**
- * JSON se poora data fetch karo
- * (NO CACHING - har page load pe fresh data aayega, JSON change turant reflect hoga)
- */
-function get_job_roles_table_data_all()
-{
-
-    $response = wp_remote_get(JOB_ROLES_TABLE_JSON_URL, array(
-        'timeout' => 10,
-        'headers' => array(
-            'Cache-Control' => 'no-cache',
-        ),
-    ));
-
-    if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
-        return false;
-    }
-
-    $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body, true);
-
-    if (empty($data) || !is_array($data)) {
-        return false;
-    }
-
-    return $data;
+if (!defined('JOB_ROLES_CENTRAL_API_URL')) {
+    define('JOB_ROLES_CENTRAL_API_URL', 'https://admin.distanceeducationschool.com/admin/api/get_job_roles.php');
 }
 
-
 /**
- * Ek specific course ka JOB ROLES data nikalo (jaise "mba", "mca")
+ * Fetch course job roles data from Database or Central API
  */
 function get_job_roles_table_data($course_key)
 {
-    $all_data = get_job_roles_table_data_all();
+    static $cache = [];
+    $course_key = strtolower(trim($course_key));
 
-    if (empty($all_data) || !isset($all_data[$course_key])) {
-        return false;
+    if (empty($course_key)) {
+        $course_key = 'mba';
     }
 
-    return $all_data[$course_key];
+    if (isset($cache[$course_key])) {
+        return $cache[$course_key];
+    }
+
+    // 1. Try Local Database Connection
+    if (!function_exists('get_db_connection')) {
+        $possible_configs = [
+            __DIR__ . '/admin/config/config.php',
+            dirname(__DIR__) . '/admin/config/config.php',
+            dirname(__DIR__, 2) . '/admin/config/config.php',
+        ];
+        foreach ($possible_configs as $cfg_file) {
+            if (file_exists($cfg_file)) {
+                require_once $cfg_file;
+                break;
+            }
+        }
+    }
+
+    if (function_exists('get_db_connection')) {
+        try {
+            $db = get_db_connection();
+            if ($db) {
+                $stmt = $db->prepare("
+                    SELECT id, course_slug, course_name, heading, description, roles_json 
+                    FROM course_job_roles 
+                    WHERE LOWER(course_slug) = LOWER(?) OR LOWER(course_name) = LOWER(?)
+                    LIMIT 1
+                ");
+                $stmt->execute([$course_key, $course_key]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($row) {
+                    $roles = [];
+                    if (!empty($row['roles_json'])) {
+                        $decoded = json_decode($row['roles_json'], true);
+                        if (is_array($decoded)) {
+                            $roles = $decoded;
+                        }
+                    }
+
+                    $data = [
+                        'course_slug' => $row['course_slug'],
+                        'course_name' => $row['course_name'],
+                        'heading'     => $row['heading'],
+                        'description' => $row['description'],
+                        'columns'     => ["Job Role", "Role Description", "Salary Range in India"],
+                        'roles'       => $roles
+                    ];
+                    $cache[$course_key] = $data;
+                    return $data;
+                }
+            }
+        } catch (Exception $e) {
+            // Error connecting to DB, proceed to API fallback
+        }
+    }
+
+    // 2. Central API Fallback (for remote WordPress subdomains without direct DB access)
+    $api_url = JOB_ROLES_CENTRAL_API_URL . '?course=' . urlencode($course_key);
+    $json_content = null;
+
+    if (function_exists('wp_remote_get')) {
+        $response = wp_remote_get($api_url, [
+            'timeout' => 8,
+            'headers' => ['Cache-Control' => 'no-cache']
+        ]);
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+            $json_content = wp_remote_retrieve_body($response);
+        }
+    }
+
+    if (!$json_content && function_exists('file_get_contents')) {
+        $ctx = stream_context_create([
+            'http' => ['timeout' => 5]
+        ]);
+        $json_content = @file_get_contents($api_url, false, $ctx);
+    }
+
+    if ($json_content) {
+        $api_res = json_decode($json_content, true);
+        if (!empty($api_res['success']) && !empty($api_res['roles'])) {
+            $data = [
+                'course_slug' => $api_res['course_slug'] ?? $course_key,
+                'course_name' => $api_res['course_name'] ?? strtoupper($course_key),
+                'heading'     => $api_res['heading'] ?? '',
+                'description' => $api_res['description'] ?? '',
+                'columns'     => $api_res['columns'] ?? ["Job Role", "Role Description", "Salary Range in India"],
+                'roles'       => $api_res['roles']
+            ];
+            $cache[$course_key] = $data;
+            return $data;
+        }
+    }
+
+    return false;
 }
 
-
 /**
- * Ek job-role row ke <td> print karta hai
+ * Render single row cells
  */
 function render_job_roles_table_row_cells($role)
 {
     ?>
-    <td>
+    <td class="job-roles-td-title">
         <?php if (!empty($role['link'])): ?>
-            <a href="<?php echo esc_url($role['link']); ?>" target="_blank" rel="noopener noreferrer"
-                class="job-roles-table-role-link">
-                <strong><?php echo esc_html($role['role']); ?></strong>
+            <a href="<?php echo esc_url($role['link']); ?>" target="_blank" rel="noopener noreferrer" class="job-roles-table-role-link">
+                <?php echo esc_html($role['role']); ?>
             </a>
         <?php else: ?>
             <strong><?php echo esc_html($role['role']); ?></strong>
         <?php endif; ?>
     </td>
-    <td><?php echo esc_html($role['description']); ?></td>
-    <td><?php echo esc_html($role['salary']); ?></td>
+    <td class="job-roles-td-desc"><?php echo esc_html($role['description']); ?></td>
+    <td class="job-roles-td-salary"><?php echo esc_html($role['salary']); ?></td>
     <?php
 }
 
-
 /**
- * SHORTCODE: [job_roles_table course="mba"]
- * Isko kisi bhi subdomain ke kisi bhi page/Elementor widget me use kar sakte ho
+ * Main Shortcode & SSR Renderer: [job_roles_table course="mba"]
  */
-function job_roles_table_shortcode($atts)
+function sode_job_roles_table_render($atts)
 {
-
-    $atts = shortcode_atts(array(
-        'course' => '',
-    ), $atts);
+    $atts = shortcode_atts([
+        'course' => 'mba',
+    ], $atts);
 
     $course_key = strtolower(trim($atts['course']));
-
     if (empty($course_key)) {
-        return '<p><em>Job roles table: course attribute missing.</em></p>';
+        $course_key = 'mba';
     }
 
     $course_data = get_job_roles_table_data($course_key);
 
     if (empty($course_data) || empty($course_data['roles'])) {
-        return '<p><em>Job roles data currently unavailable. Please refresh shortly.</em></p>';
+        return '<div class="job-roles-table-empty" style="padding:15px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; color:#6b7280; font-size:14px;"><em>Job roles data is currently being updated. Please check back shortly.</em></div>';
     }
 
-    // Heading aur Description JSON se aayenge, agar maujood hon
+    // Heading and Description
     $table_heading = isset($course_data['heading']) ? $course_data['heading'] : '';
     $table_description = isset($course_data['description']) ? $course_data['description'] : '';
 
-    // $YEAR$ placeholder ko actual year se replace karo
+    // Replace $YEAR$, {YEAR}, etc.
     $current_year = function_exists('get_site_year') ? get_site_year() : date('Y');
-    $table_heading = str_replace('$YEAR$', $current_year, $table_heading);
-    $table_description = str_replace('$YEAR$', $current_year, $table_description);
+    $table_heading = str_ireplace(['$YEAR$', '{YEAR}', '{{YEAR}}'], $current_year, $table_heading);
+    $table_description = str_ireplace(['$YEAR$', '{YEAR}', '{{YEAR}}'], $current_year, $table_description);
 
-    $columns = isset($course_data['columns']) ? $course_data['columns'] : array();
+    $columns = !empty($course_data['columns']) ? $course_data['columns'] : ["Job Role", "Role Description", "Salary Range in India"];
     $roles = $course_data['roles'];
     $total_rows = count($roles);
     $visible_rows = JOB_ROLES_TABLE_VISIBLE_ROWS;
     $has_more = $total_rows > $visible_rows;
 
-    // Har table instance ka unique ID (agar ek hi page pe 2+ tables ho to conflict na ho)
     static $table_instance = 0;
     $table_instance++;
-    $unique_id = 'job-roles-table-' . $course_key . '-' . $table_instance . '-' . wp_rand(100, 999);
+    $unique_id = 'job-roles-table-' . preg_replace('/[^a-z0-9]/', '', $course_key) . '-' . $table_instance . '-' . wp_rand(100, 999);
 
     ob_start();
     ?>
-    <div class="job-roles-table-wrapper">
+    <div class="job-roles-table-wrapper" style="margin: 25px 0;">
 
         <?php if (!empty($table_heading)): ?>
             <h2 class="job-roles-table-heading"><?php echo esc_html($table_heading); ?></h2>
@@ -205,7 +291,7 @@ function job_roles_table_shortcode($atts)
         <?php if ($has_more): ?>
             <div class="job-roles-table-btn-wrap">
                 <button type="button" class="job-roles-table-toggle-btn" data-target="<?php echo esc_attr($unique_id); ?>">
-                    View More
+                    Read More
                 </button>
             </div>
         <?php endif; ?>
@@ -213,23 +299,30 @@ function job_roles_table_shortcode($atts)
     </div>
     <?php
 
-    // Style + Script sirf ek hi baar page pe print ho (baar baar nahi, chahe kitni bhi tables ho)
-    if (!did_action('job_roles_table_assets_printed')) {
-        do_action('job_roles_table_assets_printed');
+    // Print CSS and JS once per page load
+    static $job_roles_assets_rendered = false;
+    if (!$job_roles_assets_rendered) {
+        $job_roles_assets_rendered = true;
         ?>
         <style>
+            .job-roles-table-wrapper {
+                width: 100%;
+                box-sizing: border-box;
+                font-family: inherit;
+            }
+
             .job-roles-table-heading {
-                font-size: 25px;
-                font-weight: 600;
-                line-height: 1.2;
+                font-size: 24px;
+                font-weight: 700;
+                line-height: 1.3;
                 margin: 0 0 10px 0;
-                color: #000;
+                color: #111827;
             }
 
             .job-roles-table-description {
-                font-size: 13px;
-                line-height: 1.46;
-                color: #000;
+                font-size: 14px;
+                line-height: 1.55;
+                color: #374151;
                 margin: 0 0 18px 0;
             }
 
@@ -240,24 +333,30 @@ function job_roles_table_shortcode($atts)
                 -webkit-overflow-scrolling: touch;
                 border: 1px solid #e5e7eb;
                 border-radius: 10px;
+                background: #ffffff;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
             }
 
             .job-roles-fees-table {
                 width: 100%;
                 min-width: 650px;
                 border-collapse: collapse;
-                font-size: 13px;
-                margin: 0px;
+                font-size: 13.5px;
+                margin: 0;
+                background-color: #ffffff;
             }
 
             .job-roles-fees-table thead th {
                 background-color: #dbeafe;
+                color: #1e3a8a;
                 text-align: left;
                 padding: 14px 16px;
                 font-weight: 700;
                 white-space: nowrap;
-                border-bottom: 1px solid #e5e7eb;
+                border-bottom: 1px solid #bfdbfe;
                 border-right: 1px solid #c7d9f5;
+                font-size: 13px;
+                letter-spacing: 0.02em;
             }
 
             .job-roles-fees-table thead th:last-child {
@@ -269,22 +368,42 @@ function job_roles_table_shortcode($atts)
                 border-bottom: 1px solid #eef0f3;
                 border-right: 1px solid #eef0f3;
                 vertical-align: middle;
+                color: #1f2937;
+                line-height: 1.45;
             }
 
             .job-roles-fees-table tbody td:last-child {
                 border-right: none;
             }
 
+            .job-roles-fees-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
             .job-roles-fees-table tbody tr:hover {
-                background-color: #f9fafb;
+                background-color: #f8fafc;
+            }
+
+            .job-roles-td-title {
+                font-weight: 700;
+                color: #0f172a;
+            }
+
+            .job-roles-td-salary {
+                font-weight: 600;
+                color: #047857;
+                white-space: nowrap;
             }
 
             .job-roles-table-role-link {
-                color: #1ab1f0;
+                color: #2563eb;
                 text-decoration: none;
+                font-weight: 700;
+                transition: color 0.15s ease;
             }
 
             .job-roles-table-role-link:hover {
+                color: #1d4ed8;
                 text-decoration: underline;
             }
 
@@ -294,52 +413,90 @@ function job_roles_table_shortcode($atts)
             }
 
             .job-roles-table-toggle-btn {
-                padding: 10px 26px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 28px;
                 background-color: #2563eb;
-                color: #fff;
+                color: #ffffff;
                 border: none;
                 border-radius: 6px;
                 cursor: pointer;
                 font-weight: 700;
                 font-size: 14px;
-                transition: background-color 0.2s ease;
+                line-height: 1;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
             }
 
             .job-roles-table-toggle-btn:hover {
                 background-color: #1d4ed8;
+                box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+                transform: translateY(-1px);
+            }
+
+            .job-roles-table-toggle-btn:active {
+                transform: translateY(0);
             }
 
             @media (max-width: 600px) {
-                .job-roles-fees-table {
-                    font-size: 14px;
+                .job-roles-table-heading {
+                    font-size: 20px;
                 }
-
+                .job-roles-fees-table {
+                    font-size: 13px;
+                }
                 .job-roles-fees-table thead th,
                 .job-roles-fees-table tbody td {
-                    padding: 12px;
+                    padding: 10px 12px;
                 }
             }
         </style>
         <script>
-            document.addEventListener('click', function (e) {
-                if (!e.target.classList.contains('job-roles-table-toggle-btn')) {
-                    return;
-                }
-                var btn = e.target;
-                var table = document.getElementById(btn.getAttribute('data-target'));
-                if (!table) { return; }
+            (function () {
+                if (window.sodeJobRolesTableInitialized) return;
+                window.sodeJobRolesTableInitialized = true;
 
-                var extraTbody = table.querySelector('.job-roles-table-extra-rows');
-                if (!extraTbody) { return; }
+                document.addEventListener('click', function (e) {
+                    var btn = e.target.closest('.job-roles-table-toggle-btn');
+                    if (!btn) return;
 
-                var isHidden = extraTbody.style.display === 'none';
-                extraTbody.style.display = isHidden ? 'table-row-group' : 'none';
-                btn.textContent = isHidden ? 'View Less' : 'View More';
-            });
+                    var tableId = btn.getAttribute('data-target');
+                    var table = document.getElementById(tableId);
+                    if (!table) return;
+
+                    var extraTbody = table.querySelector('.job-roles-table-extra-rows');
+                    if (!extraTbody) return;
+
+                    var isHidden = extraTbody.style.display === 'none' || getComputedStyle(extraTbody).display === 'none';
+                    if (isHidden) {
+                        extraTbody.style.display = 'table-row-group';
+                        btn.textContent = 'Read Less';
+                    } else {
+                        extraTbody.style.display = 'none';
+                        btn.textContent = 'Read More';
+                    }
+                });
+            })();
         </script>
         <?php
     }
 
     return ob_get_clean();
 }
-add_shortcode('job_roles_table', 'job_roles_table_shortcode');
+
+/**
+ * Backward compatibility function for shortcode
+ */
+function job_roles_table_shortcode($atts)
+{
+    return sode_job_roles_table_render($atts);
+}
+
+// Register shortcodes if WordPress environment is active
+if (function_exists('add_shortcode')) {
+    add_shortcode('job_roles_table', 'sode_job_roles_table_render');
+    add_shortcode('job_roles', 'sode_job_roles_table_render');
+    add_shortcode('course_job_roles', 'sode_job_roles_table_render');
+    add_shortcode('job_roles_salary', 'sode_job_roles_table_render');
+}
