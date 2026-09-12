@@ -506,9 +506,10 @@ if (!function_exists('sode_footer_render')) {
             }
 
             #<?php echo $uid; ?> .sf-ai-heading {
-                font-size: clamp(22px, 2.8vw, 34px);
+                font-size: clamp(22px, 2.8vw, 28px);
                 font-weight: 800;
                 color: #10213B;
+                margin-bottom: 5px;
             }
 
             #<?php echo $uid; ?> .sf-ai-sub {
@@ -586,10 +587,6 @@ if (!function_exists('sode_footer_render')) {
                 text-decoration: none;
                 transition: background .2s;
                 white-space: nowrap;
-            }
-
-            #<?php echo $uid; ?> .sf-ai-btn:hover {
-                background: #1E3A8A;
             }
 
             /* ===== SLIDER ===== */
@@ -773,7 +770,7 @@ if (!function_exists('sode_footer_render')) {
 
             #<?php echo $uid; ?> .sf-footer-link:hover {
                 color: #F5C518;
-                text-decoration: underline;
+                text-decoration: underline !important;
             }
 
             #<?php echo $uid; ?> .sf-link-sep {
@@ -790,17 +787,26 @@ if (!function_exists('sode_footer_render')) {
             /* ===== RESPONSIVE ===== */
             @media (max-width: 768px) {
                 #<?php echo $uid; ?> .sf-cta-bar {
-                    padding: 18px 20px;
+                    padding: 25px;
                 }
 
                 #<?php echo $uid; ?> .sf-cta-inner {
                     flex-direction: column;
-                    align-items: flex-start;
+                    align-items: center;
                     gap: 14px;
                 }
 
+                #<?php echo $uid; ?> .sf-cta-heading {
+                    font-size: 24px;
+                    line-height: 1.3;
+                    text-align: center;
+                }
+
+                #<?php echo $uid; ?> .sf-cta-sub {
+                    text-align: center;
+                }
+
                 #<?php echo $uid; ?> .sf-cta-btn {
-                    width: 100%;
                     justify-content: center;
                 }
 
@@ -844,8 +850,12 @@ if (!function_exists('sode_footer_render')) {
                 }
 
                 #<?php echo $uid; ?> .sf-about-text {
-                    text-align: left;
+                    text-align: center;
                 }
+
+                #<?php echo $uid; ?> .sf-about-subtitle {
+                font-size: 13px;
+            }
             }
         </style>
 
