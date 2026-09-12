@@ -20,16 +20,58 @@ if (defined('SODE_FOOTER_UNIVERSAL_LOADED')) {
 }
 define('SODE_FOOTER_UNIVERSAL_LOADED', true);
 
-if (!function_exists('sode_get_footer_config')) {
-    function sode_get_footer_config()
+// Helper: resolve any asset path to a full public URL (working on subdomains & admin)
+if (!function_exists('sode_footer_asset_url')) {
+    function sode_footer_asset_url($path)
     {
-        static $cache = null;
-        if ($cache !== null)
-            return $cache;
+        if (empty($path)) return '';
+        $path = trim((string)$path);
+        if (preg_match('#^https?://#i', $path) && strpos($path, 'localhost') === false) {
+            return $path;
+        }
+        if (function_exists('get_asset_url')) {
+            return get_asset_url($path);
+        }
+        $admin_url = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
+        $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', 'uploads/', $path);
+        $clean = ltrim($clean, '/');
+        if (strpos($clean, 'uploads/') !== 0 && strpos($clean, 'assets/') !== 0) {
+            if (strpos($clean, '202') === 0) {
+                $clean = 'uploads/' . $clean;
+            }
+        }
+        return $admin_url . '/admin/' . $clean;
+    }
+}
+
+if (!function_exists('sode_get_footer_config')) {
+    function sode_get_footer_config($uni_slug = '')
+    {
+        static $cache = [];
+        if (empty($uni_slug)) {
+            if (function_exists('sode_client_detect_uni')) {
+                $uni_slug = sode_client_detect_uni();
+            } elseif (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+                $uni_slug = SODE_UNIVERSITY_SLUG;
+            } elseif (!empty($_GET['uni'])) {
+                $uni_slug = $_GET['uni'];
+            } elseif (!empty($_SERVER['HTTP_HOST'])) {
+                $parts = explode('.', strtolower($_SERVER['HTTP_HOST']));
+                if (count($parts) >= 3 && !in_array($parts[0], ['www', 'admin', 'mail', 'cpanel'])) {
+                    $uni_slug = $parts[0];
+                }
+            }
+        }
+        if (empty($uni_slug)) $uni_slug = 'dsu';
+        $cache_key = strtolower(trim($uni_slug));
+
+        if (isset($cache[$cache_key])) {
+            return $cache[$cache_key];
+        }
 
         $cfg = [];
 
-        // 1. Direct DB
+        // 1. Direct DB (Central Admin environment)
         if (function_exists('get_db_connection')) {
             try {
                 $db = get_db_connection();
@@ -49,32 +91,42 @@ if (!function_exists('sode_get_footer_config')) {
             }
         }
 
-        // 2. Remote API
+        // 2. Remote API (WordPress Client environment)
         if (empty($cfg)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
             $ctx = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
-            $raw = @file_get_contents($api_base . '/api/get_footer_config.php', false, $ctx);
-            if ($raw) {
-                $json = json_decode($raw, true);
-                if (!empty($json['success'])) {
-                    $cfg = [
-                        'cta_heading' => $json['cta_heading'] ?? '',
-                        'cta_subtext' => $json['cta_subtext'] ?? '',
-                        'cta_btn_text' => $json['cta_btn_text'] ?? '',
-                        'cta_btn_link' => $json['cta_btn_link'] ?? '#',
-                        'cta_btn_phone' => $json['cta_btn_phone'] ?? '',
-                        'ai_tools_heading' => $json['ai_tools_heading'] ?? '',
-                        'ai_tools_subtext' => $json['ai_tools_subtext'] ?? '',
-                        'ai_tools' => $json['ai_tools'] ?? [],
-                        'about_logo_url' => $json['about_logo_url'] ?? '',
-                        'about_title' => $json['about_title'] ?? '',
-                        'about_subtitle' => $json['about_subtitle'] ?? '',
-                        'about_sode_text' => $json['about_sode'] ?? '',
-                        'legal_notice_heading' => $json['legal_notice_heading'] ?? '',
-                        'legal_notice_text' => $json['legal_notice'] ?? '',
-                        'footer_links' => $json['footer_links'] ?? [],
-                        'copyright_text' => $json['copyright'] ?? '',
-                    ];
+            $endpoints = [
+                $api_base . '/admin/api/get_footer_config.php?uni=' . urlencode($cache_key),
+                $api_base . '/api/get_footer_config.php?uni=' . urlencode($cache_key),
+            ];
+            foreach ($endpoints as $ep) {
+                $raw = @file_get_contents($ep, false, $ctx);
+                if ($raw) {
+                    $json = json_decode($raw, true);
+                    if (!empty($json['success'])) {
+                        $cfg = [
+                            'cta_heading'          => $json['cta_heading']          ?? '',
+                            'cta_subtext'          => $json['cta_subtext']          ?? '',
+                            'cta_btn_text'         => $json['cta_btn_text']         ?? '',
+                            'cta_btn_link'         => $json['cta_btn_link']         ?? '#',
+                            'cta_btn_phone'        => $json['cta_btn_phone']        ?? '',
+                            'cta_btn_class'        => $json['cta_btn_class']        ?? '',
+                            'cta_btn_newtab'       => (int)($json['cta_btn_newtab'] ?? 0),
+                            'ai_tools_heading'     => $json['ai_tools_heading']     ?? '',
+                            'ai_tools_subtext'     => $json['ai_tools_subtext']     ?? '',
+                            'ai_tools'             => $json['ai_tools']             ?? [],
+                            'about_logo_url'       => $json['about_logo_url']       ?? '',
+                            'about_title'          => $json['about_title']          ?? '',
+                            'about_subtitle'       => $json['about_subtitle']       ?? '',
+                            'about_sode_text'      => $json['about_sode']           ?? '',
+                            'legal_notice_heading' => $json['legal_notice_heading'] ?? '',
+                            'legal_notice_text'    => $json['legal_notice']         ?? '',
+                            'footer_links'         => $json['footer_links']         ?? [],
+                            'copyright_text'       => $json['copyright']            ?? '',
+                            'official_url'         => $json['official_url']         ?? '',
+                        ];
+                        break;
+                    }
                 }
             }
         }
@@ -87,7 +139,7 @@ if (!function_exists('sode_get_footer_config')) {
         // Ensure all keys exist using fallback defaults
         $fallback = sode_footer_fallback_config();
         foreach ($fallback as $k => $v) {
-            if (!isset($cfg[$k]) || ($cfg[$k] === '' && $k !== 'cta_btn_phone' && $k !== 'cta_btn_class' && $k !== 'cta_btn_newtab' && $k !== 'about_logo_url')) {
+            if (!isset($cfg[$k]) || ($cfg[$k] === '' && !in_array($k, ['cta_btn_phone', 'cta_btn_class', 'cta_btn_newtab', 'about_logo_url', 'official_url']))) {
                 $cfg[$k] = $v;
             }
         }
@@ -98,46 +150,59 @@ if (!function_exists('sode_get_footer_config')) {
             $cfg['footer_links'] = json_decode($cfg['footer_links_json'] ?? '[]', true) ?: $fallback['footer_links'];
         }
 
-        $cache = $cfg;
-        return $cache;
+        $cache[$cache_key] = $cfg;
+        return $cfg;
     }
 }
 
-// Helper: get official_url for the current university (from DB via slug constant)
+// Helper: get official_url for the current university (from DB via slug/short_name or API)
 if (!function_exists('sode_footer_get_official_url')) {
-    function sode_footer_get_official_url()
+    function sode_footer_get_official_url($uni_slug = '')
     {
-        static $url = null;
-        if ($url !== null)
-            return $url;
-        $url = '';
-        try {
-            if (function_exists('get_db_connection')) {
-                $db = get_db_connection();
-                if ($db) {
-                    $slug = null;
-                    // 1. Use SODE_UNIVERSITY_SLUG constant (set by WordPress plugin)
-                    if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
-                        $slug = SODE_UNIVERSITY_SLUG;
-                    }
-                    // 2. Fallback: global_settings table
-                    if (!$slug) {
-                        $gk = $db->query("SELECT setting_value FROM global_settings WHERE setting_key = 'university_slug' LIMIT 1")->fetchColumn();
-                        if ($gk)
-                            $slug = $gk;
-                    }
-                    if ($slug) {
-                        $stmt = $db->prepare("SELECT official_url FROM universities WHERE slug = ? LIMIT 1");
-                        $stmt->execute([$slug]);
-                        $uni = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($uni)
-                            $url = $uni['official_url'] ?? '';
-                    }
+        static $cached_urls = [];
+        if (empty($uni_slug)) {
+            if (function_exists('sode_client_detect_uni')) {
+                $uni_slug = sode_client_detect_uni();
+            } elseif (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+                $uni_slug = SODE_UNIVERSITY_SLUG;
+            } elseif (!empty($_GET['uni'])) {
+                $uni_slug = $_GET['uni'];
+            } elseif (!empty($_POST['uni'])) {
+                $uni_slug = $_POST['uni'];
+            } elseif (!empty($_SERVER['HTTP_HOST'])) {
+                $parts = explode('.', strtolower($_SERVER['HTTP_HOST']));
+                if (count($parts) >= 3 && !in_array($parts[0], ['www', 'admin', 'mail', 'cpanel'])) {
+                    $uni_slug = $parts[0];
                 }
             }
-        } catch (Exception $e) {
         }
-        return $url;
+        if (empty($uni_slug)) $uni_slug = 'dsu';
+        $key = strtolower(trim($uni_slug));
+        if (isset($cached_urls[$key])) return $cached_urls[$key];
+
+        // 1. Direct DB lookup (matches slug, short_name e.g. DSU, or full_name)
+        if (function_exists('get_db_connection')) {
+            try {
+                $db = get_db_connection();
+                if ($db) {
+                    $stmt = $db->prepare("SELECT official_url FROM universities WHERE (LOWER(slug) = ? OR LOWER(short_name) = ? OR LOWER(full_name) = ?) AND is_active = 1 LIMIT 1");
+                    $stmt->execute([$key, $key, $key]);
+                    $val = $stmt->fetchColumn();
+                    if ($val) {
+                        $cached_urls[$key] = $val;
+                        return $val;
+                    }
+                }
+            } catch (Exception $e) {}
+        }
+
+        // 2. Known subdomain mappings fallback
+        if ($key === 'dsu' || strpos($key, 'dayananda') !== false) {
+            $cached_urls[$key] = 'https://dsuonline.com/';
+            return 'https://dsuonline.com/';
+        }
+
+        return '';
     }
 }
 
@@ -206,7 +271,27 @@ if (!function_exists('sode_footer_fallback_config')) {
 if (!function_exists('sode_footer_render')) {
     function sode_footer_render($atts = [])
     {
-        $cfg = sode_get_footer_config();
+        // Detect university slug
+        $uni_slug = !empty($atts['uni']) ? $atts['uni'] : (!empty($atts['university']) ? $atts['university'] : '');
+        if (empty($uni_slug)) {
+            if (function_exists('sode_client_detect_uni')) {
+                $uni_slug = sode_client_detect_uni();
+            } elseif (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+                $uni_slug = SODE_UNIVERSITY_SLUG;
+            } elseif (!empty($_GET['uni'])) {
+                $uni_slug = $_GET['uni'];
+            } elseif (!empty($_SERVER['HTTP_HOST'])) {
+                $parts = explode('.', strtolower($_SERVER['HTTP_HOST']));
+                if (count($parts) >= 3 && !in_array($parts[0], ['www', 'admin', 'mail', 'cpanel'])) {
+                    $uni_slug = $parts[0];
+                }
+            }
+        }
+        if (empty($uni_slug)) {
+            $uni_slug = 'dsu';
+        }
+
+        $cfg = sode_get_footer_config($uni_slug);
         $tools = $cfg['ai_tools'] ?? [];
         $links = $cfg['footer_links'] ?? [];
 
@@ -224,14 +309,21 @@ if (!function_exists('sode_footer_render')) {
         $use_slider_mobile = $tool_count > 1;
 
         // Resolve {official_url} placeholder for legal notice
-        $official_url = sode_footer_get_official_url();
+        $official_url = !empty($cfg['official_url']) ? $cfg['official_url'] : sode_footer_get_official_url($uni_slug);
+        if (empty($official_url) && ($uni_slug === 'dsu' || stripos($uni_slug, 'dayananda') !== false)) {
+            $official_url = 'https://dsuonline.com/';
+        }
+
         $legal_text = $cfg['legal_notice_text'] ?? '';
-        if (!empty($official_url) && strpos($legal_text, '{official_url}') !== false) {
-            $domain = preg_replace('#^https?://#', '', rtrim($official_url, '/'));
-            $linked = '<a href="' . htmlspecialchars($official_url) . '" target="_blank" rel="nofollow" style="color:#F5C518;text-decoration:underline;">' . htmlspecialchars($domain) . '</a>';
-            $legal_text = str_replace('{official_url}', $linked, $legal_text);
-        } else {
-            $legal_text = htmlspecialchars($legal_text);
+        if (strpos($legal_text, '{official_url}') !== false) {
+            if (!empty($official_url)) {
+                $domain = preg_replace('#^https?://#', '', rtrim($official_url, '/'));
+                $domain = preg_replace('#^www\.#', '', $domain);
+                $linked = '<a href="' . htmlspecialchars($official_url) . '" target="_blank" rel="nofollow" style="color:#F5C518;text-decoration:underline;font-weight:600;">' . htmlspecialchars($domain) . '</a>';
+                $legal_text = str_replace('{official_url}', $linked, $legal_text);
+            } else {
+                $legal_text = str_replace('{official_url}', 'the official university portal', $legal_text);
+            }
         }
 
         ob_start();
@@ -367,9 +459,12 @@ if (!function_exists('sode_footer_render')) {
             <?php if (!empty($cfg['about_sode_text'])): ?>
                 <div class="sf-about-section">
                     <div class="sf-about-inner">
-                        <?php if (!empty($cfg['about_logo_url'])): ?>
+                        <?php 
+                        $about_logo = sode_footer_asset_url($cfg['about_logo_url'] ?? '');
+                        if (!empty($about_logo)): 
+                        ?>
                             <div class="sf-about-logo-wrap">
-                                <img src="<?php echo htmlspecialchars($cfg['about_logo_url']); ?>" alt="SODE Logo"
+                                <img src="<?php echo htmlspecialchars($about_logo); ?>" alt="SODE Logo"
                                     class="sf-about-logo">
                             </div>
                         <?php else: ?>
@@ -693,8 +788,11 @@ if (!function_exists('sode_footer_render')) {
 
             #<?php echo $uid; ?> .sf-about-logo {
                 width: 110px;
+                max-width: 100%;
                 height: auto;
                 border-radius: 12px;
+                object-fit: contain;
+                display: block;
             }
 
             #<?php echo $uid; ?> .sf-about-logo-placeholder svg {
@@ -849,13 +947,21 @@ if (!function_exists('sode_footer_render')) {
                     padding: 24px 20px;
                 }
 
+                #<?php echo $uid; ?> .sf-about-logo-wrap {
+                    margin: 0 auto;
+                }
+
+                #<?php echo $uid; ?> .sf-about-logo {
+                    margin: 0 auto;
+                }
+
                 #<?php echo $uid; ?> .sf-about-text {
                     text-align: center;
                 }
 
                 #<?php echo $uid; ?> .sf-about-subtitle {
-                font-size: 13px;
-            }
+                    font-size: 13px;
+                }
             }
         </style>
 
@@ -894,11 +1000,10 @@ if (!function_exists('sode_footer_render')) {
                     }
 
                     function getOffset() {
-                        var vis = slidesToShow();
-                        var slide = slides[0];
-                        if (!slide) return 0;
-                        var gap = parseInt(getComputedStyle(track).gap) || 20;
-                        return current * (slide.offsetWidth + gap);
+                        var slide = slides[current];
+                        var firstSlide = slides[0];
+                        if (!slide || !firstSlide) return 0;
+                        return Math.max(0, slide.offsetLeft - firstSlide.offsetLeft);
                     }
 
                     function goTo(idx) {
@@ -923,6 +1028,7 @@ if (!function_exists('sode_footer_render')) {
                             (function (di) {
                                 var dot = document.createElement('button');
                                 dot.className = 'sf-dot' + (di === 0 ? ' active' : '');
+                                dot.setAttribute('aria-label', 'Slide ' + (di + 1));
                                 dot.addEventListener('click', function () { goTo(di); resetAuto(); });
                                 dotsWrap.appendChild(dot);
                             })(d);
@@ -934,25 +1040,54 @@ if (!function_exists('sode_footer_render')) {
 
                     // Auto-scroll 2.5s
                     function startAuto() {
-                        autoTimer = setInterval(function () { goTo(current + 1); }, 2500);
+                        if (autoTimer) clearInterval(autoTimer);
+                        autoTimer = setInterval(function () {
+                            // Do not advance if the viewport is hidden (e.g. desktop slider on mobile)
+                            if (viewport.offsetParent === null && viewport.offsetWidth === 0) return;
+                            goTo(current + 1);
+                        }, 2500);
                     }
-                    function resetAuto() { clearInterval(autoTimer); startAuto(); }
-
-                    // Pause on hover
-                    var wrap = viewport.closest('.sf-slider-wrap');
-                    if (wrap) {
-                        wrap.addEventListener('mouseenter', function () { clearInterval(autoTimer); });
-                        wrap.addEventListener('mouseleave', function () { startAuto(); });
-                    }
-
-                    // Touch swipe
-                    var touchStartX = 0;
-                    viewport.addEventListener('touchstart', function (e) { touchStartX = e.touches[0].clientX; clearInterval(autoTimer); }, { passive: true });
-                    viewport.addEventListener('touchend', function (e) {
-                        var diff = touchStartX - e.changedTouches[0].clientX;
-                        if (Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
+                    function resetAuto() {
+                        if (autoTimer) clearInterval(autoTimer);
                         startAuto();
-                    });
+                    }
+
+                    // Pause on hover only for devices with real mouse hover
+                    var canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+                    var wrap = viewport.closest('.sf-slider-wrap');
+                    if (wrap && canHover) {
+                        wrap.addEventListener('mouseenter', function () { clearInterval(autoTimer); });
+                        wrap.addEventListener('mouseleave', function () { resetAuto(); });
+                    }
+
+                    // Touch swipe handling for mobile
+                    var touchStartX = 0;
+                    var touchStartY = 0;
+
+                    viewport.addEventListener('touchstart', function (e) {
+                        if (!e.touches || !e.touches[0]) return;
+                        touchStartX = e.touches[0].clientX;
+                        touchStartY = e.touches[0].clientY;
+                        clearInterval(autoTimer);
+                    }, { passive: true });
+
+                    function onTouchEnd(e) {
+                        if (touchStartX) {
+                            var endX = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : touchStartX;
+                            var endY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : touchStartY;
+                            var diffX = touchStartX - endX;
+                            var diffY = touchStartY - endY;
+                            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+                                goTo(diffX > 0 ? current + 1 : current - 1);
+                            }
+                        }
+                        touchStartX = 0;
+                        touchStartY = 0;
+                        resetAuto();
+                    }
+
+                    viewport.addEventListener('touchend', onTouchEnd, { passive: true });
+                    viewport.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
                     startAuto();
                     goTo(0);
