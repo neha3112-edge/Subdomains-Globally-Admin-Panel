@@ -127,10 +127,10 @@ function get_job_roles_table_data($course_key)
                     $data = [
                         'course_slug' => $row['course_slug'],
                         'course_name' => $row['course_name'],
-                        'heading'     => $row['heading'],
+                        'heading' => $row['heading'],
                         'description' => $row['description'],
-                        'columns'     => ["Job Role", "Role Description", "Salary Range in India"],
-                        'roles'       => $roles
+                        'columns' => ["Job Role", "Role Description", "Salary Range in India"],
+                        'roles' => $roles
                     ];
                     $cache[$course_key] = $data;
                     return $data;
@@ -168,10 +168,10 @@ function get_job_roles_table_data($course_key)
             $data = [
                 'course_slug' => $api_res['course_slug'] ?? $course_key,
                 'course_name' => $api_res['course_name'] ?? strtoupper($course_key),
-                'heading'     => $api_res['heading'] ?? '',
+                'heading' => $api_res['heading'] ?? '',
                 'description' => $api_res['description'] ?? '',
-                'columns'     => $api_res['columns'] ?? ["Job Role", "Role Description", "Salary Range in India"],
-                'roles'       => $api_res['roles']
+                'columns' => $api_res['columns'] ?? ["Job Role", "Role Description", "Salary Range in India"],
+                'roles' => $api_res['roles']
             ];
             $cache[$course_key] = $data;
             return $data;
@@ -189,7 +189,8 @@ function render_job_roles_table_row_cells($role)
     ?>
     <td class="job-roles-td-title">
         <?php if (!empty($role['link'])): ?>
-            <a href="<?php echo esc_url($role['link']); ?>" target="_blank" rel="noopener noreferrer" class="job-roles-table-role-link">
+            <a href="<?php echo esc_url($role['link']); ?>" target="_blank" rel="noopener noreferrer"
+                class="job-roles-table-role-link">
                 <?php echo esc_html($role['role']); ?>
             </a>
         <?php else: ?>
@@ -313,16 +314,16 @@ function sode_job_roles_table_render($atts)
 
             .job-roles-table-heading {
                 font-size: 24px;
-                font-weight: 700;
+                font-weight: 600;
                 line-height: 1.3;
                 margin: 0 0 10px 0;
                 color: #111827;
             }
 
             .job-roles-table-description {
-                font-size: 14px;
-                line-height: 1.55;
-                color: #374151;
+                font-size: 13px;
+                line-height: 19px;
+                color: #000;
                 margin: 0 0 18px 0;
             }
 
@@ -334,7 +335,7 @@ function sode_job_roles_table_render($atts)
                 border: 1px solid #e5e7eb;
                 border-radius: 10px;
                 background: #ffffff;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             }
 
             .job-roles-fees-table {
@@ -347,8 +348,8 @@ function sode_job_roles_table_render($atts)
             }
 
             .job-roles-fees-table thead th {
-                background-color: #dbeafe;
-                color: #1e3a8a;
+                background-color: #ebf3fc;
+                color: #000;
                 text-align: left;
                 padding: 14px 16px;
                 font-weight: 700;
@@ -443,9 +444,11 @@ function sode_job_roles_table_render($atts)
                 .job-roles-table-heading {
                     font-size: 20px;
                 }
+
                 .job-roles-fees-table {
                     font-size: 13px;
                 }
+
                 .job-roles-fees-table thead th,
                 .job-roles-fees-table tbody td {
                     padding: 10px 12px;
