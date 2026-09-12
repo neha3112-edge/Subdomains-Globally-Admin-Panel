@@ -22,13 +22,15 @@ define('SODE_COURSE_SYLLABUS_UNIVERSAL_LOADED', true);
 
 // Polyfills
 if (!function_exists('sanitize_title')) {
-    function sanitize_title($title) {
-        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string)$title), '-'));
+    function sanitize_title($title)
+    {
+        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string) $title), '-'));
     }
 }
 if (!function_exists('shortcode_atts')) {
-    function shortcode_atts($pairs, $atts, $shortcode = '') {
-        $atts = (array)$atts;
+    function shortcode_atts($pairs, $atts, $shortcode = '')
+    {
+        $atts = (array) $atts;
         $out = [];
         foreach ($pairs as $name => $default) {
             if (array_key_exists($name, $atts)) {
@@ -45,9 +47,10 @@ if (!function_exists('shortcode_atts')) {
  * Helper: Fetch course syllabus data from DB or Central API
  */
 if (!function_exists('sode_get_course_syllabus_data')) {
-    function sode_get_course_syllabus_data($uni_slug = '', $course_slug = 'mba', $mode = 'Online') {
+    function sode_get_course_syllabus_data($uni_slug = '', $course_slug = 'mba', $mode = 'Online')
+    {
         static $cache = [];
-        
+
         // 1. Auto-detect uni_slug if empty
         if (empty($uni_slug)) {
             if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
@@ -139,9 +142,9 @@ if (!function_exists('sode_get_course_syllabus_data')) {
         if (empty($semesters)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
             $params = http_build_query([
-                'uni'    => $uni_slug,
+                'uni' => $uni_slug,
                 'course' => $course_slug,
-                'mode'   => $mode_clean
+                'mode' => $mode_clean
             ]);
             $endpoints = [
                 $api_base . '/admin/api/get_course_syllabus.php?' . $params,
@@ -155,8 +158,10 @@ if (!function_exists('sode_get_course_syllabus_data')) {
                     $json = json_decode($raw, true);
                     if (!empty($json['success']) && !empty($json['semesters']) && is_array($json['semesters'])) {
                         $semesters = $json['semesters'];
-                        if (!empty($json['university_name'])) $uni_name = $json['university_name'];
-                        if (!empty($json['course_name'])) $course_name = $json['course_name'];
+                        if (!empty($json['university_name']))
+                            $uni_name = $json['university_name'];
+                        if (!empty($json['course_name']))
+                            $course_name = $json['course_name'];
                         break;
                     }
                 }
@@ -165,9 +170,9 @@ if (!function_exists('sode_get_course_syllabus_data')) {
 
         $result = [
             'university' => $uni_name,
-            'course'     => $course_name,
-            'mode'       => $mode_clean,
-            'semesters'  => $semesters,
+            'course' => $course_name,
+            'mode' => $mode_clean,
+            'semesters' => $semesters,
         ];
 
         $cache[$cache_key] = $result;
@@ -179,13 +184,14 @@ if (!function_exists('sode_get_course_syllabus_data')) {
  * Main Render Function for Course Syllabus Table
  */
 if (!function_exists('sode_course_syllabus_render')) {
-    function sode_course_syllabus_render($atts = []) {
+    function sode_course_syllabus_render($atts = [])
+    {
         $atts = shortcode_atts([
-            'uni'        => '',
+            'uni' => '',
             'university' => '',
-            'course'     => 'mba',
-            'mode'       => 'Online',
-            'class'      => '',
+            'course' => 'mba',
+            'mode' => 'Online',
+            'class' => '',
         ], $atts, 'course_syllabus');
 
         $uni = !empty($atts['uni']) ? $atts['uni'] : $atts['university'];
@@ -229,13 +235,14 @@ if (!function_exists('sode_course_syllabus_render')) {
                     <tbody>
                         <?php for ($r = 0; $r < $max_rows; $r++): ?>
                             <tr>
-                                <?php foreach ($semesters as $sem): 
+                                <?php foreach ($semesters as $sem):
                                     $sub = $sem['subjects'][$r] ?? null;
                                     ?>
                                     <td>
                                         <?php if ($sub && !empty($sub['name'])): ?>
                                             <?php if (!empty($sub['link'])): ?>
-                                                <a href="<?php echo htmlspecialchars($sub['link']); ?>" target="_blank" rel="noopener" class="sode-syllabus-link">
+                                                <a href="<?php echo htmlspecialchars($sub['link']); ?>" target="_blank" rel="noopener"
+                                                    class="sode-syllabus-link">
                                                     <?php echo htmlspecialchars($sub['name']); ?>
                                                 </a>
                                             <?php else: ?>
@@ -256,9 +263,8 @@ if (!function_exists('sode_course_syllabus_render')) {
         <style>
             #<?php echo $uid; ?>.sode-syllabus-wrapper {
                 width: 100%;
-                margin: 20px 0;
+                margin: 0px;
                 box-sizing: border-box;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
             }
 
             #<?php echo $uid; ?> .sode-syllabus-scroll {
@@ -276,7 +282,10 @@ if (!function_exists('sode_course_syllabus_render')) {
                 border-collapse: collapse;
                 border-spacing: 0;
                 text-align: left;
-                min-width: <?php echo max(600, $col_count * 200); ?>px;
+                min-width:
+                    <?php echo max(600, $col_count * 200); ?>
+                    px;
+                margin: 0px;
             }
 
             #<?php echo $uid; ?> .sode-syllabus-table thead tr {
@@ -354,6 +363,7 @@ if (!function_exists('sode_course_syllabus_render')) {
                     padding: 11px 14px;
                     font-size: 12px;
                 }
+
                 #<?php echo $uid; ?> .sode-syllabus-table td {
                     padding: 10px 14px;
                     font-size: 12px;
