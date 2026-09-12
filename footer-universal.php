@@ -319,7 +319,7 @@ if (!function_exists('sode_footer_render')) {
             if (!empty($official_url)) {
                 $domain = preg_replace('#^https?://#', '', rtrim($official_url, '/'));
                 $domain = preg_replace('#^www\.#', '', $domain);
-                $linked = '<a href="' . htmlspecialchars($official_url) . '" target="_blank" rel="nofollow" style="color:#F5C518;text-decoration:underline;font-weight:600;">' . htmlspecialchars($domain) . '</a>';
+                $linked = '<a href="' . htmlspecialchars($official_url) . '" target="_blank" rel="nofollow" style="color:#F5C518;font-weight:600;">' . htmlspecialchars($domain) . '</a>';
                 $legal_text = str_replace('{official_url}', $linked, $legal_text);
             } else {
                 $legal_text = str_replace('{official_url}', 'the official university portal', $legal_text);
@@ -339,8 +339,10 @@ if (!function_exists('sode_footer_render')) {
                         <h2 class="sf-cta-heading">
                             <?php
                             $heading = htmlspecialchars($cfg['cta_heading']);
-                            // Bold "Talk to Experts" part if present
-                            $heading = preg_replace('/(\?.*)/u', '<span class="sf-cta-bold">$1</span>', $heading);
+                            // Yellow part: up to and including '?' (e.g. "Having Doubts ?"), rest in white (e.g. "Talk to Experts")
+                            if (preg_match('/^(.*?\?)\s*(.*)$/us', $heading, $m)) {
+                                $heading = $m[1] . (!empty($m[2]) ? ' <span class="sf-cta-bold">' . $m[2] . '</span>' : '');
+                            }
                             echo $heading;
                             ?>
                         </h2>
@@ -349,11 +351,13 @@ if (!function_exists('sode_footer_render')) {
                         <?php endif; ?>
                     </div>
                     <?php
-                    $btn_link = !empty($cfg['cta_btn_phone']) ? 'tel:' . preg_replace('/\s+/', '', $cfg['cta_btn_phone']) : ($cfg['cta_btn_link'] ?: '#');
+                    $btn_link = !empty($cfg['cta_btn_phone']) 
+                        ? 'tel:' . preg_replace('/\s+/', '', $cfg['cta_btn_phone']) 
+                        : ((!empty($cfg['cta_btn_link']) && $cfg['cta_btn_link'] !== '#') ? $cfg['cta_btn_link'] : 'javascript:void(0);');
                     $cta_cls = 'sf-cta-btn' . (!empty($cfg['cta_btn_class']) ? ' ' . htmlspecialchars(trim($cfg['cta_btn_class'])) : '');
-                    $cta_target = !empty($cfg['cta_btn_newtab']) ? ' target="_blank" rel="noopener"' : '';
+                    $cta_target = (!empty($cfg['cta_btn_newtab']) && $btn_link !== 'javascript:void(0);') ? ' target="_blank" rel="noopener"' : '';
                     ?>
-                    <a href="<?php echo htmlspecialchars($btn_link); ?>" class="<?php echo $cta_cls; ?>" <?php echo $cta_target; ?>>
+                    <a href="<?php echo htmlspecialchars($btn_link); ?>" class="<?php echo $cta_cls; ?>" <?php echo $cta_target; ?> role="button">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path
                                 d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.36 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.79a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -783,14 +787,17 @@ if (!function_exists('sode_footer_render')) {
 
             #<?php echo $uid; ?> .sf-about-logo-wrap {
                 flex-shrink: 0;
-                width: 110px;
+  width: 150px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.12);
             }
 
             #<?php echo $uid; ?> .sf-about-logo {
                 width: 110px;
                 max-width: 100%;
                 height: auto;
-                border-radius: 12px;
                 object-fit: contain;
                 display: block;
             }
@@ -854,7 +861,7 @@ if (!function_exists('sode_footer_render')) {
                 flex-wrap: wrap;
                 justify-content: center;
                 align-items: center;
-                gap: 4px;
+                gap: 8px;
                 margin: 0 0 14px;
             }
 
@@ -872,7 +879,7 @@ if (!function_exists('sode_footer_render')) {
             }
 
             #<?php echo $uid; ?> .sf-link-sep {
-                color: rgba(255, 255, 255, .35);
+                color: rgba(255, 255, 255, 0.74);
                 font-size: 13px;
             }
 
@@ -1093,6 +1100,19 @@ if (!function_exists('sode_footer_render')) {
                     goTo(0);
                     window.addEventListener('resize', function () { goTo(current); });
                 });
+
+                // Prevent page jump to top when clicking CTA button or popup/hash links
+                var rootEl = document.getElementById(uid);
+                if (rootEl) {
+                    rootEl.addEventListener('click', function (e) {
+                        var target = e.target.closest('a');
+                        if (!target) return;
+                        var href = (target.getAttribute('href') || '').trim();
+                        if (!href || href === '#' || href === 'javascript:void(0);' || href === 'javascript:void(0)' || href.indexOf('javascript:') === 0) {
+                            e.preventDefault();
+                        }
+                    });
+                }
             }());
         </script>
         <?php
