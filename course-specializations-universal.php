@@ -1,26 +1,26 @@
 <?php
 /**
  * ====================================================================
- * Universal Course Fees Component
- * File: course-fees-universal.php
+ * Universal Course Specializations Component
+ * File: course-specializations-universal.php
  * 
- * Renders a clean 2-column fee structure comparison table for any course
- * and mode (e.g. Online MBA) for universities.
+ * Renders a clean 3-column table of specializations with optional URLs,
+ * semester fees, and durations for any university course (e.g. Online MBA).
  * 
  * Shortcodes:
- *  1. [course_fees course="mba" mode="online"]
- *  2. [course_fee_table course="mba" mode="online"]
- *  3. [course_fee course="mba" mode="online"]
- *  4. [fee_structure course="mba" mode="online"]
- *  5. [university_course_fees course="mba" mode="online"]
- *  6. [uni_course_fees course="mba" mode="online"]
+ *  1. [course_specializations course="mba" mode="online"]
+ *  2. [course_specialization_table course="mba" mode="online"]
+ *  3. [course_specialization course="mba" mode="online"]
+ *  4. [specializations_table course="mba" mode="online"]
+ *  5. [university_course_specializations course="mba" mode="online"]
+ *  6. [uni_course_specializations course="mba" mode="online"]
  * ====================================================================
  */
 
-if (defined('SODE_COURSE_FEES_UNIVERSAL_LOADED')) {
+if (defined('SODE_COURSE_SPECIALIZATIONS_UNIVERSAL_LOADED')) {
     return;
 }
-define('SODE_COURSE_FEES_UNIVERSAL_LOADED', true);
+define('SODE_COURSE_SPECIALIZATIONS_UNIVERSAL_LOADED', true);
 
 // Polyfills
 if (!function_exists('sanitize_title')) {
@@ -48,8 +48,8 @@ if (!function_exists('shortcode_atts')) {
 /**
  * Format fee amount with currency prefix
  */
-if (!function_exists('sode_format_fee_display')) {
-    function sode_format_fee_display($amount, $currency = 'INR')
+if (!function_exists('sode_format_spec_fee_display')) {
+    function sode_format_spec_fee_display($amount, $currency = 'INR')
     {
         $val = trim((string) $amount);
         if ($val === '') {
@@ -64,16 +64,16 @@ if (!function_exists('sode_format_fee_display')) {
             return '';
         }
 
-        // Return formatted as "INR 61,000"
+        // Return formatted as "INR 32,875"
         return trim($currency) . ' ' . $cleaned;
     }
 }
 
 /**
- * Helper: Fetch course fees data from DB or Central API
+ * Helper: Fetch course specializations data from DB or Central API
  */
-if (!function_exists('sode_get_course_fees_data')) {
-    function sode_get_course_fees_data($uni_slug = '', $course_slug = 'mba', $mode = 'Online')
+if (!function_exists('sode_get_course_specializations_data')) {
+    function sode_get_course_specializations_data($uni_slug = '', $course_slug = 'mba', $mode = 'Online')
     {
         static $cache = [];
 
@@ -103,7 +103,7 @@ if (!function_exists('sode_get_course_fees_data')) {
             return $cache[$cache_key];
         }
 
-        $fees = [];
+        $specializations = [];
         $uni_name = strtoupper($uni_slug);
         $course_name = strtoupper($course_slug);
 
@@ -141,7 +141,7 @@ if (!function_exists('sode_get_course_fees_data')) {
                         $course_name = $found_course['short_name'] ?: $found_course['full_name'];
 
                         $m_stmt = $db->prepare("
-                            SELECT one_time_processing_fee, tuition_fee, examination_fee, per_semester_fee, total_program_fee, mode 
+                            SELECT id, mode 
                             FROM university_course_mappings 
                             WHERE university_id = ? AND course_id = ? AND LOWER(mode) = LOWER(?) 
                             LIMIT 1
@@ -152,7 +152,7 @@ if (!function_exists('sode_get_course_fees_data')) {
                         // Fallback to any mode if exact mode not found
                         if (!$mapping) {
                             $m_stmt = $db->prepare("
-                                SELECT one_time_processing_fee, tuition_fee, examination_fee, per_semester_fee, total_program_fee, mode 
+                                SELECT id, mode 
                                 FROM university_course_mappings 
                                 WHERE university_id = ? AND course_id = ? 
                                 LIMIT 1
@@ -162,32 +162,33 @@ if (!function_exists('sode_get_course_fees_data')) {
                         }
 
                         if ($mapping) {
-                            $fees = [
-                                'one_time_processing_fee' => $mapping['one_time_processing_fee'] ?? '',
-                                'tuition_fee' => $mapping['tuition_fee'] ?? '',
-                                'examination_fee' => $mapping['examination_fee'] ?? '',
-                                'per_semester_fee' => $mapping['per_semester_fee'] ?? '',
-                                'total_program_fee' => $mapping['total_program_fee'] ?? '',
-                            ];
+                            $s_stmt = $db->prepare("
+                                SELECT specialization_name, specialization_link, fees_per_sem, duration 
+                                FROM course_specializations 
+                                WHERE mapping_id = ? 
+                                ORDER BY id ASC
+                            ");
+                            $s_stmt->execute([$mapping['id']]);
+                            $specializations = $s_stmt->fetchAll(PDO::FETCH_ASSOC);
                         }
                     }
                 }
             } catch (Exception $e) {
-                error_log("sode_get_course_fees_data local error: " . $e->getMessage());
+                error_log("sode_get_course_specializations_data local error: " . $e->getMessage());
             }
         }
 
         // 3. Central Admin API Remote Call if empty
-        if (empty($fees) || (!array_filter($fees))) {
+        if (empty($specializations)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
             $params = http_build_query([
-                'uni' => $uni_slug,
+                'uni'    => $uni_slug,
                 'course' => $course_slug,
-                'mode' => $mode_clean
+                'mode'   => $mode_clean
             ]);
             $endpoints = [
-                $api_base . '/admin/api/get_course_fees.php?' . $params,
-                $api_base . '/api/get_course_fees.php?' . $params,
+                $api_base . '/admin/api/get_course_specializations.php?' . $params,
+                $api_base . '/api/get_course_specializations.php?' . $params,
             ];
 
             foreach ($endpoints as $url) {
@@ -204,8 +205,8 @@ if (!function_exists('sode_get_course_fees_data')) {
 
                 if (!empty($raw)) {
                     $json = json_decode($raw, true);
-                    if (!empty($json['success']) && !empty($json['fees']) && is_array($json['fees'])) {
-                        $fees = $json['fees'];
+                    if (!empty($json['success']) && !empty($json['specializations']) && is_array($json['specializations'])) {
+                        $specializations = $json['specializations'];
                         if (!empty($json['university_name']))
                             $uni_name = $json['university_name'];
                         if (!empty($json['course_name']))
@@ -217,10 +218,10 @@ if (!function_exists('sode_get_course_fees_data')) {
         }
 
         $result = [
-            'university' => $uni_name,
-            'course' => $course_name,
-            'mode' => $mode_clean,
-            'fees' => $fees,
+            'university'      => $uni_name,
+            'course'          => $course_name,
+            'mode'            => $mode_clean,
+            'specializations' => $specializations,
         ];
 
         $cache[$cache_key] = $result;
@@ -229,103 +230,76 @@ if (!function_exists('sode_get_course_fees_data')) {
 }
 
 /**
- * Main Render Function for Course Fees Table
+ * Main Render Function for Course Specializations Table
  */
-if (!function_exists('sode_course_fees_render')) {
-    function sode_course_fees_render($atts = [])
+if (!function_exists('sode_course_specializations_render')) {
+    function sode_course_specializations_render($atts = [])
     {
         $atts = shortcode_atts([
-            'uni' => '',
+            'uni'        => '',
             'university' => '',
-            'course' => 'mba',
-            'mode' => 'Online',
-            'currency' => 'INR',
-            'show_per_semester' => '',
-            'class' => '',
-        ], $atts, 'course_fees');
+            'course'     => 'mba',
+            'mode'       => 'Online',
+            'currency'   => 'INR',
+            'class'      => '',
+        ], $atts, 'course_specializations');
 
         $uni = !empty($atts['uni']) ? $atts['uni'] : $atts['university'];
         $course = $atts['course'];
         $mode = $atts['mode'];
         $currency = !empty($atts['currency']) ? trim($atts['currency']) : 'INR';
-        $show_per_sem = in_array(strtolower(trim((string) $atts['show_per_semester'])), ['true', '1', 'yes', 'on']);
         $custom_class = trim($atts['class'] ?? '');
 
         // Fetch data
-        $data = sode_get_course_fees_data($uni, $course, $mode);
-        $fees = $data['fees'] ?? [];
+        $data = sode_get_course_specializations_data($uni, $course, $mode);
+        $specs = $data['specializations'] ?? [];
 
-        // Build list of fee rows to display
-        $rows = [];
-
-        // 1. One-time Processing Fee
-        if (!empty($fees['one_time_processing_fee'])) {
-            $rows[] = [
-                'component' => 'One-time Processing Fee',
-                'amount' => sode_format_fee_display($fees['one_time_processing_fee'], $currency),
+        // Fallback default sample if empty to prevent broken UI
+        if (empty($specs)) {
+            $specs = [
+                ['specialization_name' => 'Financial Management', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
+                ['specialization_name' => 'Human Resource Management (HRM)', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
+                ['specialization_name' => 'Marketing Management', 'specialization_link' => '', 'fees_per_sem' => '3,750', 'duration' => '2 Years'],
+                ['specialization_name' => 'IT & Systems Management', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
+                ['specialization_name' => 'Supply Chain Management', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
+                ['specialization_name' => 'Entrepreneurship', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
+                ['specialization_name' => 'Business Analytics', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
+                ['specialization_name' => 'Artificial Intelligence', 'specialization_link' => '', 'fees_per_sem' => '32,875', 'duration' => '2 Years'],
             ];
         }
 
-        // 2. Tuition Fee
-        if (!empty($fees['tuition_fee'])) {
-            $rows[] = [
-                'component' => 'Tuition Fee',
-                'amount' => sode_format_fee_display($fees['tuition_fee'], $currency),
-            ];
-        }
-
-        // 3. Examination Fee
-        if (!empty($fees['examination_fee'])) {
-            $rows[] = [
-                'component' => 'Examination Fee',
-                'amount' => sode_format_fee_display($fees['examination_fee'], $currency),
-            ];
-        }
-
-        // 4. Per Semester Fee (optional if requested or if tuition fee is missing)
-        if (!empty($fees['per_semester_fee']) && ($show_per_sem || empty($fees['tuition_fee']))) {
-            $rows[] = [
-                'component' => 'Per Semester Fee',
-                'amount' => sode_format_fee_display($fees['per_semester_fee'], $currency),
-            ];
-        }
-
-        // 5. Total Program Fee
-        if (!empty($fees['total_program_fee'])) {
-            $rows[] = [
-                'component' => 'Total Program Fee',
-                'amount' => sode_format_fee_display($fees['total_program_fee'], $currency),
-            ];
-        }
-
-        // Fallback default sample if empty to avoid broken UI
-        if (empty($rows)) {
-            $rows = [
-                ['component' => 'One-time Processing Fee', 'amount' => $currency . ' 500'],
-                ['component' => 'Tuition Fee', 'amount' => $currency . ' 61,000'],
-                ['component' => 'Examination Fee', 'amount' => $currency . ' 3,750'],
-                ['component' => 'Total Program Fee', 'amount' => $currency . ' 1,30,000'],
-            ];
-        }
-
-        $uid = 'sode_fees_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $uid = 'sode_spec_' . substr(md5(uniqid(rand(), true)), 0, 8);
 
         ob_start();
         ?>
-        <div class="sode-course-fees-wrapper <?php echo htmlspecialchars($custom_class); ?>" id="<?php echo $uid; ?>">
-            <div class="sode-fees-scroll">
-                <table class="sode-fees-table">
+        <div class="sode-course-specs-wrapper <?php echo htmlspecialchars($custom_class); ?>" id="<?php echo $uid; ?>">
+            <div class="sode-specs-scroll">
+                <table class="sode-specs-table">
                     <thead>
                         <tr>
-                            <th class="sode-fees-th-component">FEE COMPONENT</th>
-                            <th class="sode-fees-th-amount">AMOUNT</th>
+                            <th class="sode-specs-th-name">SPECIALIZATION</th>
+                            <th class="sode-specs-th-fee">FEES (FIRST SEMESTER)</th>
+                            <th class="sode-specs-th-duration">DURATION</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($rows as $row): ?>
+                        <?php foreach ($specs as $s): ?>
                             <tr>
-                                <td class="sode-fees-td-component"><?php echo htmlspecialchars($row['component']); ?></td>
-                                <td class="sode-fees-td-amount"><?php echo htmlspecialchars($row['amount']); ?></td>
+                                <td class="sode-specs-td-name">
+                                    <?php if (!empty($s['specialization_link'])): ?>
+                                        <a href="<?php echo htmlspecialchars($s['specialization_link']); ?>" target="_blank" rel="noopener" class="sode-spec-link">
+                                            <?php echo htmlspecialchars($s['specialization_name']); ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <?php echo htmlspecialchars($s['specialization_name']); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="sode-specs-td-fee">
+                                    <?php echo htmlspecialchars(sode_format_spec_fee_display($s['fees_per_sem'], $currency)); ?>
+                                </td>
+                                <td class="sode-specs-td-duration">
+                                    <?php echo htmlspecialchars($s['duration'] ?? '2 Years'); ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -334,13 +308,13 @@ if (!function_exists('sode_course_fees_render')) {
         </div>
 
         <style>
-            #<?php echo $uid; ?>.sode-course-fees-wrapper {
+            #<?php echo $uid; ?>.sode-course-specs-wrapper {
                 width: 100%;
                 margin: 0px;
                 box-sizing: border-box;
             }
 
-            #<?php echo $uid; ?> .sode-fees-scroll {
+            #<?php echo $uid; ?> .sode-specs-scroll {
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
@@ -350,7 +324,7 @@ if (!function_exists('sode_course_fees_render')) {
                 box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
             }
 
-            #<?php echo $uid; ?> .sode-fees-table {
+            #<?php echo $uid; ?> .sode-specs-table {
                 width: 100%;
                 border-collapse: collapse;
                 border-spacing: 0;
@@ -358,12 +332,12 @@ if (!function_exists('sode_course_fees_render')) {
                 margin: 0px;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table thead tr {
+            #<?php echo $uid; ?> .sode-specs-table thead tr {
                 background: #EBF3FC;
                 border-bottom: 1px solid #CBD5E1;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table th {
+            #<?php echo $uid; ?> .sode-specs-table th {
                 padding: 13px 20px;
                 font-size: 13.5px;
                 font-weight: 800 !important;
@@ -374,71 +348,101 @@ if (!function_exists('sode_course_fees_render')) {
                 line-height: 1.4;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table th.sode-fees-th-component {
-                width: 68%;
+            #<?php echo $uid; ?> .sode-specs-table th.sode-specs-th-name {
+                width: 48%;
                 border-right: 1px solid #CBD5E1;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table th.sode-fees-th-amount {
-                width: 32%;
+            #<?php echo $uid; ?> .sode-specs-table th.sode-specs-th-fee {
+                width: 28%;
+                border-right: 1px solid #CBD5E1;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table tbody tr {
+            #<?php echo $uid; ?> .sode-specs-table th.sode-specs-th-duration {
+                width: 24%;
+            }
+
+            #<?php echo $uid; ?> .sode-specs-table tbody tr {
                 border-bottom: 1px solid #E2E8F0;
                 transition: background-color 0.15s ease;
                 background: #ffffff;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table tbody tr:last-child {
+            #<?php echo $uid; ?> .sode-specs-table tbody tr:last-child {
                 border-bottom: none;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table tbody tr:hover {
+            #<?php echo $uid; ?> .sode-specs-table tbody tr:hover {
                 background-color: #F8FAFC;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table td {
+            #<?php echo $uid; ?> .sode-specs-table td {
                 padding: 13px 20px;
                 border: none;
                 line-height: 1.5;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-component {
+            #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-name {
                 font-size: 13.5px;
                 font-weight: 600 !important;
                 color: #0F172A;
-                width: 68%;
+                width: 48%;
                 border-right: 1px solid #E2E8F0;
             }
 
-            #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-amount {
+            #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-name a.sode-spec-link {
+                color: #0F172A;
+                text-decoration: none;
+                font-weight: 600 !important;
+                transition: color 0.15s ease;
+            }
+
+            #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-name a.sode-spec-link:hover {
+                color: #2563EB;
+                text-decoration: underline;
+            }
+
+            #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-fee {
                 font-size: 13.5px;
                 font-weight: 500;
                 color: #334155;
-                width: 32%;
+                width: 28%;
+                white-space: nowrap;
+                border-right: 1px solid #E2E8F0;
+            }
+
+            #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-duration {
+                font-size: 13.5px;
+                font-weight: 500;
+                color: #334155;
+                width: 24%;
                 white-space: nowrap;
             }
 
             @media (max-width: 640px) {
-                #<?php echo $uid; ?> .sode-fees-table th {
+                #<?php echo $uid; ?> .sode-specs-table th {
                     padding: 11px 14px;
                     font-size: 12px;
                 }
 
-                #<?php echo $uid; ?> .sode-fees-table td {
+                #<?php echo $uid; ?> .sode-specs-table td {
                     padding: 10px 14px;
                     font-size: 12.5px;
                 }
 
-                #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-component {
+                #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-name {
                     font-size: 12.5px;
-                    font-weight: 700 !important;
-                    width: 60%;
+                    width: 45%;
                 }
 
-                #<?php echo $uid; ?> .sode-fees-table td.sode-fees-td-amount {
+                #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-fee {
                     font-size: 12.5px;
-                    width: 40%;
+                    width: 30%;
+                }
+
+                #<?php echo $uid; ?> .sode-specs-table td.sode-specs-td-duration {
+                    font-size: 12.5px;
+                    width: 25%;
                 }
             }
         </style>
@@ -449,10 +453,10 @@ if (!function_exists('sode_course_fees_render')) {
 
 // Register shortcodes directly if WordPress add_shortcode exists
 if (function_exists('add_shortcode')) {
-    add_shortcode('course_fees', 'sode_course_fees_render');
-    add_shortcode('course_fee_table', 'sode_course_fees_render');
-    add_shortcode('course_fee', 'sode_course_fees_render');
-    add_shortcode('fee_structure', 'sode_course_fees_render');
-    add_shortcode('university_course_fees', 'sode_course_fees_render');
-    add_shortcode('uni_course_fees', 'sode_course_fees_render');
+    add_shortcode('course_specializations', 'sode_course_specializations_render');
+    add_shortcode('course_specialization_table', 'sode_course_specializations_render');
+    add_shortcode('course_specialization', 'sode_course_specializations_render');
+    add_shortcode('specializations_table', 'sode_course_specializations_render');
+    add_shortcode('university_course_specializations', 'sode_course_specializations_render');
+    add_shortcode('uni_course_specializations', 'sode_course_specializations_render');
 }

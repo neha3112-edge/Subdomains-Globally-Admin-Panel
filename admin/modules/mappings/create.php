@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $spec_names = $_POST['spec_name'] ?? [];
+    $spec_links = $_POST['spec_link'] ?? [];
     $spec_fees = $_POST['spec_fee'] ?? [];
     $spec_durations = $_POST['spec_duration'] ?? [];
 
@@ -58,13 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Insert Specializations
             if (!empty($spec_names)) {
-                $spec_stmt = $db->prepare("INSERT INTO course_specializations (mapping_id, specialization_name, fees_per_sem, duration) VALUES (?, ?, ?, ?)");
+                $spec_stmt = $db->prepare("INSERT INTO course_specializations (mapping_id, specialization_name, specialization_link, fees_per_sem, duration) VALUES (?, ?, ?, ?, ?)");
                 foreach ($spec_names as $i => $sname) {
                     $sname = trim($sname);
                     if (!empty($sname)) {
+                        $slink = trim($spec_links[$i] ?? '');
                         $sfee = trim($spec_fees[$i] ?? '');
                         $sdur = trim($spec_durations[$i] ?? '');
-                        $spec_stmt->execute([$mapping_id, $sname, $sfee, $sdur]);
+                        $spec_stmt->execute([$mapping_id, $sname, $slink, $sfee, $sdur]);
                     }
                 }
             }
@@ -189,10 +191,18 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <button type="button" class="btn-primary btn-sm" id="add-spec-btn" style="width:auto; padding:6px 12px;">+ Add Specialization</button>
                 </div>
                 <div class="card-body">
+                    <div style="display:grid; grid-template-columns: 2fr 1.8fr 1fr 1fr 40px; gap:12px; font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; padding:0 4px;">
+                        <span>Specialization Name *</span>
+                        <span>URL / Link (Optional)</span>
+                        <span>Fee (1st Sem / Per Sem)</span>
+                        <span>Duration</span>
+                        <span></span>
+                    </div>
                     <div id="specs-container" style="display:flex; flex-direction:column; gap:12px;">
-                        <div class="spec-row" style="display:grid; grid-template-columns: 2fr 1fr 1fr 40px; gap:12px; align-items:center;">
-                            <input type="text" name="spec_name[]" class="form-control" placeholder="Specialization (e.g. Data Analytics)">
-                            <input type="text" name="spec_fee[]" class="form-control" placeholder="Fee (e.g. ₹25,000/sem)">
+                        <div class="spec-row" style="display:grid; grid-template-columns: 2fr 1.8fr 1fr 1fr 40px; gap:12px; align-items:center;">
+                            <input type="text" name="spec_name[]" class="form-control" placeholder="Specialization (e.g. Financial Management)">
+                            <input type="url" name="spec_link[]" class="form-control" placeholder="https://... (optional link)">
+                            <input type="text" name="spec_fee[]" class="form-control" placeholder="Fee (e.g. INR 32,875)">
                             <input type="text" name="spec_duration[]" class="form-control" placeholder="Duration (e.g. 2 Years)">
                             <button type="button" class="action-btn delete-btn remove-spec-btn" title="Remove">&times;</button>
                         </div>
@@ -383,11 +393,12 @@ document.getElementById('add-spec-btn').addEventListener('click', function() {
     const div = document.createElement('div');
     div.className = 'spec-row';
     div.style.display = 'grid';
-    div.style.gridTemplateColumns = '2fr 1fr 1fr 40px';
+    div.style.gridTemplateColumns = '2fr 1.8fr 1fr 1fr 40px';
     div.style.gap = '12px';
     div.style.alignItems = 'center';
     div.innerHTML = `
         <input type="text" name="spec_name[]" class="form-control" placeholder="Specialization Name">
+        <input type="url" name="spec_link[]" class="form-control" placeholder="https://... (optional link)">
         <input type="text" name="spec_fee[]" class="form-control" placeholder="Fee">
         <input type="text" name="spec_duration[]" class="form-control" placeholder="Duration">
         <button type="button" class="action-btn delete-btn remove-spec-btn" title="Remove">&times;</button>

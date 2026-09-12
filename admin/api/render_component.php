@@ -44,6 +44,9 @@ if (file_exists($root_dir . '/course-syllabus-universal.php')) {
 if (file_exists($root_dir . '/course-fees-universal.php')) {
     require_once $root_dir . '/course-fees-universal.php';
 }
+if (file_exists($root_dir . '/course-specializations-universal.php')) {
+    require_once $root_dir . '/course-specializations-universal.php';
+}
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -117,6 +120,15 @@ switch ($component) {
     case 'university_course_fees':
     case 'uni_course_fees':
         echo sode_course_fees_render($params);
+        break;
+
+    case 'course_specializations':
+    case 'course_specialization_table':
+    case 'course_specialization':
+    case 'specializations_table':
+    case 'university_course_specializations':
+    case 'uni_course_specializations':
+        echo sode_course_specializations_render($params);
         break;
 
     case 'legal_popups':

@@ -624,6 +624,33 @@ function sode_run_auto_migrations(PDO $pdo) {
                     $u_stmt = $db->prepare("UPDATE university_course_mappings SET syllabus_json = ? WHERE id = 1");
                     $u_stmt->execute([$sample_syllabus]);
                 }
+            },
+
+            '2026_09_12_002_add_specialization_link_and_seed_dsu_specs' => function(PDO $db) {
+                // 1. Add specialization_link column if not exists
+                $col_check = $db->query("SHOW COLUMNS FROM course_specializations LIKE 'specialization_link'")->fetch();
+                if (!$col_check) {
+                    $db->exec("ALTER TABLE course_specializations ADD COLUMN specialization_link TEXT NULL AFTER duration");
+                }
+
+                // 2. Seed DSU MBA (mapping_id = 1) specializations if currently empty
+                $count = (int)$db->query("SELECT COUNT(*) FROM course_specializations WHERE mapping_id = 1")->fetchColumn();
+                if ($count === 0) {
+                    $stmt = $db->prepare("INSERT INTO course_specializations (mapping_id, specialization_name, specialization_link, fees_per_sem, duration) VALUES (?, ?, ?, ?, ?)");
+                    $specs = [
+                        ['Financial Management', '', 'INR 32,875', '2 Years'],
+                        ['Human Resource Management (HRM)', '', 'INR 32,875', '2 Years'],
+                        ['Marketing Management', '', 'INR 3,750', '2 Years'],
+                        ['IT & Systems Management', '', 'INR 32,875', '2 Years'],
+                        ['Supply Chain Management', '', 'INR 32,875', '2 Years'],
+                        ['Entrepreneurship', '', 'INR 32,875', '2 Years'],
+                        ['Business Analytics', '', 'INR 32,875', '2 Years'],
+                        ['Artificial Intelligence', '', 'INR 32,875', '2 Years'],
+                    ];
+                    foreach ($specs as $s) {
+                        $stmt->execute([1, $s[0], $s[1], $s[2], $s[3]]);
+                    }
+                }
             }
         ];
 

@@ -780,6 +780,57 @@ add_shortcode('uni_course_fees', function($atts) {
 });
 
 // ====================================================
+// 2.14. COURSE SPECIALIZATIONS TABLE SHORTCODES
+// [course_specializations], [course_specialization_table], [course_specialization], [specializations_table], [university_course_specializations], [uni_course_specializations]
+// Usage: [course_specializations course="mba" mode="online"]
+// ====================================================
+if (file_exists(__DIR__ . '/course-specializations-universal.php')) {
+    require_once __DIR__ . '/course-specializations-universal.php';
+}
+
+add_shortcode('course_specializations', function($atts) {
+    if (function_exists('sode_course_specializations_render')) {
+        return sode_course_specializations_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_specializations', $atts ?: []);
+});
+
+add_shortcode('course_specialization_table', function($atts) {
+    if (function_exists('sode_course_specializations_render')) {
+        return sode_course_specializations_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_specializations', $atts ?: []);
+});
+
+add_shortcode('course_specialization', function($atts) {
+    if (function_exists('sode_course_specializations_render')) {
+        return sode_course_specializations_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_specializations', $atts ?: []);
+});
+
+add_shortcode('specializations_table', function($atts) {
+    if (function_exists('sode_course_specializations_render')) {
+        return sode_course_specializations_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_specializations', $atts ?: []);
+});
+
+add_shortcode('university_course_specializations', function($atts) {
+    if (function_exists('sode_course_specializations_render')) {
+        return sode_course_specializations_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_specializations', $atts ?: []);
+});
+
+add_shortcode('uni_course_specializations', function($atts) {
+    if (function_exists('sode_course_specializations_render')) {
+        return sode_course_specializations_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_specializations', $atts ?: []);
+});
+
+// ====================================================
 // 4. SECURITY TOKEN & AJAX LEAD HANDLER
 // ====================================================
 add_action('init', function () {
@@ -1123,4 +1174,8 @@ if (file_exists(__DIR__ . '/course-syllabus-universal.php')) {
 
 if (file_exists(__DIR__ . '/course-fees-universal.php')) {
     require_once __DIR__ . '/course-fees-universal.php';
+}
+
+if (file_exists(__DIR__ . '/course-specializations-universal.php')) {
+    require_once __DIR__ . '/course-specializations-universal.php';
 }
