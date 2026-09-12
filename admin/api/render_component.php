@@ -41,6 +41,9 @@ if (file_exists($root_dir . '/footer-universal.php')) {
 if (file_exists($root_dir . '/course-syllabus-universal.php')) {
     require_once $root_dir . '/course-syllabus-universal.php';
 }
+if (file_exists($root_dir . '/course-fees-universal.php')) {
+    require_once $root_dir . '/course-fees-universal.php';
+}
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -104,6 +107,16 @@ switch ($component) {
     case 'university_course_syllabus':
     case 'uni_course_syllabus':
         echo sode_course_syllabus_render($params);
+        break;
+
+    case 'course_fees':
+    case 'course_fee_table':
+    case 'course_fee':
+    case 'fee_table':
+    case 'fee_structure':
+    case 'university_course_fees':
+    case 'uni_course_fees':
+        echo sode_course_fees_render($params);
         break;
 
     case 'legal_popups':

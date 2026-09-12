@@ -729,6 +729,57 @@ add_shortcode('uni_course_syllabus', function($atts) {
 });
 
 // ====================================================
+// 2.13. COURSE FEES TABLE SHORTCODES
+// [course_fees], [course_fee_table], [course_fee], [fee_structure], [university_course_fees], [uni_course_fees]
+// Usage: [course_fees course="mba" mode="online"]
+// ====================================================
+if (file_exists(__DIR__ . '/course-fees-universal.php')) {
+    require_once __DIR__ . '/course-fees-universal.php';
+}
+
+add_shortcode('course_fees', function($atts) {
+    if (function_exists('sode_course_fees_render')) {
+        return sode_course_fees_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_fees', $atts ?: []);
+});
+
+add_shortcode('course_fee_table', function($atts) {
+    if (function_exists('sode_course_fees_render')) {
+        return sode_course_fees_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_fees', $atts ?: []);
+});
+
+add_shortcode('course_fee', function($atts) {
+    if (function_exists('sode_course_fees_render')) {
+        return sode_course_fees_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_fees', $atts ?: []);
+});
+
+add_shortcode('fee_structure', function($atts) {
+    if (function_exists('sode_course_fees_render')) {
+        return sode_course_fees_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_fees', $atts ?: []);
+});
+
+add_shortcode('university_course_fees', function($atts) {
+    if (function_exists('sode_course_fees_render')) {
+        return sode_course_fees_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_fees', $atts ?: []);
+});
+
+add_shortcode('uni_course_fees', function($atts) {
+    if (function_exists('sode_course_fees_render')) {
+        return sode_course_fees_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_fees', $atts ?: []);
+});
+
+// ====================================================
 // 4. SECURITY TOKEN & AJAX LEAD HANDLER
 // ====================================================
 add_action('init', function () {
