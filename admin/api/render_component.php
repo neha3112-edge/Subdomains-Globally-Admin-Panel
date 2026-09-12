@@ -50,6 +50,10 @@ if (file_exists($root_dir . '/course-specializations-universal.php')) {
 if (file_exists($root_dir . '/job-roles-table-universal.php')) {
     require_once $root_dir . '/job-roles-table-universal.php';
 }
+if (file_exists($root_dir . '/course-fees-table-universal.php')) {
+    require_once $root_dir . '/course-fees-table-universal.php';
+}
+
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -140,6 +144,14 @@ switch ($component) {
     case 'job_roles_salary':
         echo sode_job_roles_table_render($params);
         break;
+
+    case 'course_table':
+    case 'universities_table':
+    case 'course_universities':
+    case 'top_universities':
+        echo sode_course_universities_table_render($params);
+        break;
+
 
     case 'legal_popups':
     case 'disclaimer_popup':

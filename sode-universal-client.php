@@ -858,6 +858,35 @@ add_shortcode('job_roles_salary', function($atts) {
     return sode_fetch_remote_component('job_roles_table', $atts ?: []);
 });
 
+add_shortcode('course_table', function($atts) {
+    if (function_exists('sode_course_universities_table_render')) {
+        return sode_course_universities_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_table', $atts ?: []);
+});
+
+add_shortcode('universities_table', function($atts) {
+    if (function_exists('sode_course_universities_table_render')) {
+        return sode_course_universities_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_table', $atts ?: []);
+});
+
+add_shortcode('course_universities', function($atts) {
+    if (function_exists('sode_course_universities_table_render')) {
+        return sode_course_universities_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_table', $atts ?: []);
+});
+
+add_shortcode('top_universities', function($atts) {
+    if (function_exists('sode_course_universities_table_render')) {
+        return sode_course_universities_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_table', $atts ?: []);
+});
+
+
 
 // ====================================================
 // 4. SECURITY TOKEN & AJAX LEAD HANDLER
@@ -1212,4 +1241,9 @@ if (file_exists(__DIR__ . '/course-specializations-universal.php')) {
 if (file_exists(__DIR__ . '/job-roles-table-universal.php')) {
     require_once __DIR__ . '/job-roles-table-universal.php';
 }
+
+if (file_exists(__DIR__ . '/course-fees-table-universal.php')) {
+    require_once __DIR__ . '/course-fees-table-universal.php';
+}
+
 

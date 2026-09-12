@@ -713,8 +713,92 @@ function sode_run_auto_migrations(PDO $pdo) {
                         }
                     }
                 }
+            },
+
+            '2026_09_12_004_create_and_seed_course_universities_table' => function ($db) {
+                // 1. Create table course_universities_table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS course_universities_table (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        course_slug VARCHAR(50) NOT NULL UNIQUE,
+                        course_name VARCHAR(150) NOT NULL,
+                        heading VARCHAR(255) NULL,
+                        description TEXT NULL,
+                        columns_json TEXT NULL,
+                        universities_json LONGTEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // 2. Seed data from subdomain_course_fees_table_date.json if exists
+                $json_path = dirname(__DIR__, 2) . '/subdomain_course_fees_table_date.json';
+                if (file_exists($json_path)) {
+                    $json_data = json_decode(file_get_contents($json_path), true);
+                    if (is_array($json_data)) {
+                        $courses_rows = $db->query("SELECT id, full_name, short_name, slug FROM courses")->fetchAll(PDO::FETCH_ASSOC);
+                        $courses_map = [];
+                        foreach ($courses_rows as $cr) {
+                            $courses_map[strtolower($cr['slug'])] = $cr['short_name'] ?: $cr['full_name'];
+                        }
+
+                        $stmt = $db->prepare("
+                            INSERT INTO course_universities_table (course_slug, course_name, heading, description, columns_json, universities_json)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE 
+                                course_name = VALUES(course_name),
+                                heading = VALUES(heading),
+                                description = VALUES(description),
+                                columns_json = VALUES(columns_json),
+                                universities_json = VALUES(universities_json)
+                        ");
+
+                        foreach ($json_data as $slug => $cdata) {
+                            $slug_clean = strtolower(trim($slug));
+                            $cname = $courses_map[$slug_clean] ?? strtoupper($slug_clean);
+                            $heading = $cdata['heading'] ?? ('Top 10 Online & Distance ' . $cname . ' Universities in India $YEAR$');
+                            $desc = $cdata['description'] ?? '';
+                            $columns = $cdata['columns'] ?? ["University Name", $cname . " Fee (Per Semester)", "Location", "Approvals & Accreditation", "Advantage"];
+                            $unis = $cdata['universities'] ?? [];
+
+                            $formatted_unis = [];
+                            foreach ($unis as $u) {
+                                $formatted_unis[] = [
+                                    'name'          => trim($u['name'] ?? ''),
+                                    'fees'          => trim($u['fees'] ?? ''),
+                                    'location'      => trim($u['location'] ?? ''),
+                                    'accreditation' => trim($u['accreditation'] ?? ''),
+                                    'advantage'     => trim($u['advantage'] ?? ''),
+                                    'link'          => trim($u['link'] ?? '')
+                                ];
+                            }
+
+                            $columns_json = json_encode($columns, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                            $unis_json = json_encode($formatted_unis, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                            $stmt->execute([$slug_clean, $cname, $heading, $desc, $columns_json, $unis_json]);
+                        }
+                    }
+                }
+
+                // 3. Register Sidebar item if not present
+                $check = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'course_universities'")->fetch();
+                if (!$check) {
+                    $db->exec("
+                        INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                        VALUES ('MANAGE', 'Universities Table', 'modules/course_universities/index.php', 'course_universities', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"></rect><path d=\"M3 9h18M3 15h18M9 3v18M15 3v18\"></path></svg>', 6, 1, 0)
+                    ");
+                    $new_id = (int)$db->lastInsertId();
+                    if ($new_id) {
+                        $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                        $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                        foreach ($roles as $r) {
+                            $acc_stmt->execute([$r['id'], $new_id]);
+                        }
+                    }
+                }
             }
         ];
+
 
         // 4. Run pending migrations in order
         $record_stmt = $pdo->prepare("INSERT INTO schema_migrations (migration_key, batch) VALUES (?, 1)");

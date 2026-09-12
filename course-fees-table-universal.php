@@ -13,74 +13,193 @@
  * ==========================================================
  */
 
-// Ye file "dynamic-data-files" folder me hai jo public URL se bhi
-// accessible hai (JSON files ke liye). Agar isko seedha browser me
-// khola jaye (WordPress load kiye bina) to WP functions maujood
-// nahi honge - is case me clean 403 de kar turant ruk jao, taaki
-// raw PHP error (jo file path leak kar sakta hai) na dikhe.
-if ( ! function_exists( 'add_shortcode' ) ) {
-    http_response_code( 403 );
-    exit;
-}
-
-// Ek hi baar load ho - agar kabhi galti se dobara require ho jaye
-// to fatal error (function already declared) na aaye.
+// Ek hi baar load ho - prevent duplicate declaration
 if ( defined( 'COURSE_TABLE_UNIVERSAL_LOADED' ) ) {
     return;
 }
 define( 'COURSE_TABLE_UNIVERSAL_LOADED', true );
 
-// ---------- SETTINGS: Universal JSON URL ----------
-if ( ! defined( 'COURSE_TABLE_JSON_URL' ) ) {
-    define( 'COURSE_TABLE_JSON_URL', 'https://dusol.distanceeducationschool.com/dynamic-data-files/subdomain_course_fees_table_date.json' );
+// Fallback Polyfills for standalone / SSR execution
+if (!function_exists('shortcode_atts')) {
+    function shortcode_atts($pairs, $atts, $shortcode = '')
+    {
+        $atts = (array) $atts;
+        $out = [];
+        foreach ($pairs as $name => $default) {
+            if (array_key_exists($name, $atts)) {
+                $out[$name] = $atts[$name];
+            } else {
+                $out[$name] = $default;
+            }
+        }
+        return $out;
+    }
+}
+if (!function_exists('esc_html')) {
+    function esc_html($text)
+    {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+if (!function_exists('esc_attr')) {
+    function esc_attr($text)
+    {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+if (!function_exists('esc_url')) {
+    function esc_url($url)
+    {
+        return filter_var($url, FILTER_SANITIZE_URL);
+    }
+}
+if (!function_exists('wp_rand')) {
+    function wp_rand($min = 0, $max = 999999)
+    {
+        return mt_rand($min, $max);
+    }
+}
+if (!function_exists('did_action')) {
+    function did_action($tag)
+    {
+        global $sode_did_actions;
+        return !empty($sode_did_actions[$tag]);
+    }
+}
+if (!function_exists('do_action')) {
+    function do_action($tag)
+    {
+        global $sode_did_actions;
+        $sode_did_actions[$tag] = true;
+    }
 }
 
-// Initially kitni rows dikhani hain, baaki "View More" ke peeche chhupi rahengi
+// ---------- SETTINGS ----------
+
 if ( ! defined( 'COURSE_TABLE_VISIBLE_ROWS' ) ) {
     define( 'COURSE_TABLE_VISIBLE_ROWS', 10 );
 }
-
-
-/**
- * Universal JSON se poora data fetch karo
- * (NO CACHING - har page load pe fresh data aayega, JSON change turant reflect hoga)
- */
-function get_course_table_data_all() {
-
-    $response = wp_remote_get( COURSE_TABLE_JSON_URL, array(
-        'timeout' => 10,
-        'headers' => array(
-            'Cache-Control' => 'no-cache',
-        ),
-    ) );
-
-    if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
-        return false;
-    }
-
-    $body = wp_remote_retrieve_body( $response );
-    $data = json_decode( $body, true );
-
-    if ( empty( $data ) || ! is_array( $data ) ) {
-        return false;
-    }
-
-    return $data;
+if ( ! defined( 'COURSE_UNIVERSITIES_API_URL' ) ) {
+    define( 'COURSE_UNIVERSITIES_API_URL', 'https://admin.distanceeducationschool.com/admin/api/get_course_universities.php' );
 }
 
-
 /**
- * Ek specific course ka data nikalo (jaise "mba", "mca")
+ * Fetch course universities table data from Database or Central API
  */
 function get_course_table_data( $course_key ) {
-    $all_data = get_course_table_data_all();
+    static $cache = [];
+    $course_key = strtolower( trim( $course_key ) );
 
-    if ( empty( $all_data ) || ! isset( $all_data[ $course_key ] ) ) {
-        return false;
+    if ( empty( $course_key ) ) {
+        $course_key = 'mba';
     }
 
-    return $all_data[ $course_key ];
+    if ( isset( $cache[$course_key] ) ) {
+        return $cache[$course_key];
+    }
+
+    // 1. Try Local Database Connection
+    if (!function_exists('get_db_connection')) {
+        $possible_configs = [
+            __DIR__ . '/admin/config/config.php',
+            dirname(__DIR__) . '/admin/config/config.php',
+            dirname(__DIR__, 2) . '/admin/config/config.php',
+        ];
+        foreach ($possible_configs as $cfg_file) {
+            if (file_exists($cfg_file)) {
+                require_once $cfg_file;
+                break;
+            }
+        }
+    }
+
+    if (function_exists('get_db_connection')) {
+        try {
+            $db = get_db_connection();
+            if ($db) {
+                $stmt = $db->prepare("
+                    SELECT id, course_slug, course_name, heading, description, columns_json, universities_json 
+                    FROM course_universities_table 
+                    WHERE LOWER(course_slug) = LOWER(?) OR LOWER(course_name) = LOWER(?)
+                    LIMIT 1
+                ");
+                $stmt->execute([$course_key, $course_key]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($row) {
+                    $unis = [];
+                    if (!empty($row['universities_json'])) {
+                        $decoded = json_decode($row['universities_json'], true);
+                        if (is_array($decoded)) {
+                            $unis = $decoded;
+                        }
+                    }
+
+                    $cols = ["University Name", $row['course_name'] . " Fee (Per Semester)", "Location", "Approvals & Accreditation", "Advantage"];
+                    if (!empty($row['columns_json'])) {
+                        $dec_cols = json_decode($row['columns_json'], true);
+                        if (is_array($dec_cols)) {
+                            $cols = $dec_cols;
+                        }
+                    }
+
+                    $data = [
+                        'course_slug'  => $row['course_slug'],
+                        'course_name'  => $row['course_name'],
+                        'heading'      => $row['heading'],
+                        'description'  => $row['description'],
+                        'columns'      => $cols,
+                        'universities' => $unis
+                    ];
+                    $cache[$course_key] = $data;
+                    return $data;
+                }
+            }
+        } catch (Exception $e) {
+            // Proceed to API fallback
+        }
+    }
+
+    // 2. Central API Fallback (for remote subdomains)
+    $api_url = COURSE_UNIVERSITIES_API_URL . '?course=' . urlencode($course_key);
+    $json_content = null;
+
+    if (function_exists('wp_remote_get')) {
+        $response = wp_remote_get($api_url, [
+            'timeout' => 8,
+            'headers' => ['Cache-Control' => 'no-cache']
+        ]);
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+            $json_content = wp_remote_retrieve_body($response);
+        }
+    }
+
+    if (!$json_content && function_exists('file_get_contents')) {
+        $ctx = stream_context_create([
+            'http' => ['timeout' => 5]
+        ]);
+        $json_content = @file_get_contents($api_url, false, $ctx);
+    }
+
+    if ($json_content) {
+        $api_res = json_decode($json_content, true);
+        if (!empty($api_res['success']) && !empty($api_res['universities'])) {
+            $data = [
+                'course_slug'  => $api_res['course_slug'] ?? $course_key,
+                'course_name'  => $api_res['course_name'] ?? strtoupper($course_key),
+                'heading'      => $api_res['heading'] ?? '',
+                'description'  => $api_res['description'] ?? '',
+                'columns'      => $api_res['columns'] ?? ["University Name", "Fee (Per Semester)", "Location", "Approvals & Accreditation", "Advantage"],
+                'universities' => $api_res['universities']
+            ];
+            $cache[$course_key] = $data;
+            return $data;
+        }
+    }
+
+    return false;
 }
+
 
 
 /**
@@ -865,5 +984,15 @@ function course_table_shortcode( $atts ) {
 
     return ob_get_clean();
 }
-add_shortcode( 'course_table', 'course_table_shortcode' );
+
+function sode_course_universities_table_render( $atts ) {
+    return course_table_shortcode( $atts );
+}
+
+if ( function_exists( 'add_shortcode' ) ) {
+    add_shortcode( 'course_table', 'course_table_shortcode' );
+    add_shortcode( 'universities_table', 'course_table_shortcode' );
+    add_shortcode( 'course_universities', 'course_table_shortcode' );
+    add_shortcode( 'top_universities', 'course_table_shortcode' );
+}
 
