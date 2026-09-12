@@ -558,6 +558,72 @@ function sode_run_auto_migrations(PDO $pdo) {
                         '© ' . date('Y') . ' SODE™ Counselling Services LLP'
                     ]);
                 }
+            },
+
+            '2026_09_12_001_add_syllabus_json_to_course_mappings' => function(PDO $db) {
+                // 1. Add syllabus_json column to university_course_mappings if not present
+                $has_col = $db->query("SHOW COLUMNS FROM university_course_mappings LIKE 'syllabus_json'")->fetch();
+                if (!$has_col) {
+                    $db->exec("ALTER TABLE university_course_mappings ADD COLUMN syllabus_json LONGTEXT NULL AFTER total_program_fee");
+                }
+
+                // 2. Pre-seed DSU MBA Online mapping (id=1 or course MBA) with sample semester syllabus
+                $sample_syllabus = json_encode([
+                    [
+                        'semester_title' => 'FIRST SEMESTER',
+                        'subjects' => [
+                            ['name' => 'Accounting for Managers', 'link' => ''],
+                            ['name' => 'Marketing Management', 'link' => ''],
+                            ['name' => 'Human Resource Management', 'link' => ''],
+                            ['name' => 'Organisational Behaviour', 'link' => ''],
+                            ['name' => 'Information Systems', 'link' => ''],
+                            ['name' => 'Statistics for Managers', 'link' => ''],
+                            ['name' => 'Business Economics and Policy', 'link' => ''],
+                            ['name' => 'Business Communication-I', 'link' => ''],
+                        ]
+                    ],
+                    [
+                        'semester_title' => 'SECOND SEMESTER',
+                        'subjects' => [
+                            ['name' => 'Financial Management', 'link' => ''],
+                            ['name' => 'Operations Management', 'link' => ''],
+                            ['name' => 'International Business', 'link' => ''],
+                            ['name' => 'Corporate Governance and Business Law', 'link' => ''],
+                            ['name' => 'Essentials of Entrepreneurship', 'link' => ''],
+                            ['name' => 'Business Communication-II', 'link' => ''],
+                            ['name' => 'Business Research Methods', 'link' => ''],
+                            ['name' => 'Introduction to Business Analytics', 'link' => ''],
+                        ]
+                    ],
+                    [
+                        'semester_title' => 'THIRD SEMESTER',
+                        'subjects' => [
+                            ['name' => 'Strategic Management', 'link' => ''],
+                            ['name' => 'Major Elective I', 'link' => ''],
+                            ['name' => 'Major Elective II', 'link' => ''],
+                            ['name' => 'Major Elective III', 'link' => ''],
+                            ['name' => 'Major Elective IV', 'link' => ''],
+                            ['name' => 'Minor Elective I', 'link' => ''],
+                            ['name' => 'Minor Elective II', 'link' => ''],
+                        ]
+                    ],
+                    [
+                        'semester_title' => 'FOURTH SEMESTER',
+                        'subjects' => [
+                            ['name' => 'Major Elective V', 'link' => ''],
+                            ['name' => 'Minor Elective III', 'link' => ''],
+                            ['name' => 'Internship', 'link' => ''],
+                            ['name' => 'Project Work', 'link' => ''],
+                        ]
+                    ],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                // Update mapping ID 1 if syllabus_json is empty
+                $check = $db->query("SELECT syllabus_json FROM university_course_mappings WHERE id = 1")->fetchColumn();
+                if (empty($check)) {
+                    $u_stmt = $db->prepare("UPDATE university_course_mappings SET syllabus_json = ? WHERE id = 1");
+                    $u_stmt->execute([$sample_syllabus]);
+                }
             }
         ];
 

@@ -38,6 +38,9 @@ if (file_exists($root_dir . '/legal-pages-universal.php')) {
 if (file_exists($root_dir . '/footer-universal.php')) {
     require_once $root_dir . '/footer-universal.php';
 }
+if (file_exists($root_dir . '/course-syllabus-universal.php')) {
+    require_once $root_dir . '/course-syllabus-universal.php';
+}
 
 // 2. Resolve Component and Request Parameters
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
@@ -93,6 +96,14 @@ switch ($component) {
     case 'sode_footer':
     case 'footer_section':
         echo sode_footer_render($params);
+        break;
+
+    case 'course_syllabus':
+    case 'syllabus':
+    case 'uni_syllabus':
+    case 'university_course_syllabus':
+    case 'uni_course_syllabus':
+        echo sode_course_syllabus_render($params);
         break;
 
     case 'legal_popups':

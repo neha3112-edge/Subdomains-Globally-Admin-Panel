@@ -696,6 +696,39 @@ add_shortcode('sode_footer', function($atts) {
 });
 
 // ====================================================
+// 2.12. COURSE SYLLABUS TABLE SHORTCODES
+// [course_syllabus], [syllabus], [university_course_syllabus], [uni_course_syllabus]
+// Usage: [course_syllabus course="mba" mode="online"]
+// ====================================================
+add_shortcode('course_syllabus', function($atts) {
+    if (function_exists('sode_course_syllabus_render')) {
+        return sode_course_syllabus_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_syllabus', $atts ?: []);
+});
+
+add_shortcode('syllabus', function($atts) {
+    if (function_exists('sode_course_syllabus_render')) {
+        return sode_course_syllabus_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_syllabus', $atts ?: []);
+});
+
+add_shortcode('university_course_syllabus', function($atts) {
+    if (function_exists('sode_course_syllabus_render')) {
+        return sode_course_syllabus_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_syllabus', $atts ?: []);
+});
+
+add_shortcode('uni_course_syllabus', function($atts) {
+    if (function_exists('sode_course_syllabus_render')) {
+        return sode_course_syllabus_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('course_syllabus', $atts ?: []);
+});
+
+// ====================================================
 // 4. SECURITY TOKEN & AJAX LEAD HANDLER
 // ====================================================
 add_action('init', function () {
