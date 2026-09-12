@@ -243,7 +243,7 @@ function sode_job_roles_table_render($atts)
 
     ob_start();
     ?>
-    <div class="job-roles-table-wrapper" style="margin: 25px 0;">
+    <div class="job-roles-table-wrapper">
 
         <?php if (!empty($table_heading)): ?>
             <h2 class="job-roles-table-heading"><?php echo esc_html($table_heading); ?></h2>
@@ -317,7 +317,7 @@ function sode_job_roles_table_render($atts)
                 font-weight: 600;
                 line-height: 1.3;
                 margin: 0 0 10px 0;
-                color: #111827;
+                color: #000;
             }
 
             .job-roles-table-description {
