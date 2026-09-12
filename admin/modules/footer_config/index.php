@@ -77,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db->exec("CREATE TABLE IF NOT EXISTS footer_config (id INT UNSIGNED NOT NULL DEFAULT 1, PRIMARY KEY(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $set_parts = []; $vals = [];
     foreach ($fields as $k => $v) { $set_parts[] = "`$k` = ?"; $vals[] = $v; }
-    $vals[] = 1;
     $db->prepare("INSERT INTO footer_config (id) VALUES(1) ON DUPLICATE KEY UPDATE id=1")->execute();
     $db->prepare("UPDATE footer_config SET " . implode(', ', $set_parts) . " WHERE id = 1")->execute($vals);
     set_flash_message('Footer configuration updated successfully!', 'success');
