@@ -1132,7 +1132,7 @@ add_action('wp_footer', function () {
                             const select = counselingOverlay.querySelector('select[name="course"]');
                             if (select) {
                                 for (let i = 0; i < select.options.length; i++) {
-                                    if (select.options[i].value.toLowerCase() === courseName.toLowerCase()) {
+                                    if (select.options[i].value.toLowerCase() === courseName.toLowerCase() || select.options[i].text.toLowerCase() === courseName.toLowerCase()) {
                                         select.selectedIndex = i;
                                         break;
                                     }

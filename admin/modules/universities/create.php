@@ -98,13 +98,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cfg_crm_api_key = '';
             $cfg_crm_secret = '';
 
-            // Handle Course Checkboxes
-            $allowed_courses_post = $_POST['allowed_courses'] ?? [];
-            if (!empty($allowed_courses_post) && is_array($allowed_courses_post)) {
-                $cfg_allowed_courses = implode(', ', array_map('trim', $allowed_courses_post));
-            } else {
-                $cfg_allowed_courses = trim($_POST['cfg_allowed_courses_json'] ?? 'MBA, MCA, MCOM, MA, MSC, MLIS, BBA, BCA, BCOM, BA, BSC, BLIS, Other');
+            // Handle Course Items (Label, Key, Enabled, Custom)
+            $course_items_post = $_POST['course_items'] ?? [];
+            $allowed_courses_arr = [];
+
+            if (!empty($course_items_post) && is_array($course_items_post)) {
+                foreach ($course_items_post as $item) {
+                    $lbl = trim($item['label'] ?? '');
+                    $k = strtoupper(trim($item['key'] ?? ''));
+                    $enabled = !empty($item['enabled']) ? 1 : 0;
+                    $is_custom = !empty($item['is_custom']) ? 1 : 0;
+                    $level = trim($item['level'] ?? '');
+
+                    if ($lbl === '') continue;
+                    if ($k === '') {
+                        $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+                    }
+
+                    $allowed_courses_arr[] = [
+                        'label'     => $lbl,
+                        'key'       => $k,
+                        'enabled'   => $enabled,
+                        'is_custom' => $is_custom,
+                        'level'     => $level
+                    ];
+                }
             }
+
+            $cfg_allowed_courses = json_encode($allowed_courses_arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             $form_stmt = $db->prepare("
                 INSERT INTO university_form_configs (
@@ -128,8 +149,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if (!function_exists('sode_get_configured_course_items')) {
+    function sode_get_configured_course_items($raw_json, $all_master_courses) {
+        $items = [];
+        $seen = [];
+
+        $decoded = !empty($raw_json) ? json_decode($raw_json, true) : null;
+
+        if (is_array($decoded)) {
+            foreach ($decoded as $c) {
+                if (!is_array($c)) continue;
+                $lbl = trim($c['label'] ?? '');
+                $k = strtoupper(trim($c['key'] ?? ''));
+                if ($lbl === '') continue;
+                if ($k === '') $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+                $enabled = isset($c['enabled']) ? (int)(bool)$c['enabled'] : 1;
+                $is_custom = !empty($c['is_custom']) ? 1 : 0;
+                $level = trim($c['level'] ?? ($is_custom ? 'Custom' : 'General'));
+
+                $items[] = [
+                    'label'     => $lbl,
+                    'key'       => $k,
+                    'enabled'   => $enabled,
+                    'is_custom' => $is_custom,
+                    'level'     => $level
+                ];
+                $seen[strtoupper($lbl)] = true;
+                $seen[$k] = true;
+            }
+
+            foreach ($all_master_courses as $mc) {
+                $lbl = $mc['short_name'];
+                $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+                if (!isset($seen[strtoupper($lbl)]) && !isset($seen[$k])) {
+                    $items[] = [
+                        'label'     => $lbl,
+                        'key'       => $k,
+                        'enabled'   => 0,
+                        'is_custom' => 0,
+                        'level'     => $mc['level'] ?? ''
+                    ];
+                    $seen[strtoupper($lbl)] = true;
+                    $seen[$k] = true;
+                }
+            }
+        } else {
+            $enabled_map = [];
+            if (!empty($raw_json)) {
+                $parts = array_map('trim', explode(',', $raw_json));
+                foreach ($parts as $p) {
+                    if ($p !== '') {
+                        $enabled_map[strtoupper($p)] = true;
+                        $enabled_map[strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $p))] = true;
+                    }
+                }
+            } else {
+                $enabled_map = null;
+            }
+
+            foreach ($all_master_courses as $mc) {
+                $lbl = $mc['short_name'];
+                $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+                $is_en = ($enabled_map === null) ? 1 : (isset($enabled_map[strtoupper($lbl)]) || isset($enabled_map[$k]) ? 1 : 0);
+
+                $items[] = [
+                    'label'     => $lbl,
+                    'key'       => $k,
+                    'enabled'   => $is_en,
+                    'is_custom' => 0,
+                    'level'     => $mc['level'] ?? ''
+                ];
+                $seen[strtoupper($lbl)] = true;
+                $seen[$k] = true;
+            }
+
+            $is_other_en = ($enabled_map === null) ? 1 : (isset($enabled_map['OTHER']) ? 1 : 0);
+            $items[] = [
+                'label'     => 'Other',
+                'key'       => 'OTHER',
+                'enabled'   => $is_other_en,
+                'is_custom' => 0,
+                'level'     => 'General'
+            ];
+        }
+
+        return $items;
+    }
+}
+
 // Fetch Master Courses for Checkbox Grid
 $all_master_courses = $db->query("SELECT * FROM courses ORDER BY level ASC, short_name ASC")->fetchAll();
+$configured_courses = sode_get_configured_course_items('', $all_master_courses);
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -375,45 +485,125 @@ require_once ADMIN_PATH . '/includes/header.php';
                         </div>
                     </div>
 
-                    <!-- Allowed Courses Checkbox Matrix -->
-                    <div class="form-group" style="margin-top:12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <label class="form-label" style="margin-bottom:0;">Allowed Courses in Form Dropdown</label>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" class="btn-sm action-btn" onclick="selectAllCourses(true)" style="padding:3px 10px; font-size:11.5px;">Select All</button>
-                                <button type="button" class="btn-sm action-btn" onclick="selectAllCourses(false)" style="padding:3px 10px; font-size:11.5px;">Clear All</button>
+                    <!-- Allowed Courses with Label, Key & Custom Add -->
+                    <div class="form-group" style="margin-top:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <label class="form-label" style="margin-bottom:2px; font-size:13.5px; font-weight:700;">Allowed Courses in Form Dropdown</label>
+                                <span style="font-size:12px; color:var(--text-dim); display:block;">
+                                    Configure dropdown options with customized <strong>Display Label</strong> and backend <strong>Key (All CAPITAL)</strong>. Uncheck to hide from form.
+                                </span>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button type="button" class="btn-sm" onclick="addCustomCourseRow()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:#fff; border:none; padding:5px 12px; font-size:12px; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; box-shadow: 0 2px 8px rgba(99,102,241,0.3);">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    + Add Custom Course
+                                </button>
+                                <button type="button" class="btn-sm action-btn" onclick="selectAllCourseRows(true)" style="padding:5px 10px; font-size:11.5px;">Select All</button>
+                                <button type="button" class="btn-sm action-btn" onclick="selectAllCourseRows(false)" style="padding:5px 10px; font-size:11.5px;">Clear All</button>
                             </div>
                         </div>
 
-                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px; padding:14px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:8px;">
-                            <?php 
-                            foreach ($all_master_courses as $c): 
-                                $c_code = $c['short_name'];
-                            ?>
-                                <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; cursor:pointer; font-size:13px;">
-                                    <input type="checkbox" name="allowed_courses[]" value="<?php echo htmlspecialchars($c_code); ?>" class="course-checkbox" checked>
-                                    <span style="font-weight:600; color:var(--text-main);"><?php echo htmlspecialchars($c_code); ?></span>
-                                    <span style="font-size:10.5px; color:var(--text-dim); margin-left:auto;"><?php echo htmlspecialchars($c['level']); ?></span>
-                                </label>
-                            <?php endforeach; ?>
-
-                            <!-- Standard 'Other' Option -->
-                            <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; cursor:pointer; font-size:13px;">
-                                <input type="checkbox" name="allowed_courses[]" value="Other" class="course-checkbox" checked>
-                                <span style="font-weight:600; color:var(--text-main);">Other</span>
-                                <span style="font-size:10.5px; color:var(--text-dim); margin-left:auto;">General</span>
-                            </label>
+                        <div style="border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background:rgba(255,255,255,0.015); box-shadow:inset 0 1px 3px rgba(0,0,0,0.2);">
+                            <div style="max-height: 480px; overflow-y: auto;">
+                                <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
+                                    <thead>
+                                        <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid var(--border-color); color:var(--text-dim); font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:2; backdrop-filter:blur(4px);">
+                                            <th style="padding:10px 12px; width:60px; text-align:center;">Active</th>
+                                            <th style="padding:10px 12px;">Display Label (Visitor Sees)</th>
+                                            <th style="padding:10px 12px; width:260px;">Form & CRM Key (All CAPITAL)</th>
+                                            <th style="padding:10px 12px; width:90px; text-align:center;">Level</th>
+                                            <th style="padding:10px 12px; width:60px; text-align:center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allowedCoursesTableBody">
+                                        <?php foreach ($configured_courses as $idx => $c): ?>
+                                            <tr class="course-item-row" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;">
+                                                <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
+                                                    <input type="hidden" name="course_items[<?php echo $idx; ?>][enabled]" value="0">
+                                                    <input type="checkbox" name="course_items[<?php echo $idx; ?>][enabled]" value="1" class="course-row-checkbox" <?php echo !empty($c['enabled']) ? 'checked' : ''; ?> style="width:16px; height:16px; cursor:pointer;">
+                                                </td>
+                                                <td style="padding:8px 12px; vertical-align:middle;">
+                                                    <input type="text" name="course_items[<?php echo $idx; ?>][label]" class="form-control course-label-input" value="<?php echo htmlspecialchars($c['label']); ?>" placeholder="e.g. B.Com" required style="font-size:13px; padding:6px 10px;">
+                                                </td>
+                                                <td style="padding:8px 12px; vertical-align:middle;">
+                                                    <input type="text" name="course_items[<?php echo $idx; ?>][key]" class="form-control course-key-input" value="<?php echo htmlspecialchars($c['key']); ?>" placeholder="e.g. BCOM" required style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:6px 10px; color:#38bdf8;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');">
+                                                </td>
+                                                <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
+                                                    <input type="hidden" name="course_items[<?php echo $idx; ?>][level]" value="<?php echo htmlspecialchars($c['level']); ?>">
+                                                    <input type="hidden" name="course_items[<?php echo $idx; ?>][is_custom]" value="<?php echo !empty($c['is_custom']) ? 1 : 0; ?>">
+                                                    <span class="badge" style="background:<?php echo !empty($c['is_custom']) ? 'rgba(168,85,247,0.18)' : 'rgba(255,255,255,0.06)'; ?>; color:<?php echo !empty($c['is_custom']) ? '#c084fc' : 'var(--text-dim)'; ?>; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600;">
+                                                        <?php echo htmlspecialchars($c['level'] ?: (!empty($c['is_custom']) ? 'Custom' : 'General')); ?>
+                                                    </span>
+                                                </td>
+                                                <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
+                                                    <?php if (!empty($c['is_custom'])): ?>
+                                                        <button type="button" class="btn-icon" onclick="removeCourseRow(this)" title="Delete Custom Course" style="background:none; border:none; color:#ef4444; font-size:18px; cursor:pointer; line-height:1; padding:4px;">&times;</button>
+                                                    <?php else: ?>
+                                                        <span style="color:var(--text-dim); font-size:12px;" title="Standard course">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <span style="font-size:11.5px; color:var(--text-dim); margin-top:6px; display:block;">Select the courses that should appear in this university's lead capture form dropdown.</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <script>
-        function selectAllCourses(check) {
-            document.querySelectorAll('.course-checkbox').forEach(cb => cb.checked = check);
-        }
+            let courseRowIndex = <?php echo count($configured_courses); ?>;
+
+            function selectAllCourseRows(checked) {
+                document.querySelectorAll('.course-row-checkbox').forEach(cb => cb.checked = checked);
+            }
+
+            function removeCourseRow(btn) {
+                const row = btn.closest('tr');
+                if (row) row.remove();
+            }
+
+            function addCustomCourseRow() {
+                const tbody = document.getElementById('allowedCoursesTableBody');
+                const tr = document.createElement('tr');
+                tr.className = 'course-item-row';
+                tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(99,102,241,0.06); transition:background 0.2s;';
+                
+                const idx = courseRowIndex++;
+                tr.innerHTML = `
+                    <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
+                        <input type="hidden" name="course_items[${idx}][enabled]" value="0">
+                        <input type="checkbox" name="course_items[${idx}][enabled]" value="1" class="course-row-checkbox" checked style="width:16px; height:16px; cursor:pointer;">
+                    </td>
+                    <td style="padding:8px 12px; vertical-align:middle;">
+                        <input type="text" name="course_items[${idx}][label]" class="form-control course-label-input" placeholder="e.g. Executive MBA" required style="font-size:13px; padding:6px 10px;" oninput="autoSuggestCourseKey(this, ${idx})">
+                    </td>
+                    <td style="padding:8px 12px; vertical-align:middle;">
+                        <input type="text" id="course_key_${idx}" name="course_items[${idx}][key]" class="form-control course-key-input" placeholder="e.g. EXECUTIVE_MBA" required style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:6px 10px; color:#38bdf8;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''); this.dataset.manualEdited='1';">
+                    </td>
+                    <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
+                        <input type="hidden" name="course_items[${idx}][level]" value="Custom">
+                        <input type="hidden" name="course_items[${idx}][is_custom]" value="1">
+                        <span class="badge" style="background:rgba(168,85,247,0.18); color:#c084fc; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600;">Custom</span>
+                    </td>
+                    <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
+                        <button type="button" class="btn-icon" onclick="removeCourseRow(this)" title="Delete Custom Course" style="background:none; border:none; color:#ef4444; font-size:18px; cursor:pointer; line-height:1; padding:4px;">&times;</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                const labelInput = tr.querySelector('.course-label-input');
+                if (labelInput) labelInput.focus();
+            }
+
+            function autoSuggestCourseKey(input, idx) {
+                const keyInput = document.getElementById('course_key_' + idx);
+                if (!keyInput || keyInput.dataset.manualEdited === '1') return;
+                const clean = input.value.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                keyInput.value = clean;
+            }
         </script>
 
         <!-- Right Column: Accreditations & Status -->

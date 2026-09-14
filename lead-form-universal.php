@@ -464,9 +464,39 @@ function custom_lead_form_shortcode($atts = [])
     $subheading = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $sub_val);
     $form_name = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $atts['form_name']);
 
-    // Allowed courses list
-    $courses_str = ! empty($cfg['allowed_courses_json']) ? $cfg['allowed_courses_json'] : 'MBA, MCA, MCOM, MA, MSC, MLIS, BBA, BCA, BCOM, BA, BSC, BLIS, Other';
-    $courses_list = array_filter(array_map('trim', explode(',', $courses_str)));
+    // Allowed courses list (Label & Key support)
+    $courses_raw = ! empty($cfg['allowed_courses_json']) ? $cfg['allowed_courses_json'] : 'MBA, MCA, MCOM, MA, MSC, MLIS, BBA, BCA, BCOM, BA, BSC, BLIS, Other';
+    $courses_list = [];
+
+    $decoded_courses = json_decode($courses_raw, true);
+    if (is_array($decoded_courses)) {
+        foreach ($decoded_courses as $c_row) {
+            if (!is_array($c_row)) continue;
+            // Only include enabled items
+            if (isset($c_row['enabled']) && !$c_row['enabled']) {
+                continue;
+            }
+            $lbl = trim($c_row['label'] ?? '');
+            $k = strtoupper(trim($c_row['key'] ?? ''));
+            if ($lbl === '') continue;
+            if ($k === '') $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+
+            $courses_list[] = [
+                'label' => $lbl,
+                'key'   => $k
+            ];
+        }
+    } else {
+        // Fallback for older comma-separated format
+        $parts = array_filter(array_map('trim', explode(',', $courses_raw)));
+        foreach ($parts as $p) {
+            $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $p));
+            $courses_list[] = [
+                'label' => $p,
+                'key'   => $k
+            ];
+        }
+    }
 
     // Default UTM parameters from Admin
     $default_utm_source = ! empty($cfg['default_utm_source']) ? $cfg['default_utm_source'] : 'Organic';
@@ -681,7 +711,7 @@ function custom_lead_form_shortcode($atts = [])
         <select name="course" required>
             <option value="">Select Course</option>
             <?php foreach ($courses_list as $c_item): ?>
-                <option value="<?php echo esc_attr($c_item); ?>"><?php echo esc_html($c_item); ?></option>
+                <option value="<?php echo esc_attr($c_item['key']); ?>"><?php echo esc_html($c_item['label']); ?></option>
             <?php endforeach; ?>
         </select>
 
@@ -1053,7 +1083,7 @@ function sode_counseling_form_popup_modal()
                         const select = overlay.querySelector('select[name="course"]');
                         if (select) {
                             for (let i = 0; i < select.options.length; i++) {
-                                if (select.options[i].value.toLowerCase() === courseName.toLowerCase()) {
+                                if (select.options[i].value.toLowerCase() === courseName.toLowerCase() || select.options[i].text.toLowerCase() === courseName.toLowerCase()) {
                                     select.selectedIndex = i;
                                     break;
                                 }
