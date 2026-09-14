@@ -89,6 +89,7 @@ echo json_encode([
         'admission_start_date' => $uni['admission_start_date'] ?? '',
         'assignment_date' => $uni['assignment_date'] ?? '',
         'rating' => (float)$uni['rating'],
+        'whatsapp_btn_intent' => $uni['whatsapp_btn_intent'] ?? '',
         'accreditations' => $accreditations,
         'global_keys' => $global_keys
     ]

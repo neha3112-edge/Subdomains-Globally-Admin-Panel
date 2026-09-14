@@ -332,10 +332,11 @@ function edu_banner_shortcode($atts)
 
     // WhatsApp Dynamic Details & Custom Intent Support
     $wa_phone = !empty($uni_data['global_keys']['whatsapp_number']) ? preg_replace('/[^0-9+]/', '', $uni_data['global_keys']['whatsapp_number']) : '+917065777755';
-    $wa_default_text = 'I want to Download ' . $full_uni_name . ' ' . $mode_text . ' Brochure';
-    $wa_text = !empty($uni_data['whatsapp_btn_intent']) ? $uni_data['whatsapp_btn_intent'] : $wa_default_text;
+    $wa_default_template = !empty($uni_data['global_keys']['whatsapp_default_intent']) ? $uni_data['global_keys']['whatsapp_default_intent'] : 'I want to Download {UNIVERSITY_NAME} {MODE} Brochure';
+    $wa_text = !empty($uni_data['whatsapp_btn_intent']) ? $uni_data['whatsapp_btn_intent'] : $wa_default_template;
     $wa_text = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{MODE}'], [$full_uni_name, $short_uni_name, $mode_text], $wa_text);
     $wa_url = 'https://api.whatsapp.com/send/?phone=' . urlencode($wa_phone) . '&text=' . urlencode($wa_text);
+    $wa_btn_enabled = !isset($uni_data['global_keys']['whatsapp_btn_enabled']) || $uni_data['global_keys']['whatsapp_btn_enabled'] !== '0';
 
     /* ---- Convert YouTube URL to embed URL ---- */
     $yt_embed = '';
@@ -981,6 +982,7 @@ function edu_banner_shortcode($atts)
                     </p>
 
                     <!-- Dynamic WhatsApp Download Brochure Link -->
+                    <?php if ($wa_btn_enabled): ?>
                     <div class="custom_whatsapp_brochure_btn">
                         <a href="<?php echo esc_url($wa_url); ?>" target="_blank">
                             <svg viewBox="0 0 24 24">
@@ -990,6 +992,7 @@ function edu_banner_shortcode($atts)
                             Download Brochure
                         </a>
                     </div>
+                    <?php endif; ?>
 
                     <!-- Additional Buttons if Podcast Audio exists in Admin -->
                     <?php if ($audio_url): ?>
@@ -1108,6 +1111,7 @@ function edu_banner_shortcode($atts)
                     Last date of Admission : <span class="admission-date"><?php echo esc_html($db_admission_date); ?></span>
                 </p>
 
+                <?php if ($wa_btn_enabled): ?>
                 <div class="custom_whatsapp_brochure_btn">
                     <a href="<?php echo esc_url($wa_url); ?>" target="_blank">
                         <svg viewBox="0 0 24 24">
@@ -1117,6 +1121,7 @@ function edu_banner_shortcode($atts)
                         Download Brochure
                     </a>
                 </div>
+                <?php endif; ?>
             </div>
 
             <!-- =====================================================
