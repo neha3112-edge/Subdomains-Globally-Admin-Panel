@@ -12,6 +12,12 @@ $db = get_db_connection();
 // Fetch available accreditations
 $all_accreditations = $db->query("SELECT * FROM accreditations ORDER BY title ASC")->fetchAll();
 
+// Fetch dynamic active education modes
+$active_modes = $db->query("SELECT mode_name FROM education_modes_master WHERE is_active = 1 ORDER BY sort_order ASC, id ASC")->fetchAll(PDO::FETCH_COLUMN);
+if (empty($active_modes)) {
+    $active_modes = ['Online & Distance', 'Online', 'Distance'];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
@@ -164,9 +170,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <div class="form-group">
                             <label class="form-label">Education Mode</label>
                             <select name="mode" class="form-select">
-                                <option value="Online & Distance">Online & Distance</option>
-                                <option value="Online">Online</option>
-                                <option value="Distance">Distance</option>
+                                <?php foreach ($active_modes as $m_opt): ?>
+                                    <option value="<?php echo htmlspecialchars($m_opt); ?>" <?php echo ($m_opt === 'Online & Distance') ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($m_opt); ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group">

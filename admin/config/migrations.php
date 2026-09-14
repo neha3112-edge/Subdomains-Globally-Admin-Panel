@@ -1014,6 +1014,168 @@ function sode_run_auto_migrations(PDO $pdo) {
                 } catch (Exception $e) {
                     error_log("Drop course_id from syllabus master: " . $e->getMessage());
                 }
+            },
+
+            '2026_09_14_001_create_course_durations_master' => function(PDO $db) {
+                // 1. Create course_durations_master table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS course_durations_master (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        duration_title VARCHAR(100) NOT NULL,
+                        sort_order INT DEFAULT 0,
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uk_duration_title (duration_title)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+
+                // Drop duration_months if existed from previous run
+                try {
+                    $chk_col = $db->query("SHOW COLUMNS FROM course_durations_master LIKE 'duration_months'")->fetchAll();
+                    if (!empty($chk_col)) {
+                        $db->exec("ALTER TABLE course_durations_master DROP COLUMN duration_months");
+                    }
+                } catch (Exception $e) {}
+
+                // 2. Seed initial common durations
+                $defaults = [
+                    ['duration_title' => '6 Months', 'sort_order' => 1],
+                    ['duration_title' => '1 Year', 'sort_order' => 2],
+                    ['duration_title' => '1.5 Years', 'sort_order' => 3],
+                    ['duration_title' => '2 Years', 'sort_order' => 4],
+                    ['duration_title' => '3 Years', 'sort_order' => 5],
+                    ['duration_title' => '4 Years', 'sort_order' => 6],
+                    ['duration_title' => '5 Years', 'sort_order' => 7],
+                ];
+
+                $ins = $db->prepare("
+                    INSERT IGNORE INTO course_durations_master (duration_title, sort_order, is_active)
+                    VALUES (?, ?, 1)
+                ");
+                foreach ($defaults as $d) {
+                    $ins->execute([$d['duration_title'], $d['sort_order']]);
+                }
+
+                // Also seed from existing course_specializations table
+                try {
+                    $existing_durs = $db->query("
+                        SELECT DISTINCT duration FROM course_specializations 
+                        WHERE duration IS NOT NULL AND duration != ''
+                    ")->fetchAll(PDO::FETCH_COLUMN);
+
+                    $order = 10;
+                    foreach ($existing_durs as $ed) {
+                        $ed = trim($ed);
+                        if (!empty($ed)) {
+                            $ins->execute([$ed, $order++]);
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Seed existing durations error: " . $e->getMessage());
+                }
+
+                // 3. Register Sidebar item
+                try {
+                    $check_dur = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'durations'")->fetch();
+                    if (!$check_dur) {
+                        $db->exec("
+                            INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                            VALUES ('MANAGE', 'Durations', 'modules/durations/index.php', 'durations', 'durations', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polyline points=\"12 6 12 12 16 14\"></polyline></svg>', 6, 1, 0)
+                        ");
+                        $dur_item_id = (int)$db->lastInsertId();
+                        if ($dur_item_id) {
+                            $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                            $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                            foreach ($roles as $r) {
+                                $acc_stmt->execute([$r['id'], $dur_item_id]);
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Durations sidebar registration error: " . $e->getMessage());
+                }
+            },
+
+            '2026_09_14_002_create_education_modes_master' => function($db) {
+                // 1. Create education_modes_master table
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS education_modes_master (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        mode_name VARCHAR(100) NOT NULL,
+                        sort_order INT DEFAULT 0,
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uk_mode_name (mode_name)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+
+                // 2. Seed initial common modes
+                $defaults = [
+                    ['mode_name' => 'Online & Distance', 'sort_order' => 1],
+                    ['mode_name' => 'Online', 'sort_order' => 2],
+                    ['mode_name' => 'Distance', 'sort_order' => 3],
+                    ['mode_name' => 'Hybrid', 'sort_order' => 4],
+                    ['mode_name' => 'Regular', 'sort_order' => 5],
+                ];
+
+                $ins = $db->prepare("
+                    INSERT IGNORE INTO education_modes_master (mode_name, sort_order, is_active)
+                    VALUES (?, ?, 1)
+                ");
+                foreach ($defaults as $d) {
+                    $ins->execute([$d['mode_name'], $d['sort_order']]);
+                }
+
+                // Also seed any existing modes from universities & mappings
+                try {
+                    $u_modes = $db->query("SELECT DISTINCT mode FROM universities WHERE mode IS NOT NULL AND mode != ''")->fetchAll(PDO::FETCH_COLUMN);
+                    $m_modes = $db->query("SELECT DISTINCT mode FROM university_course_mappings WHERE mode IS NOT NULL AND mode != ''")->fetchAll(PDO::FETCH_COLUMN);
+                    $all_existing = array_unique(array_merge($u_modes, $m_modes));
+                    $order = 10;
+                    foreach ($all_existing as $em) {
+                        $em = trim($em);
+                        if (!empty($em)) {
+                            $ins->execute([$em, $order++]);
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Seed existing modes error: " . $e->getMessage());
+                }
+
+                // 3. Register Sidebar item under SETTINGS
+                try {
+                    $check_mode = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'modes'")->fetch();
+                    if (!$check_mode) {
+                        $db->exec("
+                            INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                            VALUES ('SETTINGS', 'Education Modes', 'modules/settings/modes.php', 'modes', 'modes', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"></path><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"></path></svg>', 17, 1, 0)
+                        ");
+                        $mode_item_id = (int)$db->lastInsertId();
+                        if ($mode_item_id) {
+                            $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                            $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                            foreach ($roles as $r) {
+                                $acc_stmt->execute([$r['id'], $mode_item_id]);
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Modes sidebar registration error: " . $e->getMessage());
+                }
+            },
+
+            '2026_09_14_003_add_plain_password_to_users' => function(PDO $db) {
+                try {
+                    $col_check = $db->query("SHOW COLUMNS FROM users LIKE 'plain_password'")->fetch();
+                    if (!$col_check) {
+                        $db->exec("ALTER TABLE users ADD COLUMN plain_password VARCHAR(255) NULL AFTER password_hash");
+                    }
+                    $db->exec("UPDATE users SET plain_password = 'admin123' WHERE id = 1 AND (plain_password IS NULL OR plain_password = '')");
+                } catch (Exception $e) {
+                    error_log("Users plain_password migration error: " . $e->getMessage());
+                }
             }
         ];
 

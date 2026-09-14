@@ -68,7 +68,7 @@ if (isset($_GET['edit_id'])) {
 }
 
 // Fetch all sidebar items
-$items = $db->query("SELECT * FROM sidebar_items ORDER BY menu_section ASC, sort_order ASC, id ASC")->fetchAll();
+$all_sidebar_items = $db->query("SELECT * FROM sidebar_items ORDER BY menu_section ASC, sort_order ASC, id ASC")->fetchAll();
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -149,7 +149,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- Right: Table -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title">All Sidebar Items (<?php echo count($items); ?>)</span>
+            <span class="card-title">All Sidebar Items (<?php echo count($all_sidebar_items); ?>)</span>
         </div>
         <div class="table-responsive">
             <table class="admin-table">
@@ -164,10 +164,10 @@ require_once ADMIN_PATH . '/includes/header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($items)): ?>
+                    <?php if (empty($all_sidebar_items)): ?>
                         <tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No sidebar items configured.</td></tr>
                     <?php else: ?>
-                        <?php foreach ($items as $it): ?>
+                        <?php foreach ($all_sidebar_items as $it): ?>
                             <tr>
                                 <td style="width:30px;">
                                     <?php if (!empty($it['icon_svg'])): ?>

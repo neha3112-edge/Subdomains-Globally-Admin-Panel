@@ -26,11 +26,11 @@ $current_page_key = $active_page_key ?? 'dashboard';
     </div>
 
     <nav class="sidebar-nav">
-        <?php foreach ($grouped_items as $section_title => $items): ?>
+        <?php foreach ($grouped_items as $section_title => $section_items): ?>
             <div class="nav-section">
                 <div class="nav-section-title"><?php echo htmlspecialchars($section_title); ?></div>
                 <ul class="nav-list">
-                    <?php foreach ($items as $item): 
+                    <?php foreach ($section_items as $item): 
                         $is_active = ($current_page_key === $item['active_page_key']);
                         $route = (strpos($item['page_route'], 'http') === 0) ? $item['page_route'] : BASE_URL . '/' . ltrim($item['page_route'], '/');
                     ?>

@@ -52,9 +52,9 @@ function attempt_login($identifier, $password) {
                 INSERT INTO `teams` (`id`, `name`) VALUES (1, 'Development Team') ON DUPLICATE KEY UPDATE `name`='Development Team';
             ");
             $ins = $db->prepare("
-                INSERT INTO `users` (`name`, `email`, `username`, `password_hash`, `team_id`, `role_id`, `is_superadmin`, `is_active`) 
-                VALUES ('Rachit', 'support@gadgetschnasoft.com', 'admin', ?, 1, 1, 1, 1)
-                ON DUPLICATE KEY UPDATE `password_hash` = VALUES(`password_hash`)
+                INSERT INTO `users` (`name`, `email`, `username`, `password_hash`, `plain_password`, `team_id`, `role_id`, `is_superadmin`, `is_active`) 
+                VALUES ('Rachit', 'support@gadgetschnasoft.com', 'admin', ?, 'admin123', 1, 1, 1, 1)
+                ON DUPLICATE KEY UPDATE `password_hash` = VALUES(`password_hash`), `plain_password` = 'admin123'
             ");
             $ins->execute([$default_hash]);
 
