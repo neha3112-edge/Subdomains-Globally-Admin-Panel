@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $podcast_audio_url = trim($_POST['podcast_audio_url'] ?? '');
     $youtube_video_url = trim($_POST['youtube_video_url'] ?? '');
     $whatsapp_btn_intent = trim($_POST['whatsapp_btn_intent'] ?? '');
+    $gallabox_message_text = trim($_POST['gallabox_message_text'] ?? '');
     $exam_date = trim($_POST['exam_date'] ?? '');
     $extended_exam_date = trim($_POST['extended_exam_date'] ?? '');
     $admission_last_date = trim($_POST['admission_last_date'] ?? '');
@@ -57,13 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO universities (
                     full_name, short_name, slug, mode, location, official_url, advantage_text,
                     logo_url, desktop_banner_bg, mobile_banner_bg, campus_mobile_img,
-                    brochure_pdf_url, podcast_audio_url, youtube_video_url, whatsapp_btn_intent,
+                    brochure_pdf_url, podcast_audio_url, youtube_video_url, whatsapp_btn_intent, gallabox_message_text,
                     exam_date, extended_exam_date, admission_last_date, admission_start_date, assignment_date,
                     rating, is_active
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, ?,
                     ?, ?, ?, ?,
-                    ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
                     ?, ?, ?, ?, ?,
                     ?, ?
                 )
@@ -71,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $full_name, $short_name, $slug, $mode, $location, $official_url, $advantage_text,
                 $logo_url, $desktop_banner_bg, $mobile_banner_bg, $campus_mobile_img,
-                $brochure_pdf_url, $podcast_audio_url, $youtube_video_url, $whatsapp_btn_intent,
+                $brochure_pdf_url, $podcast_audio_url, $youtube_video_url, $whatsapp_btn_intent, $gallabox_message_text,
                 $exam_date, $extended_exam_date, $admission_last_date, $admission_start_date, $assignment_date,
                 $rating, $is_active
             ]);
@@ -403,6 +404,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <input type="text" name="whatsapp_btn_intent" class="form-control" placeholder="I want to Download {UNIVERSITY_NAME} {MODE} Brochure">
                         <small style="color:var(--text-muted); font-size:12px; margin-top:4px; display:block;">
                             Placeholders available: <code>{UNIVERSITY_NAME}</code>, <code>{UNI}</code>, <code>{MODE}</code>. If left empty, default message will be used.
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top:16px;">
+                        <label class="form-label">Gallabox WhatsApp Widget Message Text (messageText)</label>
+                        <input type="text" name="gallabox_message_text" class="form-control" placeholder="Start Your {UNIVERSITY_NAME} {MODE} Counseling with an Expert Now">
+                        <small style="color:var(--text-muted); font-size:12px; margin-top:4px; display:block;">
+                            WhatsApp prefilled message for Gallabox widget. Placeholders available: <code>{UNIVERSITY_NAME}</code>, <code>{UNI}</code>, <code>{MODE}</code>. If left empty, global default message text will be used.
                         </small>
                     </div>
                 </div>

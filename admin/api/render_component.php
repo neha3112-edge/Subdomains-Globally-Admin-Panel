@@ -53,6 +53,9 @@ if (file_exists($root_dir . '/job-roles-table-universal.php')) {
 if (file_exists($root_dir . '/course-fees-table-universal.php')) {
     require_once $root_dir . '/course-fees-table-universal.php';
 }
+if (file_exists($root_dir . '/gallabox-widget-universal.php')) {
+    require_once $root_dir . '/gallabox-widget-universal.php';
+}
 
 
 // 2. Resolve Component and Request Parameters
@@ -230,6 +233,12 @@ switch ($component) {
             </div>
         </div>
         <?php
+        break;
+
+    case 'gallabox_widget':
+    case 'whatsapp_widget':
+    case 'gallabox':
+        echo function_exists('sode_gallabox_widget_render') ? sode_gallabox_widget_render($params) : '';
         break;
 
     default:

@@ -1082,7 +1082,14 @@ add_action('wp_footer', function () {
     // 2. Output Modals from Central Admin
     echo sode_fetch_remote_component('popup_modals');
 
-    // 2. Output Unified Form & Popup Client JS
+    // 3. Output Gallabox WhatsApp Floating Widget from Central Admin
+    if (function_exists('sode_gallabox_widget_render')) {
+        echo sode_gallabox_widget_render(['uni' => sode_client_detect_uni()]);
+    } else {
+        echo sode_fetch_remote_component('gallabox_widget', ['uni' => sode_client_detect_uni()]);
+    }
+
+    // 4. Output Unified Form & Popup Client JS
     ?>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -1360,4 +1367,8 @@ if (file_exists(__DIR__ . '/job-roles-table-universal.php')) {
 
 if (file_exists(__DIR__ . '/course-fees-table-universal.php')) {
     require_once __DIR__ . '/course-fees-table-universal.php';
+}
+
+if (file_exists(__DIR__ . '/gallabox-widget-universal.php')) {
+    require_once __DIR__ . '/gallabox-widget-universal.php';
 }

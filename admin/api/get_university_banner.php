@@ -90,6 +90,7 @@ echo json_encode([
         'assignment_date' => $uni['assignment_date'] ?? '',
         'rating' => (float)$uni['rating'],
         'whatsapp_btn_intent' => $uni['whatsapp_btn_intent'] ?? '',
+        'gallabox_message_text' => $uni['gallabox_message_text'] ?? '',
         'accreditations' => $accreditations,
         'global_keys' => $global_keys
     ]
