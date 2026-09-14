@@ -78,9 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'copyright_text'       => trim($_POST['copyright_text']       ?? '© ' . date('Y') . ' SODE™ Counselling Services LLP'),
     ];
 
-    $db->exec("CREATE TABLE IF NOT EXISTS footer_config (id INT UNSIGNED NOT NULL DEFAULT 1, PRIMARY KEY(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_class` VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
-    try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_newtab` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $e) {}
     $set_parts = []; $vals = [];
     foreach ($fields as $k => $v) { $set_parts[] = "`$k` = ?"; $vals[] = $v; }
     $db->prepare("INSERT INTO footer_config (id) VALUES(1) ON DUPLICATE KEY UPDATE id=1")->execute();
@@ -90,8 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch config
-try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_class` VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
-try { $db->exec("ALTER TABLE footer_config ADD COLUMN `cta_btn_newtab` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $e) {}
 $config = $db->query("SELECT * FROM footer_config WHERE id = 1")->fetch(PDO::FETCH_ASSOC) ?: [];
 
 // Parse JSON

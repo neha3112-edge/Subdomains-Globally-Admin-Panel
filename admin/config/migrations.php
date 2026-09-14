@@ -5,11 +5,9 @@
  */
 
 function sode_run_auto_migrations(PDO $pdo) {
-    static $already_run = false;
-    if ($already_run) {
-        return;
-    }
-    $already_run = true;
+    // Automatic DB migrations have been disabled as per user request to prevent clashing with active live admin panel data.
+    // Schema changes must now be provided as explicit SQL queries to run manually.
+    return;
 
     try {
         // 1. Ensure migrations tracking table exists

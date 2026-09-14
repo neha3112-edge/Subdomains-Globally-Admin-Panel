@@ -106,22 +106,6 @@ $display_url = get_asset_url($relative_path);
 
 $db = get_db_connection();
 
-// Ensure media_library table exists
-$db->exec("
-    CREATE TABLE IF NOT EXISTS `media_library` (
-      `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      `file_name` VARCHAR(255) NOT NULL,
-      `file_path` VARCHAR(255) NOT NULL,
-      `file_url` TEXT NOT NULL,
-      `file_type` ENUM('image', 'audio', 'video', 'pdf', 'document', 'other') DEFAULT 'image',
-      `mime_type` VARCHAR(100) NULL,
-      `file_size` INT UNSIGNED DEFAULT 0,
-      `uploaded_by` INT UNSIGNED NULL,
-      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX `idx_media_type` (`file_type`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-");
-
 $user_id = $_SESSION['user_id'] ?? null;
 $stmt = $db->prepare("
     INSERT INTO media_library (file_name, file_path, file_url, file_type, mime_type, file_size, uploaded_by) 

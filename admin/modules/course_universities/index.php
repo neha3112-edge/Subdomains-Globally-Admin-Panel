@@ -23,10 +23,8 @@ $all_course_records = $db->query("
     ORDER BY c.id ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// If table is empty or migration needed
+// If table is empty or needs reload
 if (empty($all_course_records)) {
-    require_once dirname(__DIR__, 2) . '/config/migrations.php';
-    sode_run_auto_migrations($db);
     $all_course_records = $db->query("
         SELECT c.id AS course_id, c.full_name, c.short_name, c.slug AS course_slug,
                cut.id AS table_record_id,

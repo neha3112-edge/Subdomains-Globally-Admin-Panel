@@ -1,4 +1,8 @@
 {
+  "intelephense.environment.includePaths": [
+    ".",
+    "wordpress-stubs.php"
+  ],
   "intelephense.stubs": [
     "apache",
     "bcmath",

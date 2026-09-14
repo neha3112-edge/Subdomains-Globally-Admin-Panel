@@ -8,7 +8,6 @@ $page_subtitle = 'Manage global announcements and news that display on all unive
 $active_page_key = 'universal_news';
 
 $db = get_db_connection();
-sode_run_auto_migrations($db);
 
 // Handle Form Submissions (Save, Update, Delete, Toggle Active)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

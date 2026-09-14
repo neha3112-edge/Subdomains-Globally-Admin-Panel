@@ -12,22 +12,6 @@ if (!is_logged_in()) {
 
 $db = get_db_connection();
 
-// Ensure table exists
-$db->exec("
-    CREATE TABLE IF NOT EXISTS `media_library` (
-      `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      `file_name` VARCHAR(255) NOT NULL,
-      `file_path` VARCHAR(255) NOT NULL,
-      `file_url` TEXT NOT NULL,
-      `file_type` ENUM('image', 'audio', 'video', 'pdf', 'document', 'other') DEFAULT 'image',
-      `mime_type` VARCHAR(100) NULL,
-      `file_size` INT UNSIGNED DEFAULT 0,
-      `uploaded_by` INT UNSIGNED NULL,
-      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX `idx_media_type` (`file_type`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-");
-
 $type = trim($_GET['type'] ?? '');
 $search = trim($_GET['q'] ?? '');
 $page = max(1, (int)($_GET['page'] ?? 1));

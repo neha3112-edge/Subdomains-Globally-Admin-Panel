@@ -964,13 +964,131 @@ if ( function_exists('add_shortcode') ) {
 
 
 // ====================================================
-// ✅ STEP 6 — POPUP MODAL SYSTEM (Compare)
-// Class: .open-compare-form
+// ✅ STEP 5.5 — POPUP MODAL SYSTEM (Counseling / Apply Now)
+// Class: .applynow, .apply-now, .open-counseling-modal-btn, .open-counseling-popup
 // ====================================================
 if ( function_exists('add_action') ) {
+    add_action('wp_footer', 'sode_counseling_form_popup_modal');
     add_action('wp_footer', 'sode_compare_form_popup_modal');
     add_action('wp_footer', 'sode_auto_open_brochure_on_thankyou');
     add_action('wp_footer', 'sode_brochure_form_popup_modal');
+}
+
+function sode_counseling_form_popup_modal()
+{
+    static $rendered = false;
+    if ($rendered) return;
+    $rendered = true;
+    ?>
+
+    <style>
+        #counselingFormPopupOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+        }
+        #counselingFormPopupOverlay.active {
+            display: flex;
+        }
+        #counselingFormPopupBox {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px 24px 20px;
+            width: 92%;
+            max-width: 440px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
+            animation: counselingPopupSlideIn 0.3s ease;
+        }
+        @keyframes counselingPopupSlideIn {
+            from { transform: translateY(-25px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+        .counseling-popup-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #333;
+            background: none;
+            border: none;
+            line-height: 1;
+            z-index: 10;
+            padding: 0;
+        }
+        .counseling-popup-close:hover { color: #e11d48; }
+    </style>
+
+    <div id="counselingFormPopupOverlay">
+        <div id="counselingFormPopupBox">
+            <button type="button" class="counseling-popup-close" aria-label="Close">&times;</button>
+            <div id="sode-counseling-modal-content">
+                <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['form_name' => 'Counseling Popup Form']) : (function_exists('do_shortcode') ? do_shortcode('[custom_lead_form form_name="Counseling Popup Form"]') : ''); ?>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const overlay = document.getElementById('counselingFormPopupOverlay');
+            if (!overlay) return;
+
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('.applynow, .apply-now, .open-counseling-modal-btn, .open-counseling-form, .open-counseling-popup, a[href="#applynow"], a[href="#apply-now"]');
+                if (btn) {
+                    e.preventDefault();
+                    const courseName = btn.getAttribute('data-course');
+                    if (courseName) {
+                        const select = overlay.querySelector('select[name="course"]');
+                        if (select) {
+                            for (let i = 0; i < select.options.length; i++) {
+                                if (select.options[i].value.toLowerCase() === courseName.toLowerCase()) {
+                                    select.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    overlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+
+            const closeBtn = overlay.querySelector('.counseling-popup-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        })();
+    </script>
+    <?php
 }
 
 function sode_compare_form_popup_modal()

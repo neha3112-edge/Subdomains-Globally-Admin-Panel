@@ -8,9 +8,6 @@ require_once dirname(__DIR__) . '/config/config.php';
 
 $db = get_db_connection();
 
-// Ensure migrations have run
-sode_run_auto_migrations($db);
-
 $uni_slug = trim($_GET['uni'] ?? ($_GET['university'] ?? ''));
 $uni = null;
 

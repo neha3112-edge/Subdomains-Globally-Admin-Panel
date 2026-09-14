@@ -208,6 +208,14 @@ switch ($component) {
             }
             .sode-modal-close:hover { color: #e11d48; }
         </style>
+        <div id="counselingFormPopupOverlay" class="sode-modal-overlay">
+            <div class="sode-modal-box">
+                <button type="button" class="sode-modal-close counseling-popup-close" aria-label="Close">&times;</button>
+                <div id="sode-counseling-modal-content">
+                    <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['university' => $params['uni'] ?? '', 'form_name' => 'Counseling Popup Form']) : ''; ?>
+                </div>
+            </div>
+        </div>
         <div id="compareFormPopupOverlay" class="sode-modal-overlay">
             <div class="sode-modal-box">
                 <button type="button" class="sode-modal-close compare-popup-close">&times;</button>

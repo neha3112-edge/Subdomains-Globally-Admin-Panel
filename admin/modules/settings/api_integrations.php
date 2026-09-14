@@ -9,18 +9,6 @@ $active_page_key = 'api_integrations';
 
 $db = get_db_connection();
 
-// Ensure global_settings table exists
-$db->exec("
-    CREATE TABLE IF NOT EXISTS `global_settings` (
-        `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        `setting_key` VARCHAR(100) NOT NULL UNIQUE,
-        `setting_value` LONGTEXT NULL,
-        `setting_group` VARCHAR(50) DEFAULT 'general',
-        `description` VARCHAR(255) NULL,
-        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-");
-
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
