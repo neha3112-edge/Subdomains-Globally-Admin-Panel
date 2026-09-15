@@ -241,8 +241,8 @@ add_action('wp_head', function () {
                         } else if (node.nodeType === 1) {
                             var tag = node.tagName;
                             if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
-                            // Replace placeholder in attribute values (title, alt, placeholder, etc.)
-                            ['title', 'alt', 'placeholder', 'data-title', 'content'].forEach(function (attr) {
+                            // Replace placeholder in attribute values (href, title, alt, placeholder, etc.)
+                            ['href', 'title', 'alt', 'placeholder', 'data-title', 'content'].forEach(function (attr) {
                                 if (node.hasAttribute(attr)) {
                                     var a = node.getAttribute(attr);
                                     var ac = false;
