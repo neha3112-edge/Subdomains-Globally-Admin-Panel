@@ -639,7 +639,27 @@ add_shortcode('uni_eligibility', function ($atts) {
 });
 
 // ====================================================
+// 2.8.1. UNIVERSITY PROGRAMS & FEE TABLE SHORTCODES
+// [university_programs_table], [uni_programs_table], [programs_table], [university_fees_table], [uni_fees_table], [programs_fee_table], [university_courses_table], [uni_courses_table]
+// ====================================================
+$prog_table_handler = function ($atts) {
+    if (function_exists('sode_university_programs_table_render')) {
+        return sode_university_programs_table_render($atts);
+    }
+    return sode_fetch_remote_component('university_programs_table', $atts);
+};
+add_shortcode('university_programs_table', $prog_table_handler);
+add_shortcode('uni_programs_table', $prog_table_handler);
+add_shortcode('programs_table', $prog_table_handler);
+add_shortcode('university_fees_table', $prog_table_handler);
+add_shortcode('uni_fees_table', $prog_table_handler);
+add_shortcode('programs_fee_table', $prog_table_handler);
+add_shortcode('university_courses_table', $prog_table_handler);
+add_shortcode('uni_courses_table', $prog_table_handler);
+
+// ====================================================
 // 2.9. UNIVERSITY ADMISSION & APPLICATION PROCESS SHORTCODES
+
 // [university_application_process], [idol_application_process], [uni_application_process], [admission_process], [application_process]
 // ====================================================
 add_shortcode('university_application_process', function ($atts) {

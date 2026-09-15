@@ -98,6 +98,17 @@ switch ($component) {
         echo sode_courses_eligibility_table_render($params);
         break;
 
+    case 'university_programs_table':
+    case 'uni_programs_table':
+    case 'programs_table':
+    case 'university_fees_table':
+    case 'uni_fees_table':
+    case 'programs_fee_table':
+    case 'university_courses_table':
+    case 'uni_courses_table':
+        echo sode_university_programs_table_render($params);
+        break;
+
     case 'application_process':
     case 'university_application_process':
     case 'uni_application_process':

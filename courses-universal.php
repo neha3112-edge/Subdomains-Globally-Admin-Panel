@@ -1523,6 +1523,243 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
     }
 }
 
+/**
+ * ====================================================================
+ * Universal University Programs & Fee Table Component
+ * Renders the 4-column dynamic program table:
+ * PROGRAM | DURATION | FEE / 1ST SEMESTER | MORE INFORMATION
+ * ====================================================================
+ */
+if (!function_exists('sode_university_programs_table_render')) {
+    function sode_university_programs_table_render($atts = [])
+    {
+        $atts = shortcode_atts([
+            'university'     => '',
+            'uni'            => '',
+            'mode'           => 'all',            // 'all', 'online', 'distance'
+            'program_col'    => 'PROGRAM',
+            'duration_col'   => 'DURATION',
+            'fee_col'        => 'FEE / 1ST SEMESTER',
+            'more_info_col'  => 'MORE INFORMATION',
+            'btn_text'       => 'View Details',
+            'currency'       => 'INR',
+            'class'          => '',
+        ], $atts);
+
+        $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
+        $all_courses = sode_get_university_courses_data($uni_slug);
+
+        $mode_filter = strtolower(trim($atts['mode']));
+        $filtered = [];
+        $seen_courses = [];
+
+        foreach ($all_courses as $c) {
+            $m = strtolower($c['mode'] ?? 'online');
+            if ($mode_filter === 'online' && $m !== 'online')
+                continue;
+            if ($mode_filter === 'distance' && $m !== 'distance')
+                continue;
+
+            $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
+            if (isset($seen_courses[$key]))
+                continue;
+            $seen_courses[$key] = true;
+
+            $filtered[] = $c;
+        }
+
+        if (empty($filtered)) {
+            return '';
+        }
+
+        $table_id = 'sode_prog_tbl_' . substr(md5(uniqid(rand(), true)), 0, 8);
+
+        ob_start();
+        ?>
+        <div class="sode-programs-table-wrapper <?php echo esc_attr($atts['class']); ?>"
+            id="<?php echo esc_attr($table_id); ?>">
+            <div class="sode-programs-table-scroll">
+                <table class="sode-programs-table">
+                    <thead>
+                        <tr>
+                            <th class="sode-prog-col-prog"><?php echo esc_html($atts['program_col']); ?></th>
+                            <th class="sode-prog-col-dur"><?php echo esc_html($atts['duration_col']); ?></th>
+                            <th class="sode-prog-col-fee"><?php echo esc_html($atts['fee_col']); ?></th>
+                            <th class="sode-prog-col-info"><?php echo esc_html($atts['more_info_col']); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($filtered as $item):
+                            // Program Name
+                            $short_clean = $item['short_name'];
+                            if ($short_clean === 'B.Com') {
+                                $short_clean = 'BCom';
+                            } elseif ($short_clean === 'M.Com') {
+                                $short_clean = 'MCom';
+                            } elseif ($short_clean === 'B.Sc') {
+                                $short_clean = 'BSc';
+                            } elseif ($short_clean === 'M.Sc') {
+                                $short_clean = 'MSc';
+                            }
+
+                            // Duration (2 Years for PG / Master, 3 Years for UG / Bachelor)
+                            $duration = !empty($item['duration']) ? $item['duration'] : '2 Years';
+                            if (stripos($duration, 'year') !== false && stripos($duration, 'years') === false) {
+                                $duration = str_ireplace('year', 'Years', $duration);
+                            }
+
+                            // Fee / 1st Semester
+                            $raw_fee = !empty($item['per_sem_fee']) ? $item['per_sem_fee'] : (!empty($item['total_fee']) ? $item['total_fee'] : '');
+                            $fee_disp = '-';
+                            if ($raw_fee !== '') {
+                                $fee_num = preg_replace('/^(INR|RS\.?|₹|\$)\s*/i', '', trim($raw_fee));
+                                $fee_disp = trim($atts['currency']) . ' ' . $fee_num;
+                            }
+
+                            // Course Link
+                            $course_url = !empty($item['link']) && $item['link'] !== '#' ? $item['link'] : '/' . ltrim($item['slug'], '/') . '/';
+                            ?>
+                            <tr>
+                                <td class="sode-prog-cell-prog">
+                                    <strong><?php echo esc_html($short_clean); ?></strong>
+                                </td>
+                                <td class="sode-prog-cell-dur">
+                                    <?php echo esc_html($duration); ?>
+                                </td>
+                                <td class="sode-prog-cell-fee">
+                                    <?php echo esc_html($fee_disp); ?>
+                                </td>
+                                <td class="sode-prog-cell-info">
+                                    <a href="<?php echo esc_url($course_url); ?>" class="sode-prog-details-link">
+                                        <?php echo esc_html($atts['btn_text']); ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <style>
+            #<?php echo esc_attr($table_id); ?>.sode-programs-table-wrapper {
+                width: 100%;
+                margin: 20px 0;
+                box-sizing: border-box;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table-scroll {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border: 1px solid #d8e5ee;
+                border-radius: 4px;
+                background: #ffffff;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table {
+                width: 100%;
+                border-collapse: collapse;
+                border-spacing: 0;
+                table-layout: auto;
+                margin: 0;
+                background: #ffffff;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table thead th {
+                background-color: #eaf4fc;
+                color: #0b1a2d;
+                font-weight: 800;
+                font-size: 13.5px;
+                text-align: left;
+                padding: 13px 18px;
+                border-bottom: 1px solid #d8e5ee;
+                border-right: 1px solid #d8e5ee;
+                letter-spacing: 0.4px;
+                white-space: nowrap;
+                vertical-align: middle;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table thead th:last-child {
+                border-right: none;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table tbody tr {
+                background: #ffffff;
+                transition: background 0.15s ease-in-out;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table tbody tr:hover {
+                background: #f8fbff;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table tbody td {
+                padding: 13px 18px;
+                border-bottom: 1px solid #e8eef3;
+                border-right: 1px solid #e8eef3;
+                font-size: 14px;
+                color: #1f2937;
+                vertical-align: middle;
+                line-height: 1.4;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-programs-table tbody td:last-child {
+                border-right: none;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-prog-cell-prog strong {
+                font-weight: 800;
+                color: #000000;
+                font-size: 14px;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-prog-cell-dur {
+                color: #374151;
+                font-weight: 400;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-prog-cell-fee {
+                color: #374151;
+                font-weight: 400;
+                white-space: nowrap;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-prog-details-link {
+                color: #374151;
+                font-size: 14px;
+                font-weight: 400;
+                text-decoration: none;
+                transition: color 0.15s ease, text-decoration 0.15s ease;
+                display: inline-block;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-prog-details-link:hover {
+                color: #0284c7;
+                text-decoration: underline;
+            }
+
+            @media (max-width: 768px) {
+                #<?php echo esc_attr($table_id); ?> .sode-programs-table thead th {
+                    padding: 11px 14px;
+                    font-size: 12.5px;
+                }
+
+                #<?php echo esc_attr($table_id); ?> .sode-programs-table tbody td {
+                    padding: 11px 14px;
+                    font-size: 13.5px;
+                }
+            }
+        </style>
+        <?php
+        return ob_get_clean();
+    }
+}
+
 // Register Shortcodes
 if (function_exists('add_shortcode')) {
     add_shortcode('university_courses', 'sode_courses_tabs_render');
@@ -1542,4 +1779,15 @@ if (function_exists('add_shortcode')) {
     add_shortcode('university_eligibility', 'sode_courses_eligibility_table_render');
     add_shortcode('uni_eligibility', 'sode_courses_eligibility_table_render');
     add_shortcode('eligibility_table', 'sode_courses_eligibility_table_render');
+
+    // Programs / Fee Table Shortcodes
+    add_shortcode('university_programs_table', 'sode_university_programs_table_render');
+    add_shortcode('uni_programs_table', 'sode_university_programs_table_render');
+    add_shortcode('programs_table', 'sode_university_programs_table_render');
+    add_shortcode('university_fees_table', 'sode_university_programs_table_render');
+    add_shortcode('uni_fees_table', 'sode_university_programs_table_render');
+    add_shortcode('programs_fee_table', 'sode_university_programs_table_render');
+    add_shortcode('university_courses_table', 'sode_university_programs_table_render');
+    add_shortcode('uni_courses_table', 'sode_university_programs_table_render');
 }
+
