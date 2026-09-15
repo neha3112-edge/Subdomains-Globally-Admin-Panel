@@ -823,8 +823,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
 
             /* =========================================
-                                   DESKTOP (> 1024px)
-                                   ========================================= */
+                                           DESKTOP (> 1024px)
+                                           ========================================= */
             @media (min-width: 1025px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
                     padding: 10px 4px 14px 4px;
@@ -860,8 +860,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
 
             /* =========================================
-                                   TABLET (769px - 1024px)
-                                   ========================================= */
+                                           TABLET (769px - 1024px)
+                                           ========================================= */
             @media (min-width: 769px) and (max-width: 1024px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
                     padding: 10px 4px 14px 4px;
@@ -897,8 +897,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
 
             /* =========================================
-                                   MOBILE (<= 768px)
-                                   ========================================= */
+                                           MOBILE (<= 768px)
+                                           ========================================= */
             @media (max-width: 768px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
                     padding: 0 20px;
@@ -1534,16 +1534,16 @@ if (!function_exists('sode_university_programs_table_render')) {
     function sode_university_programs_table_render($atts = [])
     {
         $atts = shortcode_atts([
-            'university'     => '',
-            'uni'            => '',
-            'mode'           => 'all',            // 'all', 'online', 'distance'
-            'program_col'    => 'PROGRAM',
-            'duration_col'   => 'DURATION',
-            'fee_col'        => 'FEE / 1ST SEMESTER',
-            'more_info_col'  => 'MORE INFORMATION',
-            'btn_text'       => 'View Details',
-            'currency'       => 'INR',
-            'class'          => '',
+            'university' => '',
+            'uni' => '',
+            'mode' => 'all',            // 'all', 'online', 'distance'
+            'program_col' => 'PROGRAM',
+            'duration_col' => 'DURATION',
+            'fee_col' => 'FEE / 1ST SEMESTER',
+            'more_info_col' => 'MORE INFORMATION',
+            'btn_text' => 'View Details',
+            'currency' => 'INR',
+            'class' => '',
         ], $atts);
 
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
@@ -1644,9 +1644,8 @@ if (!function_exists('sode_university_programs_table_render')) {
         <style>
             #<?php echo esc_attr($table_id); ?>.sode-programs-table-wrapper {
                 width: 100%;
-                margin: 20px 0;
+                margin: 0px;
                 box-sizing: border-box;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-programs-table-scroll {
@@ -1670,7 +1669,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             #<?php echo esc_attr($table_id); ?> .sode-programs-table thead th {
                 background-color: #eaf4fc;
                 color: #0b1a2d;
-                font-weight: 800;
+                font-weight: 700;
                 font-size: 13.5px;
                 text-align: left;
                 padding: 13px 18px;
@@ -1713,7 +1712,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-prog-cell-prog strong {
-                font-weight: 800;
+                font-weight: 700;
                 color: #000000;
                 font-size: 14px;
             }
