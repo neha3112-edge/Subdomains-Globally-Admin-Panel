@@ -109,8 +109,94 @@ if (!empty($uni_slug)) {
             '$RATING$'                   => $uni['rating'] ?? '',
         ];
 
-        // Merge — university keys override global keys if same code
-        $map = array_merge($map, $uni_keys);
+        // Fetch all course fee mappings for this university
+        $course_stmt = $db->prepare("
+            SELECT 
+                c.short_name,
+                c.slug,
+                c.full_name,
+                ucm.per_semester_fee,
+                ucm.total_program_fee,
+                ucm.tuition_fee,
+                ucm.examination_fee,
+                ucm.one_time_processing_fee
+            FROM university_course_mappings ucm
+            INNER JOIN courses c ON ucm.course_id = c.id
+            WHERE ucm.university_id = ?
+        ");
+        $course_stmt->execute([$uni['id']]);
+        $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $fee_keys = [];
+        foreach ($courses as $c) {
+            $per_sem   = trim((string)($c['per_semester_fee'] ?? ''));
+            $total_fee = trim((string)($c['total_program_fee'] ?? ''));
+            $tuition   = trim((string)($c['tuition_fee'] ?? ''));
+            $exam      = trim((string)($c['examination_fee'] ?? ''));
+            $reg_fee   = trim((string)($c['one_time_processing_fee'] ?? ''));
+
+            // Default fee (per semester if available, else total)
+            $main_fee = $per_sem !== '' ? $per_sem : $total_fee;
+
+            // Generate name variants (e.g. MBA, BCOM, B_COM, MCA, etc.)
+            $slug_clean  = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c['slug'] ?? ''));
+            $short_clean = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c['short_name'] ?? ''));
+            $short_und   = strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', trim($c['short_name'] ?? '', '.')));
+
+            $prefixes = array_unique(array_filter([$slug_clean, $short_clean, $short_und]));
+
+            foreach ($prefixes as $pfx) {
+                // Main / Per Semester Fee
+                $fee_keys['$' . $pfx . '_FEE$']                  = $main_fee;
+                $fee_keys['$' . $pfx . '_FEES$']                 = $main_fee;
+                $fee_keys['{' . $pfx . '_FEE}']                  = $main_fee;
+                $fee_keys['{' . $pfx . '_FEES}']                 = $main_fee;
+
+                $fee_keys['$' . $pfx . '_PER_SEMESTER_FEE$']     = $per_sem;
+                $fee_keys['$' . $pfx . '_PER_SEMESTER_FEES$']    = $per_sem;
+                $fee_keys['{' . $pfx . '_PER_SEMESTER_FEE}']     = $per_sem;
+                $fee_keys['{' . $pfx . '_PER_SEMESTER_FEES}']    = $per_sem;
+
+                $fee_keys['$' . $pfx . '_SEMESTER_FEE$']         = $per_sem;
+                $fee_keys['$' . $pfx . '_SEMESTER_FEES$']        = $per_sem;
+                $fee_keys['{' . $pfx . '_SEMESTER_FEE}']         = $per_sem;
+                $fee_keys['{' . $pfx . '_SEMESTER_FEES}']        = $per_sem;
+
+                // Total Program Fee
+                $fee_keys['$' . $pfx . '_TOTAL_FEE$']            = $total_fee;
+                $fee_keys['$' . $pfx . '_TOTAL_FEES$']           = $total_fee;
+                $fee_keys['{' . $pfx . '_TOTAL_FEE}']            = $total_fee;
+                $fee_keys['{' . $pfx . '_TOTAL_FEES}']           = $total_fee;
+
+                $fee_keys['$' . $pfx . '_TOTAL_PROGRAM_FEE$']    = $total_fee;
+                $fee_keys['$' . $pfx . '_TOTAL_PROGRAM_FEES$']   = $total_fee;
+                $fee_keys['{' . $pfx . '_TOTAL_PROGRAM_FEE}']    = $total_fee;
+                $fee_keys['{' . $pfx . '_TOTAL_PROGRAM_FEES}']   = $total_fee;
+
+                // Tuition Fee
+                if ($tuition !== '') {
+                    $fee_keys['$' . $pfx . '_TUITION_FEE$']      = $tuition;
+                    $fee_keys['{' . $pfx . '_TUITION_FEE}']      = $tuition;
+                }
+
+                // Examination Fee
+                if ($exam !== '') {
+                    $fee_keys['$' . $pfx . '_EXAM_FEE$']         = $exam;
+                    $fee_keys['{' . $pfx . '_EXAM_FEE}']         = $exam;
+                    $fee_keys['$' . $pfx . '_EXAMINATION_FEE$']  = $exam;
+                    $fee_keys['{' . $pfx . '_EXAMINATION_FEE}']  = $exam;
+                }
+
+                // One-time registration / processing fee
+                if ($reg_fee !== '') {
+                    $fee_keys['$' . $pfx . '_REGISTRATION_FEE$'] = $reg_fee;
+                    $fee_keys['{' . $pfx . '_REGISTRATION_FEE}'] = $reg_fee;
+                }
+            }
+        }
+
+        // Merge — university keys and course fees override global keys
+        $map = array_merge($map, $uni_keys, $fee_keys);
     }
 }
 
