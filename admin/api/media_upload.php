@@ -70,42 +70,38 @@ finfo_close($finfo);
 // Year/Month Folder Structure
 $uploads_root = ADMIN_PATH . '/uploads';
 
-// Ensure root uploads/ directory exists and is writable
-if (!is_dir($uploads_root)) {
-    $old_umask = umask(0);
-    $mkdir_ok  = mkdir($uploads_root, 0777, true);
-    umask($old_umask);
-    if (!$mkdir_ok) {
-        $err = error_get_last();
-        echo json_encode(['success' => false, 'message' => 'Cannot create uploads/ directory: ' . ($err['message'] ?? 'Permission denied — set write permission on admin/ folder on server')]);
-        exit;
+// Helper: create or verify a directory is writable using actual test-write
+function ensure_writable_dir(string $dir): bool {
+    // Create if not exists (bypass umask)
+    if (!is_dir($dir)) {
+        $old_umask = umask(0);
+        $ok = mkdir($dir, 0777, true);
+        umask($old_umask);
+        if (!$ok) return false;
     }
-    @chmod($uploads_root, 0777);
+    // Try chmod even if exists (fixes dirs created by old code with wrong perms)
+    @chmod($dir, 0777);
+    // Verify with actual test-write (is_writable can lie under open_basedir)
+    $test_file = $dir . '/.write_test_' . uniqid();
+    $handle = @fopen($test_file, 'w');
+    if (!$handle) return false;
+    fclose($handle);
+    @unlink($test_file);
+    return true;
 }
 
-if (!is_writable($uploads_root)) {
+// Ensure uploads root is writable
+if (!ensure_writable_dir($uploads_root)) {
     echo json_encode(['success' => false, 'message' => 'uploads/ directory is not writable. Run on server SSH: chmod -R 777 ' . $uploads_root]);
     exit;
 }
 
-// Create Year/Month subfolder (use umask(0) to bypass server umask restrictions)
+// Create Year/Month subfolder
 $sub_dir    = date('Y') . '/' . date('m');
 $target_dir = $uploads_root . '/' . $sub_dir;
 
-if (!is_dir($target_dir)) {
-    $old_umask = umask(0);
-    $mkdir_ok  = mkdir($target_dir, 0777, true);
-    umask($old_umask);
-    if (!$mkdir_ok) {
-        $err = error_get_last();
-        echo json_encode(['success' => false, 'message' => 'Cannot create upload subfolder (' . $sub_dir . '): ' . ($err['message'] ?? 'Permission denied') . ' — Run: chmod -R 777 ' . $uploads_root . ' on server']);
-        exit;
-    }
-    @chmod($target_dir, 0777);
-}
-
-if (!is_writable($target_dir)) {
-    echo json_encode(['success' => false, 'message' => 'Upload subfolder (' . $sub_dir . ') is not writable even after mkdir. Run: chmod -R 777 ' . $uploads_root . ' on server via SSH.']);
+if (!ensure_writable_dir($target_dir)) {
+    echo json_encode(['success' => false, 'message' => 'Cannot write to upload subfolder (' . $sub_dir . '). Run on server SSH: chmod -R 777 ' . $uploads_root]);
     exit;
 }
 
@@ -121,7 +117,7 @@ if (!move_uploaded_file($tmp_path, $dest_path)) {
     if (!copy($tmp_path, $dest_path)) {
         $last_err = error_get_last();
         $err_msg  = !empty($last_err['message']) ? $last_err['message'] : 'Unknown error';
-        echo json_encode(['success' => false, 'message' => 'Failed to save file to disk: ' . $err_msg . ' — Check if PHP open_basedir restricts temp dir access on your server.']);
+        echo json_encode(['success' => false, 'message' => 'Failed to save file to disk: ' . $err_msg . ' — Check PHP open_basedir / upload_tmp_dir settings on your server.']);
         exit;
     }
     @unlink($tmp_path);
@@ -129,6 +125,7 @@ if (!move_uploaded_file($tmp_path, $dest_path)) {
 @chmod($dest_path, 0644);
 
 // Generate Path & Dynamic URL
+
 $relative_path = 'uploads/' . $sub_dir . '/' . $final_name;
 $display_url = get_asset_url($relative_path);
 
