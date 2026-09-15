@@ -69,31 +69,53 @@ finfo_close($finfo);
 
 // Year/Month Folder Structure
 $uploads_root = ADMIN_PATH . '/uploads';
+
+// Ensure root uploads/ directory exists and is writable
 if (!is_dir($uploads_root)) {
-    @mkdir($uploads_root, 0777, true);
-    @chmod($uploads_root, 0777);
+    if (!mkdir($uploads_root, 0775, true)) {
+        $err = error_get_last();
+        echo json_encode(['success' => false, 'message' => 'Cannot create uploads/ directory: ' . ($err['message'] ?? 'Permission denied — set write permission on admin/ folder on server')]);
+        exit;
+    }
+    @chmod($uploads_root, 0775);
 }
 
-$sub_dir = date('Y') . '/' . date('m');
+if (!is_writable($uploads_root)) {
+    echo json_encode(['success' => false, 'message' => 'uploads/ directory is not writable. Run: chmod -R 775 ' . $uploads_root . ' on your server via SSH or File Manager.']);
+    exit;
+}
+
+// Create Year/Month subfolder
+$sub_dir    = date('Y') . '/' . date('m');
 $target_dir = $uploads_root . '/' . $sub_dir;
 
 if (!is_dir($target_dir)) {
-    @mkdir($target_dir, 0777, true);
-    @chmod($target_dir, 0777);
+    if (!mkdir($target_dir, 0775, true)) {
+        $err = error_get_last();
+        echo json_encode(['success' => false, 'message' => 'Cannot create upload subfolder (' . $sub_dir . '): ' . ($err['message'] ?? 'Permission denied') . ' — Run: chmod -R 775 ' . $uploads_root . ' on server']);
+        exit;
+    }
+    @chmod($target_dir, 0775);
+}
+
+if (!is_writable($target_dir)) {
+    echo json_encode(['success' => false, 'message' => 'Upload subfolder (' . $sub_dir . ') is not writable. Run: chmod -R 775 ' . $uploads_root . ' on server via SSH.']);
+    exit;
 }
 
 // Clean filename
 $clean_name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', pathinfo($original_name, PATHINFO_FILENAME));
 $clean_name = trim($clean_name, '_');
 $final_name = $clean_name . '_' . time() . '.' . $extension;
-$dest_path = $target_dir . '/' . $final_name;
+$dest_path  = $target_dir . '/' . $final_name;
 
-if (!@move_uploaded_file($tmp_path, $dest_path)) {
-    // Fallback attempt: copy + unlink if move_uploaded_file had temporary stream restriction
-    if (!@copy($tmp_path, $dest_path)) {
+// Try move_uploaded_file first (correct way for uploaded files)
+if (!move_uploaded_file($tmp_path, $dest_path)) {
+    // Fallback: copy + unlink (some server configs restrict move_uploaded_file across mount points)
+    if (!copy($tmp_path, $dest_path)) {
         $last_err = error_get_last();
-        $err_msg = !empty($last_err['message']) ? $last_err['message'] : 'Permission denied. Please ensure the uploads/ directory on server is writable (chmod 777 or 775).';
-        echo json_encode(['success' => false, 'message' => 'Failed to save uploaded file to disk: ' . $err_msg]);
+        $err_msg  = !empty($last_err['message']) ? $last_err['message'] : 'Unknown error';
+        echo json_encode(['success' => false, 'message' => 'Failed to save file to disk: ' . $err_msg . ' — Check if PHP open_basedir restricts temp dir access on your server.']);
         exit;
     }
     @unlink($tmp_path);
