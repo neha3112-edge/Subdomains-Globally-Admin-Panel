@@ -823,8 +823,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
 
             /* =========================================
-                                           DESKTOP (> 1024px)
-                                           ========================================= */
+                                                   DESKTOP (> 1024px)
+                                                   ========================================= */
             @media (min-width: 1025px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
                     padding: 10px 4px 14px 4px;
@@ -860,8 +860,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
 
             /* =========================================
-                                           TABLET (769px - 1024px)
-                                           ========================================= */
+                                                   TABLET (769px - 1024px)
+                                                   ========================================= */
             @media (min-width: 769px) and (max-width: 1024px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
                     padding: 10px 4px 14px 4px;
@@ -897,8 +897,8 @@ if (!function_exists('sode_courses_tabs_render')) {
             }
 
             /* =========================================
-                                           MOBILE (<= 768px)
-                                           ========================================= */
+                                                   MOBILE (<= 768px)
+                                                   ========================================= */
             @media (max-width: 768px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-shell {
                     padding: 0 20px;
@@ -1729,7 +1729,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-prog-details-link {
-                color: #374151;
+                color: #0284c7;
                 font-size: 14px;
                 font-weight: 400;
                 text-decoration: none;
@@ -1738,8 +1738,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-prog-details-link:hover {
-                color: #0284c7;
-                text-decoration: underline;
+                text-decoration: underline !important;
             }
 
             @media (max-width: 768px) {
