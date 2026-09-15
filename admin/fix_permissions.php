@@ -1,83 +1,82 @@
 ﻿<?php
-/**
- * Upload Self-Healing & Diagnostics Tool
- * Visit: /admin/fix_permissions.php in browser to fix upload permission issues
- */
 require_once __DIR__ . '/config/config.php';
 
 if (!is_logged_in()) {
-    die(json_encode(['error' => 'Access denied. Please login first.']));
+    http_response_code(403);
+    die('{"error":"Access denied. Please login to admin panel first."}');
 }
 
 header('Content-Type: application/json; charset=utf-8');
 
 $uploads_root = ADMIN_PATH . '/uploads';
 $year_dir     = $uploads_root . '/' . date('Y');
-$month_dir    = $year_dir . '/' . date('m');
+$month_dir    = $year_dir    . '/' . date('m');
 
 $log = [];
 
-// Step 1: Diagnostics
-$log[] = '=== SERVER DIAGNOSTICS ===';
-$log[] = 'PHP user: ' . (function_exists('posix_getpwuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? 'unknown') : get_current_user());
-$log[] = 'open_basedir: ' . (ini_get('open_basedir') ?: 'none');
-$log[] = 'upload_tmp_dir: ' . (ini_get('upload_tmp_dir') ?: sys_get_temp_dir());
-$log[] = 'ADMIN_PATH: ' . ADMIN_PATH;
-$log[] = '';
+// --- Diagnostics ---
+$php_user = '';
+if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
+    $pw = posix_getpwuid(posix_geteuid());
+    $php_user = is_array($pw) ? $pw['name'] : 'uid:' . posix_geteuid();
+} else {
+    $php_user = get_current_user();
+}
 
-// Step 2: Delete empty wrong-permission subdirs and recreate fresh
-$log[] = '=== FIXING DIRECTORIES ===';
+$log[] = 'PHP user       : ' . $php_user;
+$log[] = 'open_basedir   : ' . (ini_get('open_basedir') ?: 'none (no restriction)');
+$log[] = 'upload_tmp_dir : ' . (ini_get('upload_tmp_dir') ?: sys_get_temp_dir());
+$log[] = 'ADMIN_PATH     : ' . ADMIN_PATH;
+$log[] = '---';
 
-foreach ([$month_dir, $year_dir] as $dir) {
+// --- Delete empty wrong-permission subdirs ---
+foreach (array($month_dir, $year_dir) as $dir) {
     if (is_dir($dir)) {
-        $items = array_diff(scandir($dir), ['.', '..']);
+        $items = array_diff(scandir($dir), array('.', '..'));
         if (empty($items)) {
             $ok = @rmdir($dir);
             $log[] = ($ok ? 'Removed' : 'Could not remove') . ' empty dir: ' . $dir;
         } else {
-            $log[] = 'Dir not empty, skipping delete: ' . $dir . ' (' . count($items) . ' items)';
+            $log[] = 'Dir not empty, keeping: ' . $dir . ' (' . count($items) . ' items)';
         }
     }
 }
 
-// Recreate all dirs fresh with umask(0) → guaranteed 0777
+// --- Recreate dirs with umask(0) ---
 $old_umask = umask(0);
-foreach ([$uploads_root, $year_dir, $month_dir] as $dir) {
+foreach (array($uploads_root, $year_dir, $month_dir) as $dir) {
     if (!is_dir($dir)) {
         $ok = mkdir($dir, 0777, true);
-        $log[] = 'mkdir ' . $dir . ' => ' . ($ok ? 'OK' : 'FAILED: ' . (error_get_last()['message'] ?? 'unknown'));
+        $err = error_get_last();
+        $log[] = 'mkdir ' . $dir . ' : ' . ($ok ? 'OK' : 'FAILED - ' . ($err ? $err['message'] : 'unknown'));
     } else {
         $ok = chmod($dir, 0777);
-        $log[] = 'chmod 0777 on existing ' . $dir . ' => ' . ($ok ? 'OK' : 'FAILED (different owner)');
+        $log[] = 'chmod 0777 ' . $dir . ' : ' . ($ok ? 'OK' : 'FAILED (different owner - need SSH)');
     }
 }
 umask($old_umask);
-$log[] = '';
+$log[] = '---';
 
-// Step 3: Actual write test on each dir
-$log[] = '=== WRITE TESTS ===';
-$all_writable = true;
-
-foreach ([$uploads_root, $year_dir, $month_dir] as $dir) {
-    $perms     = is_dir($dir) ? substr(sprintf('%o', fileperms($dir)), -4) : 'N/A';
-    $test_file = $dir . '/.wtest_' . uniqid();
-    $handle    = @fopen($test_file, 'w');
-    if ($handle) {
-        fwrite($handle, 'test');
-        fclose($handle);
-        @unlink($test_file);
-        $log[] = 'WRITABLE: ' . $dir . ' (perms: ' . $perms . ')';
+// --- Write test ---
+$all_ok = true;
+foreach (array($uploads_root, $year_dir, $month_dir) as $dir) {
+    $perms = is_dir($dir) ? substr(sprintf('%o', fileperms($dir)), -4) : 'N/A';
+    $test  = $dir . '/.wtest_' . uniqid();
+    $fh    = @fopen($test, 'w');
+    if ($fh) {
+        fwrite($fh, 'ok');
+        fclose($fh);
+        @unlink($test);
+        $log[] = 'WRITABLE   : ' . $dir . ' (perms:' . $perms . ')';
     } else {
-        $err       = error_get_last();
-        $log[]     = 'NOT WRITABLE: ' . $dir . ' (perms: ' . $perms . ') -- ' . ($err['message'] ?? 'Permission denied');
-        $all_writable = false;
+        $e     = error_get_last();
+        $log[] = 'NOT WRITABLE: ' . $dir . ' (perms:' . $perms . ') - ' . ($e ? $e['message'] : 'Permission denied');
+        $all_ok = false;
     }
 }
 
-echo json_encode([
-    'fixed'   => $all_writable,
-    'message' => $all_writable
-        ? 'SUCCESS: All upload directories are writable! Try uploading again.'
-        : 'FAILED: Directories still not writable. This is an open_basedir or PHP process user ownership issue — contact your hosting provider.',
+echo json_encode(array(
+    'fixed'   => $all_ok,
+    'message' => $all_ok ? 'SUCCESS - All dirs writable! Try uploading again.' : 'FAILED - Run fix on server: chmod -R 777 ' . $uploads_root,
     'log'     => $log,
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
