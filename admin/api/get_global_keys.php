@@ -38,6 +38,18 @@ if (!empty($uni_slug)) {
 
 
     if ($uni) {
+        // Fetch accreditations / approvals for this university (Comma separated)
+        $acc_stmt = $db->prepare("
+            SELECT a.title 
+            FROM university_accreditations ua
+            INNER JOIN accreditations a ON ua.accreditation_id = a.id
+            WHERE ua.university_id = ?
+            ORDER BY a.id ASC
+        ");
+        $acc_stmt->execute([$uni['id']]);
+        $acc_titles = $acc_stmt->fetchAll(PDO::FETCH_COLUMN);
+        $approvals_str = !empty($acc_titles) ? implode(', ', $acc_titles) : '';
+
         $uni_keys = [
             // University Name
             '{UNIVERSITY_NAME}'          => $uni['full_name']  ?? '',
@@ -77,6 +89,20 @@ if (!empty($uni_slug)) {
             '$EXAM_DATE$'                => $uni['exam_date']            ?? '',
             '{ASSIGNMENT_DATE}'          => $uni['assignment_date']      ?? '',
             '$ASSIGNMENT_DATE$'          => $uni['assignment_date']      ?? '',
+
+            // Approvals & Accreditations (Comma Separated)
+            '{APPROVALS}'                => $approvals_str,
+            '{approvals}'                => $approvals_str,
+            '$APPROVALS$'                => $approvals_str,
+            '$approvals$'                => $approvals_str,
+            '{ACCREDITATIONS}'           => $approvals_str,
+            '{accreditations}'           => $approvals_str,
+            '$ACCREDITATIONS$'           => $approvals_str,
+            '$accreditations$'           => $approvals_str,
+            '{APPROVALS_ACCREDITATIONS}' => $approvals_str,
+            '$APPROVALS_ACCREDITATIONS$' => $approvals_str,
+            '{COMMA_SEPARATED_APPROVALS}' => $approvals_str,
+            '$COMMA_SEPARATED_APPROVALS$' => $approvals_str,
 
             // Rating
             '{UNIVERSITY_RATING}'        => $uni['rating'] ?? '',
