@@ -72,34 +72,40 @@ $uploads_root = ADMIN_PATH . '/uploads';
 
 // Ensure root uploads/ directory exists and is writable
 if (!is_dir($uploads_root)) {
-    if (!mkdir($uploads_root, 0775, true)) {
+    $old_umask = umask(0);
+    $mkdir_ok  = mkdir($uploads_root, 0777, true);
+    umask($old_umask);
+    if (!$mkdir_ok) {
         $err = error_get_last();
         echo json_encode(['success' => false, 'message' => 'Cannot create uploads/ directory: ' . ($err['message'] ?? 'Permission denied — set write permission on admin/ folder on server')]);
         exit;
     }
-    @chmod($uploads_root, 0775);
+    @chmod($uploads_root, 0777);
 }
 
 if (!is_writable($uploads_root)) {
-    echo json_encode(['success' => false, 'message' => 'uploads/ directory is not writable. Run: chmod -R 775 ' . $uploads_root . ' on your server via SSH or File Manager.']);
+    echo json_encode(['success' => false, 'message' => 'uploads/ directory is not writable. Run on server SSH: chmod -R 777 ' . $uploads_root]);
     exit;
 }
 
-// Create Year/Month subfolder
+// Create Year/Month subfolder (use umask(0) to bypass server umask restrictions)
 $sub_dir    = date('Y') . '/' . date('m');
 $target_dir = $uploads_root . '/' . $sub_dir;
 
 if (!is_dir($target_dir)) {
-    if (!mkdir($target_dir, 0775, true)) {
+    $old_umask = umask(0);
+    $mkdir_ok  = mkdir($target_dir, 0777, true);
+    umask($old_umask);
+    if (!$mkdir_ok) {
         $err = error_get_last();
-        echo json_encode(['success' => false, 'message' => 'Cannot create upload subfolder (' . $sub_dir . '): ' . ($err['message'] ?? 'Permission denied') . ' — Run: chmod -R 775 ' . $uploads_root . ' on server']);
+        echo json_encode(['success' => false, 'message' => 'Cannot create upload subfolder (' . $sub_dir . '): ' . ($err['message'] ?? 'Permission denied') . ' — Run: chmod -R 777 ' . $uploads_root . ' on server']);
         exit;
     }
-    @chmod($target_dir, 0775);
+    @chmod($target_dir, 0777);
 }
 
 if (!is_writable($target_dir)) {
-    echo json_encode(['success' => false, 'message' => 'Upload subfolder (' . $sub_dir . ') is not writable. Run: chmod -R 775 ' . $uploads_root . ' on server via SSH.']);
+    echo json_encode(['success' => false, 'message' => 'Upload subfolder (' . $sub_dir . ') is not writable even after mkdir. Run: chmod -R 777 ' . $uploads_root . ' on server via SSH.']);
     exit;
 }
 
