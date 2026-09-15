@@ -9,6 +9,14 @@ $active_page_key = 'global_keys';
 
 $db = get_db_connection();
 
+// Ensure link_url column exists in global_keys
+try {
+    $col_chk = $db->query("SHOW COLUMNS FROM global_keys LIKE 'link_url'")->fetch();
+    if (!$col_chk) {
+        $db->exec("ALTER TABLE global_keys ADD COLUMN link_url VARCHAR(500) NULL AFTER key_value");
+    }
+} catch (Exception $e) {}
+
 // Handle Save / Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -18,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
         $key_code = trim($_POST['key_code'] ?? '');
         $key_value = trim($_POST['key_value'] ?? '');
+        $link_url = trim($_POST['link_url'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
@@ -31,12 +40,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash_message('Key Code and Key Value are required.', 'error');
         } else {
             if ($id) {
-                $stmt = $db->prepare("UPDATE global_keys SET key_code = ?, key_value = ?, description = ?, is_active = ? WHERE id = ?");
-                $stmt->execute([$key_code, $key_value, $description, $is_active, $id]);
+                $stmt = $db->prepare("UPDATE global_keys SET key_code = ?, key_value = ?, link_url = ?, description = ?, is_active = ? WHERE id = ?");
+                $stmt->execute([$key_code, $key_value, $link_url, $description, $is_active, $id]);
                 set_flash_message('Global key updated successfully!', 'success');
             } else {
-                $stmt = $db->prepare("INSERT INTO global_keys (key_code, key_value, description, is_active) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$key_code, $key_value, $description, $is_active]);
+                $stmt = $db->prepare("INSERT INTO global_keys (key_code, key_value, link_url, description, is_active) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$key_code, $key_value, $link_url, $description, $is_active]);
                 set_flash_message('Global key created successfully!', 'success');
             }
             // Auto-flush cache on all active subdomains
@@ -146,6 +155,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Link URL (Optional)</label>
+                    <input type="text" name="link_url" class="form-control" value="<?php echo htmlspecialchars($edit_key['link_url'] ?? ''); ?>" placeholder="e.g. tel:+917065777755, mailto:info@example.com, https://...">
+                    <small style="color:var(--text-muted); font-size:11.5px; margin-top:4px; display:block;">
+                        💡 <strong>URL daloge</strong> toh key automatically clickable link (<code>&lt;a href="..."&gt;text&lt;/a&gt;</code>) ban jayegi. Empty chhodne par sirf normal text fetch hoga.
+                    </small>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Description / Usage Context</label>
                     <input type="text" name="description" class="form-control" value="<?php echo htmlspecialchars($edit_key['description'] ?? ''); ?>" placeholder="Active academic calendar year">
                 </div>
@@ -175,6 +192,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <tr>
                         <th>Key Code</th>
                         <th>Value</th>
+                        <th>Link URL</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -182,7 +200,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (empty($keys)): ?>
-                        <tr><td colspan="5" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No global keys match your search query "' . htmlspecialchars($search) . '".' : 'No global keys configured yet.'; ?></td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No global keys match your search query "' . htmlspecialchars($search) . '".' : 'No global keys configured yet.'; ?></td></tr>
                     <?php else: ?>
                         <?php foreach ($keys as $k): ?>
                             <tr>
@@ -191,6 +209,15 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 </td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($k['key_value']); ?></strong>
+                                </td>
+                                <td>
+                                    <?php if (!empty($k['link_url'])): ?>
+                                        <a href="<?php echo htmlspecialchars($k['link_url']); ?>" target="_blank" style="text-decoration:none;">
+                                            <code style="font-size:12px; color:var(--primary); background:rgba(37,99,235,0.08); padding:3px 6px; border-radius:4px;"><?php echo htmlspecialchars($k['link_url']); ?></code>
+                                        </a>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-dim); font-size:13px;">-</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="color:var(--text-dim); font-size:12px;">
                                     <?php echo htmlspecialchars($k['description'] ?? '-'); ?>

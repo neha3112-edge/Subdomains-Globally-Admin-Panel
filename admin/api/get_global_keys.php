@@ -9,35 +9,59 @@ require_once dirname(__DIR__) . '/config/config.php';
 $db = get_db_connection();
 
 // ── 1. Global Keys (always returned) ──────────────────────────────────
-$global_rows = $db->query("SELECT key_code, key_value FROM global_keys WHERE is_active = 1")->fetchAll();
+$cols = $db->query("SHOW COLUMNS FROM global_keys LIKE 'link_url'")->fetch();
+$select_sql = $cols ? "SELECT key_code, key_value, link_url FROM global_keys WHERE is_active = 1" : "SELECT key_code, key_value, '' AS link_url FROM global_keys WHERE is_active = 1";
+$global_rows = $db->query($select_sql)->fetchAll();
 $map = [];
 foreach ($global_rows as $k) {
-    $map[$k['key_code']] = $k['key_value'];
+    $code = $k['key_code'];
+    $val  = (string)$k['key_value'];
+    $url  = trim((string)($k['link_url'] ?? ''));
 
-    // Auto-detect and generate tel/mailto links for Phone and Email keys
-    $raw_code = strtoupper(trim($k['key_code'], '$ '));
-    $val = trim((string)$k['key_value']);
+    $raw_code = strtoupper(trim($code, '$ '));
 
+    if ($url !== '') {
+        // If URL is set, the primary key automatically outputs as a clickable link!
+        $map[$code] = '<a href="' . htmlspecialchars($url) . '">' . htmlspecialchars($val) . '</a>';
+
+        // Also provide plain text and raw URL keys
+        $map['$' . $raw_code . '_TEXT$'] = $val;
+        $map['{' . $raw_code . '_TEXT}'] = $val;
+        $map['$' . $raw_code . '_URL$']  = $url;
+        $map['{' . $raw_code . '_URL}']  = $url;
+        $map['$' . $raw_code . '_LINK$'] = $url;
+        $map['{' . $raw_code . '_LINK}'] = $url;
+    } else {
+        // Normal plain text key
+        $map[$code] = $val;
+    }
+
+    // Auto-detect and generate tel/mailto links for Phone and Email keys if not manually set
     if (in_array($raw_code, ['PHONE', 'PHONE_NUMBER', 'MOBILE', 'CONTACT_NUMBER', 'SUPPORT_PHONE'])) {
         $clean_phone = preg_replace('/[^0-9+]/', '', $val);
-        $map['$' . $raw_code . '_LINK$']  = 'tel:' . $clean_phone;
-        $map['{' . $raw_code . '_LINK}']  = 'tel:' . $clean_phone;
-        $map['$' . $raw_code . '_TEL$']   = 'tel:' . $clean_phone;
-        $map['{' . $raw_code . '_TEL}']   = 'tel:' . $clean_phone;
-        $map['$' . $raw_code . '_HTML$']  = '<a href="tel:' . $clean_phone . '">' . htmlspecialchars($val) . '</a>';
-        $map['{' . $raw_code . '_HTML}']  = '<a href="tel:' . $clean_phone . '">' . htmlspecialchars($val) . '</a>';
+        if ($url === '') {
+            $map['$' . $raw_code . '_LINK$']  = 'tel:' . $clean_phone;
+            $map['{' . $raw_code . '_LINK}']  = 'tel:' . $clean_phone;
+            $map['$' . $raw_code . '_TEL$']   = 'tel:' . $clean_phone;
+            $map['{' . $raw_code . '_TEL}']   = 'tel:' . $clean_phone;
+            $map['$' . $raw_code . '_HTML$']  = '<a href="tel:' . $clean_phone . '">' . htmlspecialchars($val) . '</a>';
+            $map['{' . $raw_code . '_HTML}']  = '<a href="tel:' . $clean_phone . '">' . htmlspecialchars($val) . '</a>';
+        }
     }
 
     if (in_array($raw_code, ['EMAIL', 'EMAIL_ADDRESS', 'SUPPORT_EMAIL', 'CONTACT_EMAIL'])) {
         $clean_email = filter_var($val, FILTER_SANITIZE_EMAIL);
-        $map['$' . $raw_code . '_LINK$']   = 'mailto:' . $clean_email;
-        $map['{' . $raw_code . '_LINK}']   = 'mailto:' . $clean_email;
-        $map['$' . $raw_code . '_MAILTO$'] = 'mailto:' . $clean_email;
-        $map['{' . $raw_code . '_MAILTO}'] = 'mailto:' . $clean_email;
-        $map['$' . $raw_code . '_HTML$']   = '<a href="mailto:' . $clean_email . '">' . htmlspecialchars($val) . '</a>';
-        $map['{' . $raw_code . '_HTML}']   = '<a href="mailto:' . $clean_email . '">' . htmlspecialchars($val) . '</a>';
+        if ($url === '') {
+            $map['$' . $raw_code . '_LINK$']   = 'mailto:' . $clean_email;
+            $map['{' . $raw_code . '_LINK}']   = 'mailto:' . $clean_email;
+            $map['$' . $raw_code . '_MAILTO$'] = 'mailto:' . $clean_email;
+            $map['{' . $raw_code . '_MAILTO}'] = 'mailto:' . $clean_email;
+            $map['$' . $raw_code . '_HTML$']   = '<a href="mailto:' . $clean_email . '">' . htmlspecialchars($val) . '</a>';
+            $map['{' . $raw_code . '_HTML}']   = '<a href="mailto:' . $clean_email . '">' . htmlspecialchars($val) . '</a>';
+        }
     }
 }
+
 
 
 // ── 2. University-Specific Keys (returned when ?uni=slug passed) ───────
