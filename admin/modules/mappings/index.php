@@ -21,8 +21,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
 }
 
-// Fetch all mappings
-$mappings = $db->query("
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (u.full_name LIKE :q1 OR u.short_name LIKE :q2 OR c.full_name LIKE :q3 OR c.short_name LIKE :q4 OR ucm.mode LIKE :q5)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+    $params[':q3'] = '%' . $search . '%';
+    $params[':q4'] = '%' . $search . '%';
+    $params[':q5'] = '%' . $search . '%';
+}
+
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+if ($search !== '') {
+    $count_stmt = $db->prepare("
+        SELECT COUNT(*) 
+        FROM university_course_mappings ucm
+        INNER JOIN universities u ON ucm.university_id = u.id
+        INNER JOIN courses c ON ucm.course_id = c.id
+        $where_sql
+    ");
+    $count_stmt->execute($params);
+    $total_mappings = (int)$count_stmt->fetchColumn();
+} else {
+    $total_mappings = (int)$db->query("
+        SELECT COUNT(*) 
+        FROM university_course_mappings ucm
+        INNER JOIN universities u ON ucm.university_id = u.id
+        INNER JOIN courses c ON ucm.course_id = c.id
+    ")->fetchColumn();
+}
+
+// Fetch paginated mappings
+$stmt = $db->prepare("
     SELECT ucm.*, 
            u.full_name AS uni_name, u.short_name AS uni_short, u.logo_url,
            c.full_name AS course_name, c.short_name AS course_short, c.level,
@@ -30,20 +69,45 @@ $mappings = $db->query("
     FROM university_course_mappings ucm
     INNER JOIN universities u ON ucm.university_id = u.id
     INNER JOIN courses c ON ucm.course_id = c.id
+    $where_sql
     ORDER BY ucm.id DESC
-")->fetchAll();
+    LIMIT :limit OFFSET :offset
+");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$mappings = $stmt->fetchAll();
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
 
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
     <div>
-        <span class="section-heading-sm" style="margin-bottom:0;">All University-Course Mappings (<?php echo count($mappings); ?>)</span>
+        <span class="section-heading-sm" style="margin-bottom:0;">All University-Course Mappings (<?php echo $total_mappings; ?>)</span>
     </div>
     <a href="<?php echo BASE_URL; ?>/modules/mappings/create.php" class="btn-primary btn-sm" style="padding:10px 18px; font-size:13.5px; text-decoration:none;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         Map New Course
     </a>
+</div>
+
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search mappings by university, course, or mode..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="<?php echo BASE_URL; ?>/modules/mappings/index.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
 </div>
 
 <div class="admin-card">
@@ -65,7 +129,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <?php if (empty($mappings)): ?>
                     <tr>
                         <td colspan="8" style="text-align:center; padding:40px; color:var(--text-dim);">
-                            No mappings configured. Click "Map New Course" to link a university to a course.
+                            <?php echo $search !== '' ? 'No mappings match your search query "' . htmlspecialchars($search) . '".' : 'No mappings configured. Click "Map New Course" to link a university to a course.'; ?>
                         </td>
                     </tr>
                 <?php else: ?>
@@ -117,6 +181,7 @@ require_once ADMIN_PATH . '/includes/header.php';
             </tbody>
         </table>
     </div>
+    <?php echo sode_render_pagination($total_mappings, $page, $per_page); ?>
 </div>
 
 <?php

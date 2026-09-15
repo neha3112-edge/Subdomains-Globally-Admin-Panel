@@ -180,7 +180,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <div style="display:grid; grid-template-columns: 1.2fr 1.2fr 1fr; gap:16px;">
                         <div class="form-group">
                             <label class="form-label">University *</label>
-                            <select name="university_id" class="form-select" required>
+                            <select name="university_id" class="form-select searchable-select" required>
                                 <?php foreach ($universities as $u): ?>
                                     <option value="<?php echo $u['id']; ?>" <?php echo ($mapping['university_id'] == $u['id']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($u['short_name'] ?: $u['full_name']); ?>
@@ -191,7 +191,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                         <div class="form-group">
                             <label class="form-label">Course *</label>
-                            <select name="course_id" class="form-select" required>
+                            <select name="course_id" class="form-select searchable-select" required>
                                 <?php foreach ($courses as $c): ?>
                                     <option value="<?php echo $c['id']; ?>" <?php echo ($mapping['course_id'] == $c['id']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($c['full_name'] . ' (' . $c['short_name'] . ')'); ?>
@@ -202,7 +202,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                         <div class="form-group">
                             <label class="form-label">Course Mode *</label>
-                            <select name="mode" class="form-select" required>
+                            <select name="mode" class="form-select searchable-select" required>
                                 <?php 
                                 $curr_mode = $mapping['mode'] ?? '';
                                 $found_m = false;
@@ -569,12 +569,18 @@ require_once ADMIN_PATH . '/includes/header.php';
 }
 
 /* Searchable Select Dropdown Styles */
+.admin-card {
+    overflow: visible !important;
+}
+.card-body {
+    overflow: visible !important;
+}
 .sode-ss-wrapper {
     position: relative;
     width: 100%;
 }
 .sode-ss-wrapper.open {
-    z-index: 9999;
+    z-index: 10005;
 }
 .spec-row:has(.sode-ss-wrapper.open),
 .sode-sub-row:has(.sode-ss-wrapper.open),
@@ -640,13 +646,23 @@ require_once ADMIN_PATH . '/includes/header.php';
     border: 1px solid #2e3d5b;
     border-radius: 10px;
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
-    z-index: 10000;
+    z-index: 10010;
     overflow: hidden;
     display: none;
     animation: sodeDropdownFade 0.15s ease-out;
 }
+.sode-ss-wrapper.open-up .sode-ss-dropdown {
+    top: auto;
+    bottom: calc(100% + 4px);
+    box-shadow: 0 -16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    animation: sodeDropdownFadeUp 0.15s ease-out;
+}
 @keyframes sodeDropdownFade {
     from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sodeDropdownFadeUp {
+    from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
 }
 .sode-ss-search-wrap {
@@ -829,25 +845,42 @@ function makeSearchableSelect(selectEl, placeholderText) {
         document.querySelectorAll('.sode-ss-wrapper.open').forEach(function(w) {
             if (w !== wrapper) {
                 w.classList.remove('open');
+                w.classList.remove('open-up');
                 var d = w.querySelector('.sode-ss-dropdown');
                 if (d) d.style.display = 'none';
                 var pr = w.closest('.spec-row, .sode-sub-row');
                 if (pr) pr.style.zIndex = '';
-                var pc = w.closest('.sode-sem-card');
+                var pc = w.closest('.sode-sem-card, .admin-card');
                 if (pc) pc.style.zIndex = '';
             }
         });
 
         updateOptionsList();
+
+        // Auto-detect whether to open upwards (dropup) or downwards
+        var triggerRect = trigger.getBoundingClientRect();
+        var spaceBelow = window.innerHeight - triggerRect.bottom;
+        var spaceAbove = triggerRect.top;
+        var neededHeight = 260;
+
+        var shouldDropup = (spaceBelow < neededHeight) && (spaceAbove > spaceBelow) && (spaceAbove >= 240);
+
+        if (shouldDropup) {
+            wrapper.classList.add('open-up');
+            listWrap.style.maxHeight = Math.max(140, Math.min(240, spaceAbove - 60)) + 'px';
+        } else {
+            wrapper.classList.remove('open-up');
+            listWrap.style.maxHeight = Math.max(140, Math.min(240, spaceBelow - 60)) + 'px';
+        }
+
         wrapper.classList.add('open');
         dropdown.style.display = 'block';
         searchInput.value = '';
         filterList('');
 
         var parentRow = wrapper.closest('.spec-row, .sode-sub-row');
-        if (parentRow) parentRow.style.zIndex = '9999';
-        var parentCard = wrapper.closest('.sode-sem-card');
-        if (parentCard) parentCard.style.zIndex = '9999';
+        if (parentRow) parentRow.style.zIndex = '10005';
+        if (parentCard) parentCard.style.zIndex = '10005';
 
         setTimeout(function() { searchInput.focus(); }, 40);
 
@@ -859,11 +892,12 @@ function makeSearchableSelect(selectEl, placeholderText) {
 
     function closeDropdown() {
         wrapper.classList.remove('open');
+        wrapper.classList.remove('open-up');
         dropdown.style.display = 'none';
 
         var parentRow = wrapper.closest('.spec-row, .sode-sub-row');
         if (parentRow) parentRow.style.zIndex = '';
-        var parentCard = wrapper.closest('.sode-sem-card');
+        var parentCard = wrapper.closest('.sode-sem-card, .admin-card');
         if (parentCard) parentCard.style.zIndex = '';
     }
 

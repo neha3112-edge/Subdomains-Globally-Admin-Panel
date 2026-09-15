@@ -180,3 +180,108 @@ if (!function_exists('sode_fire_and_forget')) {
     }
 }
 
+/**
+ * Universal Server-Side Pagination Helpers
+ */
+if (!function_exists('sode_get_pagination_params')) {
+    function sode_get_pagination_params($default_per_page = 10, $allowed = [10, 25, 50, 100], $page_key = 'page', $per_page_key = 'per_page') {
+        $page = isset($_GET[$page_key]) ? (int)$_GET[$page_key] : 1;
+        if ($page < 1) $page = 1;
+
+        $per_page = isset($_GET[$per_page_key]) ? (int)$_GET[$per_page_key] : $default_per_page;
+        if (!in_array($per_page, $allowed)) {
+            $per_page = $default_per_page;
+        }
+
+        $offset = ($page - 1) * $per_page;
+
+        return [
+            'page'     => $page,
+            'per_page' => $per_page,
+            'offset'   => $offset
+        ];
+    }
+}
+
+if (!function_exists('sode_render_pagination')) {
+    function sode_render_pagination($total_records, $current_page, $per_page, $allowed = [10, 25, 50, 100], $page_key = 'page', $per_page_key = 'per_page') {
+        $total_records = max(0, (int)$total_records);
+        $per_page = max(1, (int)$per_page);
+        $total_pages = max(1, (int)ceil($total_records / $per_page));
+        $current_page = max(1, min((int)$current_page, $total_pages));
+
+        // Build URL generator preserving current query params
+        $queryParams = $_GET ?? [];
+
+        $buildUrl = function($p, $pp = null) use ($queryParams, $page_key, $per_page_key, $per_page) {
+            $params = $queryParams;
+            $params[$page_key] = $p;
+            $params[$per_page_key] = ($pp !== null) ? $pp : $per_page;
+            return '?' . http_build_query($params);
+        };
+
+        // Determine page numbers range with ellipsis
+        $pages = [];
+        if ($total_pages <= 7) {
+            for ($i = 1; $i <= $total_pages; $i++) {
+                $pages[] = $i;
+            }
+        } else {
+            if ($current_page <= 4) {
+                $pages = [1, 2, 3, 4, 5, '...', $total_pages];
+            } elseif ($current_page >= $total_pages - 3) {
+                $pages = [1, '...', $total_pages - 4, $total_pages - 3, $total_pages - 2, $total_pages - 1, $total_pages];
+            } else {
+                $pages = [1, '...', $current_page - 1, $current_page, $current_page + 1, '...', $total_pages];
+            }
+        }
+
+        ob_start();
+        ?>
+        <div class="sode-pagination-bar">
+            <div class="sode-pagination-left">
+                <span class="sode-pagination-total">Total Records: <?php echo number_format($total_records); ?></span>
+            </div>
+            <div class="sode-pagination-right">
+                <!-- Previous Button -->
+                <?php if ($current_page > 1): ?>
+                    <a href="<?php echo htmlspecialchars($buildUrl($current_page - 1)); ?>" class="sode-page-link sode-page-nav" title="Previous Page">&lt;</a>
+                <?php else: ?>
+                    <span class="sode-page-link sode-page-nav disabled">&lt;</span>
+                <?php endif; ?>
+
+                <!-- Page numbers & ellipsis -->
+                <?php foreach ($pages as $p): ?>
+                    <?php if ($p === '...'): ?>
+                        <span class="sode-page-ellipsis">&hellip;</span>
+                    <?php elseif ($p == $current_page): ?>
+                        <span class="sode-page-link active"><?php echo $p; ?></span>
+                    <?php else: ?>
+                        <a href="<?php echo htmlspecialchars($buildUrl($p)); ?>" class="sode-page-link"><?php echo $p; ?></a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+
+                <!-- Next Button -->
+                <?php if ($current_page < $total_pages): ?>
+                    <a href="<?php echo htmlspecialchars($buildUrl($current_page + 1)); ?>" class="sode-page-link sode-page-nav" title="Next Page">&gt;</a>
+                <?php else: ?>
+                    <span class="sode-page-link sode-page-nav disabled">&gt;</span>
+                <?php endif; ?>
+
+                <!-- Per Page Select Dropdown -->
+                <div class="sode-per-page-wrap">
+                    <select class="sode-per-page-select" onchange="window.location.href=this.value;" title="Records per page">
+                        <?php foreach ($allowed as $cnt): ?>
+                            <option value="<?php echo htmlspecialchars($buildUrl(1, $cnt)); ?>" <?php echo ($cnt == $per_page) ? 'selected' : ''; ?>>
+                                <?php echo $cnt; ?> / page
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+}
+

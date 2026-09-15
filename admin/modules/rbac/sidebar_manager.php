@@ -67,11 +67,62 @@ if (isset($_GET['edit_id'])) {
     $edit_item = $stmt->fetch();
 }
 
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (display_name LIKE :q1 OR page_route LIKE :q2 OR active_page_key LIKE :q3 OR rbac_module_key LIKE :q4 OR menu_section LIKE :q5)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+    $params[':q3'] = '%' . $search . '%';
+    $params[':q4'] = '%' . $search . '%';
+    $params[':q5'] = '%' . $search . '%';
+}
+
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+if ($search !== '') {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM sidebar_items $where_sql");
+    $count_stmt->execute($params);
+    $total_sidebar_items = (int)$count_stmt->fetchColumn();
+} else {
+    $total_sidebar_items = (int)$db->query("SELECT COUNT(*) FROM sidebar_items")->fetchColumn();
+}
+
 // Fetch all sidebar items
-$all_sidebar_items = $db->query("SELECT * FROM sidebar_items ORDER BY menu_section ASC, sort_order ASC, id ASC")->fetchAll();
+$stmt = $db->prepare("SELECT * FROM sidebar_items $where_sql ORDER BY menu_section ASC, sort_order ASC, id ASC LIMIT :limit OFFSET :offset");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$all_sidebar_items = $stmt->fetchAll();
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
+
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search sidebar items by name, route, key, or section..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="sidebar_manager.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <div class="split-layout">
     <!-- Left: Form -->
@@ -149,7 +200,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- Right: Table -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title">All Sidebar Items (<?php echo count($all_sidebar_items); ?>)</span>
+            <span class="card-title">All Sidebar Items (<?php echo $total_sidebar_items; ?>)</span>
         </div>
         <div class="table-responsive">
             <table class="admin-table">
@@ -165,7 +216,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (empty($all_sidebar_items)): ?>
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No sidebar items configured.</td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No sidebar items match your search query "' . htmlspecialchars($search) . '".' : 'No sidebar items configured.'; ?></td></tr>
                     <?php else: ?>
                         <?php foreach ($all_sidebar_items as $it): ?>
                             <tr>
@@ -216,6 +267,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </tbody>
             </table>
         </div>
+        <?php echo sode_render_pagination($total_sidebar_items, $page, $per_page); ?>
     </div>
 </div>
 

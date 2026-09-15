@@ -107,23 +107,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch All Global Syllabus Subjects
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Fetch All Global Syllabus Subjects with pagination
 $search = trim($_GET['q'] ?? '');
 if (!empty($search)) {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM course_syllabus_subjects_master WHERE subject_name LIKE :q");
+    $count_stmt->execute([':q' => '%' . $search . '%']);
+    $total_count = (int)$count_stmt->fetchColumn();
+
     $stmt = $db->prepare("
         SELECT * FROM course_syllabus_subjects_master 
-        WHERE subject_name LIKE ? 
+        WHERE subject_name LIKE :q 
         ORDER BY subject_name ASC
+        LIMIT :limit OFFSET :offset
     ");
-    $stmt->execute(['%' . $search . '%']);
+    $stmt->bindValue(':q', '%' . $search . '%', PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 } else {
-    $stmt = $db->query("
+    $total_count = (int)$db->query("SELECT COUNT(*) FROM course_syllabus_subjects_master")->fetchColumn();
+
+    $stmt = $db->prepare("
         SELECT * FROM course_syllabus_subjects_master 
         ORDER BY subject_name ASC
+        LIMIT :limit OFFSET :offset
     ");
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 }
 $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$total_count = count($subjects);
 
 include dirname(__DIR__, 2) . '/includes/header.php';
 ?>
@@ -334,15 +353,17 @@ include dirname(__DIR__, 2) . '/includes/header.php';
 </div>
 
 <!-- Search Bar -->
-<div class="admin-card" style="padding: 16px; margin-bottom: 20px;">
-    <form method="GET" action="" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 250px; position: relative;">
-            <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Search syllabus subjects by name..." class="form-control" style="padding-left: 38px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Search syllabus subjects by name..." class="form-control">
         </div>
-        <button type="submit" class="sode-btn sode-btn-secondary" style="padding: 10px 20px;">Search</button>
+        <button type="submit" class="search-btn-theme">Search</button>
         <?php if (!empty($search)): ?>
-            <a href="<?= BASE_URL ?>/modules/syllabus/index.php" class="sode-btn sode-btn-secondary" style="color: var(--text-dim);">Clear</a>
+            <a href="<?= BASE_URL ?>/modules/syllabus/index.php" class="search-btn-clear">Clear</a>
         <?php endif; ?>
     </form>
 </div>
@@ -381,7 +402,7 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                     <?php foreach ($subjects as $idx => $sub): ?>
                         <tr>
                             <td style="text-align: center; color: var(--text-dim); font-size: 13px; font-weight: 600;">
-                                <?= $idx + 1 ?>
+                                <?= $offset + $idx + 1 ?>
                             </td>
                             <td>
                                 <div style="font-weight: 600; font-size: 14px; color: var(--text-main);">
@@ -429,6 +450,7 @@ include dirname(__DIR__, 2) . '/includes/header.php';
             </tbody>
         </table>
     </div>
+    <?= sode_render_pagination($total_count, $page, $per_page) ?>
 </div>
 
 <!-- Add / Edit Single Modal -->

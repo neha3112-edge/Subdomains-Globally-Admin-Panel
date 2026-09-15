@@ -3,244 +3,211 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('courses');
 
+// Backwards compatibility: redirect edit_id to dedicated edit.php page
+if (isset($_GET['edit_id'])) {
+    redirect(BASE_URL . '/modules/courses/edit.php?id=' . (int)$_GET['edit_id']);
+}
+
 $page_title = 'Courses Master';
-$page_subtitle = 'Manage academic programs, degree levels, and descriptions';
+$page_subtitle = 'Manage academic degree programs, program levels, and university mappings';
 $active_page_key = 'courses';
 
 $db = get_db_connection();
 
-// Handle Save / Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle Delete Course
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     verify_csrf();
-    $action = $_POST['action'] ?? '';
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id) {
+        // Check if course has university mappings
+        $check_map = $db->prepare("SELECT COUNT(*) FROM university_course_mappings WHERE course_id = ?");
+        $check_map->execute([$id]);
+        $map_count = (int)$check_map->fetchColumn();
 
-    if ($action === 'save') {
-        $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
-        $full_name = trim($_POST['full_name'] ?? '');
-        $short_name = trim($_POST['short_name'] ?? '');
-        $slug = trim($_POST['slug'] ?? '');
-        if (empty($slug)) {
-            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $short_name ?: $full_name)));
-        }
-        $level = trim($_POST['level'] ?? 'PG');
-        $description = trim($_POST['description'] ?? '');
-
-        if (empty($full_name) || empty($short_name) || empty($slug)) {
-            set_flash_message('Full Name, Short Name, and Slug are required.', 'error');
+        if ($map_count > 0) {
+            set_flash_message("Cannot delete course because it is currently mapped to {$map_count} university(ies). Please remove those mappings first.", 'error');
         } else {
-            if ($id) {
-                $stmt = $db->prepare("UPDATE courses SET full_name = ?, short_name = ?, slug = ?, level = ?, description = ? WHERE id = ?");
-                $stmt->execute([$full_name, $short_name, $slug, $level, $description, $id]);
-                set_flash_message('Course updated successfully!', 'success');
-            } else {
-                $stmt = $db->prepare("INSERT INTO courses (full_name, short_name, slug, level, description) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$full_name, $short_name, $slug, $level, $description]);
-                set_flash_message('Course created successfully!', 'success');
-            }
-            redirect(BASE_URL . '/modules/courses/index.php');
-        }
-    } elseif ($action === 'delete') {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) {
             $stmt = $db->prepare("DELETE FROM courses WHERE id = ?");
             $stmt->execute([$id]);
             set_flash_message('Course deleted successfully!', 'success');
-            redirect(BASE_URL . '/modules/courses/index.php');
         }
+        redirect(BASE_URL . '/modules/courses/index.php');
     }
 }
 
-// Edit Mode
-$edit_course = null;
-if (isset($_GET['edit_id'])) {
-    $edit_id = (int)$_GET['edit_id'];
-    $stmt = $db->prepare("SELECT * FROM courses WHERE id = ?");
-    $stmt->execute([$edit_id]);
-    $edit_course = $stmt->fetch();
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (c.full_name LIKE :q1 OR c.short_name LIKE :q2 OR c.slug LIKE :q3 OR c.level LIKE :q4)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+    $params[':q3'] = '%' . $search . '%';
+    $params[':q4'] = '%' . $search . '%';
 }
 
-// Fetch all courses with real-time job roles count from course_job_roles
-$courses = $db->query("
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+if ($search !== '') {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM courses c $where_sql");
+    $count_stmt->execute($params);
+    $total_courses = (int)$count_stmt->fetchColumn();
+} else {
+    $total_courses = (int)$db->query("SELECT COUNT(*) FROM courses")->fetchColumn();
+}
+
+// Fetch paginated courses with real-time mappings count and job roles count
+$stmt = $db->prepare("
     SELECT c.*,
            (SELECT COUNT(*) FROM university_course_mappings WHERE course_id = c.id) AS mapped_unis_count,
            IFNULL(JSON_LENGTH(cjr.roles_json), 0) AS job_roles_count
     FROM courses c
     LEFT JOIN course_job_roles cjr ON (LOWER(cjr.course_slug) = LOWER(c.slug) OR LOWER(cjr.course_slug) = LOWER(c.short_name))
+    $where_sql
     ORDER BY c.id ASC
-")->fetchAll();
-
+    LIMIT :limit OFFSET :offset
+");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$courses = $stmt->fetchAll();
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
 
-<div class="split-layout">
-    <!-- Left: Add / Edit Form -->
-    <div class="admin-card">
-        <div class="card-header">
-            <span class="card-title"><?php echo $edit_course ? 'Edit Course' : 'Add New Course'; ?></span>
-            <?php if ($edit_course): ?>
-                <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="btn-sm action-btn" title="Cancel edit">&times;</a>
-            <?php endif; ?>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="action" value="save">
-                <input type="hidden" name="id" value="<?php echo $edit_course['id'] ?? ''; ?>">
-
-                <div class="form-group">
-                    <label class="form-label">Full Degree Name *</label>
-                    <input type="text" name="full_name" id="field_course_full_name" class="form-control" value="<?php echo htmlspecialchars($edit_course['full_name'] ?? ''); ?>" placeholder="e.g. Master of Business Administration" required>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                    <div class="form-group">
-                        <label class="form-label">Short Name *</label>
-                        <input type="text" name="short_name" id="field_course_short_name" class="form-control" value="<?php echo htmlspecialchars($edit_course['short_name'] ?? ''); ?>" placeholder="e.g. MBA" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Level *</label>
-                        <select name="level" class="form-select">
-                            <option value="PG" <?php echo (($edit_course['level'] ?? '') === 'PG') ? 'selected' : ''; ?>>Postgraduate (PG)</option>
-                            <option value="UG" <?php echo (($edit_course['level'] ?? '') === 'UG') ? 'selected' : ''; ?>>Undergraduate (UG)</option>
-                            <option value="Diploma" <?php echo (($edit_course['level'] ?? '') === 'Diploma') ? 'selected' : ''; ?>>Diploma</option>
-                            <option value="Certificate" <?php echo (($edit_course['level'] ?? '') === 'Certificate') ? 'selected' : ''; ?>>Certificate</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Slug *</label>
-                    <input type="text" name="slug" id="field_course_slug" class="form-control" value="<?php echo htmlspecialchars($edit_course['slug'] ?? ''); ?>" placeholder="e.g. mba" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Overview / Description</label>
-                    <textarea name="description" class="form-textarea" placeholder="Detailed syllabus or program scope..."><?php echo htmlspecialchars($edit_course['description'] ?? ''); ?></textarea>
-                </div>
-
-                <button type="submit" class="btn-primary">
-                    <?php echo $edit_course ? 'Update Course' : 'Create Course'; ?>
-                </button>
-            </form>
-        </div>
+<!-- Top Action Header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <div>
+        <span class="section-heading-sm" style="margin-bottom:0;">All Courses Master (<?php echo $total_courses; ?>)</span>
     </div>
-
-    <!-- Right: All Courses Table -->
-    <div class="admin-card">
-        <div class="card-header">
-            <span class="card-title">All Courses Master (<?php echo count($courses); ?>)</span>
-        </div>
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Course</th>
-                        <th>Level</th>
-                        <th>Slug</th>
-                        <th>Universities</th>
-                        <th>Job Roles</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($courses)): ?>
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No courses created yet.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($courses as $c): ?>
-                            <tr>
-                                <td>
-                                    <strong><?php echo htmlspecialchars($c['full_name']); ?></strong>
-                                    <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;"><?php echo htmlspecialchars($c['short_name']); ?></div>
-                                </td>
-                                <td>
-                                    <span class="badge badge-info"><?php echo htmlspecialchars($c['level']); ?></span>
-                                </td>
-                                <td>
-                                    <code style="font-size:11px; color:var(--text-dim);"><?php echo htmlspecialchars($c['slug']); ?></code>
-                                </td>
-                                <td>
-                                    <span class="badge badge-warning"><?php echo $c['mapped_unis_count']; ?> Universities</span>
-                                </td>
-                                <td>
-                                    <a href="<?php echo BASE_URL; ?>/modules/job_roles/index.php?course_id=<?php echo $c['id']; ?>" class="badge badge-success" style="text-decoration:none;">
-                                        <?php echo $c['job_roles_count']; ?> Roles &rarr;
-                                    </a>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <a href="<?php echo BASE_URL; ?>/modules/courses/index.php?edit_id=<?php echo $c['id']; ?>" class="action-btn" title="Edit Course">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                        </a>
-
-                                        <form method="POST" action="" class="confirm-delete" style="display:inline;">
-                                            <?php echo csrf_field(); ?>
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
-                                            <button type="submit" class="action-btn delete-btn" title="Delete Course">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <a href="<?php echo BASE_URL; ?>/modules/settings/levels.php" style="width:auto; height:auto; padding:9px 15px; font-size:13px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:var(--radius-md); color:var(--text-main); transition:all 0.2s ease;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+            Degree Levels
+        </a>
+        <a href="<?php echo BASE_URL; ?>/modules/courses/create.php" class="btn-primary btn-sm" style="padding:10px 18px; font-size:13.5px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add New Course
+        </a>
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const fullNameInput = document.getElementById('field_course_full_name');
-    const shortNameInput = document.getElementById('field_course_short_name');
-    const slugInput = document.getElementById('field_course_slug');
-    
-    if (!slugInput) return;
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search courses by degree name, short code, slug, or level..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 
-    let isSlugManuallyEdited = slugInput.value.trim() !== '';
+<!-- Full-Width Courses Master Table -->
+<div class="admin-card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="card-title">Academic Courses Directory</span>
+        <span style="font-size:12px; color:var(--text-dim);">Showing <?php echo count($courses); ?> of <?php echo $total_courses; ?> programs</span>
+    </div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Course Program</th>
+                    <th>Level</th>
+                    <th>URL Slug</th>
+                    <th>Mapped Universities</th>
+                    <th>Career Job Roles</th>
+                    <th style="width:130px; text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($courses)): ?>
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:48px; color:var(--text-dim);">
+                            <div style="font-size:15px; font-weight:600; margin-bottom:6px;">No courses found</div>
+                            <div style="font-size:13px;"><?php echo $search !== '' ? 'No courses match your query "' . htmlspecialchars($search) . '". Try a different search.' : 'Get started by creating your first academic degree program.'; ?></div>
+                            <?php if (empty($search)): ?>
+                                <a href="<?php echo BASE_URL; ?>/modules/courses/create.php" class="btn-primary btn-sm" style="margin-top:14px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                    + Add New Course
+                                </a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php 
+                    $row_idx = $offset + 1;
+                    foreach ($courses as $c): 
+                    ?>
+                        <tr>
+                            <td style="color:var(--text-dim); font-size:12px; font-weight:600;"><?php echo $row_idx++; ?></td>
+                            <td>
+                                <a href="<?php echo BASE_URL; ?>/modules/courses/edit.php?id=<?php echo $c['id']; ?>" style="text-decoration:none; color:inherit;">
+                                    <strong style="font-size:13.5px; color:var(--text-main);"><?php echo htmlspecialchars($c['full_name']); ?></strong>
+                                </a>
+                                <div style="font-size:12px; color:var(--primary); font-weight:600; margin-top:2px;">
+                                    <?php echo htmlspecialchars($c['short_name']); ?>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-info" style="font-weight:600; padding:4px 10px; font-size:11.5px;">
+                                    <?php echo htmlspecialchars($c['level']); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <code style="font-size:11.5px; background:rgba(255,255,255,0.05); padding:3px 7px; border-radius:4px; color:var(--text-dim);">
+                                    <?php echo htmlspecialchars($c['slug']); ?>
+                                </code>
+                            </td>
+                            <td>
+                                <a href="<?php echo BASE_URL; ?>/modules/course_universities/index.php?course_id=<?php echo $c['id']; ?>" class="badge badge-warning" style="text-decoration:none; padding:4px 10px; font-size:11.5px;">
+                                    <?php echo $c['mapped_unis_count']; ?> Universities &rarr;
+                                </a>
+                            </td>
+                            <td>
+                                <a href="<?php echo BASE_URL; ?>/modules/job_roles/index.php?course_id=<?php echo $c['id']; ?>" class="badge badge-success" style="text-decoration:none; padding:4px 10px; font-size:11.5px;">
+                                    <?php echo $c['job_roles_count']; ?> Roles &rarr;
+                                </a>
+                            </td>
+                            <td>
+                                <div class="table-actions" style="justify-content:flex-end;">
+                                    <a href="<?php echo BASE_URL; ?>/modules/courses/edit.php?id=<?php echo $c['id']; ?>" class="action-btn" title="Edit Course">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </a>
 
-    function generateSlug(text) {
-        return text
-            .toString()
-            .toLowerCase()
-            .trim()
-            .replace(/&/g, '-and-')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-    }
-
-    function syncSlug() {
-        if (isSlugManuallyEdited) return;
-        const sourceText = (shortNameInput && shortNameInput.value.trim() !== '') ? shortNameInput.value : (fullNameInput ? fullNameInput.value : '');
-        slugInput.value = generateSlug(sourceText);
-    }
-
-    if (shortNameInput) {
-        shortNameInput.addEventListener('input', syncSlug);
-    }
-
-    if (fullNameInput) {
-        fullNameInput.addEventListener('input', function() {
-            if (!shortNameInput || shortNameInput.value.trim() === '') {
-                syncSlug();
-            }
-        });
-    }
-
-    slugInput.addEventListener('input', function() {
-        if (this.value.trim() === '') {
-            isSlugManuallyEdited = false;
-            syncSlug();
-        } else {
-            isSlugManuallyEdited = true;
-        }
-    });
-});
-</script>
+                                    <form method="POST" action="" class="confirm-delete" style="display:inline;">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
+                                        <button type="submit" class="action-btn delete-btn" title="Delete Course" onclick="return confirm('Are you sure you want to delete course \'<?php echo htmlspecialchars(addslashes($c['full_name'])); ?>\'?');">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php echo sode_render_pagination($total_courses, $page, $per_page); ?>
+</div>
 
 <?php
 require_once ADMIN_PATH . '/includes/footer.php';

@@ -109,23 +109,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch All Modes
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Fetch All Modes with pagination
 $search = trim($_GET['q'] ?? '');
 if (!empty($search)) {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM education_modes_master WHERE mode_name LIKE :q");
+    $count_stmt->execute([':q' => '%' . $search . '%']);
+    $total_count = (int)$count_stmt->fetchColumn();
+
     $stmt = $db->prepare("
         SELECT * FROM education_modes_master 
-        WHERE mode_name LIKE ? 
+        WHERE mode_name LIKE :q 
         ORDER BY sort_order ASC, id ASC
+        LIMIT :limit OFFSET :offset
     ");
-    $stmt->execute(['%' . $search . '%']);
+    $stmt->bindValue(':q', '%' . $search . '%', PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 } else {
-    $stmt = $db->query("
+    $total_count = (int)$db->query("SELECT COUNT(*) FROM education_modes_master")->fetchColumn();
+
+    $stmt = $db->prepare("
         SELECT * FROM education_modes_master 
         ORDER BY sort_order ASC, id ASC
+        LIMIT :limit OFFSET :offset
     ");
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 }
 $modes = $stmt->fetchAll();
-$total_count = count($modes);
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -322,7 +341,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <?php foreach ($modes as $idx => $m): ?>
                             <tr>
                                 <td style="text-align:center; color:var(--text-dim); font-size:12px; font-weight:600;">
-                                    <?php echo $idx + 1; ?>
+                                    <?php echo $offset + $idx + 1; ?>
                                 </td>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:8px;">
@@ -371,6 +390,7 @@ require_once ADMIN_PATH . '/includes/header.php';
             </div>
         <?php endif; ?>
     </div>
+    <?php echo sode_render_pagination($total_count, $page, $per_page); ?>
 </div>
 
 <!-- Modal: Add / Edit Mode -->

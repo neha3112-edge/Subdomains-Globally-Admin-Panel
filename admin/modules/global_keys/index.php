@@ -65,11 +65,60 @@ if (isset($_GET['edit_id'])) {
     $edit_key = $stmt->fetch();
 }
 
-// Fetch all keys
-$keys = $db->query("SELECT * FROM global_keys ORDER BY id ASC")->fetchAll();
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (key_code LIKE :q1 OR key_value LIKE :q2 OR description LIKE :q3)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+    $params[':q3'] = '%' . $search . '%';
+}
+
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+if ($search !== '') {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM global_keys $where_sql");
+    $count_stmt->execute($params);
+    $total_keys = (int)$count_stmt->fetchColumn();
+} else {
+    $total_keys = (int)$db->query("SELECT COUNT(*) FROM global_keys")->fetchColumn();
+}
+
+// Fetch paginated keys
+$stmt = $db->prepare("SELECT * FROM global_keys $where_sql ORDER BY id ASC LIMIT :limit OFFSET :offset");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$keys = $stmt->fetchAll();
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
+
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search global keys by key code ($KEY$), value, or description..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="<?php echo BASE_URL; ?>/modules/global_keys/index.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <div class="split-layout">
     <!-- Left: Form -->
@@ -118,7 +167,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- Right: Table -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title">All Global Keys (<?php echo count($keys); ?>)</span>
+            <span class="card-title">All Global Keys (<?php echo $total_keys; ?>)</span>
         </div>
         <div class="table-responsive">
             <table class="admin-table">
@@ -133,7 +182,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (empty($keys)): ?>
-                        <tr><td colspan="5" style="text-align:center; color:var(--text-dim);">No global keys configured yet.</td></tr>
+                        <tr><td colspan="5" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No global keys match your search query "' . htmlspecialchars($search) . '".' : 'No global keys configured yet.'; ?></td></tr>
                     <?php else: ?>
                         <?php foreach ($keys as $k): ?>
                             <tr>
@@ -175,6 +224,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </tbody>
             </table>
         </div>
+        <?php echo sode_render_pagination($total_keys, $page, $per_page); ?>
     </div>
 </div>
 

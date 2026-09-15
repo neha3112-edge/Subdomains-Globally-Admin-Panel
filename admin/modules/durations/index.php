@@ -108,23 +108,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch All Durations
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Fetch All Durations with pagination
 $search = trim($_GET['q'] ?? '');
 if (!empty($search)) {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM course_durations_master WHERE duration_title LIKE :q");
+    $count_stmt->execute([':q' => '%' . $search . '%']);
+    $total_count = (int)$count_stmt->fetchColumn();
+
     $stmt = $db->prepare("
         SELECT * FROM course_durations_master 
-        WHERE duration_title LIKE ? 
+        WHERE duration_title LIKE :q 
         ORDER BY sort_order ASC, id ASC
+        LIMIT :limit OFFSET :offset
     ");
-    $stmt->execute(['%' . $search . '%']);
+    $stmt->bindValue(':q', '%' . $search . '%', PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 } else {
-    $stmt = $db->query("
+    $total_count = (int)$db->query("SELECT COUNT(*) FROM course_durations_master")->fetchColumn();
+
+    $stmt = $db->prepare("
         SELECT * FROM course_durations_master 
         ORDER BY sort_order ASC, id ASC
+        LIMIT :limit OFFSET :offset
     ");
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
 }
 $durations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$total_count = count($durations);
 
 include dirname(__DIR__, 2) . '/includes/header.php';
 ?>
@@ -346,7 +365,7 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                         <?php foreach ($durations as $idx => $d): ?>
                             <tr>
                                 <td style="text-align:center; color:var(--text-dim); font-size:12px; font-weight:600;">
-                                    <?php echo $idx + 1; ?>
+                                    <?php echo $offset + $idx + 1; ?>
                                 </td>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:8px;">
@@ -395,6 +414,7 @@ include dirname(__DIR__, 2) . '/includes/header.php';
             </div>
         <?php endif; ?>
     </div>
+    <?php echo sode_render_pagination($total_count, $page, $per_page); ?>
 </div>
 
 <!-- Modal: Add / Edit Duration -->

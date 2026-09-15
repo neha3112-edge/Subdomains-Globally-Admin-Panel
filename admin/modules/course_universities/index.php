@@ -8,8 +8,51 @@ $active_page_key = 'course_universities';
 
 $db = get_db_connection();
 
-// 1. Fetch all available courses from courses table joined with course_universities_table
-$all_course_records = $db->query("
+// Pagination setup for courses
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// 1. Total courses count
+$total_courses = (int)$db->query("SELECT COUNT(*) FROM courses")->fetchColumn();
+
+// 2. Fetch paginated courses for pills
+$courses_stmt = $db->prepare("
+    SELECT c.id AS course_id, c.full_name, c.short_name, c.slug AS course_slug,
+           (SELECT IFNULL(JSON_LENGTH(universities_json), 0) FROM course_universities_table WHERE LOWER(course_slug) = LOWER(c.slug) OR LOWER(course_slug) = LOWER(c.short_name) LIMIT 1) AS unis_count
+    FROM courses c
+    ORDER BY c.id ASC
+    LIMIT :limit OFFSET :offset
+");
+$courses_stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$courses_stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$courses_stmt->execute();
+$page_courses = $courses_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// 3. Active selected course (support course_id or course slug)
+$selected_course_id = (int)($_GET['course_id'] ?? 0);
+$selected_slug = strtolower(trim($_GET['course'] ?? ($_POST['course_slug'] ?? 'mba')));
+
+if ($selected_course_id > 0) {
+    $c_stmt = $db->prepare("SELECT slug FROM courses WHERE id = ?");
+    $c_stmt->execute([$selected_course_id]);
+    $found_slug = $c_stmt->fetchColumn();
+    if ($found_slug) {
+        $selected_slug = strtolower($found_slug);
+    }
+}
+
+if (empty($selected_slug) && !empty($page_courses)) {
+    $selected_slug = strtolower($page_courses[0]['course_slug']);
+}
+if (empty($selected_slug)) {
+    $selected_slug = 'mba';
+}
+
+// Fetch single full record for current active course
+$current_course_data = null;
+$sel_stmt = $db->prepare("
     SELECT c.id AS course_id, c.full_name, c.short_name, c.slug AS course_slug,
            cut.id AS table_record_id,
            cut.course_name AS saved_course_name,
@@ -20,53 +63,11 @@ $all_course_records = $db->query("
            cut.updated_at
     FROM courses c
     LEFT JOIN course_universities_table cut ON (LOWER(cut.course_slug) = LOWER(c.slug) OR LOWER(cut.course_slug) = LOWER(c.short_name))
-    ORDER BY c.id ASC
-")->fetchAll(PDO::FETCH_ASSOC);
-
-// If table is empty or needs reload
-if (empty($all_course_records)) {
-    $all_course_records = $db->query("
-        SELECT c.id AS course_id, c.full_name, c.short_name, c.slug AS course_slug,
-               cut.id AS table_record_id,
-               cut.course_name AS saved_course_name,
-               cut.heading,
-               cut.description,
-               cut.columns_json,
-               cut.universities_json,
-               cut.updated_at
-        FROM courses c
-        LEFT JOIN course_universities_table cut ON (LOWER(cut.course_slug) = LOWER(c.slug) OR LOWER(cut.course_slug) = LOWER(c.short_name))
-        ORDER BY c.id ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
-}
-
-// 2. Active selected course (support course_id or course slug)
-$selected_course_id = (int)($_GET['course_id'] ?? 0);
-$selected_slug = strtolower(trim($_GET['course'] ?? ($_POST['course_slug'] ?? 'mba')));
-
-$current_course_data = null;
-if ($selected_course_id > 0) {
-    foreach ($all_course_records as $c_rec) {
-        if ((int)$c_rec['course_id'] === $selected_course_id) {
-            $current_course_data = $c_rec;
-            $selected_slug = strtolower($c_rec['course_slug']);
-            break;
-        }
-    }
-}
-if (!$current_course_data && !empty($selected_slug)) {
-    foreach ($all_course_records as $c_rec) {
-        if (strtolower($c_rec['course_slug']) === $selected_slug || strtolower($c_rec['short_name']) === $selected_slug) {
-            $current_course_data = $c_rec;
-            $selected_slug = strtolower($c_rec['course_slug']);
-            break;
-        }
-    }
-}
-if (!$current_course_data && !empty($all_course_records)) {
-    $current_course_data = $all_course_records[0];
-    $selected_slug = strtolower($current_course_data['course_slug']);
-}
+    WHERE LOWER(c.slug) = ? OR LOWER(c.short_name) = ?
+    LIMIT 1
+");
+$sel_stmt->execute([$selected_slug, $selected_slug]);
+$current_course_data = $sel_stmt->fetch(PDO::FETCH_ASSOC);
 
 // Parse current course universities
 $current_unis = [];
@@ -78,7 +79,7 @@ if (!empty($current_course_data['universities_json'])) {
 }
 
 // Default labels for new courses
-$course_display_title = $current_course_data['short_name'] ?: ($current_course_data['full_name'] ?? strtoupper($selected_slug));
+$course_display_title = $current_course_data['short_name'] ?? ($current_course_data['full_name'] ?? strtoupper($selected_slug));
 $default_heading = 'Top 10 Online & Distance ' . $course_display_title . ' Universities in India $YEAR$';
 $default_description = 'Choosing the right university is an important step when pursuing an Online & Distance ' . $course_display_title . '. The best choice depends on factors such as fees, recognition, course options, and career support. Here are some of the top Online & Distance ' . $course_display_title . ' universities in India for $YEAR$.';
 
@@ -94,11 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Resolve friendly course name from courses master
         $course_name = strtoupper($course_slug);
-        foreach ($all_course_records as $cr) {
-            if (strtolower($cr['course_slug']) === $course_slug) {
-                $course_name = $cr['short_name'] ?: $cr['full_name'];
-                break;
-            }
+        $c_name_stmt = $db->prepare("SELECT short_name, full_name FROM courses WHERE LOWER(slug) = ? OR LOWER(short_name) = ? LIMIT 1");
+        $c_name_stmt->execute([$course_slug, $course_slug]);
+        $c_name_rec = $c_name_stmt->fetch(PDO::FETCH_ASSOC);
+        if ($c_name_rec) {
+            $course_name = $c_name_rec['short_name'] ?: $c_name_rec['full_name'];
         }
 
         $uni_names = $_POST['uni_name'] ?? [];
@@ -174,23 +175,19 @@ require_once ADMIN_PATH . '/includes/header.php';
                     Courses Master
                 </a>
                 <span class="badge badge-info" style="font-size:12px; padding:6px 12px;">
-                    Total Courses: <?php echo count($all_course_records); ?>
+                    Total Courses: <?php echo $total_courses; ?>
                 </span>
             </div>
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <?php foreach ($all_course_records as $c_item): 
+            <?php foreach ($page_courses as $c_item): 
                 $slug = strtolower($c_item['course_slug']);
                 $is_cur = ($slug === $selected_slug);
-                $cnt = 0;
-                if (!empty($c_item['universities_json'])) {
-                    $d = json_decode($c_item['universities_json'], true);
-                    if (is_array($d)) $cnt = count($d);
-                }
+                $cnt = (int)($c_item['unis_count'] ?? 0);
                 $pill_label = $c_item['short_name'] ?: strtoupper($c_item['course_slug']);
             ?>
-                <a href="<?php echo BASE_URL; ?>/modules/course_universities/index.php?course=<?php echo urlencode($slug); ?>" 
+                <a href="<?php echo BASE_URL; ?>/modules/course_universities/index.php?course=<?php echo urlencode($slug); ?>&page=<?php echo $page; ?>&per_page=<?php echo $per_page; ?>" 
                    style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; font-size:12.5px; font-weight:700; text-decoration:none; transition:all 0.2s ease; <?php echo $is_cur ? 'background:var(--primary, #4f46e5); color:#fff; box-shadow:0 2px 8px rgba(79,70,229,0.35);' : 'background:var(--bg-input, #151f32); color:var(--text-main, #f8fafc); border:1px solid var(--border-color, #1e2b45);'; ?>">
                     <span><?php echo htmlspecialchars($pill_label); ?></span>
                     <span style="background:<?php echo $is_cur ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'; ?>; padding:2px 7px; border-radius:10px; font-size:11px;">
@@ -199,6 +196,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </a>
             <?php endforeach; ?>
         </div>
+        <?php echo sode_render_pagination($total_courses, $page, $per_page); ?>
     </div>
 
     <!-- Main Course Universities Form -->

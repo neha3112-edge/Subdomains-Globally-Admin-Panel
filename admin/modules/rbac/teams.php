@@ -54,12 +54,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (t.name LIKE :q1 OR t.description LIKE :q2)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+}
+
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+if ($search !== '') {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM teams t $where_sql");
+    $count_stmt->execute($params);
+    $total_teams = (int)$count_stmt->fetchColumn();
+} else {
+    $total_teams = (int)$db->query("SELECT COUNT(*) FROM teams")->fetchColumn();
+}
+
 // Fetch all teams with member count
-$teams = $db->query("
+$stmt = $db->prepare("
     SELECT t.*, (SELECT COUNT(*) FROM users u WHERE u.team_id = t.id) AS members_count 
     FROM teams t 
+    $where_sql
     ORDER BY t.id ASC
-")->fetchAll();
+    LIMIT :limit OFFSET :offset
+");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$teams = $stmt->fetchAll();
 
 $edit_team = null;
 if ($action === 'edit' && $team_id > 0) {
@@ -70,6 +104,22 @@ if ($action === 'edit' && $team_id > 0) {
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
+
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search teams by name or description..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="teams.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <div class="split-layout">
     
@@ -93,7 +143,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                 <div class="form-group">
                     <label class="form-label">Description</label>
-                    <textarea name="description" class="form-textarea" placeholder="Brief details about the team"><?php echo htmlspecialchars($edit_team['description'] ?? ''); ?></textarea>
+                    <textarea name="description" class="form-textarea" placeholder="Brief notes about team responsibilities..."><?php echo htmlspecialchars($edit_team['description'] ?? ''); ?></textarea>
                 </div>
 
                 <button type="submit" class="btn-primary" style="margin-top:10px;">
@@ -106,7 +156,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- RIGHT: All Teams Table -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title">All Teams (<?php echo count($teams); ?>)</span>
+            <span class="card-title">All Teams (<?php echo $total_teams; ?>)</span>
         </div>
         <div class="table-responsive">
             <table class="admin-table">
@@ -120,7 +170,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (empty($teams)): ?>
-                        <tr><td colspan="4" style="text-align:center; color:var(--text-dim);">No teams found.</td></tr>
+                        <tr><td colspan="4" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No teams match your search query "' . htmlspecialchars($search) . '".' : 'No teams found.'; ?></td></tr>
                     <?php else: ?>
                         <?php foreach ($teams as $t): ?>
                             <tr>
@@ -150,6 +200,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </tbody>
             </table>
         </div>
+        <?php echo sode_render_pagination($total_teams, $page, $per_page); ?>
     </div>
 
 </div>

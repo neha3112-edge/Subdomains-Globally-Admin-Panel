@@ -133,14 +133,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch all users
-$users = $db->query("
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (u.name LIKE :q1 OR u.username LIKE :q2 OR u.email LIKE :q3 OR u.phone LIKE :q4 OR t.name LIKE :q5 OR r.name LIKE :q6)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+    $params[':q3'] = '%' . $search . '%';
+    $params[':q4'] = '%' . $search . '%';
+    $params[':q5'] = '%' . $search . '%';
+    $params[':q6'] = '%' . $search . '%';
+}
+
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+$count_query = "
+    SELECT COUNT(*) 
+    FROM users u 
+    LEFT JOIN teams t ON u.team_id = t.id 
+    LEFT JOIN roles r ON u.role_id = r.id 
+    $where_sql
+";
+if ($search !== '') {
+    $count_stmt = $db->prepare($count_query);
+    $count_stmt->execute($params);
+    $total_users = (int)$count_stmt->fetchColumn();
+} else {
+    $total_users = (int)$db->query($count_query)->fetchColumn();
+}
+
+// Fetch paginated users
+$stmt = $db->prepare("
     SELECT u.*, t.name AS team_name, r.name AS role_name 
     FROM users u 
     LEFT JOIN teams t ON u.team_id = t.id 
     LEFT JOIN roles r ON u.role_id = r.id 
+    $where_sql
     ORDER BY u.id DESC
-")->fetchAll();
+    LIMIT :limit OFFSET :offset
+");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$users = $stmt->fetchAll();
 
 // Fetch teams and roles for dropdowns
 $teams = $db->query("SELECT id, name FROM teams ORDER BY name ASC")->fetchAll();
@@ -156,6 +201,22 @@ if ($action === 'edit' && $user_id > 0) {
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
+
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search users by name, username, email, phone, team or role..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="users.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <div class="split-layout">
     
@@ -197,16 +258,23 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Password <?php echo $edit_user ? '<small style="color:var(--text-dim);">(leave blank to keep current)</small>' : '<span style="color:var(--danger, #ef4444);">*</span>'; ?></label>
-                    <input type="password" name="password" class="form-control" placeholder="Min 6 characters" <?php echo $edit_user ? '' : 'required'; ?>>
+                    <label class="form-label">
+                        Password 
+                        <?php if ($edit_user): ?>
+                            <span style="font-size:11.5px; font-weight:normal; color:var(--text-dim);">(leave blank to keep current)</span>
+                        <?php else: ?>
+                            <span style="color:var(--danger, #ef4444);">*</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="password" name="password" class="form-control" placeholder="<?php echo $edit_user ? 'New Password' : 'Min 6 characters'; ?>" <?php echo $edit_user ? '' : 'required'; ?>>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Team</label>
+                    <label class="form-label">Team Assignment</label>
                     <select name="team_id" class="form-select">
-                        <option value="">No Team</option>
+                        <option value="">-- Select Team (Optional) --</option>
                         <?php foreach ($teams as $t): ?>
-                            <option value="<?php echo $t['id']; ?>" <?php echo (($edit_user['team_id'] ?? 0) == $t['id']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo $t['id']; ?>" <?php echo (isset($edit_user['team_id']) && $edit_user['team_id'] == $t['id']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($t['name']); ?>
                             </option>
                         <?php endforeach; ?>
@@ -214,28 +282,28 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Role</label>
-                    <select name="role_id" class="form-select">
-                        <option value="">No Role (Access Denied by default)</option>
+                    <label class="form-label">Role Assignment <span style="color:var(--danger, #ef4444);">*</span></label>
+                    <select name="role_id" class="form-select" required>
+                        <option value="">-- Select Role --</option>
                         <?php foreach ($roles as $r): ?>
-                            <option value="<?php echo $r['id']; ?>" <?php echo (($edit_user['role_id'] ?? 0) == $r['id']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo $r['id']; ?>" <?php echo (isset($edit_user['role_id']) && $edit_user['role_id'] == $r['id']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($r['name']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
-                <div class="form-group" style="margin-top:10px;">
-                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                <div class="form-check-group" style="margin-bottom:14px;">
+                    <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" name="is_superadmin" value="1" <?php echo !empty($edit_user['is_superadmin']) ? 'checked' : ''; ?>>
-                        <span>Superadmin (Full access bypass)</span>
+                        <span style="font-size:13px; font-weight:500;">Superadmin (Full Access, bypasses all permissions)</span>
                     </label>
                 </div>
 
-                <div class="form-group">
-                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                <div class="form-check-group" style="margin-bottom:20px;">
+                    <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" name="is_active" value="1" <?php echo (!isset($edit_user) || !empty($edit_user['is_active'])) ? 'checked' : ''; ?>>
-                        <span>Active Account</span>
+                        <span style="font-size:13px; font-weight:500;">Account Active</span>
                     </label>
                 </div>
 
@@ -249,7 +317,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- RIGHT: All Users Table -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title">All Users (<?php echo count($users); ?>)</span>
+            <span class="card-title">All Users (<?php echo $total_users; ?>)</span>
         </div>
         <div class="table-responsive">
             <table class="admin-table">
@@ -265,7 +333,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (empty($users)): ?>
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No users found.</td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No users match your search query "' . htmlspecialchars($search) . '".' : 'No users found.'; ?></td></tr>
                     <?php else: ?>
                         <?php foreach ($users as $u): ?>
                             <tr>
@@ -330,6 +398,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </tbody>
             </table>
         </div>
+        <?php echo sode_render_pagination($total_users, $page, $per_page); ?>
     </div>
 
 </div>

@@ -55,16 +55,66 @@ if (isset($_GET['edit_id'])) {
     $edit_acc = $stmt->fetch();
 }
 
-// Fetch all accreditations
-$accreditations = $db->query("
+// Search setup
+$search = trim($_GET['q'] ?? '');
+$where_sql = "";
+$params = [];
+if ($search !== '') {
+    $where_sql = "WHERE (a.title LIKE :q1 OR a.description LIKE :q2)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+}
+
+// Pagination setup
+$pagination = sode_get_pagination_params(10);
+$page = $pagination['page'];
+$per_page = $pagination['per_page'];
+$offset = $pagination['offset'];
+
+// Total count
+if ($search !== '') {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM accreditations a $where_sql");
+    $count_stmt->execute($params);
+    $total_accreditations = (int)$count_stmt->fetchColumn();
+} else {
+    $total_accreditations = (int)$db->query("SELECT COUNT(*) FROM accreditations")->fetchColumn();
+}
+
+// Fetch paginated accreditations
+$stmt = $db->prepare("
     SELECT a.*,
            (SELECT COUNT(*) FROM university_accreditations WHERE accreditation_id = a.id) AS universities_count
     FROM accreditations a 
+    $where_sql
     ORDER BY a.id ASC
-")->fetchAll();
+    LIMIT :limit OFFSET :offset
+");
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$accreditations = $stmt->fetchAll();
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
+
+<!-- Full Width Search Bar -->
+<div class="search-section-card">
+    <form method="GET" action="" class="search-section-form">
+        <div class="search-input-wrap">
+            <span class="search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search accreditations by title or description..." class="form-control">
+        </div>
+        <button type="submit" class="search-btn-theme">Search</button>
+        <?php if (!empty($search)): ?>
+            <a href="<?php echo BASE_URL; ?>/modules/accreditations/index.php" class="search-btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <div class="split-layout">
     <!-- Left: Form -->
@@ -95,26 +145,34 @@ require_once ADMIN_PATH . '/includes/header.php';
                             Choose
                         </button>
                     </div>
-                    <div class="media-preview-inline" id="preview_acc_logo" style="margin-top:6px; <?php echo empty($edit_acc['image_url']) ? 'display:none;' : ''; ?>">
+                    <div class="media-preview-container" id="preview_acc_logo">
                         <?php if (!empty($edit_acc['image_url'])): ?>
-                            <img src="<?php echo htmlspecialchars(get_asset_url($edit_acc['image_url'])); ?>" alt="thumb" style="height:34px; width:34px; object-fit:contain; background:#fff; border-radius:4px; padding:2px; border:1px solid var(--border-color);">
+                            <div class="media-preview-item">
+                                <img src="<?php echo htmlspecialchars($edit_acc['image_url']); ?>" alt="Preview" style="max-height:80px;">
+                                <span class="media-preview-remove" onclick="removeMediaPreview('field_acc_logo', 'preview_acc_logo')">&times;</span>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Official Portal Link</label>
-                    <input type="url" name="official_link" class="form-control" value="<?php echo htmlspecialchars($edit_acc['official_link'] ?? ''); ?>" placeholder="https://ugc.ac.in">
+                    <label class="form-label">Official Link</label>
+                    <input type="url" name="official_link" class="form-control" value="<?php echo htmlspecialchars($edit_acc['official_link'] ?? ''); ?>" placeholder="https://deb.ugc.ac.in">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Description / Legal Authority Notes</label>
-                    <textarea name="description" class="form-textarea" placeholder="Entitled by University Grants Commission Distance Education Bureau..."><?php echo htmlspecialchars($edit_acc['description'] ?? ''); ?></textarea>
+                    <label class="form-label">Description / Importance Note</label>
+                    <textarea name="description" class="form-textarea" placeholder="Why this accreditation matters..."><?php echo htmlspecialchars($edit_acc['description'] ?? ''); ?></textarea>
                 </div>
 
-                <button type="submit" class="btn-primary">
-                    <?php echo $edit_acc ? 'Update Accreditation' : 'Add Accreditation'; ?>
-                </button>
+                <div style="margin-top:24px; display:flex; gap:10px;">
+                    <button type="submit" class="btn-primary" style="flex:1;">
+                        <?php echo $edit_acc ? 'Update Accreditation' : 'Save Accreditation'; ?>
+                    </button>
+                    <?php if ($edit_acc): ?>
+                        <a href="<?php echo BASE_URL; ?>/modules/accreditations/index.php" class="btn-sm action-btn" style="text-decoration:none; padding:10px 16px; font-weight:600;">Cancel</a>
+                    <?php endif; ?>
+                </div>
             </form>
         </div>
     </div>
@@ -122,7 +180,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- Right: Table -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title">Accreditations Master (<?php echo count($accreditations); ?>)</span>
+            <span class="card-title">Accreditations Master (<?php echo $total_accreditations; ?>)</span>
         </div>
         <div class="table-responsive">
             <table class="admin-table">
@@ -137,7 +195,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </thead>
                 <tbody>
                     <?php if (empty($accreditations)): ?>
-                        <tr><td colspan="5" style="text-align:center; color:var(--text-dim);">No accreditations added yet.</td></tr>
+                        <tr><td colspan="5" style="text-align:center; padding:32px; color:var(--text-dim);"><?php echo $search !== '' ? 'No accreditations match your search query "' . htmlspecialchars($search) . '".' : 'No accreditations added yet.'; ?></td></tr>
                     <?php else: ?>
                         <?php foreach ($accreditations as $a): ?>
                             <tr>
@@ -188,6 +246,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </tbody>
             </table>
         </div>
+        <?php echo sode_render_pagination($total_accreditations, $page, $per_page); ?>
     </div>
 </div>
 
