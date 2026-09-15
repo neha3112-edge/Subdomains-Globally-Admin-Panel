@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash_message('Current password is incorrect.', 'error');
         } else {
             $new_hash = password_hash($new_pwd, PASSWORD_BCRYPT);
-            $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-            $stmt->execute([$new_hash, $current_user['id']]);
+            $stmt = $db->prepare("UPDATE users SET password_hash = ?, plain_password = ? WHERE id = ?");
+            $stmt->execute([$new_hash, $new_pwd, $current_user['id']]);
             set_flash_message('Password changed successfully!', 'success');
             redirect(BASE_URL . '/change_password.php');
         }

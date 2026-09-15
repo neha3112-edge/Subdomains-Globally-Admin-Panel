@@ -130,6 +130,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash_message('success', 'User deleted successfully.');
         }
         redirect(BASE_URL . '/modules/rbac/users.php');
+    } elseif ($post_action === 'reset_password') {
+        $target_user_id = (int)($_POST['target_user_id'] ?? 0);
+        $new_password = trim($_POST['new_password'] ?? '');
+
+        if ($target_user_id <= 0) {
+            set_flash_message('error', 'Invalid user selected.');
+            redirect(BASE_URL . '/modules/rbac/users.php');
+        }
+
+        if (empty($new_password) || strlen($new_password) < 6) {
+            set_flash_message('error', 'New password must be at least 6 characters long.');
+            redirect(BASE_URL . '/modules/rbac/users.php');
+        }
+
+        $u_stmt = $db->prepare("SELECT id, name, username FROM users WHERE id = ?");
+        $u_stmt->execute([$target_user_id]);
+        $target_user = $u_stmt->fetch();
+
+        if (!$target_user) {
+            set_flash_message('error', 'User not found.');
+            redirect(BASE_URL . '/modules/rbac/users.php');
+        }
+
+        $new_hash = password_hash($new_password, PASSWORD_BCRYPT);
+        $update_stmt = $db->prepare("
+            UPDATE users 
+            SET password_hash = :hash, plain_password = :plain 
+            WHERE id = :id
+        ");
+        $update_stmt->execute([
+            'hash'  => $new_hash,
+            'plain' => $new_password,
+            'id'    => $target_user_id
+        ]);
+
+        set_flash_message('success', "Password for user '{$target_user['name']}' (@{$target_user['username']}) has been successfully reset!");
+        redirect(BASE_URL . '/modules/rbac/users.php');
     }
 }
 
@@ -258,15 +295,25 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
-                        Password 
-                        <?php if ($edit_user): ?>
-                            <span style="font-size:11.5px; font-weight:normal; color:var(--text-dim);">(leave blank to keep current)</span>
-                        <?php else: ?>
-                            <span style="color:var(--danger, #ef4444);">*</span>
-                        <?php endif; ?>
-                    </label>
-                    <input type="password" name="password" class="form-control" placeholder="<?php echo $edit_user ? 'New Password' : 'Min 6 characters'; ?>" <?php echo $edit_user ? '' : 'required'; ?>>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label class="form-label" style="margin-bottom:0;">
+                            Password 
+                            <?php if ($edit_user): ?>
+                                <span style="font-size:11.5px; font-weight:normal; color:var(--text-dim);">(leave blank to keep current)</span>
+                            <?php else: ?>
+                                <span style="color:var(--danger, #ef4444);">*</span>
+                            <?php endif; ?>
+                        </label>
+                        <button type="button" onclick="generateRandomPass('field_form_password')" style="background:none; border:none; color:var(--primary); font-size:11.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:0;">
+                            ⚡ Generate
+                        </button>
+                    </div>
+                    <div style="position:relative;">
+                        <input type="password" name="password" id="field_form_password" class="form-control" placeholder="<?php echo $edit_user ? 'Enter new password to update' : 'Min 6 characters'; ?>" <?php echo $edit_user ? '' : 'required'; ?> style="padding-right:40px;">
+                        <button type="button" onclick="toggleInputPass('field_form_password', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;" title="Show / Hide Password">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -380,6 +427,15 @@ require_once ADMIN_PATH . '/includes/header.php';
                                         <a href="<?php echo BASE_URL; ?>/modules/rbac/users.php?action=edit&id=<?php echo $u['id']; ?>" class="action-btn" title="Edit">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </a>
+                                        <button type="button" class="action-btn" title="Reset Password" style="color:#f59e0b;" onclick='openResetPasswordModal(<?php echo htmlspecialchars(json_encode([
+                                            "id"            => (int)$u["id"],
+                                            "name"          => $u["name"] ?? "",
+                                            "username"      => $u["username"] ?? "",
+                                            "email"         => $u["email"] ?? "",
+                                            "plain_password"=> $u["plain_password"] ?? ""
+                                        ]), ENT_QUOTES, "UTF-8"); ?>)'>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
+                                        </button>
                                         <?php if ($u['id'] !== 1): ?>
                                             <form method="POST" action="" class="delete-form" style="display:inline;">
                                                 <?php echo csrf_field(); ?>
@@ -456,7 +512,13 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                             Password
                         </label>
-                        <span id="copyPassAlert" style="font-size:11px; color:#10b981; font-weight:600; display:none;">Copied to clipboard!</span>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span id="copyPassAlert" style="font-size:11px; color:#10b981; font-weight:600; display:none;">Copied to clipboard!</span>
+                            <button type="button" onclick="switchFromViewToResetModal()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; font-size:11px; font-weight:600; padding:3px 9px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
+                                Reset Password
+                            </button>
+                        </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <input type="password" id="viewUserPassInput" readonly value="" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#f8fafc; font-family:monospace; font-size:15px; height:44px; padding:0 14px; flex:1; outline:none; letter-spacing:1px;" />
@@ -488,12 +550,95 @@ require_once ADMIN_PATH . '/includes/header.php';
             </div>
         </div>
         <div class="sode-modal-footer" style="display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border-color, #1e2b45); background:rgba(255,255,255,0.02);">
-            <button type="button" class="btn-sm action-btn" onclick="closeViewUserModal()">Close</button>
+            <button type="button" class="btn-sm action-btn" onclick="closeViewUserModal()" style="width:auto; height:auto; padding:7px 14px;">Close</button>
+            <button type="button" class="btn-sm" onclick="switchFromViewToResetModal()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
+                Reset Password
+            </button>
             <a id="viewUserEditLink" href="#" class="btn-sm btn-primary" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; padding:7px 16px; font-size:12.5px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 Edit User
             </a>
         </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetPasswordModal" class="sode-modal-overlay">
+    <div class="sode-modal" style="max-width:480px;">
+        <div class="sode-modal-header">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #f59e0b, #d97706); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:16px; box-shadow:0 4px 12px rgba(245,158,11,0.3);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
+                </div>
+                <div>
+                    <div class="sode-modal-title" style="font-size:16px; font-weight:700;">Reset User Password</div>
+                    <div id="resetUserSubtitle" style="font-size:12px; color:var(--text-dim);">Set a new login password for user</div>
+                </div>
+            </div>
+            <button type="button" class="sode-modal-close" onclick="closeResetPasswordModal()">&times;</button>
+        </div>
+
+        <form method="POST" action="" id="resetPasswordForm">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="post_action" value="reset_password">
+            <input type="hidden" name="target_user_id" id="resetTargetUserId" value="">
+
+            <div class="sode-modal-body" style="padding:22px;">
+                <!-- User Summary Box -->
+                <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div id="resetUserName" style="font-size:14px; font-weight:700; color:var(--text-main);">User Name</div>
+                        <div id="resetUserMeta" style="font-size:12px; color:var(--text-dim); margin-top:2px;">user@example.com</div>
+                    </div>
+                    <span id="resetUserHandle" style="font-size:12px; font-weight:600; color:var(--primary); background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25); padding:3px 8px; border-radius:4px;">@username</span>
+                </div>
+
+                <!-- Current Password Preview (if exists) -->
+                <div id="resetCurrentPassBox" style="margin-bottom:16px; display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-dim); letter-spacing:0.5px;">Current Password</label>
+                        <span id="copyResetCurrentPassAlert" style="font-size:11px; color:#10b981; font-weight:600; display:none;">Copied!</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="resetCurrentPassInput" readonly style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:#94a3b8; font-family:monospace; font-size:13px; height:36px; padding:0 10px; flex:1; outline:none;" />
+                        <button type="button" class="btn-sm" onclick="copyResetCurrentPass()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-main); font-size:12px; padding:0 12px; border-radius:6px; cursor:pointer;">Copy</button>
+                    </div>
+                </div>
+
+                <!-- New Password Field -->
+                <div class="form-group" style="margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label class="form-label" style="margin-bottom:0;">
+                            New Password <span style="color:var(--danger, #ef4444);">*</span>
+                        </label>
+                        <button type="button" onclick="generateResetModalPass()" style="background:none; border:none; color:var(--primary); font-size:11.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:0;">
+                            ⚡ Generate Strong Password
+                        </button>
+                    </div>
+                    <div style="position:relative;">
+                        <input type="text" name="new_password" id="resetNewPassInput" class="form-control" placeholder="Enter new password (min 6 characters)" required minlength="6" style="padding-right:75px; font-family:monospace; font-size:14.5px; height:44px;" autocomplete="off">
+                        <div style="position:absolute; right:8px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:4px;">
+                            <button type="button" onclick="copyResetNewPass()" title="Copy Password" style="background:rgba(255,255,255,0.08); border:none; border-radius:5px; color:var(--text-main); cursor:pointer; font-size:11px; padding:5px 8px; font-weight:600;">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                        <small style="font-size:11px; color:var(--text-dim);">Minimum 6 characters. Will take effect immediately.</small>
+                        <span id="copyResetNewPassAlert" style="font-size:11px; color:#10b981; font-weight:600; display:none;">Copied!</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sode-modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:16px 22px; border-top:1px solid var(--border-color); background:rgba(255,255,255,0.02);">
+                <button type="button" class="btn-sm action-btn" onclick="closeResetPasswordModal()" style="width:auto; height:auto; padding:9px 16px; border-radius:8px;">Cancel</button>
+                <button type="submit" class="btn-primary" style="padding:9px 20px; font-size:13.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Save & Reset Password
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -632,6 +777,9 @@ function openViewUserModal(user) {
     // Edit link
     document.getElementById('viewUserEditLink').href = '<?php echo BASE_URL; ?>/modules/rbac/users.php?action=edit&id=' + user.id;
 
+    // Save user for quick switch
+    currentUserForReset = user;
+
     // Show modal
     var modal = document.getElementById('viewUserModal');
     modal.style.display = 'flex';
@@ -672,11 +820,127 @@ function copyViewUserPassword() {
     });
 }
 
+// ---------------- RESET PASSWORD MODAL LOGIC ----------------
+var currentUserForReset = null;
+
+function openResetPasswordModal(user) {
+    currentUserForReset = user;
+    document.getElementById('resetTargetUserId').value = user.id;
+    document.getElementById('resetUserName').textContent = user.name || 'User';
+    document.getElementById('resetUserMeta').textContent = user.email || '';
+    document.getElementById('resetUserHandle').textContent = user.username ? '@' + user.username : 'ID: ' + user.id;
+    document.getElementById('resetUserSubtitle').textContent = 'Set a new password for ' + (user.name || 'this user');
+    
+    var curPassBox = document.getElementById('resetCurrentPassBox');
+    var curPassInput = document.getElementById('resetCurrentPassInput');
+    if (user.plain_password) {
+        curPassInput.value = user.plain_password;
+        curPassBox.style.display = 'block';
+    } else {
+        curPassInput.value = '';
+        curPassBox.style.display = 'none';
+    }
+
+    var newPassInput = document.getElementById('resetNewPassInput');
+    newPassInput.value = '';
+    
+    document.getElementById('resetPasswordModal').style.display = 'flex';
+    setTimeout(function() {
+        newPassInput.focus();
+    }, 100);
+}
+
+function closeResetPasswordModal() {
+    var modal = document.getElementById('resetPasswordModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function switchFromViewToResetModal() {
+    closeViewUserModal();
+    if (currentUserForReset) {
+        openResetPasswordModal(currentUserForReset);
+    }
+}
+
+function generateRandomPassword() {
+    var upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    var lower = 'abcdefghjkmnpqrstuvwxyz';
+    var numbers = '23456789';
+    var symbols = '!@#$%&*';
+    var all = upper + lower + numbers + symbols;
+    
+    // Ensure at least 1 of each
+    var pass = '';
+    pass += upper.charAt(Math.floor(Math.random() * upper.length));
+    pass += lower.charAt(Math.floor(Math.random() * lower.length));
+    pass += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    pass += symbols.charAt(Math.floor(Math.random() * symbols.length));
+    
+    for (var i = 0; i < 6; i++) {
+        pass += all.charAt(Math.floor(Math.random() * all.length));
+    }
+    // Shuffle
+    return pass.split('').sort(function(){ return 0.5 - Math.random(); }).join('');
+}
+
+function generateResetModalPass() {
+    var pass = generateRandomPassword();
+    var input = document.getElementById('resetNewPassInput');
+    input.value = pass;
+}
+
+function copyResetNewPass() {
+    var input = document.getElementById('resetNewPassInput');
+    if (!input.value) {
+        generateResetModalPass();
+    }
+    navigator.clipboard.writeText(input.value).then(function() {
+        var alert = document.getElementById('copyResetNewPassAlert');
+        alert.style.display = 'inline';
+        setTimeout(function(){ alert.style.display = 'none'; }, 2500);
+    });
+}
+
+function copyResetCurrentPass() {
+    var input = document.getElementById('resetCurrentPassInput');
+    if (!input.value) return;
+    navigator.clipboard.writeText(input.value).then(function() {
+        var alert = document.getElementById('copyResetCurrentPassAlert');
+        alert.style.display = 'inline';
+        setTimeout(function(){ alert.style.display = 'none'; }, 2500);
+    });
+}
+
+function generateRandomPass(inputId) {
+    var pass = generateRandomPassword();
+    var input = document.getElementById(inputId);
+    if (input) {
+        input.value = pass;
+        input.type = 'text';
+    }
+}
+
+function toggleInputPass(inputId, btn) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.style.color = 'var(--primary)';
+    } else {
+        input.type = 'password';
+        btn.style.color = 'var(--text-dim)';
+    }
+}
+
 // Close on background click
 window.addEventListener('click', function(e) {
-    var modal = document.getElementById('viewUserModal');
-    if (e.target === modal) {
+    var viewModal = document.getElementById('viewUserModal');
+    if (e.target === viewModal) {
         closeViewUserModal();
+    }
+    var resetModal = document.getElementById('resetPasswordModal');
+    if (e.target === resetModal) {
+        closeResetPasswordModal();
     }
 });
 </script>
