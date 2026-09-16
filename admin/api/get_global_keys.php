@@ -168,7 +168,8 @@ if (!empty($uni_slug)) {
                 ucm.total_program_fee,
                 ucm.tuition_fee,
                 ucm.examination_fee,
-                ucm.one_time_processing_fee
+                ucm.one_time_processing_fee,
+                ucm.eligibility_text
             FROM university_course_mappings ucm
             INNER JOIN courses c ON ucm.course_id = c.id
             WHERE ucm.university_id = ?
@@ -177,12 +178,23 @@ if (!empty($uni_slug)) {
         $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $fee_keys = [];
+        $all_elig_lines = [];
+
         foreach ($courses as $c) {
             $per_sem   = trim((string)($c['per_semester_fee'] ?? ''));
             $total_fee = trim((string)($c['total_program_fee'] ?? ''));
             $tuition   = trim((string)($c['tuition_fee'] ?? ''));
             $exam      = trim((string)($c['examination_fee'] ?? ''));
             $reg_fee   = trim((string)($c['one_time_processing_fee'] ?? ''));
+            $elig_text = trim((string)($c['eligibility_text'] ?? ''));
+
+            if ($elig_text === '') {
+                $is_master = (stripos($c['full_name'], 'Master') !== false);
+                $elig_text = $is_master ? "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories." : "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.";
+            }
+
+            $c_disp_name = ($c['short_name'] === 'B.Com') ? 'BCom' : $c['short_name'];
+            $all_elig_lines[] = "• " . $c_disp_name . ": " . $elig_text;
 
             // Default fee (per semester if available, else total)
             $main_fee = $per_sem !== '' ? $per_sem : $total_fee;
@@ -241,8 +253,21 @@ if (!empty($uni_slug)) {
                     $fee_keys['$' . $pfx . '_REGISTRATION_FEE$'] = $reg_fee;
                     $fee_keys['{' . $pfx . '_REGISTRATION_FEE}'] = $reg_fee;
                 }
+
+                // Course Eligibility Text
+                $fee_keys['$' . $pfx . '_ELIGIBILITY$']          = $elig_text;
+                $fee_keys['{' . $pfx . '_ELIGIBILITY}']          = $elig_text;
+                $fee_keys['$' . $pfx . '_ELIGIBILITY_TEXT$']     = $elig_text;
+                $fee_keys['{' . $pfx . '_ELIGIBILITY_TEXT}']     = $elig_text;
             }
         }
+
+        // Combined eligibility keys
+        $all_elig_str = implode("\n", $all_elig_lines);
+        $fee_keys['$ALL_COURSES_ELIGIBILITY$']      = $all_elig_str;
+        $fee_keys['{ALL_COURSES_ELIGIBILITY}']      = $all_elig_str;
+        $fee_keys['$UNIVERSITY_ELIGIBILITY_TEXT$']  = $all_elig_str;
+        $fee_keys['{UNIVERSITY_ELIGIBILITY_TEXT}']  = $all_elig_str;
 
         // Merge — university keys and course fees override global keys
         $map = array_merge($map, $uni_keys, $fee_keys);

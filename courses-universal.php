@@ -1525,6 +1525,135 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
 
 /**
  * ====================================================================
+ * Universal University Courses Eligibility Text Component
+ * Renders course eligibility requirements in clean text format
+ * (bullet list, paragraphs, inline text, or single course text)
+ * ====================================================================
+ */
+if (!function_exists('sode_courses_eligibility_text_render')) {
+    function sode_courses_eligibility_text_render($atts = [])
+    {
+        $atts = shortcode_atts([
+            'university'  => '',
+            'uni'         => '',
+            'course'      => '',                 // single course filter e.g. 'mba', 'mca', 'bba'
+            'mode'        => 'all',              // 'all', 'online', 'distance'
+            'layout'      => 'list',             // 'list', 'p', 'paragraph', 'inline', 'plain', 'raw'
+            'format'      => 'short',            // 'short' (e.g. MBA), 'full' (Master of Business Administration)
+            'show_course' => '',                // 'true', 'false' (defaults to false if course is set, true otherwise)
+            'bold'        => 'true',             // bold course name prefix
+            'bullet'      => '',                 // custom bullet symbol e.g. '• ', '✓ '
+            'separator'   => '<br>',             // for inline layout
+            'class'       => '',
+        ], $atts);
+
+        $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
+        $all_courses = sode_get_university_courses_data($uni_slug);
+
+        $mode_filter = strtolower(trim($atts['mode']));
+        $course_filter = strtolower(trim($atts['course']));
+        $filtered = [];
+        $seen_courses = [];
+
+        foreach ($all_courses as $c) {
+            $m = strtolower($c['mode'] ?? 'online');
+            if ($mode_filter === 'online' && $m !== 'online')
+                continue;
+            if ($mode_filter === 'distance' && $m !== 'distance')
+                continue;
+
+            // Single course filter
+            if (!empty($course_filter)) {
+                $s_clean = strtolower(preg_replace('/[^a-z0-9]/', '', $c['short_name'] ?? ''));
+                $slug_clean = strtolower(preg_replace('/[^a-z0-9]/', '', $c['slug'] ?? ''));
+                $target_clean = strtolower(preg_replace('/[^a-z0-9]/', '', $course_filter));
+                if ($s_clean !== $target_clean && $slug_clean !== $target_clean) {
+                    continue;
+                }
+            }
+
+            $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
+            if (isset($seen_courses[$key]))
+                continue;
+            $seen_courses[$key] = true;
+
+            $filtered[] = $c;
+        }
+
+        if (empty($filtered)) {
+            return '';
+        }
+
+        // Determine if show_course should be on or off
+        $show_course = $atts['show_course'];
+        if ($show_course === '') {
+            $show_course = empty($course_filter) ? 'true' : 'false';
+        }
+        $is_show_course = ($show_course === 'true' || $show_course === '1' || $show_course === 'yes');
+        $is_bold = ($atts['bold'] === 'true' || $atts['bold'] === '1' || $atts['bold'] === 'yes');
+
+        // Single course raw/plain request (e.g. [course_eligibility course="mba"] or [mba_eligibility])
+        if (!empty($course_filter) && count($filtered) === 1 && !$is_show_course && ($atts['layout'] === 'raw' || $atts['layout'] === 'plain' || empty($atts['layout']) || $atts['layout'] === 'list')) {
+            $first = reset($filtered);
+            $elig = !empty($first['eligibility']) ? $first['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
+            return esc_html($elig);
+        }
+
+        $layout = strtolower(trim($atts['layout']));
+        $output_items = [];
+
+        foreach ($filtered as $item) {
+            $c_name = ($atts['format'] === 'full') ? $item['full_name'] : $item['short_name'];
+            if ($c_name === 'B.Com') $c_name = 'BCom';
+            $elig = !empty($item['eligibility']) ? $item['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
+
+            $prefix = '';
+            if ($is_show_course) {
+                $prefix = $is_bold ? '<strong>' . esc_html($c_name) . ':</strong> ' : esc_html($c_name) . ': ';
+            }
+
+            $bullet = !empty($atts['bullet']) ? esc_html($atts['bullet']) . ' ' : '';
+            $text = $prefix . esc_html($elig);
+
+            $output_items[] = [
+                'name' => $c_name,
+                'prefix' => $prefix,
+                'eligibility' => esc_html($elig),
+                'full' => $bullet . $text,
+            ];
+        }
+
+        $wrap_class = esc_attr(trim('sode-eligibility-text ' . $atts['class']));
+
+        // Layout: Paragraphs
+        if ($layout === 'p' || $layout === 'paragraph' || $layout === 'paragraphs') {
+            $html = '<div class="' . $wrap_class . ' sode-elig-layout-p">';
+            foreach ($output_items as $oi) {
+                $html .= '<p class="sode-elig-item" style="margin: 0 0 10px 0; font-size: 14px; line-height: 1.6; color: #374151;">' . $oi['full'] . '</p>';
+            }
+            $html .= '</div>';
+            return $html;
+        }
+
+        // Layout: Inline (with <br> or separator)
+        if ($layout === 'inline' || $layout === 'plain' || $layout === 'raw') {
+            $lines = array_map(function($oi) { return $oi['full']; }, $output_items);
+            $sep = !empty($atts['separator']) ? $atts['separator'] : '<br>';
+            return '<div class="' . $wrap_class . ' sode-elig-layout-inline" style="font-size: 14px; line-height: 1.6; color: #374151;">' . implode($sep, $lines) . '</div>';
+        }
+
+        // Default Layout: Clean Bullet List (<ul><li>)
+        $html = '<ul class="' . $wrap_class . ' sode-elig-layout-list" style="margin: 12px 0; padding-left: 20px; line-height: 1.7; font-size: 14px; color: #374151; list-style-type: disc;">';
+        foreach ($output_items as $oi) {
+            $html .= '<li class="sode-elig-item" style="margin-bottom: 8px;">' . $oi['full'] . '</li>';
+        }
+        $html .= '</ul>';
+        return $html;
+    }
+}
+
+/**
+ * ====================================================================
  * Universal University Programs & Fee Table Component
  * Renders the 4-column dynamic program table:
  * PROGRAM | DURATION | FEE / 1ST SEMESTER | MORE INFORMATION
@@ -1777,6 +1906,21 @@ if (function_exists('add_shortcode')) {
     add_shortcode('university_eligibility', 'sode_courses_eligibility_table_render');
     add_shortcode('uni_eligibility', 'sode_courses_eligibility_table_render');
     add_shortcode('eligibility_table', 'sode_courses_eligibility_table_render');
+
+    // Eligibility Text Shortcodes (Text Format)
+    add_shortcode('university_eligibility_text', 'sode_courses_eligibility_text_render');
+    add_shortcode('uni_eligibility_text', 'sode_courses_eligibility_text_render');
+    add_shortcode('courses_eligibility_text', 'sode_courses_eligibility_text_render');
+    add_shortcode('eligibility_text', 'sode_courses_eligibility_text_render');
+    add_shortcode('course_eligibility', 'sode_courses_eligibility_text_render');
+    add_shortcode('course_eligibility_text', 'sode_courses_eligibility_text_render');
+
+    // Single course shortcuts
+    add_shortcode('mba_eligibility', function ($atts) { return sode_courses_eligibility_text_render(array_merge((array)$atts, ['course' => 'mba'])); });
+    add_shortcode('mca_eligibility', function ($atts) { return sode_courses_eligibility_text_render(array_merge((array)$atts, ['course' => 'mca'])); });
+    add_shortcode('bba_eligibility', function ($atts) { return sode_courses_eligibility_text_render(array_merge((array)$atts, ['course' => 'bba'])); });
+    add_shortcode('bca_eligibility', function ($atts) { return sode_courses_eligibility_text_render(array_merge((array)$atts, ['course' => 'bca'])); });
+    add_shortcode('bcom_eligibility', function ($atts) { return sode_courses_eligibility_text_render(array_merge((array)$atts, ['course' => 'bcom'])); });
 
     // Programs / Fee Table Shortcodes
     add_shortcode('university_programs_table', 'sode_university_programs_table_render');

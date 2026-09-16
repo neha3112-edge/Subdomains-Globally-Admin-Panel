@@ -658,6 +658,30 @@ add_shortcode('university_courses_table', $prog_table_handler);
 add_shortcode('uni_courses_table', $prog_table_handler);
 
 // ====================================================
+// 2.8.2. UNIVERSITY COURSES ELIGIBILITY TEXT SHORTCODES
+// [university_eligibility_text], [uni_eligibility_text], [courses_eligibility_text], [eligibility_text], [course_eligibility]
+// ====================================================
+$elig_text_handler = function ($atts) {
+    if (function_exists('sode_courses_eligibility_text_render')) {
+        return sode_courses_eligibility_text_render($atts);
+    }
+    return sode_fetch_remote_component('university_eligibility_text', $atts);
+};
+add_shortcode('university_eligibility_text', $elig_text_handler);
+add_shortcode('uni_eligibility_text', $elig_text_handler);
+add_shortcode('courses_eligibility_text', $elig_text_handler);
+add_shortcode('eligibility_text', $elig_text_handler);
+add_shortcode('course_eligibility', $elig_text_handler);
+add_shortcode('course_eligibility_text', $elig_text_handler);
+
+add_shortcode('mba_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'mba'])); });
+add_shortcode('mca_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'mca'])); });
+add_shortcode('bba_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'bba'])); });
+add_shortcode('bca_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'bca'])); });
+add_shortcode('bcom_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'bcom'])); });
+
+
+// ====================================================
 // 2.9. UNIVERSITY ADMISSION & APPLICATION PROCESS SHORTCODES
 
 // [university_application_process], [idol_application_process], [uni_application_process], [admission_process], [application_process]
