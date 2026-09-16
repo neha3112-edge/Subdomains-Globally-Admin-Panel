@@ -680,6 +680,26 @@ add_shortcode('bba_eligibility', function ($atts) use ($elig_text_handler) { ret
 add_shortcode('bca_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'bca'])); });
 add_shortcode('bcom_eligibility', function ($atts) use ($elig_text_handler) { return $elig_text_handler(array_merge((array)$atts, ['course' => 'bcom'])); });
 
+// ====================================================
+// 2.8.3. RECENT ANNOUNCEMENTS / INNER PAGE NEWS SHORTCODES
+// [recent_announcements], [university_announcements], [uni_announcements], [announcements_list], [inner_page_news]
+// ====================================================
+if (file_exists(__DIR__ . '/announcements-list-universal.php')) {
+    include_once __DIR__ . '/announcements-list-universal.php';
+}
+
+$announcements_handler = function ($atts) {
+    if (function_exists('sode_announcements_list_render')) {
+        return sode_announcements_list_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('recent_announcements', $atts ?: []);
+};
+add_shortcode('recent_announcements', $announcements_handler);
+add_shortcode('university_announcements', $announcements_handler);
+add_shortcode('uni_announcements', $announcements_handler);
+add_shortcode('announcements_list', $announcements_handler);
+add_shortcode('inner_page_news', $announcements_handler);
+
 
 // ====================================================
 // 2.9. UNIVERSITY ADMISSION & APPLICATION PROCESS SHORTCODES

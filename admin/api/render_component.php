@@ -30,6 +30,7 @@ if (file_exists($admin_dir . '/config/config.php')) {
 require_once $root_dir . '/lead-form-universal.php';
 require_once $root_dir . '/education-banner-universal.php';
 require_once $root_dir . '/news-marquee-universal.php';
+require_once $root_dir . '/announcements-list-universal.php';
 require_once $root_dir . '/courses-universal.php';
 require_once $root_dir . '/admission-process-universal.php';
 if (file_exists($root_dir . '/legal-pages-universal.php')) {
@@ -189,6 +190,15 @@ switch ($component) {
     case 'news_marquee':
     case 'universal_news':
         echo sode_news_marquee_render($params);
+        break;
+
+    case 'recent_announcements':
+    case 'announcements':
+    case 'announcements_list':
+    case 'university_announcements':
+    case 'uni_announcements':
+    case 'inner_page_news':
+        echo sode_announcements_list_render($params);
         break;
 
     case 'lead_form':

@@ -56,7 +56,7 @@ foreach ($global_keys as $k => $v) {
 $uni_id = $uni ? (int)$uni['id'] : 0;
 if ($uni_id > 0) {
     $stmt = $db->prepare("
-        SELECT id, is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order
+        SELECT id, is_global, university_id, news_text, description, published_date, news_link, has_badge, badge_text, sort_order, created_at
         FROM news_items
         WHERE is_active = 1 AND (is_global = 1 OR university_id = ?)
         ORDER BY is_global DESC, sort_order ASC, id ASC
@@ -64,7 +64,7 @@ if ($uni_id > 0) {
     $stmt->execute([$uni_id]);
 } else {
     $stmt = $db->query("
-        SELECT id, is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order
+        SELECT id, is_global, university_id, news_text, description, published_date, news_link, has_badge, badge_text, sort_order, created_at
         FROM news_items
         WHERE is_active = 1 AND is_global = 1
         ORDER BY is_global DESC, sort_order ASC, id ASC
@@ -80,6 +80,15 @@ foreach ($raw_news as $row) {
         $text = str_ireplace($search, $replace, $text);
     }
 
+    $desc = $row['description'] ?? '';
+    if (!empty($desc)) {
+        foreach ($rep_map as $search => $replace) {
+            $desc = str_ireplace($search, $replace, $desc);
+        }
+    }
+
+    $pub_date = !empty($row['published_date']) ? $row['published_date'] : date('F j, Y', strtotime($row['created_at']));
+
     $link = $row['news_link'];
     if (!empty($link)) {
         foreach ($rep_map as $search => $replace) {
@@ -88,13 +97,17 @@ foreach ($raw_news as $row) {
     }
 
     $items[] = [
-        'id'         => (int)$row['id'],
-        'text'       => $text,
-        'link'       => $link ?: '',
-        'has_badge'  => (bool)$row['has_badge'],
-        'badge_text' => $row['badge_text'] ?: 'New',
-        'is_global'  => (bool)$row['is_global'],
-        'sort_order' => (int)$row['sort_order'],
+        'id'             => (int)$row['id'],
+        'text'           => $text,
+        'title'          => $text,
+        'description'    => $desc,
+        'published_date' => $pub_date,
+        'link'           => $link ?: '',
+        'has_badge'      => (bool)$row['has_badge'],
+        'badge_text'     => $row['badge_text'] ?: 'New',
+        'is_global'      => (bool)$row['is_global'],
+        'university_id'  => $row['university_id'] ? (int)$row['university_id'] : null,
+        'sort_order'     => (int)$row['sort_order'],
     ];
 }
 
