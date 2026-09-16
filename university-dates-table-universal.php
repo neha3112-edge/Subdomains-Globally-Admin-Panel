@@ -200,7 +200,7 @@ if (!function_exists('sode_get_university_dates_data')) {
 }
 
 /**
- * Main Renderer for Important Dates Table
+ * Main Renderer for Important Dates Table (Matches exact user design: EVENT & DATE table)
  */
 if (!function_exists('sode_university_dates_table_render')) {
     function sode_university_dates_table_render($atts = [])
@@ -208,393 +208,133 @@ if (!function_exists('sode_university_dates_table_render')) {
         $atts = shortcode_atts([
             'university' => '',
             'uni'        => '',
-            'heading'    => '',
-            'title'      => '',
-            'subtitle'   => '',
-            'show_btn'   => 'true',
-            'btn_text'   => '',
-            'btn_link'   => '#lead-form',
         ], $atts);
 
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
         $uni = sode_get_university_dates_data($uni_slug);
 
         $y = date('Y');
-        $session = $y . '-' . substr((string)((int)$y + 1), -2);
-        $uni_name = !empty($uni['full_name']) ? $uni['full_name'] : 'University';
-        $uni_short = !empty($uni['short_name']) ? $uni['short_name'] : 'University';
 
-        // Title and Subtitle resolution
-        $title = !empty($atts['title']) ? $atts['title'] : (!empty($atts['heading']) ? $atts['heading'] : "{$uni_short} Important Dates & Deadlines {$y}");
-        $subtitle = !empty($atts['subtitle']) ? $atts['subtitle'] : "Official admission schedule and academic examination calendar for {$session} session.";
-        
-        $btn_text = !empty($atts['btn_text']) ? $atts['btn_text'] : "Apply for {$y} Admission";
-        $btn_link = !empty($atts['btn_link']) ? $atts['btn_link'] : "#lead-form";
-        $show_btn = filter_var($atts['show_btn'], FILTER_VALIDATE_BOOLEAN);
+        // Events mapping according to user screenshot
+        $rows = [];
 
-        // Prepare Milestone Dates List
-        $events = [];
-
-        // 1. Admission Start Date
-        if (!empty($uni['admission_start_date'])) {
-            $events[] = [
-                'name'        => 'Admission Start Date',
-                'description' => 'Online application process opens for new session',
-                'date'        => $uni['admission_start_date'],
-                'badge'       => '',
-                'badge_color' => '',
-                'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>'
-            ];
-        }
-
-        // 2. Admission Last Date (Highlighted with badge)
         if (!empty($uni['admission_last_date'])) {
-            $events[] = [
-                'name'        => 'Admission Last Date',
-                'description' => 'Final deadline for submission of registration form & fees',
-                'date'        => $uni['admission_last_date'],
-                'badge'       => 'Last Date',
-                'badge_color' => '#f59e0b',
-                'highlight'   => true,
-                'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>'
+            $rows[] = [
+                'event' => 'Application Deadline',
+                'date'  => trim($uni['admission_last_date'])
             ];
         }
 
-        // 3. Assignment Submission Date
-        if (!empty($uni['assignment_date'])) {
-            $events[] = [
-                'name'        => 'Assignment Submission Date',
-                'description' => 'Last date to submit internal assignments & project reports',
-                'date'        => $uni['assignment_date'],
-                'badge'       => '',
-                'badge_color' => '',
-                'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>'
+        if (!empty($uni['admission_start_date'])) {
+            $rows[] = [
+                'event' => 'Semester Commencement',
+                'date'  => trim($uni['admission_start_date'])
             ];
         }
 
-        // 4. Term-End Examination Date
         if (!empty($uni['exam_date'])) {
-            $events[] = [
-                'name'        => 'Term-End Exam Date',
-                'description' => 'Semester / Annual examination schedule commencement',
-                'date'        => $uni['exam_date'],
-                'badge'       => '',
-                'badge_color' => '',
-                'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'
+            $rows[] = [
+                'event' => 'Examination Commencement',
+                'date'  => trim($uni['exam_date'])
             ];
         }
 
-        // 5. Extended Exam Date
         if (!empty($uni['extended_exam_date'])) {
-            $events[] = [
-                'name'        => 'Extended Exam Date',
-                'description' => 'Supplementary / Extended examination window',
-                'date'        => $uni['extended_exam_date'],
-                'badge'       => 'Extended',
-                'badge_color' => '#3b82f6',
-                'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline><path d="M16 16l4 4"></path></svg>'
+            $rows[] = [
+                'event' => 'Extended Examination',
+                'date'  => trim($uni['extended_exam_date'])
             ];
         }
 
-        // Fallback if no dates were entered in admin panel yet
-        if (empty($events)) {
-            $events = [
-                [
-                    'name'        => 'Admission Start Date',
-                    'description' => 'Online application process opens for new session',
-                    'date'        => '7th September ' . $y,
-                    'badge'       => '',
-                    'badge_color' => '',
-                    'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>'
-                ],
-                [
-                    'name'        => 'Admission Last Date',
-                    'description' => 'Final deadline for submission of registration form & fees',
-                    'date'        => '30th September ' . $y,
-                    'badge'       => 'Last Date',
-                    'badge_color' => '#f59e0b',
-                    'highlight'   => true,
-                    'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 16 14"></polyline></svg>'
-                ],
-                [
-                    'name'        => 'Assignment Submission Date',
-                    'description' => 'Last date to submit internal assignments & project reports',
-                    'date'        => '15 November ' . $y,
-                    'badge'       => '',
-                    'badge_color' => '',
-                    'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>'
-                ],
-                [
-                    'name'        => 'Term-End Exam Date',
-                    'description' => 'Semester / Annual examination schedule commencement',
-                    'date'        => 'December ' . $y,
-                    'badge'       => '',
-                    'badge_color' => '',
-                    'icon'        => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'
-                ]
+        if (!empty($uni['assignment_date'])) {
+            $rows[] = [
+                'event' => 'Assignment Submission',
+                'date'  => trim($uni['assignment_date'])
             ];
         }
 
-        $unique_id = 'sode-dates-' . wp_rand(1000, 9999);
+        // Fallback default sample if empty
+        if (empty($rows)) {
+            $rows = [
+                ['event' => 'Application Deadline', 'date' => '15th October ' . $y . ' *'],
+                ['event' => 'Semester Commencement', 'date' => 'October ' . $y . '*'],
+                ['event' => 'Examination Commencement', 'date' => 'December ' . $y . '*']
+            ];
+        }
+
         ob_start();
         ?>
         <style>
-            .sode-dates-wrapper {
-                background: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 16px;
-                box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
-                padding: 30px 34px;
-                margin: 25px 0;
-                font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                box-sizing: border-box;
-                color: #1e293b;
-            }
-            .sode-dates-header {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                margin-bottom: 22px;
-                padding-bottom: 18px;
-                border-bottom: 1px solid #f1f5f9;
-            }
-            .sode-dates-icon-box {
-                width: 46px;
-                height: 46px;
-                border-radius: 12px;
-                background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-                color: #2563eb;
-            }
-            .sode-dates-title {
-                font-size: 22px;
-                font-weight: 800;
-                color: #0f172a;
-                margin: 0 0 4px 0;
-                letter-spacing: -0.3px;
-                line-height: 1.3;
-            }
-            .sode-dates-subtitle {
-                font-size: 13.5px;
-                color: #64748b;
-                margin: 0;
-                line-height: 1.4;
-            }
-            .sode-dates-table-container {
+            .sode-uni-dates-table-container {
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
+                margin: 15px 0;
             }
-            .sode-dates-table {
+            .sode-uni-dates-table {
                 width: 100%;
                 border-collapse: collapse;
                 text-align: left;
                 background: #ffffff;
+                font-family: inherit;
+                border: 1px solid #d5e0ea;
             }
-            .sode-dates-table thead th {
-                background: #f8fafc;
-                color: #475569;
-                font-size: 13px;
-                font-weight: 700;
+            .sode-uni-dates-table th {
+                background: #e8f3fe;
+                color: #000000;
+                font-size: 14.5px;
+                font-weight: 800;
+                letter-spacing: 0.2px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
                 padding: 14px 20px;
-                border-bottom: 2px solid #e2e8f0;
+                border: 1px solid #d5e0ea;
             }
-            .sode-dates-table tbody tr {
-                border-bottom: 1px solid #f1f5f9;
-                transition: background-color 0.15s ease;
-            }
-            .sode-dates-table tbody tr:hover {
-                background-color: #f8fafc;
-            }
-            .sode-dates-table tbody tr:last-child {
-                border-bottom: none;
-            }
-            .sode-dates-table tbody td {
-                padding: 16px 20px;
+            .sode-uni-dates-table td {
+                padding: 14px 20px;
+                border: 1px solid #d5e0ea;
                 vertical-align: middle;
             }
-            .sode-date-event-cell {
-                display: flex;
-                align-items: center;
-                gap: 12px;
+            .sode-uni-dates-table td.sode-date-event-title {
+                font-size: 15px;
+                font-weight: 700;
+                color: #000000;
+                width: 60%;
             }
-            .sode-date-event-icon {
-                width: 32px;
-                height: 32px;
-                border-radius: 8px;
-                background: #f1f5f9;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-            .sode-date-event-name {
+            .sode-uni-dates-table td.sode-date-value {
                 font-size: 14.5px;
-                font-weight: 700;
-                color: #1e293b;
-                margin-bottom: 2px;
+                font-weight: 400;
+                color: #111827;
+                width: 40%;
             }
-            .sode-date-event-desc {
-                font-size: 12px;
-                color: #64748b;
-                line-height: 1.35;
-            }
-            .sode-date-value-box {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-            .sode-date-value-text {
-                font-size: 14.5px;
-                font-weight: 700;
-                color: #0f172a;
-            }
-            .sode-date-badge {
-                display: inline-block;
-                background: #fef3c7;
-                color: #b45309;
-                border: 1px solid #fde68a;
-                font-size: 11px;
-                font-weight: 700;
-                padding: 2px 8px;
-                border-radius: 4px;
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
-            }
-            .sode-dates-footer {
-                margin-top: 18px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 14px;
-                padding-top: 14px;
-                border-top: 1px solid #f1f5f9;
-            }
-            .sode-dates-disclaimer {
-                font-size: 12px;
-                color: #64748b;
-                line-height: 1.4;
-                max-width: 65%;
-            }
-            .sode-dates-apply-btn {
-                background: #2563eb;
-                color: #ffffff !important;
-                font-size: 13.5px;
-                font-weight: 700;
-                padding: 10px 22px;
-                border-radius: 8px;
-                text-decoration: none;
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                box-shadow: 0 3px 10px rgba(37, 99, 235, 0.28);
-                transition: all 0.2s ease;
-            }
-            .sode-dates-apply-btn:hover {
-                background: #1d4ed8;
-                transform: translateY(-1px);
-                box-shadow: 0 5px 14px rgba(37, 99, 235, 0.38);
-                color: #ffffff !important;
-            }
-            @media (max-width: 640px) {
-                .sode-dates-wrapper {
-                    padding: 20px 16px;
-                    border-radius: 12px;
+            @media (max-width: 600px) {
+                .sode-uni-dates-table th, 
+                .sode-uni-dates-table td {
+                    padding: 10px 14px;
+                    font-size: 13.5px;
                 }
-                .sode-dates-title {
-                    font-size: 18px;
-                }
-                .sode-dates-footer {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
-                .sode-dates-disclaimer {
-                    max-width: 100%;
-                    text-align: center;
-                }
-                .sode-dates-apply-btn {
-                    text-align: center;
-                    justify-content: center;
-                    width: 100%;
+                .sode-uni-dates-table td.sode-date-event-title {
+                    font-size: 14px;
                 }
             }
         </style>
 
-        <div class="sode-dates-wrapper" id="<?php echo esc_attr($unique_id); ?>">
-            <div class="sode-dates-header">
-                <div class="sode-dates-icon-box">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                </div>
-                <div>
-                    <h3 class="sode-dates-title"><?php echo esc_html($title); ?></h3>
-                    <p class="sode-dates-subtitle"><?php echo esc_html($subtitle); ?></p>
-                </div>
-            </div>
-
-            <div class="sode-dates-table-container">
-                <table class="sode-dates-table">
-                    <thead>
+        <div class="sode-uni-dates-table-container">
+            <table class="sode-uni-dates-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60%;">EVENT</th>
+                        <th style="width: 40%;">DATE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($rows as $r): ?>
                         <tr>
-                            <th style="width: 58%;">Event / Milestone</th>
-                            <th style="width: 42%;">Important Date & Deadline</th>
+                            <td class="sode-date-event-title"><?php echo esc_html($r['event']); ?></td>
+                            <td class="sode-date-value"><?php echo esc_html($r['date']); ?></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($events as $e): ?>
-                            <tr>
-                                <td>
-                                    <div class="sode-date-event-cell">
-                                        <span class="sode-date-event-icon">
-                                            <?php echo $e['icon']; ?>
-                                        </span>
-                                        <div>
-                                            <div class="sode-date-event-name">
-                                                <?php echo esc_html($e['name']); ?>
-                                            </div>
-                                            <div class="sode-date-event-desc">
-                                                <?php echo esc_html($e['description']); ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="sode-date-value-box">
-                                        <span class="sode-date-value-text" style="<?php echo !empty($e['highlight']) ? 'color:#b45309;' : ''; ?>">
-                                            <?php echo esc_html($e['date']); ?>
-                                        </span>
-                                        <?php if (!empty($e['badge'])): ?>
-                                            <span class="sode-date-badge" style="<?php echo !empty($e['badge_color']) ? 'background:rgba(245,158,11,0.15); color:#b45309; border-color:rgba(245,158,11,0.3);' : ''; ?>">
-                                                <?php echo esc_html($e['badge']); ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="sode-dates-footer">
-                <div class="sode-dates-disclaimer">
-                    ℹ️ <em>Note: Dates and examination schedules are subject to university and regulatory notifications. Students are advised to submit applications before the admission deadline.</em>
-                </div>
-                <?php if ($show_btn): ?>
-                    <a href="<?php echo esc_url($btn_link); ?>" class="sode-dates-apply-btn">
-                        <span><?php echo esc_html($btn_text); ?></span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </a>
-                <?php endif; ?>
-            </div>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
         <?php
         return ob_get_clean();
