@@ -456,6 +456,8 @@ require_once ADMIN_PATH . '/includes/header.php';
 @keyframes toastSlideUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
 /* Enhanced Top Bar Action Buttons */
 .media-refresh-btn {
     display: inline-flex;
@@ -605,11 +607,11 @@ require_once ADMIN_PATH . '/includes/header.php';
             </div>
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
-            <button type="button" class="btn-primary" id="trigger-upload-toggle-btn" style="width:auto; height:38px; padding:0 20px; font-size:13px; display:inline-flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-primary" id="trigger-upload-toggle-btn" style="width:auto; height:38px; padding:0 20px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px; background:var(--primary-gradient, linear-gradient(135deg, #4f46e5, #7c3aed)); color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:0 4px 14px rgba(79, 70, 229, 0.4);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Upload New Files</span>
             </button>
-            <button type="button" class="media-refresh-btn" id="refresh-library-btn" title="Refresh library">
+            <button type="button" class="media-refresh-btn" id="refresh-library-btn" title="Refresh library" style="height:38px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:var(--bg-input, #151f32); border:1px solid var(--border-color, #1e2b45); border-radius:10px; color:var(--text-main, #ffffff); font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.25); white-space:nowrap;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 <span>Refresh</span>
             </button>
@@ -752,19 +754,19 @@ require_once ADMIN_PATH . '/includes/header.php';
                     </label>
                     <div style="display:flex; gap:8px;">
                         <input type="text" id="modal-full-url-input" readonly class="form-control" style="font-size:12px; padding:7px 10px;">
-                        <button type="button" class="modal-btn-copy-url" id="modal-copy-full-btn">
+                        <button type="button" class="modal-btn-copy-url" id="modal-copy-full-btn" style="height:36px; padding:0 16px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:6px; background:rgba(79, 70, 229, 0.2); border:1px solid #4f46e5; border-radius:8px; color:#c7d2fe; cursor:pointer; white-space:nowrap; outline:none;">
                             Copy URL
                         </button>
                     </div>
                 </div>
 
                 <!-- Actions: Open / Download / Delete (Rich Colored Buttons) -->
-                <div class="modal-bottom-actions">
-                    <a id="modal-download-link" href="#" target="_blank" class="modal-btn-download">
+                <div class="modal-bottom-actions" style="display:flex; gap:12px; margin-top:auto; padding-top:14px; border-top:1px solid var(--border-color);">
+                    <a id="modal-download-link" href="#" target="_blank" class="modal-btn-download" style="flex:1; height:42px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color:#ffffff !important; border:1px solid #3b82f6; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; cursor:pointer; box-shadow:0 4px 14px rgba(37, 99, 235, 0.4); outline:none;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                         <span>Open / Download</span>
                     </a>
-                    <button type="button" class="modal-btn-delete" id="modal-delete-btn">
+                    <button type="button" class="modal-btn-delete" id="modal-delete-btn" style="flex:1; height:42px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color:#ffffff !important; border:1px solid #ef4444; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 4px 14px rgba(239, 68, 68, 0.4); outline:none;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         <span>Delete Permanently</span>
                     </button>
