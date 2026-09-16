@@ -46,6 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($post_action === 'save_university_news') {
         $news_id = !empty($_POST['news_id']) ? (int) $_POST['news_id'] : null;
         $news_text = trim($_POST['news_text'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $published_date = trim($_POST['published_date'] ?? '');
+        if (empty($published_date)) {
+            $published_date = date('F j, Y');
+        }
         $news_link = trim($_POST['news_link'] ?? '');
         $has_badge = isset($_POST['has_badge']) ? 1 : 0;
         $badge_text = trim($_POST['badge_text'] ?? 'New');
@@ -55,23 +60,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
         if (empty($news_text)) {
-            set_flash_message('News text is required.', 'error');
+            set_flash_message('Announcement text / title is required.', 'error');
         } else {
             if ($news_id) {
                 $stmt = $db->prepare("
                     UPDATE news_items 
-                    SET news_text = ?, news_link = ?, has_badge = ?, badge_text = ?, sort_order = ?, is_active = ?, is_global = 0, university_id = ?
+                    SET news_text = ?, description = ?, published_date = ?, news_link = ?, has_badge = ?, badge_text = ?, sort_order = ?, is_active = ?, is_global = 0, university_id = ?
                     WHERE id = ? AND university_id = ?
                 ");
-                $stmt->execute([$news_text, $news_link, $has_badge, $badge_text, $sort_order, $is_active, $id, $news_id, $id]);
-                set_flash_message('University news updated successfully!', 'success');
+                $stmt->execute([$news_text, $description, $published_date, $news_link, $has_badge, $badge_text, $sort_order, $is_active, $id, $news_id, $id]);
+                set_flash_message('University announcement updated successfully!', 'success');
             } else {
                 $stmt = $db->prepare("
-                    INSERT INTO news_items (is_global, university_id, news_text, news_link, has_badge, badge_text, sort_order, is_active)
-                    VALUES (0, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO news_items (is_global, university_id, news_text, description, published_date, news_link, has_badge, badge_text, sort_order, is_active)
+                    VALUES (0, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$id, $news_text, $news_link, $has_badge, $badge_text, $sort_order, $is_active]);
-                set_flash_message('University news added successfully!', 'success');
+                $stmt->execute([$id, $news_text, $description, $published_date, $news_link, $has_badge, $badge_text, $sort_order, $is_active]);
+                set_flash_message('University announcement added successfully!', 'success');
             }
 
             sode_bust_all_subdomain_caches($db);
@@ -973,8 +978,23 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <input type="hidden" name="action" value="save_university_news">
                     <input type="hidden" name="news_id" value="<?php echo $edit_uni_news['id'] ?? ''; ?>">
 
+                    <!-- Published Date -->
                     <div class="form-group">
-                        <label class="form-label">Announcement Text *</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label class="form-label" style="margin-bottom: 0;">Published Date *</label>
+                            <button type="button" class="btn-xs" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer;" onclick="document.getElementById('field_uni_published_date').value = '<?php echo date('F j, Y'); ?>'">
+                                📅 Set Today's Date
+                            </button>
+                        </div>
+                        <input type="text" name="published_date" id="field_uni_published_date" class="form-control" value="<?php echo htmlspecialchars($edit_uni_news['published_date'] ?? date('F j, Y')); ?>" placeholder="e.g. September 12, 2026" required>
+                        <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">
+                            Displayed before title on inner page announcements (e.g. <code>September 12, 2026</code>).
+                        </div>
+                    </div>
+
+                    <!-- Announcement Text / Title -->
+                    <div class="form-group">
+                        <label class="form-label">Announcement Title / Headline *</label>
                         <textarea name="news_text" id="field_uni_news_text" class="form-textarea" rows="3"
                             placeholder="e.g. For the latest notifications regarding student support, access the <?php echo htmlspecialchars($uni['short_name']); ?> Student Support Page."
                             required><?php echo htmlspecialchars($edit_uni_news['news_text'] ?? ''); ?></textarea>
@@ -983,13 +1003,27 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <span>Tags:</span>
                             <button type="button" class="btn-xs"
                                 style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;"
-                                onclick="insertUniTag('{UNIVERSITY_NAME}')">{UNIVERSITY_NAME}</button>
+                                onclick="insertUniTag('{UNIVERSITY_NAME}', 'field_uni_news_text')">{UNIVERSITY_NAME}</button>
                             <button type="button" class="btn-xs"
                                 style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;"
-                                onclick="insertUniTag('{UNIVERSITY_SHORT_NAME}')">{UNIVERSITY_SHORT_NAME}</button>
+                                onclick="insertUniTag('{UNIVERSITY_SHORT_NAME}', 'field_uni_news_text')">{UNIVERSITY_SHORT_NAME}</button>
                             <button type="button" class="btn-xs"
                                 style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;"
-                                onclick="insertUniTag('$YEAR$')">$YEAR$</button>
+                                onclick="insertUniTag('$YEAR$', 'field_uni_news_text')">$YEAR$</button>
+                        </div>
+                    </div>
+
+                    <!-- Description (Shows on Inner Page "Recent Announcements") -->
+                    <div class="form-group">
+                        <label class="form-label">Description (Shows on Inner Page "Recent Announcements")</label>
+                        <textarea name="description" id="field_uni_news_desc" class="form-textarea" rows="3"
+                            placeholder="e.g. <?php echo htmlspecialchars($uni['full_name']); ?> has extended the admission deadline..."><?php echo htmlspecialchars($edit_uni_news['description'] ?? ''); ?></textarea>
+                        <div style="margin-top: 4px; font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between;">
+                            <span>Inner page card description</span>
+                            <div>
+                                <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('{UNIVERSITY_NAME}', 'field_uni_news_desc')">+{UNIVERSITY_NAME}</button>
+                                <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('$YEAR$', 'field_uni_news_desc')">+$YEAR$</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1052,6 +1086,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <table class="admin-table">
                         <thead>
                             <tr>
+                                <th style="width: 105px;">Date</th>
                                 <th>Announcement</th>
                                 <th>Badge</th>
                                 <th>Order</th>
@@ -1062,7 +1097,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <tbody>
                             <?php if (empty($uni_news_list)): ?>
                                 <tr>
-                                    <td colspan="5" style="text-align:center; padding:30px; color:var(--text-dim);">
+                                    <td colspan="6" style="text-align:center; padding:30px; color:var(--text-dim);">
                                         No specific news added for <?php echo htmlspecialchars($uni['short_name']); ?>
                                         yet.<br>
                                         <small>(Universal announcements from Settings &rarr; Universal News will still
@@ -1073,9 +1108,19 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 <?php foreach ($uni_news_list as $un): ?>
                                     <tr>
                                         <td>
+                                            <span style="font-size: 11.5px; font-weight: 500;">
+                                                <?php echo htmlspecialchars($un['published_date'] ?: date('M j, Y', strtotime($un['created_at']))); ?>
+                                            </span>
+                                        </td>
+                                        <td>
                                             <div style="font-weight: 500; font-size: 13px;">
                                                 <?php echo htmlspecialchars($un['news_text']); ?>
                                             </div>
+                                            <?php if (!empty($un['description'])): ?>
+                                                <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px; line-height: 1.4;">
+                                                    <?php echo htmlspecialchars(substr($un['description'], 0, 85)); ?><?php echo strlen($un['description']) > 85 ? '...' : ''; ?>
+                                                </div>
+                                            <?php endif; ?>
                                             <?php if (!empty($un['news_link'])): ?>
                                                 <div style="font-size: 11px; color: var(--accent-color); margin-top: 2px;">
                                                     <a href="<?php echo htmlspecialchars($un['news_link']); ?>" target="_blank"
@@ -1161,8 +1206,8 @@ require_once ADMIN_PATH . '/includes/header.php';
 </div>
 
 <script>
-    function insertUniTag(tag) {
-        var textarea = document.getElementById('field_uni_news_text');
+    function insertUniTag(tag, elementId) {
+        var textarea = document.getElementById(elementId || 'field_uni_news_text');
         if (!textarea) return;
         var start = textarea.selectionStart;
         var end = textarea.selectionEnd;

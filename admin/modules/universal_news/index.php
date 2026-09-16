@@ -3,8 +3,8 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('universal_news');
 
-$page_title = 'Announcements & News';
-$page_subtitle = 'Manage Universal (global) and University-specific announcements for Home Page & Inner Pages';
+$page_title = 'Universal News & Announcements';
+$page_subtitle = 'Manage global announcements that display across ALL university subdomains (Home Page & Inner Pages)';
 $active_page_key = 'universal_news';
 
 $db = get_db_connection();
@@ -20,14 +20,8 @@ try {
         $db->exec("ALTER TABLE news_items ADD COLUMN published_date VARCHAR(100) NULL AFTER description");
     }
 } catch (Exception $e) {
-    // Columns might already exist
+    // Ignore if columns already exist
 }
-
-// Fetch all universities for dropdown & filters
-$universities = [];
-try {
-    $universities = $db->query("SELECT id, full_name, short_name, slug FROM universities ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {}
 
 // Handle Form Submissions (Save, Update, Delete, Toggle Active)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -49,38 +43,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sort_order = (int)($_POST['sort_order'] ?? 0);
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
-        // Scope: Universal or University-specific
-        $scope = $_POST['scope'] ?? 'global';
-        if ($scope === 'global') {
-            $is_global = 1;
-            $university_id = null;
-        } else {
-            $is_global = 0;
-            $university_id = (int)$scope;
-            if ($university_id <= 0) {
-                $is_global = 1;
-                $university_id = null;
-            }
-        }
-
         if (empty($news_text)) {
             set_flash_message('Announcement title / headline is required.', 'error');
         } else {
             if ($id) {
                 $stmt = $db->prepare("
                     UPDATE news_items 
-                    SET news_text = ?, description = ?, published_date = ?, news_link = ?, has_badge = ?, badge_text = ?, sort_order = ?, is_active = ?, is_global = ?, university_id = ?
-                    WHERE id = ?
+                    SET news_text = ?, description = ?, published_date = ?, news_link = ?, has_badge = ?, badge_text = ?, sort_order = ?, is_active = ?, is_global = 1, university_id = NULL
+                    WHERE id = ? AND is_global = 1
                 ");
-                $stmt->execute([$news_text, $description, $published_date, $news_link, $has_badge, $badge_text, $sort_order, $is_active, $is_global, $university_id, $id]);
-                set_flash_message('Announcement updated successfully!', 'success');
+                $stmt->execute([$news_text, $description, $published_date, $news_link, $has_badge, $badge_text, $sort_order, $is_active, $id]);
+                set_flash_message('Universal announcement updated successfully!', 'success');
             } else {
                 $stmt = $db->prepare("
                     INSERT INTO news_items (is_global, university_id, news_text, description, published_date, news_link, has_badge, badge_text, sort_order, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (1, NULL, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$is_global, $university_id, $news_text, $description, $published_date, $news_link, $has_badge, $badge_text, $sort_order, $is_active]);
-                set_flash_message('Announcement created successfully!', 'success');
+                $stmt->execute([$news_text, $description, $published_date, $news_link, $has_badge, $badge_text, $sort_order, $is_active]);
+                set_flash_message('Universal announcement created successfully!', 'success');
             }
 
             // Auto-bust subdomain caches
@@ -90,16 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $stmt = $db->prepare("DELETE FROM news_items WHERE id = ?");
+            $stmt = $db->prepare("DELETE FROM news_items WHERE id = ? AND is_global = 1");
             $stmt->execute([$id]);
             sode_bust_all_subdomain_caches($db);
-            set_flash_message('Announcement deleted successfully!', 'success');
+            set_flash_message('Universal announcement deleted successfully!', 'success');
             redirect(BASE_URL . '/modules/universal_news/index.php');
         }
     } elseif ($action === 'toggle_active') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $stmt = $db->prepare("UPDATE news_items SET is_active = IF(is_active=1, 0, 1) WHERE id = ?");
+            $stmt = $db->prepare("UPDATE news_items SET is_active = IF(is_active=1, 0, 1) WHERE id = ? AND is_global = 1");
             $stmt->execute([$id]);
             sode_bust_all_subdomain_caches($db);
             set_flash_message('Announcement status updated!', 'success');
@@ -108,39 +88,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Edit Mode
+// Edit Mode (Only fetch if it's a global news item)
 $edit_news = null;
 if (isset($_GET['edit_id'])) {
     $edit_id = (int)$_GET['edit_id'];
-    $stmt = $db->prepare("SELECT * FROM news_items WHERE id = ?");
+    $stmt = $db->prepare("SELECT * FROM news_items WHERE id = ? AND is_global = 1");
     $stmt->execute([$edit_id]);
     $edit_news = $stmt->fetch();
 }
 
-// Filtering
-$filter_scope = $_GET['filter_scope'] ?? 'all';
-$query = "
-    SELECT n.*, u.full_name as university_name, u.short_name as uni_short_name 
-    FROM news_items n
-    LEFT JOIN universities u ON n.university_id = u.id
-";
-$params = [];
+// Fetch all Universal News items ONLY
+$news_list = $db->query("
+    SELECT * FROM news_items 
+    WHERE is_global = 1 
+    ORDER BY sort_order ASC, id DESC
+")->fetchAll(PDO::FETCH_ASSOC);
 
-if ($filter_scope === 'global') {
-    $query .= " WHERE n.is_global = 1";
-} elseif ($filter_scope === 'university') {
-    $query .= " WHERE n.is_global = 0";
-} elseif (is_numeric($filter_scope)) {
-    $query .= " WHERE n.university_id = ?";
-    $params[] = (int)$filter_scope;
-}
-
-$query .= " ORDER BY n.is_global DESC, n.sort_order ASC, n.id DESC";
-$stmt = $db->prepare($query);
-$stmt->execute($params);
-$news_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// For preview widget
+// For live preview widgets
 $preview_items = array_filter($news_list, function($n) { return !empty($n['is_active']); });
 
 require_once ADMIN_PATH . '/includes/header.php';
@@ -150,7 +114,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <!-- Left Column: Add / Edit Form -->
     <div class="admin-card">
         <div class="card-header">
-            <span class="card-title"><?php echo $edit_news ? 'Edit Announcement' : 'Add Announcement'; ?></span>
+            <span class="card-title"><?php echo $edit_news ? 'Edit Universal Announcement' : 'Add Universal Announcement'; ?></span>
             <?php if ($edit_news): ?>
                 <a href="<?php echo BASE_URL; ?>/modules/universal_news/index.php" class="btn-sm action-btn" title="Cancel edit">&times;</a>
             <?php endif; ?>
@@ -161,24 +125,8 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <input type="hidden" name="action" value="save">
                 <input type="hidden" name="id" value="<?php echo $edit_news['id'] ?? ''; ?>">
 
-                <!-- Scope Selection (Universal vs University) -->
-                <div class="form-group">
-                    <label class="form-label" style="font-weight: 700;">Announcement Scope *</label>
-                    <select name="scope" class="form-control" style="font-weight: 600;">
-                        <option value="global" <?php echo (!$edit_news || !empty($edit_news['is_global'])) ? 'selected' : ''; ?>>
-                            🌐 Universal (Show on ALL University Subdomains)
-                        </option>
-                        <optgroup label="University-Specific (Shows on that Subdomain Only)">
-                            <?php foreach ($universities as $uni): ?>
-                                <option value="<?php echo $uni['id']; ?>" <?php echo ($edit_news && empty($edit_news['is_global']) && (int)$edit_news['university_id'] === (int)$uni['id']) ? 'selected' : ''; ?>>
-                                    🏫 <?php echo htmlspecialchars($uni['full_name']); ?> (<?php echo htmlspecialchars($uni['short_name']); ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </optgroup>
-                    </select>
-                    <div style="font-size: 11.5px; color: var(--text-dim); margin-top: 4px;">
-                        <em>Note: On any subdomain, Universal announcements appear first, followed by University-specific announcements.</em>
-                    </div>
+                <div style="background: rgba(59, 130, 246, 0.08); border-left: 3px solid var(--accent-color); padding: 10px 14px; border-radius: 4px; margin-bottom: 16px; font-size: 12.5px; color: var(--text-color);">
+                    🌐 <strong>Universal Scope:</strong> Announcements created here will automatically display across <strong>ALL university subdomains</strong> (both on the Home Page marquee and Inner Page announcement cards).
                 </div>
 
                 <!-- Published Date (Admin editable) -->
@@ -231,7 +179,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <input type="text" name="news_link" class="form-control" value="<?php echo htmlspecialchars($edit_news['news_link'] ?? ''); ?>" placeholder="https://.../admission or #">
                 </div>
 
-                <!-- Badge Controls (Mainly for Home Page Marquee) -->
+                <!-- Badge Controls -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div class="form-group">
                         <label class="form-label">Show Badge?</label>
@@ -265,7 +213,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                 <div style="margin-top: 16px; display: flex; gap: 10px;">
                     <button type="submit" class="btn-primary">
-                        <?php echo $edit_news ? 'Update Announcement' : 'Save Announcement'; ?>
+                        <?php echo $edit_news ? 'Update Universal Announcement' : 'Add Universal Announcement'; ?>
                     </button>
                     <?php if ($edit_news): ?>
                         <a href="<?php echo BASE_URL; ?>/modules/universal_news/index.php" class="btn-secondary" style="text-decoration:none;">Cancel</a>
@@ -275,7 +223,7 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
     </div>
 
-    <!-- Right Column: Live Interactive Previews & Table -->
+    <!-- Right Column: Dual Live Previews & Universal Announcements Table -->
     <div>
         <!-- Dual Preview Widget: Inner Page Design & Home Page Marquee -->
         <div class="admin-card" style="margin-bottom: 20px;">
@@ -384,32 +332,21 @@ require_once ADMIN_PATH . '/includes/header.php';
             </div>
         </div>
 
-        <!-- Announcements Table -->
+        <!-- Universal Announcements Table -->
         <div class="admin-card">
-            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
-                <span class="card-title">Announcements (<?php echo count($news_list); ?>)</span>
-                
-                <!-- Filter Dropdown -->
-                <form method="GET" action="" style="display: flex; gap: 8px; align-items: center;">
-                    <select name="filter_scope" class="form-control form-control-sm" onchange="this.form.submit()" style="font-size: 12px; padding: 4px 8px;">
-                        <option value="all" <?php echo $filter_scope === 'all' ? 'selected' : ''; ?>>All Announcements</option>
-                        <option value="global" <?php echo $filter_scope === 'global' ? 'selected' : ''; ?>>🌐 Universal Only</option>
-                        <option value="university" <?php echo $filter_scope === 'university' ? 'selected' : ''; ?>>🏫 University-Specific Only</option>
-                        <?php foreach ($universities as $u): ?>
-                            <option value="<?php echo $u['id']; ?>" <?php echo $filter_scope == $u['id'] ? 'selected' : ''; ?>>
-                                &nbsp;&nbsp;↳ <?php echo htmlspecialchars($u['short_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </form>
+            <div class="card-header">
+                <span class="card-title">Universal Announcements (<?php echo count($news_list); ?>)</span>
+                <span class="badge" style="background: rgba(37,99,235,0.12); color: #2563eb; font-weight: 700;">
+                    🌐 Global (All Subdomains)
+                </span>
             </div>
             <div class="table-responsive">
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th style="width: 110px;">Scope</th>
                             <th style="width: 130px;">Date</th>
                             <th>Announcement Content</th>
+                            <th>Badge</th>
                             <th>Order</th>
                             <th>Status</th>
                             <th style="width: 80px;">Actions</th>
@@ -417,21 +354,10 @@ require_once ADMIN_PATH . '/includes/header.php';
                     </thead>
                     <tbody>
                         <?php if (empty($news_list)): ?>
-                            <tr><td colspan="6" style="text-align:center; color:var(--text-dim); padding:24px;">No announcements found.</td></tr>
+                            <tr><td colspan="6" style="text-align:center; color:var(--text-dim); padding:24px;">No universal announcements added yet.</td></tr>
                         <?php else: ?>
                             <?php foreach ($news_list as $item): ?>
                                 <tr>
-                                    <td>
-                                        <?php if (!empty($item['is_global'])): ?>
-                                            <span class="badge" style="background: rgba(37,99,235,0.12); color: #2563eb; font-weight: 700; font-size: 11px;">
-                                                🌐 Universal
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge" style="background: rgba(16,185,129,0.12); color: #059669; font-weight: 700; font-size: 11px;" title="<?php echo htmlspecialchars($item['university_name'] ?? ''); ?>">
-                                                🏫 <?php echo htmlspecialchars($item['uni_short_name'] ?: 'Uni #' . $item['university_id']); ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
                                     <td>
                                         <span style="font-size: 12px; color: var(--text-color); font-weight: 500;">
                                             <?php echo htmlspecialchars($item['published_date'] ?: date('M j, Y', strtotime($item['created_at']))); ?>
@@ -440,15 +366,10 @@ require_once ADMIN_PATH . '/includes/header.php';
                                     <td>
                                         <div style="font-weight: 600; font-size: 13px; color: var(--text-color);">
                                             <?php echo htmlspecialchars($item['news_text']); ?>
-                                            <?php if (!empty($item['has_badge'])): ?>
-                                                <span style="background: #f3b23e; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px;">
-                                                    <?php echo htmlspecialchars($item['badge_text'] ?: 'New'); ?>
-                                                </span>
-                                            <?php endif; ?>
                                         </div>
                                         <?php if (!empty($item['description'])): ?>
                                             <div style="font-size: 11.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.4;">
-                                                <?php echo htmlspecialchars(substr($item['description'], 0, 110)); ?><?php echo strlen($item['description']) > 110 ? '...' : ''; ?>
+                                                <?php echo htmlspecialchars(substr($item['description'], 0, 120)); ?><?php echo strlen($item['description']) > 120 ? '...' : ''; ?>
                                             </div>
                                         <?php endif; ?>
                                         <?php if (!empty($item['news_link'])): ?>
@@ -457,6 +378,15 @@ require_once ADMIN_PATH . '/includes/header.php';
                                                     <?php echo htmlspecialchars(substr($item['news_link'], 0, 40)); ?><?php echo strlen($item['news_link']) > 40 ? '...' : ''; ?> ↗
                                                 </a>
                                             </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($item['has_badge'])): ?>
+                                            <span style="background: #f3b23e; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
+                                                <?php echo htmlspecialchars($item['badge_text'] ?: 'New'); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span style="color: var(--text-dim); font-size: 11px;">None</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
