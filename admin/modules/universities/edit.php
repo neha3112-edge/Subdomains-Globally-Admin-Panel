@@ -9,6 +9,19 @@ $active_page_key = 'universities';
 
 $db = get_db_connection();
 
+// Auto-check and add Alternate Universities columns if not yet present
+try {
+    $alt_col_chk = $db->query("SHOW COLUMNS FROM universities LIKE 'show_in_alternate'")->fetch();
+    if (!$alt_col_chk) {
+        $db->exec("ALTER TABLE universities 
+            ADD COLUMN alt_desktop_img TEXT NULL AFTER campus_mobile_img,
+            ADD COLUMN alt_mobile_img TEXT NULL AFTER alt_desktop_img,
+            ADD COLUMN sample_degree_img TEXT NULL AFTER alt_mobile_img,
+            ADD COLUMN alt_description TEXT NULL AFTER sample_degree_img,
+            ADD COLUMN show_in_alternate TINYINT(1) DEFAULT 0 AFTER alt_description");
+    }
+} catch (Exception $e) {}
+
 $id = (int) ($_GET['id'] ?? 0);
 if (!$id) {
     redirect(BASE_URL . '/modules/universities/index.php');
@@ -135,6 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $desktop_banner_bg = get_relative_asset_path(trim($_POST['desktop_banner_bg'] ?? ''));
     $mobile_banner_bg = get_relative_asset_path(trim($_POST['mobile_banner_bg'] ?? ''));
     $campus_mobile_img = get_relative_asset_path(trim($_POST['campus_mobile_img'] ?? ''));
+    $alt_desktop_img = get_relative_asset_path(trim($_POST['alt_desktop_img'] ?? ''));
+    $alt_mobile_img = get_relative_asset_path(trim($_POST['alt_mobile_img'] ?? ''));
+    $sample_degree_img = get_relative_asset_path(trim($_POST['sample_degree_img'] ?? ''));
+    $alt_description = trim($_POST['alt_description'] ?? '');
+    $show_in_alternate = isset($_POST['show_in_alternate']) ? 1 : 0;
     $brochure_pdf_url = get_relative_asset_path(trim($_POST['brochure_pdf_url'] ?? ''));
     $podcast_audio_url = get_relative_asset_path(trim($_POST['podcast_audio_url'] ?? ''));
     $youtube_video_url = trim($_POST['youtube_video_url'] ?? '');
@@ -157,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
                 UPDATE universities SET
                     full_name = ?, short_name = ?, slug = ?, mode = ?, location = ?, official_url = ?, advantage_text = ?,
                     logo_url = ?, desktop_banner_bg = ?, mobile_banner_bg = ?, campus_mobile_img = ?,
+                    alt_desktop_img = ?, alt_mobile_img = ?, sample_degree_img = ?, alt_description = ?, show_in_alternate = ?,
                     brochure_pdf_url = ?, podcast_audio_url = ?, youtube_video_url = ?, whatsapp_btn_intent = ?, gallabox_message_text = ?,
                     exam_date = ?, extended_exam_date = ?, admission_last_date = ?, admission_start_date = ?, assignment_date = ?,
                     rating = ?, is_active = ?
@@ -174,6 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
                 $desktop_banner_bg,
                 $mobile_banner_bg,
                 $campus_mobile_img,
+                $alt_desktop_img,
+                $alt_mobile_img,
+                $sample_degree_img,
+                $alt_description,
+                $show_in_alternate,
                 $brochure_pdf_url,
                 $podcast_audio_url,
                 $youtube_video_url,
@@ -666,10 +690,120 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </div>
             </div>
 
+            <!-- Alternate Universities Listing Details -->
+            <div class="admin-card" id="alternate-universities-section">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="card-title">3. Alternate Universities Listing Details</span>
+                    <span class="badge badge-info" style="font-size:11px;">Alternatives Universities</span>
+                </div>
+                <div class="card-body">
+                    <div style="background:var(--bg-main, #f8fafc); border:1px solid var(--border-color, #e2e8f0); border-radius:8px; padding:14px 16px; margin-bottom:18px;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; font-weight:700; margin:0;">
+                            <input type="checkbox" name="show_in_alternate" value="1" <?php echo !empty($uni['show_in_alternate']) ? 'checked' : ''; ?> style="width:18px; height:18px; cursor:pointer;">
+                            <span>Show this university in "Alternatives Universities" list</span>
+                        </label>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px; margin-left:28px;">
+                            When checked, this university will appear in the frontend Alternative Universities showcase cards.
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                        <!-- Alternate List Desktop Image -->
+                        <div class="form-group">
+                            <label class="form-label">Alternate List Desktop Image</label>
+                            <div class="media-input-group">
+                                <input type="text" name="alt_desktop_img" id="field_alt_desktop_img" class="form-control"
+                                    value="<?php echo htmlspecialchars($uni['alt_desktop_img'] ?? ''); ?>" placeholder="/assets/images/...">
+                                <button type="button" class="btn-media-choose media-picker-btn"
+                                    data-target="field_alt_desktop_img" data-preview="preview_alt_desktop_img" data-type="image">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    Choose / Upload
+                                </button>
+                            </div>
+                            <div class="media-preview-inline" id="preview_alt_desktop_img"
+                                style="margin-top:6px; <?php echo empty($uni['alt_desktop_img']) ? 'display:none;' : ''; ?>">
+                                <?php if (!empty($uni['alt_desktop_img'])): ?>
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['alt_desktop_img'])); ?>" alt="thumb"
+                                        style="height:38px; width:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Alternate List Mobile Image -->
+                        <div class="form-group">
+                            <label class="form-label">Alternate List Mobile Image</label>
+                            <div class="media-input-group">
+                                <input type="text" name="alt_mobile_img" id="field_alt_mobile_img" class="form-control"
+                                    value="<?php echo htmlspecialchars($uni['alt_mobile_img'] ?? ''); ?>" placeholder="/assets/images/...">
+                                <button type="button" class="btn-media-choose media-picker-btn"
+                                    data-target="field_alt_mobile_img" data-preview="preview_alt_mobile_img" data-type="image">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    Choose / Upload
+                                </button>
+                            </div>
+                            <div class="media-preview-inline" id="preview_alt_mobile_img"
+                                style="margin-top:6px; <?php echo empty($uni['alt_mobile_img']) ? 'display:none;' : ''; ?>">
+                                <?php if (!empty($uni['alt_mobile_img'])): ?>
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['alt_mobile_img'])); ?>" alt="thumb"
+                                        style="height:38px; width:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;">
+                        <!-- Sample Degree Image -->
+                        <div class="form-group">
+                            <label class="form-label">Sample Degree Image</label>
+                            <div class="media-input-group">
+                                <input type="text" name="sample_degree_img" id="field_sample_degree_img" class="form-control"
+                                    value="<?php echo htmlspecialchars($uni['sample_degree_img'] ?? ''); ?>" placeholder="/assets/images/...">
+                                <button type="button" class="btn-media-choose media-picker-btn"
+                                    data-target="field_sample_degree_img" data-preview="preview_sample_degree_img" data-type="image">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    Choose / Upload
+                                </button>
+                            </div>
+                            <div class="media-preview-inline" id="preview_sample_degree_img"
+                                style="margin-top:6px; <?php echo empty($uni['sample_degree_img']) ? 'display:none;' : ''; ?>">
+                                <?php if (!empty($uni['sample_degree_img'])): ?>
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['sample_degree_img'])); ?>" alt="thumb"
+                                        style="height:50px; max-width:100px; object-fit:contain; border-radius:6px; border:1px solid var(--border-color); background:#fff; padding:2px;">
+                                <?php endif; ?>
+                            </div>
+                            <small style="color:var(--text-muted); font-size:12px; margin-top:4px; display:block;">
+                                This image opens in a modal popup when user clicks "View Sample Degree" in the Alternatives list.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Alternate List Description -->
+                    <div class="form-group" style="margin-top:16px;">
+                        <label class="form-label">Alternate List Description</label>
+                        <textarea name="alt_description" class="form-control" rows="3" placeholder="Description that will appear only in the Alternate Universities card..."><?php echo htmlspecialchars($uni['alt_description'] ?? ''); ?></textarea>
+                        <small style="color:var(--text-muted); font-size:12px; margin-top:4px; display:block;">
+                            This description will only be shown in the Alternate Universities cards section.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
             <!-- Important Dates -->
             <div class="admin-card">
                 <div class="card-header">
-                    <span class="card-title">3. Important Dates & Deadlines</span>
+                    <span class="card-title">4. Important Dates & Deadlines</span>
                 </div>
                 <div class="card-body">
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;">
@@ -708,7 +842,7 @@ require_once ADMIN_PATH . '/includes/header.php';
             <!-- Form & Lead Integrations Configuration -->
             <div class="admin-card">
                 <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="card-title">4. Form & Lead Integrations Configuration</span>
+                    <span class="card-title">5. Form & Lead Integrations Configuration</span>
                     <a href="<?php echo BASE_URL; ?>/modules/settings/api_integrations.php" target="_blank"
                         style="font-size:12px; color:var(--primary); text-decoration:none;">
                         Manage Global API Keys &rarr;

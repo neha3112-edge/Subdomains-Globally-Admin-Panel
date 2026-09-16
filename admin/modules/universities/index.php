@@ -9,6 +9,19 @@ $active_page_key = 'universities';
 
 $db = get_db_connection();
 
+// Auto-check and add Alternate Universities columns if not yet present
+try {
+    $alt_col_chk = $db->query("SHOW COLUMNS FROM universities LIKE 'show_in_alternate'")->fetch();
+    if (!$alt_col_chk) {
+        $db->exec("ALTER TABLE universities 
+            ADD COLUMN alt_desktop_img TEXT NULL AFTER campus_mobile_img,
+            ADD COLUMN alt_mobile_img TEXT NULL AFTER alt_desktop_img,
+            ADD COLUMN sample_degree_img TEXT NULL AFTER alt_mobile_img,
+            ADD COLUMN alt_description TEXT NULL AFTER sample_degree_img,
+            ADD COLUMN show_in_alternate TINYINT(1) DEFAULT 0 AFTER alt_description");
+    }
+} catch (Exception $e) {}
+
 // Handle Delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     verify_csrf();
@@ -130,6 +143,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </td>
                             <td>
                                 <strong><?php echo htmlspecialchars($uni['full_name']); ?></strong>
+                                <?php if (!empty($uni['show_in_alternate'])): ?>
+                                    <span class="badge" style="background:rgba(99,102,241,0.15); color:#818cf8; font-size:10.5px; padding:2px 7px; margin-left:6px; font-weight:600;" title="Included in Alternate Universities Listing">Alt List</span>
+                                <?php endif; ?>
                                 <div style="font-size:12px; color:var(--text-muted);"><?php echo htmlspecialchars($uni['short_name']); ?></div>
                             </td>
                             <td>
