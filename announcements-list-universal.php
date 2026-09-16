@@ -260,8 +260,8 @@ if (!function_exists('sode_announcements_list_render')) {
             }
 
             .sode-announcement-row {
-                padding: 22px 0;
-                border-bottom: 1px solid #dbeafe;
+                padding: 30px 0;
+                border-bottom: 1px solid #dcdee1;
             }
 
             .sode-announcement-row:first-of-type {
