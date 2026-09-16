@@ -94,7 +94,7 @@ if (!function_exists('sode_get_university_dates_data')) {
                 }
             }
         }
-        $uni_slug = strtolower(trim((string)$uni_slug));
+        $uni_slug = strtolower(trim((string) $uni_slug));
 
         if (isset($dates_cache[$uni_slug])) {
             return $dates_cache[$uni_slug];
@@ -145,7 +145,8 @@ if (!function_exists('sode_get_university_dates_data')) {
                         ")->fetch(PDO::FETCH_ASSOC);
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         // 2. Central API fallback (if running remotely)
@@ -182,15 +183,15 @@ if (!function_exists('sode_get_university_dates_data')) {
         if (!$uni_data) {
             $current_year = date('Y');
             $uni_data = [
-                'full_name'            => !empty($uni_slug) ? ucwords(str_replace(['-', '_'], ' ', $uni_slug)) . ' Online' : 'Dayananda Sagar University Online',
-                'short_name'           => !empty($uni_slug) ? strtoupper($uni_slug) : 'DSU',
-                'slug'                 => $uni_slug ?: 'dsu',
-                'mode'                 => 'Online & Distance',
+                'full_name' => !empty($uni_slug) ? ucwords(str_replace(['-', '_'], ' ', $uni_slug)) . ' Online' : 'Dayananda Sagar University Online',
+                'short_name' => !empty($uni_slug) ? strtoupper($uni_slug) : 'DSU',
+                'slug' => $uni_slug ?: 'dsu',
+                'mode' => 'Online & Distance',
                 'admission_start_date' => '7th September ' . $current_year,
-                'admission_last_date'  => '30th September ' . $current_year,
-                'assignment_date'      => '15 November ' . $current_year,
-                'exam_date'            => 'December ' . $current_year,
-                'extended_exam_date'   => '15 Jan ' . ((int)$current_year + 1),
+                'admission_last_date' => '30th September ' . $current_year,
+                'assignment_date' => '15 November ' . $current_year,
+                'exam_date' => 'December ' . $current_year,
+                'extended_exam_date' => '15 Jan ' . ((int) $current_year + 1),
             ];
         }
 
@@ -207,7 +208,7 @@ if (!function_exists('sode_university_dates_table_render')) {
     {
         $atts = shortcode_atts([
             'university' => '',
-            'uni'        => '',
+            'uni' => '',
         ], $atts);
 
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
@@ -221,35 +222,35 @@ if (!function_exists('sode_university_dates_table_render')) {
         if (!empty($uni['admission_last_date'])) {
             $rows[] = [
                 'event' => 'Application Deadline',
-                'date'  => trim($uni['admission_last_date'])
+                'date' => trim($uni['admission_last_date'])
             ];
         }
 
         if (!empty($uni['admission_start_date'])) {
             $rows[] = [
                 'event' => 'Semester Commencement',
-                'date'  => trim($uni['admission_start_date'])
+                'date' => trim($uni['admission_start_date'])
             ];
         }
 
         if (!empty($uni['exam_date'])) {
             $rows[] = [
                 'event' => 'Examination Commencement',
-                'date'  => trim($uni['exam_date'])
+                'date' => trim($uni['exam_date'])
             ];
         }
 
         if (!empty($uni['extended_exam_date'])) {
             $rows[] = [
                 'event' => 'Extended Examination',
-                'date'  => trim($uni['extended_exam_date'])
+                'date' => trim($uni['extended_exam_date'])
             ];
         }
 
         if (!empty($uni['assignment_date'])) {
             $rows[] = [
                 'event' => 'Assignment Submission',
-                'date'  => trim($uni['assignment_date'])
+                'date' => trim($uni['assignment_date'])
             ];
         }
 
@@ -269,8 +270,9 @@ if (!function_exists('sode_university_dates_table_render')) {
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
-                margin: 15px 0;
+                margin: 0px;
             }
+
             .sode-uni-dates-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -278,40 +280,48 @@ if (!function_exists('sode_university_dates_table_render')) {
                 background: #ffffff;
                 font-family: inherit;
                 border: 1px solid #d5e0ea;
+                margin: 0px;
             }
+
             .sode-uni-dates-table th {
                 background: #e8f3fe;
                 color: #000000;
                 font-size: 14.5px;
-                font-weight: 800;
+                font-weight: 700;
                 letter-spacing: 0.2px;
                 text-transform: uppercase;
                 padding: 14px 20px;
                 border: 1px solid #d5e0ea;
             }
+
             .sode-uni-dates-table td {
                 padding: 14px 20px;
                 border: 1px solid #d5e0ea;
                 vertical-align: middle;
             }
+
             .sode-uni-dates-table td.sode-date-event-title {
                 font-size: 15px;
-                font-weight: 700;
+                font-weight: 600;
                 color: #000000;
                 width: 60%;
             }
+
             .sode-uni-dates-table td.sode-date-value {
                 font-size: 14.5px;
                 font-weight: 400;
                 color: #111827;
                 width: 40%;
             }
+
             @media (max-width: 600px) {
-                .sode-uni-dates-table th, 
+
+                .sode-uni-dates-table th,
                 .sode-uni-dates-table td {
                     padding: 10px 14px;
                     font-size: 13.5px;
                 }
+
                 .sode-uni-dates-table td.sode-date-event-title {
                     font-size: 14px;
                 }
@@ -351,31 +361,31 @@ if (function_exists('add_shortcode')) {
     add_shortcode('university_dates_table', 'sode_university_dates_table_render');
 
     // Individual Date Shortcodes
-    add_shortcode('admission_last_date', function($atts) {
+    add_shortcode('admission_last_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
         return esc_html($uni['admission_last_date'] ?? '');
     });
 
-    add_shortcode('admission_start_date', function($atts) {
+    add_shortcode('admission_start_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
         return esc_html($uni['admission_start_date'] ?? '');
     });
 
-    add_shortcode('exam_date', function($atts) {
+    add_shortcode('exam_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
         return esc_html($uni['exam_date'] ?? '');
     });
 
-    add_shortcode('extended_exam_date', function($atts) {
+    add_shortcode('extended_exam_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
         return esc_html($uni['extended_exam_date'] ?? '');
     });
 
-    add_shortcode('assignment_date', function($atts) {
+    add_shortcode('assignment_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
         return esc_html($uni['assignment_date'] ?? '');
