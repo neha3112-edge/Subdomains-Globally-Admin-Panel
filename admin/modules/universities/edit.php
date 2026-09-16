@@ -999,17 +999,31 @@ require_once ADMIN_PATH . '/includes/header.php';
                             placeholder="e.g. For the latest notifications regarding student support, access the <?php echo htmlspecialchars($uni['short_name']); ?> Student Support Page."
                             required><?php echo htmlspecialchars($edit_uni_news['news_text'] ?? ''); ?></textarea>
 
-                        <div style="margin-top: 6px; font-size: 11.5px; color: var(--text-dim);">
-                            <span>Tags:</span>
-                            <button type="button" class="btn-xs"
-                                style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;"
-                                onclick="insertUniTag('{UNIVERSITY_NAME}', 'field_uni_news_text')">{UNIVERSITY_NAME}</button>
-                            <button type="button" class="btn-xs"
-                                style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;"
-                                onclick="insertUniTag('{UNIVERSITY_SHORT_NAME}', 'field_uni_news_text')">{UNIVERSITY_SHORT_NAME}</button>
-                            <button type="button" class="btn-xs"
-                                style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;"
-                                onclick="insertUniTag('$YEAR$', 'field_uni_news_text')">$YEAR$</button>
+                        <div style="margin-top: 8px; font-size: 12px; color: var(--text-dim);">
+                            <span style="font-weight: 600; color: #93c5fd;">Insert Dynamic Tags:</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('{UNIVERSITY_NAME}', 'field_uni_news_text')">{UNIVERSITY_NAME}</button>
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('{UNIVERSITY_SHORT_NAME}', 'field_uni_news_text')">{UNIVERSITY_SHORT_NAME}</button>
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('{MODE}', 'field_uni_news_text')">{MODE}</button>
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('$YEAR$', 'field_uni_news_text')">$YEAR$</button>
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('$session$', 'field_uni_news_text')">$session$</button>
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('$PHONE$', 'field_uni_news_text')">$PHONE$</button>
+                                <button type="button" class="btn-xs"
+                                    style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:5px; padding:3px 9px; font-size:11.5px; font-weight:600; cursor:pointer;"
+                                    onclick="insertUniTag('$EMAIL$', 'field_uni_news_text')">$EMAIL$</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1018,12 +1032,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <label class="form-label">Description (Shows on Inner Page "Recent Announcements")</label>
                         <textarea name="description" id="field_uni_news_desc" class="form-textarea" rows="3"
                             placeholder="e.g. <?php echo htmlspecialchars($uni['full_name']); ?> has extended the admission deadline..."><?php echo htmlspecialchars($edit_uni_news['description'] ?? ''); ?></textarea>
-                        <div style="margin-top: 4px; font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between;">
-                            <span>Inner page card description</span>
-                            <div>
-                                <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('{UNIVERSITY_NAME}', 'field_uni_news_desc')">+{UNIVERSITY_NAME}</button>
-                                <button type="button" class="btn-xs" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; font-size:10.5px; cursor:pointer;" onclick="insertUniTag('$YEAR$', 'field_uni_news_desc')">+$YEAR$</button>
-                            </div>
+                        <div style="margin-top: 6px; font-size: 11.5px; color: var(--text-dim); display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                            <span style="font-weight: 600; color: #93c5fd;">Insert into description:</span>
+                            <button type="button" class="btn-xs" style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:4px; padding:2px 7px; font-size:11px; font-weight:600; cursor:pointer;" onclick="insertUniTag('{UNIVERSITY_NAME}', 'field_uni_news_desc')">+{UNIVERSITY_NAME}</button>
+                            <button type="button" class="btn-xs" style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:4px; padding:2px 7px; font-size:11px; font-weight:600; cursor:pointer;" onclick="insertUniTag('{UNIVERSITY_SHORT_NAME}', 'field_uni_news_desc')">+{UNIVERSITY_SHORT_NAME}</button>
+                            <button type="button" class="btn-xs" style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:4px; padding:2px 7px; font-size:11px; font-weight:600; cursor:pointer;" onclick="insertUniTag('$YEAR$', 'field_uni_news_desc')">+$YEAR$</button>
+                            <button type="button" class="btn-xs" style="background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); border-radius:4px; padding:2px 7px; font-size:11px; font-weight:600; cursor:pointer;" onclick="insertUniTag('$session$', 'field_uni_news_desc')">+$session$</button>
                         </div>
                     </div>
 
