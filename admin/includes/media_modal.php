@@ -35,9 +35,18 @@
                 </div>
 
                 <div class="media-main-layout">
-                    <!-- Left: Grid of media thumbnails -->
-                    <div class="media-grid-wrap" id="media-items-grid">
-                        <!-- Loaded dynamically via JS -->
+                    <!-- Left: Grid of media thumbnails & Pagination -->
+                    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+                        <div class="media-grid-wrap" id="media-items-grid" style="flex:1; overflow-y:auto;">
+                            <!-- Loaded dynamically via JS -->
+                        </div>
+                        <div class="media-modal-pagination" id="media-modal-pagination-bar" style="display:none; padding:8px 14px; border-top:1px solid var(--border-color); background:var(--bg-card); align-items:center; justify-content:space-between;">
+                            <span id="media-modal-page-info" style="font-size:12px; color:var(--text-dim);">Page 1 of 1 (50 items/page)</span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn-sm action-btn" id="media-modal-prev-btn" disabled style="padding:4px 12px; font-size:12px; height:28px;">&laquo; Prev</button>
+                                <button type="button" class="btn-sm action-btn" id="media-modal-next-btn" disabled style="padding:4px 12px; font-size:12px; height:28px;">Next &raquo;</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Right: File Details & Action Panel -->

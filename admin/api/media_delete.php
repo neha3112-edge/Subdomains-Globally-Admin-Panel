@@ -33,8 +33,12 @@ if (!$media) {
 }
 
 // Delete physical file if exists
-$physical_path = ADMIN_PATH . '/uploads/' . $media['file_path'];
-if (file_exists($physical_path)) {
+$clean_rel = ltrim($media['file_path'] ?? '', '/');
+$physical_path = (strpos($clean_rel, 'uploads/') === 0) 
+    ? ADMIN_PATH . '/' . $clean_rel 
+    : ADMIN_PATH . '/uploads/' . $clean_rel;
+
+if (!empty($clean_rel) && file_exists($physical_path)) {
     @unlink($physical_path);
 }
 

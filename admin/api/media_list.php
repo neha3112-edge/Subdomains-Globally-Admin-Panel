@@ -15,7 +15,7 @@ $db = get_db_connection();
 $type = trim($_GET['type'] ?? '');
 $search = trim($_GET['q'] ?? '');
 $page = max(1, (int)($_GET['page'] ?? 1));
-$limit = max(1, min(100, (int)($_GET['limit'] ?? 30)));
+$limit = max(1, min(100, (int)($_GET['limit'] ?? 50)));
 $offset = ($page - 1) * $limit;
 
 $where = [];

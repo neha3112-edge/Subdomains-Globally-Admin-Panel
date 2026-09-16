@@ -27,6 +27,13 @@
     const selectAndInsertBtn = document.getElementById('media-select-and-insert-btn');
     const copyUrlBtn = document.getElementById('media-copy-url-btn');
     const deleteFileBtn = document.getElementById('media-delete-file-btn');
+    const modalPaginationBar = document.getElementById('media-modal-pagination-bar');
+    const modalPageInfo = document.getElementById('media-modal-page-info');
+    const modalPrevBtn = document.getElementById('media-modal-prev-btn');
+    const modalNextBtn = document.getElementById('media-modal-next-btn');
+
+    let modalCurrentPage = 1;
+    let modalTotalPages = 1;
 
     // 1. Tab Switching
     tabBtns.forEach(btn => {
@@ -66,6 +73,7 @@
 
     function openMediaModal() {
         modal.style.display = 'flex';
+        modalCurrentPage = 1;
         // Default to Library tab
         const libTabBtn = document.querySelector('.media-tab-btn[data-tab="tab-library"]');
         if (libTabBtn) libTabBtn.click();
@@ -83,12 +91,37 @@
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(loadMediaList, 300);
+            searchTimeout = setTimeout(() => {
+                modalCurrentPage = 1;
+                loadMediaList();
+            }, 300);
         });
     }
 
     if (filterType) {
-        filterType.addEventListener('change', loadMediaList);
+        filterType.addEventListener('change', () => {
+            modalCurrentPage = 1;
+            loadMediaList();
+        });
+    }
+
+    // Modal Pagination Buttons
+    if (modalPrevBtn) {
+        modalPrevBtn.addEventListener('click', () => {
+            if (modalCurrentPage > 1) {
+                modalCurrentPage--;
+                loadMediaList();
+            }
+        });
+    }
+
+    if (modalNextBtn) {
+        modalNextBtn.addEventListener('click', () => {
+            if (modalCurrentPage < modalTotalPages) {
+                modalCurrentPage++;
+                loadMediaList();
+            }
+        });
     }
 
     function loadMediaList() {
@@ -98,18 +131,36 @@
 
         gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-dim);">Loading media files...</div>';
 
-        const url = `${window.location.origin}${window.location.pathname.replace(/\/modules\/.*|\/change_password\.php|\/dashboard\.php|\/login\.php|\/index\.php/, '')}/api/media_list.php?type=${encodeURIComponent(type)}&q=${encodeURIComponent(q)}`;
+        const url = `${window.location.origin}${window.location.pathname.replace(/\/modules\/.*|\/change_password\.php|\/dashboard\.php|\/login\.php|\/index\.php/, '')}/api/media_list.php?type=${encodeURIComponent(type)}&q=${encodeURIComponent(q)}&page=${modalCurrentPage}&limit=50`;
 
         fetch(url)
             .then(res => res.json())
             .then(data => {
                 if (!data.success) {
                     gridContainer.innerHTML = `<div style="grid-column:1/-1; color:var(--danger); padding:20px;">${data.message || 'Error loading files'}</div>`;
+                    if (modalPaginationBar) modalPaginationBar.style.display = 'none';
                     return;
                 }
 
                 mediaItems = data.items || [];
+                modalTotalPages = data.total_pages || 1;
+                modalCurrentPage = data.page || 1;
+
                 if (countLabel) countLabel.textContent = `${data.total} item(s) found`;
+
+                // Update pagination controls
+                if (modalPaginationBar) {
+                    if (modalTotalPages > 1) {
+                        modalPaginationBar.style.display = 'flex';
+                        if (modalPageInfo) {
+                            modalPageInfo.textContent = `Page ${modalCurrentPage} of ${modalTotalPages} (${data.total} files, 50/page)`;
+                        }
+                        if (modalPrevBtn) modalPrevBtn.disabled = (modalCurrentPage <= 1);
+                        if (modalNextBtn) modalNextBtn.disabled = (modalCurrentPage >= modalTotalPages);
+                    } else {
+                        modalPaginationBar.style.display = 'none';
+                    }
+                }
 
                 if (mediaItems.length === 0) {
                     gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:var(--text-dim);">No files uploaded yet. Click "Upload New File" above.</div>';
@@ -121,6 +172,7 @@
             })
             .catch(err => {
                 gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--danger);">Failed to load library items.</div>';
+                if (modalPaginationBar) modalPaginationBar.style.display = 'none';
             });
     }
 
@@ -358,6 +410,7 @@
                         // Switch to Library tab and reload
                         const libTabBtn = document.querySelector('.media-tab-btn[data-tab="tab-library"]');
                         if (libTabBtn) libTabBtn.click();
+                        modalCurrentPage = 1;
                         loadMediaList();
                     }, 500);
                 }
