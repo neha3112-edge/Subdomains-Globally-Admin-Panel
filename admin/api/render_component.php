@@ -57,6 +57,9 @@ if (file_exists($root_dir . '/course-fees-table-universal.php')) {
 if (file_exists($root_dir . '/gallabox-widget-universal.php')) {
     require_once $root_dir . '/gallabox-widget-universal.php';
 }
+if (file_exists($root_dir . '/university-dates-table-universal.php')) {
+    require_once $root_dir . '/university-dates-table-universal.php';
+}
 
 
 // 2. Resolve Component and Request Parameters
@@ -199,6 +202,15 @@ switch ($component) {
     case 'uni_announcements':
     case 'inner_page_news':
         echo sode_announcements_list_render($params);
+        break;
+
+    case 'university_dates':
+    case 'important_dates':
+    case 'uni_important_dates':
+    case 'admission_dates':
+    case 'dates_table':
+    case 'university_dates_table':
+        echo sode_university_dates_table_render($params);
         break;
 
     case 'lead_form':

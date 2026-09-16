@@ -700,6 +700,64 @@ add_shortcode('uni_announcements', $announcements_handler);
 add_shortcode('announcements_list', $announcements_handler);
 add_shortcode('inner_page_news', $announcements_handler);
 
+// ====================================================
+// 2.8.4. UNIVERSITY IMPORTANT DATES & DEADLINES TABLE SHORTCODES
+// [university_dates], [important_dates], [uni_important_dates], [admission_dates], [dates_table], [university_dates_table]
+// ====================================================
+if (file_exists(__DIR__ . '/university-dates-table-universal.php')) {
+    include_once __DIR__ . '/university-dates-table-universal.php';
+}
+
+$dates_table_handler = function ($atts) {
+    if (function_exists('sode_university_dates_table_render')) {
+        return sode_university_dates_table_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('university_dates', $atts ?: []);
+};
+add_shortcode('university_dates', $dates_table_handler);
+add_shortcode('important_dates', $dates_table_handler);
+add_shortcode('uni_important_dates', $dates_table_handler);
+add_shortcode('admission_dates', $dates_table_handler);
+add_shortcode('dates_table', $dates_table_handler);
+add_shortcode('university_dates_table', $dates_table_handler);
+
+// Individual Date Shortcodes
+add_shortcode('admission_last_date', function ($atts) {
+    if (function_exists('sode_get_university_dates_data')) {
+        $uni = sode_get_university_dates_data($atts['uni'] ?? ($atts['university'] ?? ''));
+        return esc_html($uni['admission_last_date'] ?? '');
+    }
+    return '';
+});
+add_shortcode('admission_start_date', function ($atts) {
+    if (function_exists('sode_get_university_dates_data')) {
+        $uni = sode_get_university_dates_data($atts['uni'] ?? ($atts['university'] ?? ''));
+        return esc_html($uni['admission_start_date'] ?? '');
+    }
+    return '';
+});
+add_shortcode('exam_date', function ($atts) {
+    if (function_exists('sode_get_university_dates_data')) {
+        $uni = sode_get_university_dates_data($atts['uni'] ?? ($atts['university'] ?? ''));
+        return esc_html($uni['exam_date'] ?? '');
+    }
+    return '';
+});
+add_shortcode('extended_exam_date', function ($atts) {
+    if (function_exists('sode_get_university_dates_data')) {
+        $uni = sode_get_university_dates_data($atts['uni'] ?? ($atts['university'] ?? ''));
+        return esc_html($uni['extended_exam_date'] ?? '');
+    }
+    return '';
+});
+add_shortcode('assignment_date', function ($atts) {
+    if (function_exists('sode_get_university_dates_data')) {
+        $uni = sode_get_university_dates_data($atts['uni'] ?? ($atts['university'] ?? ''));
+        return esc_html($uni['assignment_date'] ?? '');
+    }
+    return '';
+});
+
 
 // ====================================================
 // 2.9. UNIVERSITY ADMISSION & APPLICATION PROCESS SHORTCODES

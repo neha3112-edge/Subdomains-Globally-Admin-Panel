@@ -138,6 +138,8 @@ if (!empty($uni_slug)) {
             '$EXAM_DATE$'                => $uni['exam_date']            ?? '',
             '{ASSIGNMENT_DATE}'          => $uni['assignment_date']      ?? '',
             '$ASSIGNMENT_DATE$'          => $uni['assignment_date']      ?? '',
+            '{EXTENDED_EXAM_DATE}'       => $uni['extended_exam_date']   ?? '',
+            '$EXTENDED_EXAM_DATE$'       => $uni['extended_exam_date']   ?? '',
 
             // Approvals & Accreditations (Comma Separated)
             '{APPROVALS}'                => $approvals_str,
