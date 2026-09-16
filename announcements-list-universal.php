@@ -64,10 +64,10 @@ if (!function_exists('sode_announcements_list_render')) {
     {
         $atts = shortcode_atts([
             'university' => '',
-            'uni'        => '',
-            'heading'    => 'Recent Announcements',
-            'btn_text'   => 'Read More',
-            'limit'      => 20,
+            'uni' => '',
+            'heading' => 'Recent Announcements',
+            'btn_text' => 'Read More',
+            'limit' => 20,
         ], $atts);
 
         // Auto-include DB config if available locally
@@ -102,7 +102,7 @@ if (!function_exists('sode_announcements_list_render')) {
 
         $news_items = [];
         $uni_info = null;
-        $limit = max(1, min(100, (int)$atts['limit']));
+        $limit = max(1, min(100, (int) $atts['limit']));
 
         // 1. Try direct DB query first
         if (function_exists('get_db_connection')) {
@@ -135,16 +135,17 @@ if (!function_exists('sode_announcements_list_render')) {
                     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($rows as $r) {
                         $news_items[] = [
-                            'title'          => $r['news_text'],
-                            'description'    => $r['description'] ?? '',
+                            'title' => $r['news_text'],
+                            'description' => $r['description'] ?? '',
                             'published_date' => !empty($r['published_date']) ? $r['published_date'] : date('F j, Y', strtotime($r['created_at'])),
-                            'link'           => $r['news_link'] ?? '#',
-                            'has_badge'      => !empty($r['has_badge']),
-                            'badge_text'     => !empty($r['badge_text']) ? $r['badge_text'] : 'New'
+                            'link' => $r['news_link'] ?? '#',
+                            'has_badge' => !empty($r['has_badge']),
+                            'badge_text' => !empty($r['badge_text']) ? $r['badge_text'] : 'New'
                         ];
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         // 2. Fallback: Fetch via REST API if DB is remote
@@ -177,12 +178,12 @@ if (!function_exists('sode_announcements_list_render')) {
                 if (!empty($json['news']) && is_array($json['news'])) {
                     foreach ($json['news'] as $r) {
                         $news_items[] = [
-                            'title'          => $r['title'] ?? ($r['text'] ?? ''),
-                            'description'    => $r['description'] ?? '',
+                            'title' => $r['title'] ?? ($r['text'] ?? ''),
+                            'description' => $r['description'] ?? '',
                             'published_date' => $r['published_date'] ?? '',
-                            'link'           => $r['link'] ?? '#',
-                            'has_badge'      => !empty($r['has_badge']),
-                            'badge_text'     => $r['badge_text'] ?? 'New'
+                            'link' => $r['link'] ?? '#',
+                            'has_badge' => !empty($r['has_badge']),
+                            'badge_text' => $r['badge_text'] ?? 'New'
                         ];
                     }
                 }
@@ -193,28 +194,28 @@ if (!function_exists('sode_announcements_list_render')) {
         if (empty($news_items)) {
             $news_items = [
                 [
-                    'title'          => 'Admission Deadline Extended to 15th October ' . date('Y') . ' for the latest academic session.',
-                    'description'    => '{UNIVERSITY_NAME} Online has extended the admission deadline for the ' . date('Y') . '-' . substr((string)((int)date('Y')+1), -2) . ' academic session. Students can submit the application form before 15th October ' . date('Y') . '.',
+                    'title' => 'Admission Deadline Extended to 15th October ' . date('Y') . ' for the latest academic session.',
+                    'description' => '{UNIVERSITY_NAME} Online has extended the admission deadline for the ' . date('Y') . '-' . substr((string) ((int) date('Y') + 1), -2) . ' academic session. Students can submit the application form before 15th October ' . date('Y') . '.',
                     'published_date' => date('F j, Y'),
-                    'link'           => '#',
+                    'link' => '#',
                 ],
                 [
-                    'title'          => 'New Specialization Launched in Online MBA — Business Analytics',
-                    'description'    => '{UNIVERSITY_NAME} offers a new online MBA specialization for flexible learners. Online MBA now offers Business Analytics as one of the specializations that deals with business data and its organization.',
+                    'title' => 'New Specialization Launched in Online MBA — Business Analytics',
+                    'description' => '{UNIVERSITY_NAME} offers a new online MBA specialization for flexible learners. Online MBA now offers Business Analytics as one of the specializations that deals with business data and its organization.',
                     'published_date' => date('F j, Y'),
-                    'link'           => '#',
+                    'link' => '#',
                 ],
                 [
-                    'title'          => '{UNIVERSITY_SHORT_NAME} Online Convocation ' . date('Y') . ' — Details Announced',
-                    'description'    => 'Learners seeking their online degree in the Convocation for the academic year of ' . date('Y') . ' can apply with a form. Mention accurate details and more to get your degree.',
+                    'title' => '{UNIVERSITY_SHORT_NAME} Online Convocation ' . date('Y') . ' — Details Announced',
+                    'description' => 'Learners seeking their online degree in the Convocation for the academic year of ' . date('Y') . ' can apply with a form. Mention accurate details and more to get your degree.',
                     'published_date' => date('F j, Y'),
-                    'link'           => '#',
+                    'link' => '#',
                 ],
                 [
-                    'title'          => 'Semester Exam Schedule Released for ' . date('Y'),
-                    'description'    => '{UNIVERSITY_SHORT_NAME} has published several examination-related circulars and timetables for ' . date('F Y') . '. Recent updates include Summer Term Examinations, supplementary examinations, and other program-specific schedules.',
+                    'title' => 'Semester Exam Schedule Released for ' . date('Y'),
+                    'description' => '{UNIVERSITY_SHORT_NAME} has published several examination-related circulars and timetables for ' . date('F Y') . '. Recent updates include Summer Term Examinations, supplementary examinations, and other program-specific schedules.',
                     'published_date' => date('F j, Y'),
-                    'link'           => '#',
+                    'link' => '#',
                 ],
             ];
         }
@@ -225,15 +226,15 @@ if (!function_exists('sode_announcements_list_render')) {
         $y = date('Y');
 
         $replacements = [
-            '{UNIVERSITY_NAME}'       => $uni_name,
-            '{university_name}'       => $uni_name,
+            '{UNIVERSITY_NAME}' => $uni_name,
+            '{university_name}' => $uni_name,
             '{UNIVERSITY_SHORT_NAME}' => $uni_short,
             '{university_short_name}' => $uni_short,
-            '{MODE}'                  => $uni_info['mode'] ?? 'Online & Distance',
-            '{mode}'                  => $uni_info['mode'] ?? 'Online & Distance',
-            '$YEAR$'                  => $y,
-            '$nextyear$'              => (string)((int)$y + 1),
-            '$session$'               => $y . '-' . substr((string)((int)$y + 1), -2),
+            '{MODE}' => $uni_info['mode'] ?? 'Online & Distance',
+            '{mode}' => $uni_info['mode'] ?? 'Online & Distance',
+            '$YEAR$' => $y,
+            '$nextyear$' => (string) ((int) $y + 1),
+            '$session$' => $y . '-' . substr((string) ((int) $y + 1), -2),
         ];
 
         ob_start();
@@ -241,53 +242,61 @@ if (!function_exists('sode_announcements_list_render')) {
         ?>
         <style>
             .sode-announcements-box {
-                background: #eaf3ff;
+                background: #e2f2ff;
                 border: 1px solid #d2e5fc;
                 border-radius: 18px;
                 padding: 32px 36px;
-                font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 box-sizing: border-box;
-                margin: 20px 0;
+                margin: 0px;
             }
+
             .sode-announcements-title {
-                font-size: 22px;
-                font-weight: 800;
-                color: #0c2340;
-                margin: 0 0 22px 0;
+                font-size: 24px;
+                font-weight: 700;
+                color: #062c50;
+                margin: 0 0 30px 0;
                 letter-spacing: -0.3px;
                 line-height: 1.3;
             }
+
             .sode-announcement-row {
                 padding: 22px 0;
                 border-bottom: 1px solid #dbeafe;
             }
+
             .sode-announcement-row:first-of-type {
                 padding-top: 2px;
             }
+
             .sode-announcement-row:last-of-type {
                 border-bottom: none;
                 padding-bottom: 2px;
             }
+
             .sode-announcement-heading {
-                font-size: 16px;
-                font-weight: 700;
+                font-size: 18px;
+                font-weight: 600;
                 color: #0a192f;
                 line-height: 1.45;
                 margin: 0 0 9px 0;
             }
+
             .sode-announcement-date-text {
                 color: #0a192f;
             }
+
             .sode-announcement-date-sep {
                 color: #0a192f;
                 margin: 0 5px;
             }
+
             .sode-announcement-desc-text {
                 font-size: 13.5px;
                 color: #334155;
                 line-height: 1.6;
                 margin: 0 0 14px 0;
             }
+
             .sode-announcement-action-btn {
                 display: inline-flex;
                 align-items: center;
@@ -304,24 +313,29 @@ if (!function_exists('sode_announcements_list_render')) {
                 box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
                 transition: all 0.2s ease;
             }
+
             .sode-announcement-action-btn:hover {
                 background: #1d4ed8;
                 transform: translateY(-1px);
                 box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
                 color: #ffffff !important;
             }
+
             @media (max-width: 768px) {
                 .sode-announcements-box {
                     padding: 22px 18px;
                     border-radius: 14px;
                 }
+
                 .sode-announcements-title {
                     font-size: 19px;
                     margin-bottom: 18px;
                 }
+
                 .sode-announcement-heading {
                     font-size: 15px;
                 }
+
                 .sode-announcement-desc-text {
                     font-size: 13px;
                 }
@@ -334,12 +348,12 @@ if (!function_exists('sode_announcements_list_render')) {
             <?php endif; ?>
 
             <div class="sode-announcements-list">
-                <?php foreach ($news_items as $item): 
+                <?php foreach ($news_items as $item):
                     $title = str_ireplace(array_keys($replacements), array_values($replacements), $item['title']);
                     $desc = str_ireplace(array_keys($replacements), array_values($replacements), $item['description']);
                     $date = str_ireplace(array_keys($replacements), array_values($replacements), $item['published_date']);
                     $link = !empty($item['link']) ? str_ireplace(array_keys($replacements), array_values($replacements), $item['link']) : '#';
-                ?>
+                    ?>
                     <div class="sode-announcement-row">
                         <div class="sode-announcement-heading">
                             <?php if (!empty($date)): ?>
