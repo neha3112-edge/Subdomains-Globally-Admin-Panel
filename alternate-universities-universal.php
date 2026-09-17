@@ -655,6 +655,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 -webkit-overflow-scrolling: touch;
                 border: 1px solid #e2e8f0;
                 border-radius: 6px;
+                margin: 0px;
             }
 
             .sode-alt-table {
@@ -663,7 +664,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 background: #ffffff;
                 font-size: 13.5px;
                 text-align: left;
-                border: 1px solid #cbd5e1;
+                margin: 0px;
             }
 
             .sode-alt-table thead th {
@@ -674,7 +675,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 text-transform: uppercase;
                 letter-spacing: 0.6px;
                 padding: 13px 16px;
-                border: 1px solid #cbd5e1;
+                border-bottom: 2px solid #cbd5e1;
                 white-space: nowrap;
             }
 
@@ -690,11 +691,16 @@ if (!function_exists('sode_alternate_universities_render')) {
                 width: 22%;
             }
 
+
             .sode-alt-table tbody td {
                 padding: 12px 16px;
-                border: 1px solid #e2e8f0;
+                border-top: 1px solid #e5e7eb;
                 vertical-align: middle;
                 color: #374151;
+            }
+
+            .sode-alt-table tbody tr:first-child td {
+                border-top: none;
             }
 
             .sode-alt-course-name {
