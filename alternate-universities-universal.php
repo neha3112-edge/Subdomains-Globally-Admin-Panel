@@ -267,6 +267,7 @@ if (!function_exists('sode_alternate_universities_render')) {
             'heading' => '',
             'subheading' => '',
             'class' => '',
+            'prefix' => '#1',
         ], $atts, 'alternative_universities');
 
         $universities = sode_get_alternate_universities_list();
@@ -951,12 +952,23 @@ if (!function_exists('sode_alternate_universities_render')) {
             <?php endif; ?>
 
             <div class="sode-alt-list">
-                <?php foreach ($universities as $uni):
+                <?php 
+                $uni_idx = 0;
+                foreach ($universities as $uni):
+                    $uni_idx++;
                     $uni_id = $uni['id'];
                     $uni_name = $uni['full_name'];
                     $uni_slug = $uni['slug'];
                     $sample_img = $uni['sample_degree_img'];
                     $courses = $uni['courses'] ?? [];
+
+                    $prefix_opt = isset($atts['prefix']) ? trim($atts['prefix']) : '#1';
+                    if ($prefix_opt === 'rank' || $prefix_opt === 'number' || $prefix_opt === 'auto') {
+                        $prefix = '#' . $uni_idx;
+                    } else {
+                        $prefix = $prefix_opt;
+                    }
+                    $display_uni_name = ($prefix !== '' ? $prefix . ' ' : '') . $uni_name;
 
                     // Desktop / Mobile image determination
                     $desktop_img = !empty($uni['alt_desktop_img']) ? $uni['alt_desktop_img'] : (!empty($uni['campus_img']) ? $uni['campus_img'] : '');
@@ -999,27 +1011,27 @@ if (!function_exists('sode_alternate_universities_render')) {
                                         <?php if (!empty($desktop_img)): ?>
                                             <source media="(min-width: 769px)" srcset="<?php echo esc_url($desktop_img); ?>">
                                         <?php endif; ?>
-                                        <img src="<?php echo esc_url($fallback_img); ?>" alt="<?php echo esc_attr($uni_name); ?>"
+                                        <img src="<?php echo esc_url($fallback_img); ?>" alt="<?php echo esc_attr($display_uni_name); ?>"
                                             class="sode-alt-img" loading="lazy">
                                     </picture>
                                 <?php else: ?>
                                     <div class="sode-alt-placeholder">
                                         <?php if (!empty($logo_src)): ?>
-                                            <img src="<?php echo esc_url($logo_src); ?>" alt="<?php echo esc_attr($uni_name); ?>"
+                                            <img src="<?php echo esc_url($logo_src); ?>" alt="<?php echo esc_attr($display_uni_name); ?>"
                                                 class="sode-alt-placeholder-logo">
                                         <?php else: ?>
                                             <div class="sode-alt-placeholder-badge">
                                                 <?php echo esc_html(substr($uni['short_name'] ?: $uni_name, 0, 3)); ?>
                                             </div>
                                         <?php endif; ?>
-                                        <div class="sode-alt-placeholder-name"><?php echo esc_html($uni_name); ?></div>
+                                        <div class="sode-alt-placeholder-name"><?php echo esc_html($display_uni_name); ?></div>
                                     </div>
                                 <?php endif; ?>
                             </div>
 
                             <!-- Right: Info Box -->
                             <div class="sode-alt-info-box">
-                                <h3 class="sode-alt-uni-title"><?php echo esc_html($uni_name); ?></h3>
+                                <h3 class="sode-alt-uni-title"><?php echo esc_html($display_uni_name); ?></h3>
 
                                 <?php if (!empty($uni['alt_description'])): ?>
                                     <div class="sode-alt-uni-desc"><?php echo esc_html($uni['alt_description']); ?></div>

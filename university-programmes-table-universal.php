@@ -408,14 +408,15 @@ if (!function_exists('sode_render_university_programmes_table')) {
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                 }
+
                 .sode-uni-programmes-scroll-box {
                     width: 100%;
                     overflow-x: auto;
                     -webkit-overflow-scrolling: touch;
                     background: #ffffff;
                 }
+
                 .sode-uni-programmes-table {
                     width: 100%;
                     min-width: 580px;
@@ -424,6 +425,7 @@ if (!function_exists('sode_render_university_programmes_table')) {
                     text-align: left;
                     background: #ffffff;
                 }
+
                 .sode-uni-programmes-table thead th {
                     background-color: #eaf4fe;
                     color: #0f172a;
@@ -436,13 +438,16 @@ if (!function_exists('sode_render_university_programmes_table')) {
                     white-space: nowrap;
                     vertical-align: middle;
                 }
+
                 .sode-uni-programmes-table tbody tr {
                     background-color: #ffffff;
                     transition: background-color 0.15s ease-in-out;
                 }
+
                 .sode-uni-programmes-table tbody tr:hover {
                     background-color: #f8fafc;
                 }
+
                 .sode-uni-programmes-table tbody td {
                     padding: 15px 22px;
                     font-size: 15px;
@@ -451,27 +456,33 @@ if (!function_exists('sode_render_university_programmes_table')) {
                     vertical-align: middle;
                     line-height: 1.5;
                 }
+
                 .sode-uni-programmes-table tbody td.col-programme {
                     font-weight: 700;
                     color: #0f172a;
                 }
+
                 .sode-uni-programmes-table tbody td.col-level {
                     font-weight: 400;
                     color: #1e293b;
                 }
+
                 .sode-uni-programmes-table tbody td.col-approved {
                     font-weight: 400;
                     color: #1e293b;
                 }
+
                 .sode-uni-programmes-table tbody td.col-mode {
                     font-weight: 400;
                     color: #1e293b;
                 }
+
                 @media (max-width: 768px) {
                     .sode-uni-programmes-table thead th {
                         padding: 13px 15px;
                         font-size: 13px;
                     }
+
                     .sode-uni-programmes-table tbody td {
                         padding: 13px 15px;
                         font-size: 14px;
@@ -490,10 +501,10 @@ if (!function_exists('sode_render_university_programmes_table')) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($programmes as $item): 
+                        <?php foreach ($programmes as $item):
                             $mode_val = $override_mode ? $override_mode : $item['mode'];
                             $ugc_val = $override_ugc ? $override_ugc : $item['approved'];
-                        ?>
+                            ?>
                             <tr>
                                 <td class="col-programme"><?php echo esc_html($item['programme']); ?></td>
                                 <td class="col-level"><?php echo esc_html($item['level']); ?></td>
