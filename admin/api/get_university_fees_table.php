@@ -160,13 +160,8 @@ try {
         $u_id = (int)$u['id'];
         $is_curr = !empty($u['is_current']);
 
-        // Display name formatting
-        if ($is_curr) {
-            $base_name = !empty($u['short_name']) ? $u['short_name'] : $u['full_name'];
-            $disp_name = (stripos($base_name, 'online') === false) ? $base_name . ' Online' : $base_name;
-        } else {
-            $disp_name = !empty($u['full_name']) ? $u['full_name'] : $u['short_name'];
-        }
+        // Display name formatting: use full university name consistently
+        $disp_name = !empty($u['full_name']) ? $u['full_name'] : $u['short_name'];
 
         $fees_row = [];
         foreach ($columns as $col) {
@@ -202,7 +197,7 @@ try {
             'short_name'   => $u['short_name'] ?? '',
             'full_name'    => $u['full_name'] ?? '',
             'slug'         => $u['slug'] ?? '',
-            'link'         => $u['official_url'] ?? '',
+            'link'         => '',
             'is_current'   => $is_curr,
             'fees'         => $fees_row,
         ];
@@ -215,7 +210,7 @@ try {
             'full_name'    => $current_uni['full_name'],
             'short_name'   => $current_uni['short_name'],
             'slug'         => $current_uni['slug'],
-            'display_name' => (!empty($current_uni['short_name']) ? $current_uni['short_name'] : $current_uni['full_name']) . ' Online',
+            'display_name' => !empty($current_uni['full_name']) ? $current_uni['full_name'] : $current_uni['short_name'],
         ],
         'columns'            => $columns,
         'universities'       => $rows,

@@ -264,12 +264,8 @@ if (!function_exists('get_university_fees_table_data')) {
                             $u_id = (int)$u['id'];
                             $is_curr = !empty($u['is_current']);
 
-                            if ($is_curr) {
-                                $base_name = !empty($u['short_name']) ? $u['short_name'] : $u['full_name'];
-                                $disp_name = (stripos($base_name, 'online') === false) ? $base_name . ' Online' : $base_name;
-                            } else {
-                                $disp_name = !empty($u['full_name']) ? $u['full_name'] : $u['short_name'];
-                            }
+                            // Display name formatting: use full university name consistently
+                            $disp_name = !empty($u['full_name']) ? $u['full_name'] : $u['short_name'];
 
                             $fees_row = [];
                             foreach ($columns as $col) {
@@ -285,7 +281,7 @@ if (!function_exists('get_university_fees_table_data')) {
                                 'short_name' => $u['short_name'] ?? '',
                                 'full_name'  => $u['full_name'] ?? '',
                                 'slug'       => $u['slug'] ?? '',
-                                'link'       => $u['official_url'] ?? '',
+                                'link'       => '',
                                 'is_current' => $is_curr,
                                 'fees'       => $fees_row,
                             ];
@@ -297,7 +293,7 @@ if (!function_exists('get_university_fees_table_data')) {
                                 'full_name'    => $current_uni['full_name'],
                                 'short_name'   => $current_uni['short_name'],
                                 'slug'         => $current_uni['slug'],
-                                'display_name' => (!empty($current_uni['short_name']) ? $current_uni['short_name'] : $current_uni['full_name']) . ' Online',
+                                'display_name' => !empty($current_uni['full_name']) ? $current_uni['full_name'] : $current_uni['short_name'],
                             ],
                             'columns'      => $columns,
                             'universities' => $rows,
@@ -336,6 +332,58 @@ if (!function_exists('get_university_fees_table_data')) {
         }
 
         return false;
+    }
+}
+
+/**
+ * Helper: Render Row Cells for University Fees Table
+ */
+if (!function_exists('sode_render_uni_fees_row_cells')) {
+    function sode_render_uni_fees_row_cells($uni, $columns, $primary_course) {
+        $name = !empty($uni['full_name']) ? $uni['full_name'] : (!empty($uni['name']) ? $uni['name'] : $uni['short_name']);
+        $slug = !empty($uni['slug']) ? $uni['slug'] : sanitize_title($name);
+        ?>
+        <!-- Mobile Compare Column (First) -->
+        <td class="sode-uni-td-compare sode-col-mobile-only">
+            <button type="button"
+                class="uni-compare-toggle-btn"
+                data-uni-name="<?php echo esc_attr($name); ?>"
+                data-uni-slug="<?php echo esc_attr($slug); ?>"
+                data-course="<?php echo esc_attr($primary_course); ?>"
+                aria-label="Compare <?php echo esc_attr($name); ?>">
+                <span class="compare-icon">+</span>
+                <span class="compare-text">Compare</span>
+            </button>
+        </td>
+
+        <!-- University Name Column -->
+        <td class="sode-uni-td-name">
+            <span class="sode-uni-name-text"><?php echo esc_html($name); ?></span>
+        </td>
+
+        <!-- Course Fee Columns -->
+        <?php foreach ($columns as $col): 
+            $val = $uni['fees'][$col['clean_name']] ?? 'N/A';
+            $is_na = ($val === 'N/A');
+        ?>
+            <td class="sode-uni-td-fee <?php echo $is_na ? 'is-na' : ''; ?>">
+                <?php echo esc_html($val); ?>
+            </td>
+        <?php endforeach; ?>
+
+        <!-- Desktop Compare Column (Last) -->
+        <td class="sode-uni-td-compare sode-col-desktop-only">
+            <button type="button"
+                class="uni-compare-toggle-btn"
+                data-uni-name="<?php echo esc_attr($name); ?>"
+                data-uni-slug="<?php echo esc_attr($slug); ?>"
+                data-course="<?php echo esc_attr($primary_course); ?>"
+                aria-label="Compare <?php echo esc_attr($name); ?>">
+                <span class="compare-icon">+</span>
+                <span class="compare-text">Add to Compare</span>
+            </button>
+        </td>
+        <?php
     }
 }
 
@@ -392,11 +440,12 @@ if (!function_exists('sode_render_university_fees_table')) {
                 <table class="sode-uni-fees-table" id="<?php echo esc_attr($table_id); ?>">
                     <thead>
                         <tr>
+                            <th class="sode-uni-th-compare sode-col-mobile-only">COMPARE</th>
                             <th class="sode-uni-th-name">UNIVERSITY NAME</th>
                             <?php foreach ($columns as $col): ?>
                                 <th class="sode-uni-th-fee"><?php echo esc_html(strtoupper($col['header_text'])); ?></th>
                             <?php endforeach; ?>
-                            <th class="sode-uni-th-compare">COMPARE</th>
+                            <th class="sode-uni-th-compare sode-col-desktop-only">COMPARE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -405,34 +454,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                             $is_current = !empty($uni['is_current']);
                         ?>
                             <tr class="<?php echo $is_current ? 'sode-row-current-uni' : ''; ?>">
-                                <td class="sode-uni-td-name">
-                                    <?php if (!empty($uni['link'])): ?>
-                                        <a href="<?php echo esc_url($uni['link']); ?>" target="_blank" rel="noopener noreferrer" class="sode-uni-name-link">
-                                            <?php echo esc_html($uni['name']); ?>
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="sode-uni-name-text"><?php echo esc_html($uni['name']); ?></span>
-                                    <?php endif; ?>
-                                </td>
-                                <?php foreach ($columns as $col): 
-                                    $val = $uni['fees'][$col['clean_name']] ?? 'N/A';
-                                    $is_na = ($val === 'N/A');
-                                ?>
-                                    <td class="sode-uni-td-fee <?php echo $is_na ? 'is-na' : ''; ?>">
-                                        <?php echo esc_html($val); ?>
-                                    </td>
-                                <?php endforeach; ?>
-                                <td class="sode-uni-td-compare">
-                                    <button type="button"
-                                        class="uni-compare-toggle-btn"
-                                        data-uni-name="<?php echo esc_attr($uni['name']); ?>"
-                                        data-uni-slug="<?php echo esc_attr($uni['slug'] ?: sanitize_title($uni['name'])); ?>"
-                                        data-course="<?php echo esc_attr($primary_course); ?>"
-                                        aria-label="Compare <?php echo esc_attr($uni['name']); ?>">
-                                        <span class="compare-icon">+</span>
-                                        <span class="compare-text">Add to Compare</span>
-                                    </button>
-                                </td>
+                                <?php sode_render_uni_fees_row_cells($uni, $columns, $primary_course); ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -443,34 +465,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                                 $is_current = !empty($uni['is_current']);
                             ?>
                                 <tr class="<?php echo $is_current ? 'sode-row-current-uni' : ''; ?>">
-                                    <td class="sode-uni-td-name">
-                                        <?php if (!empty($uni['link'])): ?>
-                                            <a href="<?php echo esc_url($uni['link']); ?>" target="_blank" rel="noopener noreferrer" class="sode-uni-name-link">
-                                                <?php echo esc_html($uni['name']); ?>
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="sode-uni-name-text"><?php echo esc_html($uni['name']); ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <?php foreach ($columns as $col): 
-                                        $val = $uni['fees'][$col['clean_name']] ?? 'N/A';
-                                        $is_na = ($val === 'N/A');
-                                    ?>
-                                        <td class="sode-uni-td-fee <?php echo $is_na ? 'is-na' : ''; ?>">
-                                            <?php echo esc_html($val); ?>
-                                        </td>
-                                    <?php endforeach; ?>
-                                    <td class="sode-uni-td-compare">
-                                        <button type="button"
-                                            class="uni-compare-toggle-btn"
-                                            data-uni-name="<?php echo esc_attr($uni['name']); ?>"
-                                            data-uni-slug="<?php echo esc_attr($uni['slug'] ?: sanitize_title($uni['name'])); ?>"
-                                            data-course="<?php echo esc_attr($primary_course); ?>"
-                                            aria-label="Compare <?php echo esc_attr($uni['name']); ?>">
-                                            <span class="compare-icon">+</span>
-                                            <span class="compare-text">Add to Compare</span>
-                                        </button>
-                                    </td>
+                                    <?php sode_render_uni_fees_row_cells($uni, $columns, $primary_course); ?>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -540,9 +535,8 @@ if (!function_exists('sode_render_university_fees_table')) {
             }
             .sode-uni-fees-scroll {
                 width: 100%;
-                overflow-x: auto;
-                overflow-y: hidden;
-                -webkit-overflow-scrolling: touch;
+                overflow-x: visible;
+                overflow-y: visible;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
                 background: #ffffff;
@@ -550,21 +544,23 @@ if (!function_exists('sode_render_university_fees_table')) {
             }
             .sode-uni-fees-table {
                 width: 100%;
-                min-width: 820px;
+                min-width: 0;
                 border-collapse: collapse !important;
                 font-size: 13px;
                 margin: 0;
+                table-layout: auto;
             }
             .sode-uni-fees-table thead th {
                 background-color: #e0f2fe !important;
                 color: #0c2340 !important;
                 text-align: left;
-                padding: 14px 16px;
+                padding: 10px 10px;
                 font-weight: 700;
-                font-size: 12.5px;
+                font-size: 11.5px;
                 text-transform: uppercase;
-                letter-spacing: 0.3px;
-                white-space: nowrap;
+                letter-spacing: 0.2px;
+                white-space: normal;
+                line-height: 1.25;
                 border-bottom: 1px solid #cbd5e1 !important;
                 border-right: 1px solid #cbd5e1 !important;
             }
@@ -572,28 +568,33 @@ if (!function_exists('sode_render_university_fees_table')) {
                 border-right: none !important;
             }
             .sode-uni-th-name {
-                width: 220px;
-                min-width: 190px;
+                width: auto;
+                max-width: 210px;
             }
             .sode-uni-th-fee {
                 text-align: left;
-                white-space: nowrap;
             }
             .sode-uni-th-compare {
-                width: 140px;
-                min-width: 130px;
+                width: 125px;
                 text-align: center !important;
+                white-space: nowrap;
             }
             .sode-uni-fees-table tbody td {
-                padding: 13px 16px;
+                padding: 10px 10px;
                 border-bottom: 1px solid #e2e8f0 !important;
                 border-right: 1px solid #e2e8f0 !important;
                 vertical-align: middle;
                 color: #1f2937;
-                font-size: 13px;
+                font-size: 12.5px;
             }
             .sode-uni-fees-table tbody td:last-child {
                 border-right: none !important;
+            }
+            .sode-col-mobile-only {
+                display: none !important;
+            }
+            .sode-col-desktop-only {
+                display: table-cell !important;
             }
             .sode-uni-fees-table tbody tr:hover {
                 background-color: #f8fafc;
@@ -602,25 +603,16 @@ if (!function_exists('sode_render_university_fees_table')) {
             .sode-row-current-uni td {
                 background-color: #ffffff;
             }
-            .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text,
-            .sode-row-current-uni .sode-uni-td-name .sode-uni-name-link {
+            .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text {
                 font-weight: 800;
                 color: #000000;
-                font-size: 13.5px;
+                font-size: 13px;
             }
             .sode-uni-name-text {
                 font-weight: 700;
                 color: #0c2340;
-            }
-            .sode-uni-name-link {
-                color: #0c2340;
-                font-weight: 700;
-                text-decoration: none;
-                transition: color 0.15s ease;
-            }
-            .sode-uni-name-link:hover {
-                color: #2563eb;
-                text-decoration: underline;
+                display: inline-block;
+                line-height: 1.35;
             }
             .sode-uni-td-fee {
                 font-weight: 500;
@@ -642,8 +634,8 @@ if (!function_exists('sode_render_university_fees_table')) {
                 align-items: center;
                 justify-content: center;
                 gap: 5px;
-                padding: 7px 14px;
-                font-size: 12px;
+                padding: 6px 12px;
+                font-size: 11.5px;
                 font-weight: 600;
                 color: #2563eb;
                 background-color: #eff6ff;
@@ -842,6 +834,66 @@ if (!function_exists('sode_render_university_fees_table')) {
             }
 
             @media (max-width: 768px) {
+                /* Mobile: Horizontal scroll active */
+                .sode-uni-fees-scroll {
+                    overflow-x: auto !important;
+                    overflow-y: hidden !important;
+                    -webkit-overflow-scrolling: touch !important;
+                }
+                .sode-uni-fees-table {
+                    min-width: 500px !important;
+                    width: max-content !important;
+                }
+
+                /* Mobile: Compare column 1st, Hide desktop compare column */
+                .sode-col-mobile-only {
+                    display: table-cell !important;
+                }
+                .sode-col-desktop-only {
+                    display: none !important;
+                }
+
+                /* Slimmer column widths & paddings for mobile */
+                .sode-uni-fees-table thead th {
+                    padding: 7px 6px !important;
+                    font-size: 10px !important;
+                    line-height: 1.25 !important;
+                    letter-spacing: 0 !important;
+                }
+                .sode-uni-fees-table tbody td {
+                    padding: 7px 6px !important;
+                    font-size: 11px !important;
+                }
+                .sode-uni-th-compare,
+                .sode-uni-td-compare {
+                    width: 78px !important;
+                    min-width: 74px !important;
+                    max-width: 82px !important;
+                    padding: 5px 3px !important;
+                }
+                .sode-uni-th-name,
+                .sode-uni-td-name {
+                    min-width: 110px !important;
+                    max-width: 135px !important;
+                    font-size: 11px !important;
+                    line-height: 1.25 !important;
+                }
+                .sode-uni-th-fee,
+                .sode-uni-td-fee {
+                    min-width: 68px !important;
+                    font-size: 11px !important;
+                }
+                .uni-compare-toggle-btn {
+                    padding: 4px 6px !important;
+                    font-size: 10px !important;
+                    gap: 3px !important;
+                    border-radius: 12px !important;
+                    white-space: nowrap !important;
+                }
+                .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text {
+                    font-size: 11.5px !important;
+                }
+
                 .uni-compare-dock {
                     bottom: 12px;
                     padding: 12px 14px;
@@ -870,6 +922,28 @@ if (!function_exists('sode_render_university_fees_table')) {
                     text-align: center;
                     box-sizing: border-box;
                 }
+
+                /* HIDE WHATSAPP & FLOATING WIDGETS ON MOBILE WHEN COMPARE DOCK IS OPEN */
+                body.has-uni-compare-dock-open #gb-waw-iframe,
+                body.has-uni-compare-dock-open [id*="gb-waw"],
+                body.has-uni-compare-dock-open [class*="gb-waw"],
+                body.has-uni-compare-dock-open [class*="whatsapp"],
+                body.has-uni-compare-dock-open [id*="whatsapp"],
+                body.has-uni-compare-dock-open [class*="joinchat"],
+                body.has-uni-compare-dock-open [id*="joinchat"],
+                body.has-uni-compare-dock-open [class*="ht-ctc"],
+                body.has-uni-compare-dock-open [id*="ht-ctc"],
+                body.has-uni-compare-dock-open [class*="chaty"],
+                body.has-uni-compare-dock-open [id*="chaty"],
+                body.has-uni-compare-dock-open [class*="qlwapp"],
+                body.has-uni-compare-dock-open [id*="qlwapp"],
+                body.has-uni-compare-dock-open [class*="get-help"],
+                body.has-uni-compare-dock-open [id*="get-help"] {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                }
             }
             </style>
 
@@ -888,6 +962,19 @@ if (!function_exists('sode_render_university_fees_table')) {
                     toastTimer = setTimeout(function() {
                         toast.style.display = 'none';
                     }, 2800);
+                }
+
+                function setExternalWidgetVisibility(visible) {
+                    var waEl = document.getElementById('gb-waw-iframe');
+                    if (waEl) {
+                        if (window.innerWidth <= 768) {
+                            waEl.style.setProperty('display', visible ? '' : 'none', 'important');
+                            waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
+                        } else {
+                            waEl.style.removeProperty('display');
+                            waEl.style.removeProperty('visibility');
+                        }
+                    }
                 }
 
                 function updateUI() {
@@ -911,17 +998,23 @@ if (!function_exists('sode_render_university_fees_table')) {
                             var icon = btn.querySelector('.compare-icon');
                             if (icon) icon.textContent = '+';
                             var text = btn.querySelector('.compare-text');
-                            if (text) text.textContent = 'Add to Compare';
+                            if (text) {
+                                text.textContent = btn.closest('.sode-col-mobile-only') ? 'Compare' : 'Add to Compare';
+                            }
                         }
                     });
 
                     if (!dock || !countBadge || !chipsList) return;
 
                     if (selectedUnis.length === 0) {
+                        document.body.classList.remove('has-uni-compare-dock-open');
+                        setExternalWidgetVisibility(true);
                         dock.style.display = 'none';
                         return;
                     }
 
+                    document.body.classList.add('has-uni-compare-dock-open');
+                    setExternalWidgetVisibility(false);
                     dock.style.display = 'block';
                     countBadge.textContent = selectedUnis.length + '/' + maxSelections;
 
@@ -941,6 +1034,14 @@ if (!function_exists('sode_render_university_fees_table')) {
                     }
                     chipsList.innerHTML = html;
                 }
+
+                window.addEventListener('resize', function() {
+                    if (selectedUnis.length > 0) {
+                        setExternalWidgetVisibility(false);
+                    } else {
+                        setExternalWidgetVisibility(true);
+                    }
+                });
 
                 document.addEventListener('click', function(e) {
                     // 1. Toggle Button
