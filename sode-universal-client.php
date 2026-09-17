@@ -439,6 +439,10 @@ if (!function_exists('sode_fetch_remote_component')) {
 
         $html = wp_remote_retrieve_body($resp);
         if (!empty($html)) {
+            // Never cache or display API fallback error message
+            if (strpos($html, 'SODE Universal Component SSR API Online') !== false) {
+                return '';
+            }
             set_transient($cache_key, $html, 600); // 10 minutes cache
         }
         return $html;
@@ -839,7 +843,15 @@ $uni_compare_fees_handler = function ($atts) {
     if (function_exists('sode_render_university_fees_table')) {
         return sode_render_university_fees_table($atts ?: []);
     }
-    return sode_fetch_remote_component('compare_universities_table', $atts ?: []);
+    // Live Central Server handles 'subdomain_fees_table' and 'alternate_universities_fees_table'
+    $res = sode_fetch_remote_component('subdomain_fees_table', $atts ?: []);
+    if (empty($res)) {
+        $res = sode_fetch_remote_component('alternate_universities_fees_table', $atts ?: []);
+    }
+    if (empty($res)) {
+        $res = sode_fetch_remote_component('compare_universities_table', $atts ?: []);
+    }
+    return $res;
 };
 add_shortcode('compare_universities_table', $uni_compare_fees_handler);
 add_shortcode('universities_comparison_table', $uni_compare_fees_handler);
