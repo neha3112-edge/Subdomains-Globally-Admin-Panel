@@ -769,8 +769,8 @@ if (!function_exists('sode_alternate_universities_render')) {
                 .sode-alt-btn-courses,
                 .sode-alt-btn-help {
                     flex: 1;
-                    padding: 9px 12px;
-                    font-size: 13px;
+                    padding: 9px 5px;
+                    font-size: 12px;
                     text-align: center;
                 }
 
