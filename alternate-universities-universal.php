@@ -530,8 +530,6 @@ if (!function_exists('sode_alternate_universities_render')) {
             .sode-alt-info-box {
                 flex: 1;
                 min-width: 0;
-                padding-right: 100px;
-                /* Space for top-right sample degree link */
             }
 
             .sode-alt-uni-title {
@@ -543,18 +541,19 @@ if (!function_exists('sode_alternate_universities_render')) {
             }
 
             .sode-alt-uni-desc {
-                font-size: 14px;
+                font-size: 13px;
                 color: #374151;
                 line-height: 1.6;
                 margin: 0 0 14px 0;
+                padding-right: 150px;
             }
 
             .sode-alt-meta-row {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
-                gap: 22px;
-                font-size: 14px;
+                gap: 20px;
+                font-size: 13px;
                 margin-bottom: 18px;
                 line-height: 1.5;
             }
@@ -795,6 +794,10 @@ if (!function_exists('sode_alternate_universities_render')) {
                 .sode-alt-table td {
                     padding: 10px 12px;
                     font-size: 12.5px;
+                }
+
+                .sode-alt-uni-desc {
+                    padding-right: 0px;
                 }
             }
 
