@@ -260,6 +260,22 @@ switch ($component) {
         echo custom_lead_form_shortcode($params);
         break;
 
+    case 'counseling_lead_form':
+    case 'counseling_form':
+    case 'lead_form_box':
+    case 'sode_lead_form':
+        echo function_exists('sode_counseling_lead_form_box_shortcode') ? sode_counseling_lead_form_box_shortcode($params) : '';
+        break;
+
+    case 'counseling_button':
+    case 'counseling_btn':
+    case 'apply_now_button':
+    case 'free_counseling_button':
+    case 'applynow_button':
+    case 'applynow_btn':
+        echo function_exists('sode_counseling_button_shortcode') ? sode_counseling_button_shortcode($params) : '';
+        break;
+
     case 'compare_form':
     case 'compare_universities_form':
         echo compare_universities_form_shortcode($params);

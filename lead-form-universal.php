@@ -454,7 +454,8 @@ function custom_lead_form_shortcode($atts = [])
         'subheading'  => 'Get 1 to 1 Expert Guidance from SODE™',
         'form_name'   => $short_uni_name . ' Lead Form',
         'button_text' => 'Submit',
-        'university'  => $uni_slug
+        'university'  => $uni_slug,
+        'phone'       => '',
     ], $atts);
 
     // Dynamic key replacements in heading & form name
@@ -647,6 +648,19 @@ function custom_lead_form_shortcode($atts = [])
 
         <h2 style="margin-bottom:4px;"><?php echo esc_html($heading); ?></h2>
         <p style="margin-bottom:15px;"><?php echo esc_html($subheading); ?></p>
+
+        <?php if (!empty($atts['phone'])): 
+            $clean_phone = preg_replace('/[^0-9+]/', '', $atts['phone']);
+        ?>
+            <div class="lead-phone-direct-wrap" style="text-align:center; margin:-6px 0 16px 0;">
+                <a href="tel:<?php echo esc_attr($clean_phone); ?>" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; color:#074a76; font-size:16px; font-weight:700; text-decoration:none;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display:inline-block; vertical-align:middle;">
+                        <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                    </svg>
+                    <span><?php echo esc_html($atts['phone']); ?></span>
+                </a>
+            </div>
+        <?php endif; ?>
 
         <input type="text" name="name" placeholder="Enter Your Name" required>
         <input type="email" name="email" placeholder="Enter Your Email" required>
@@ -990,6 +1004,183 @@ function compare_universities_form_shortcode($atts = [])
 }
 if ( function_exists('add_shortcode') ) {
     add_shortcode('compare_universities_form', 'compare_universities_form_shortcode');
+}
+
+// ====================================================
+// ✅ STEP 5.1 — COUNSELING LEAD FORM CARD (IMAGE 1)
+// Shortcode: [counseling_lead_form], [counseling_form], [lead_form_box], [sode_lead_form]
+// ====================================================
+function sode_counseling_lead_form_box_shortcode($atts = [])
+{
+    $raw_atts = (array) ($atts ?: []);
+    $uni_slug = sode_form_detect_uni_slug($raw_atts['uni'] ?? ($raw_atts['university'] ?? ''));
+
+    $atts = shortcode_atts([
+        'heading'     => 'Book 100% Free Counseling',
+        'subheading'  => 'Get upto 20% Scholarship Coupon Code.',
+        'phone'       => '+91 7065 7777 55',
+        'button_text' => 'Submit',
+        'form_name'   => 'Counseling Box Form',
+        'university'  => $uni_slug,
+        'class'       => '',
+        'shadow'      => 'true',
+    ], $raw_atts);
+
+    $extra_class = !empty($atts['class']) ? ' ' . esc_attr($atts['class']) : '';
+    $form_content = custom_lead_form_shortcode($atts);
+
+    ob_start();
+    ?>
+    <div class="sode-counseling-lead-form-box<?php echo $extra_class; ?>">
+        <style>
+            .sode-counseling-lead-form-box {
+                width: 100%;
+                max-width: 410px;
+                margin: 24px auto;
+                background: #ffffff;
+                border-radius: 16px;
+                padding: 24px 22px 20px;
+                box-sizing: border-box;
+                box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+                border: 1px solid rgba(0, 0, 0, 0.06);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            }
+            .sode-counseling-lead-form-box .customLeadForm {
+                margin: 0;
+                padding: 0;
+            }
+            .sode-counseling-lead-form-box .customLeadForm h2 {
+                color: #e03a1d !important;
+                font-size: 18px !important;
+                font-weight: 700 !important;
+                margin: 0 0 6px 0 !important;
+                text-align: center !important;
+            }
+            .sode-counseling-lead-form-box .customLeadForm p {
+                color: #4b5563 !important;
+                font-size: 13px !important;
+                font-weight: 400 !important;
+                margin: 0 0 10px 0 !important;
+                text-align: center !important;
+            }
+            .sode-counseling-lead-form-box .customLeadForm .submitBtn {
+                background: #e03a1d !important;
+                color: #ffffff !important;
+                font-size: 16px !important;
+                font-weight: 700 !important;
+                border-radius: 6px !important;
+                padding: 12px 16px !important;
+                margin-top: 6px !important;
+                box-shadow: 0 4px 12px rgba(224, 58, 29, 0.28) !important;
+                transition: background 0.2s ease, transform 0.1s ease !important;
+            }
+            .sode-counseling-lead-form-box .customLeadForm .submitBtn:hover {
+                background: #c83217 !important;
+            }
+            .sode-counseling-lead-form-box .customLeadForm input:not([type="checkbox"]),
+            .sode-counseling-lead-form-box .customLeadForm select {
+                border: 1px solid #d1d5db !important;
+                border-radius: 6px !important;
+                padding: 10px 14px !important;
+                font-size: 14px !important;
+                color: #374151 !important;
+                margin-bottom: 12px !important;
+            }
+            .sode-counseling-lead-form-box .phone-wrapper {
+                margin-bottom: 0px !important;
+            }
+            .sode-counseling-lead-form-box .phone-wrapper select,
+            .sode-counseling-lead-form-box .phone-wrapper input {
+                margin-bottom: 12px !important;
+            }
+            @media (max-width: 480px) {
+                .sode-counseling-lead-form-box {
+                    padding: 20px 16px 16px;
+                    border-radius: 14px;
+                    margin: 16px auto;
+                }
+            }
+        </style>
+        <?php echo $form_content; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+if ( function_exists('add_shortcode') ) {
+    add_shortcode('counseling_lead_form', 'sode_counseling_lead_form_box_shortcode');
+    add_shortcode('counseling_form', 'sode_counseling_lead_form_box_shortcode');
+    add_shortcode('lead_form_box', 'sode_counseling_lead_form_box_shortcode');
+    add_shortcode('sode_lead_form', 'sode_counseling_lead_form_box_shortcode');
+}
+
+// ====================================================
+// ✅ STEP 5.2 — COUNSELING POPUP CTA BUTTON (IMAGE 2)
+// Shortcode: [counseling_button], [counseling_btn], [apply_now_button], [free_counseling_button]
+// ====================================================
+function sode_counseling_button_shortcode($atts = [])
+{
+    $atts = shortcode_atts([
+        'text'       => 'Get 100% Free Counseling',
+        'class'      => '',
+        'course'     => '',
+        'university' => '',
+        'uni'        => '',
+    ], (array) $atts);
+
+    $text = !empty($atts['text']) ? $atts['text'] : 'Get 100% Free Counseling';
+    $custom_class = !empty($atts['class']) ? ' ' . esc_attr($atts['class']) : '';
+    $course_attr = !empty($atts['course']) ? ' data-course="' . esc_attr($atts['course']) . '"' : '';
+    $uni_slug = !empty($atts['uni']) ? $atts['uni'] : (!empty($atts['university']) ? $atts['university'] : '');
+    $uni_attr = $uni_slug ? ' data-uni-slug="' . esc_attr($uni_slug) . '"' : '';
+
+    // Ensure popup modal markup is ready
+    if (function_exists('sode_counseling_form_popup_modal')) {
+        sode_counseling_form_popup_modal();
+    }
+
+    ob_start();
+    ?>
+    <button type="button" class="applynow sode-counseling-cta-btn<?php echo $custom_class; ?>"<?php echo $course_attr . $uni_attr; ?>>
+        <?php echo esc_html($text); ?>
+    </button>
+    <style>
+        .sode-counseling-cta-btn.applynow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #008000 !important;
+            color: #ffffff !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            padding: 12px 28px !important;
+            border-radius: 6px !important;
+            border: none !important;
+            cursor: pointer !important;
+            text-decoration: none !important;
+            line-height: 1.4 !important;
+            box-shadow: 0 4px 12px rgba(0, 128, 0, 0.25) !important;
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        }
+        .sode-counseling-cta-btn.applynow:hover {
+            background: #006b00 !important;
+            box-shadow: 0 6px 16px rgba(0, 128, 0, 0.35) !important;
+            transform: translateY(-1px) !important;
+        }
+        .sode-counseling-cta-btn.applynow:active {
+            transform: translateY(0) !important;
+        }
+    </style>
+    <?php
+    return ob_get_clean();
+}
+if ( function_exists('add_shortcode') ) {
+    add_shortcode('counseling_button', 'sode_counseling_button_shortcode');
+    add_shortcode('counseling_btn', 'sode_counseling_button_shortcode');
+    add_shortcode('apply_now_button', 'sode_counseling_button_shortcode');
+    add_shortcode('free_counseling_button', 'sode_counseling_button_shortcode');
+    add_shortcode('applynow_button', 'sode_counseling_button_shortcode');
+    add_shortcode('applynow_btn', 'sode_counseling_button_shortcode');
 }
 
 

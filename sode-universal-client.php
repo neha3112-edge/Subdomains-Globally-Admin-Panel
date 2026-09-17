@@ -519,6 +519,35 @@ add_shortcode('scholarship_coupon_form', function ($atts) {
 });
 
 // ====================================================
+// 2.4.2. COUNSELING LEAD FORM CARD & CTA BUTTON SHORTCODES
+// [counseling_lead_form], [counseling_form], [lead_form_box], [sode_lead_form]
+// [counseling_button], [counseling_btn], [apply_now_button], [free_counseling_button]
+// ====================================================
+$counseling_lead_form_handler = function ($atts) {
+    if (function_exists('sode_counseling_lead_form_box_shortcode')) {
+        return sode_counseling_lead_form_box_shortcode($atts ?: []);
+    }
+    return sode_fetch_remote_component('counseling_lead_form', $atts ?: []);
+};
+add_shortcode('counseling_lead_form', $counseling_lead_form_handler);
+add_shortcode('counseling_form', $counseling_lead_form_handler);
+add_shortcode('lead_form_box', $counseling_lead_form_handler);
+add_shortcode('sode_lead_form', $counseling_lead_form_handler);
+
+$counseling_btn_handler = function ($atts) {
+    if (function_exists('sode_counseling_button_shortcode')) {
+        return sode_counseling_button_shortcode($atts ?: []);
+    }
+    return sode_fetch_remote_component('counseling_button', $atts ?: []);
+};
+add_shortcode('counseling_button', $counseling_btn_handler);
+add_shortcode('counseling_btn', $counseling_btn_handler);
+add_shortcode('apply_now_button', $counseling_btn_handler);
+add_shortcode('free_counseling_button', $counseling_btn_handler);
+add_shortcode('applynow_button', $counseling_btn_handler);
+add_shortcode('applynow_btn', $counseling_btn_handler);
+
+// ====================================================
 // 2.5. LATEST NEWS & MARQUEE SHORTCODES
 // [latest_news], [universal_news], [sode_news]
 // ====================================================
