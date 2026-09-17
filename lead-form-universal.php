@@ -1140,10 +1140,20 @@ function sode_counseling_button_shortcode($atts = [])
 
     ob_start();
     ?>
-    <button type="button" class="applynow sode-counseling-cta-btn<?php echo $custom_class; ?>"<?php echo $course_attr . $uni_attr; ?>>
-        <?php echo esc_html($text); ?>
-    </button>
+    <div class="sode-counseling-btn-wrap">
+        <button type="button" class="applynow sode-counseling-cta-btn<?php echo $custom_class; ?>"<?php echo $course_attr . $uni_attr; ?>>
+            <?php echo esc_html($text); ?>
+        </button>
+    </div>
     <style>
+        .sode-counseling-btn-wrap {
+            text-align: center !important;
+            width: 100% !important;
+            margin: 16px 0 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
         .sode-counseling-cta-btn.applynow {
             display: inline-flex;
             align-items: center;
@@ -1160,7 +1170,6 @@ function sode_counseling_button_shortcode($atts = [])
             line-height: 1.4 !important;
             box-shadow: 0 4px 12px rgba(0, 128, 0, 0.25) !important;
             transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         }
         .sode-counseling-cta-btn.applynow:hover {
             background: #006b00 !important;
