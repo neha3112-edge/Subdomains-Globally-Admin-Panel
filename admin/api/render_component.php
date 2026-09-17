@@ -63,6 +63,9 @@ if (file_exists($root_dir . '/university-dates-table-universal.php')) {
 if (file_exists($root_dir . '/alternate-universities-universal.php')) {
     require_once $root_dir . '/alternate-universities-universal.php';
 }
+if (file_exists($root_dir . '/university-fees-table-universal.php')) {
+    require_once $root_dir . '/university-fees-table-universal.php';
+}
 
 
 
@@ -224,6 +227,15 @@ switch ($component) {
     case 'alternative_university_list':
     case 'alternatives_list':
         echo function_exists('sode_alternate_universities_render') ? sode_alternate_universities_render($params) : '';
+        break;
+
+    case 'university_fees_table':
+    case 'universities_fees_table':
+    case 'alternate_universities_fees_table':
+    case 'subdomain_fees_table':
+    case 'uni_fees_table':
+    case 'subdomain_course_fees_table':
+        echo function_exists('sode_render_university_fees_table') ? sode_render_university_fees_table($params) : '';
         break;
 
 

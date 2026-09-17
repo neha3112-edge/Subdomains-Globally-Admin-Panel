@@ -1524,3 +1524,7 @@ if (file_exists(__DIR__ . '/university-dates-table-universal.php')) {
 if (file_exists(__DIR__ . '/alternate-universities-universal.php')) {
     require_once __DIR__ . '/alternate-universities-universal.php';
 }
+
+if (file_exists(__DIR__ . '/university-fees-table-universal.php')) {
+    require_once __DIR__ . '/university-fees-table-universal.php';
+}
