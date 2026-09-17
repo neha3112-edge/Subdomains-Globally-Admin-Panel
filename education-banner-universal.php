@@ -385,8 +385,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                       DESKTOP  (≥ 769px)
-                       ===================================================== */
+                           DESKTOP  (≥ 769px)
+                           ===================================================== */
         @media (min-width: 769px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -613,8 +613,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                       DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
-                       ===================================================== */
+                           DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
+                           ===================================================== */
         #<?php echo $uid; ?> .edu-banner-approvals-bar {
             width: 100%;
             background: #ffc800;
@@ -701,8 +701,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                       MOBILE  (≤ 768px)
-                       ===================================================== */
+                           MOBILE  (≤ 768px)
+                           ===================================================== */
         @media (max-width: 768px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -882,8 +882,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                       PODCAST & BROCHURE POPUPS (shared)
-                       ===================================================== */
+                           PODCAST & BROCHURE POPUPS (shared)
+                           ===================================================== */
         .edu-podcast-overlay,
         .edu-brochure-overlay {
             display: none;
@@ -1030,7 +1030,7 @@ function edu_banner_shortcode($atts)
                  DESKTOP DYNAMIC ACCREDITATIONS GOLDEN BAR
                  ===================================================== -->
             <?php if (!empty($uni_data['accreditations']) && is_array($uni_data['accreditations'])): ?>
-                <div class="edu-banner-approvals-bar">
+                <div id="accrediation" class="edu-banner-approvals-bar">
                     <div class="edu-banner-approvals-container">
                         <h3 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
                             Accreditations</h3>
@@ -1128,7 +1128,7 @@ function edu_banner_shortcode($atts)
                  MOBILE DYNAMIC ACCREDITATIONS GOLDEN BAR
                  ===================================================== -->
             <?php if (!empty($uni_data['accreditations']) && is_array($uni_data['accreditations'])): ?>
-                <div class="edu-banner-approvals-bar">
+                <div id="accrediation" class="edu-banner-approvals-bar">
                     <div class="edu-banner-approvals-container">
                         <h3 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
                             Accreditations</h3>
