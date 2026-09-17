@@ -374,8 +374,10 @@ if (!function_exists('sode_client_detect_uni')) {
 if (!function_exists('sode_fetch_remote_component')) {
     function sode_fetch_remote_component($component, $args = [])
     {
-        $uni = sode_client_detect_uni($args['university'] ?? '');
+        $explicit_uni = !empty($args['uni']) ? $args['uni'] : (!empty($args['university']) ? $args['university'] : '');
+        $uni = sode_client_detect_uni($explicit_uni);
         $args['uni'] = $uni;
+        $args['university'] = $uni;
         $args['component'] = $component;
 
         // Build unique cache key
@@ -840,16 +842,39 @@ if (file_exists(__DIR__ . '/university-fees-table-universal.php')) {
 }
 
 $uni_compare_fees_handler = function ($atts) {
+    $raw_atts = (array) ($atts ?: []);
+    $explicit_uni = !empty($raw_atts['uni']) ? $raw_atts['uni'] : (!empty($raw_atts['university']) ? $raw_atts['university'] : '');
+    if (empty($explicit_uni)) {
+        foreach ($raw_atts as $k => $v) {
+            if (is_numeric($k) && is_string($v) && !empty($v)) {
+                if (strpos($v, '=') !== false) {
+                    list($pk, $pv) = explode('=', $v, 2);
+                    if (in_array(strtolower(trim($pk)), ['uni', 'university'])) {
+                        $explicit_uni = trim($pv, " '\"\t\n\r\0\x0B");
+                        break;
+                    }
+                } else {
+                    $explicit_uni = trim($v, " '\"\t\n\r\0\x0B");
+                    break;
+                }
+            }
+        }
+    }
+    if (!empty($explicit_uni)) {
+        $raw_atts['uni'] = $explicit_uni;
+        $raw_atts['university'] = $explicit_uni;
+    }
+
     if (function_exists('sode_render_university_fees_table')) {
-        return sode_render_university_fees_table($atts ?: []);
+        return sode_render_university_fees_table($raw_atts);
     }
     // Live Central Server handles 'subdomain_fees_table' and 'alternate_universities_fees_table'
-    $res = sode_fetch_remote_component('subdomain_fees_table', $atts ?: []);
+    $res = sode_fetch_remote_component('subdomain_fees_table', $raw_atts);
     if (empty($res)) {
-        $res = sode_fetch_remote_component('alternate_universities_fees_table', $atts ?: []);
+        $res = sode_fetch_remote_component('alternate_universities_fees_table', $raw_atts);
     }
     if (empty($res)) {
-        $res = sode_fetch_remote_component('compare_universities_table', $atts ?: []);
+        $res = sode_fetch_remote_component('compare_universities_table', $raw_atts);
     }
     return $res;
 };

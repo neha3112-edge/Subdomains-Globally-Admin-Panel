@@ -98,9 +98,66 @@ if (!defined('UNI_FEES_TABLE_API_URL')) {
 /**
  * Helper: Detect current university slug
  */
+if (!function_exists('sode_find_matching_university')) {
+    function sode_find_matching_university($unis, $search_term)
+    {
+        if (empty($search_term) || empty($unis)) return null;
+        $term = strtolower(trim(preg_replace('/[^a-z0-9]+/', '', (string)$search_term)));
+        if ($term === '') return null;
+
+        // 1. Exact match on slug, short_name, or full_name
+        foreach ($unis as $u) {
+            $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+            $clean_short = strtolower(str_replace(['-', '_', ' ', '.'], '', $u['short_name'] ?? ''));
+            $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+            if ($term === $clean_slug || $term === $clean_short || $term === $clean_full) {
+                return $u;
+            }
+        }
+
+        // 2. Dynamic Acronym / Initials match (e.g. cu, dsu, lpu, smu, vgu, muj)
+        foreach ($unis as $u) {
+            $slug_parts = explode('-', strtolower($u['slug'] ?? ''));
+            $slug_ac = '';
+            foreach ($slug_parts as $sp) {
+                if ($sp !== '') $slug_ac .= $sp[0];
+            }
+            if ($term === $slug_ac) {
+                return $u;
+            }
+
+            $full_words = preg_split('/[\s,\-\.]+/', strtolower($u['full_name'] ?? ''));
+            $full_ac = '';
+            foreach ($full_words as $fw) {
+                if ($fw !== '' && !in_array($fw, ['and', 'of', 'for', 'the', 'in'])) {
+                    $full_ac .= $fw[0];
+                }
+            }
+            if ($term === $full_ac) {
+                return $u;
+            }
+        }
+
+        // 3. Substring / Prefix match on slug or name
+        foreach ($unis as $u) {
+            $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+            $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+            if (strpos($clean_slug, $term) !== false || strpos($clean_full, $term) !== false) {
+                return $u;
+            }
+        }
+
+        return null;
+    }
+}
+
+/**
+ * Helper: Detect current university slug
+ */
 if (!function_exists('sode_detect_matrix_uni_slug')) {
     function sode_detect_matrix_uni_slug($explicit = '')
     {
+        $explicit = trim((string) $explicit);
         if (!empty($explicit)) {
             return sanitize_title($explicit);
         }
@@ -119,7 +176,7 @@ if (!function_exists('sode_detect_matrix_uni_slug')) {
                 return sanitize_title($parts[0]);
             }
         }
-        return 'dayananda-sagar-university';
+        return 'dsu';
     }
 }
 
@@ -176,21 +233,13 @@ if (!function_exists('get_university_fees_table_data')) {
             try {
                 $db = get_db_connection();
                 if ($db) {
-                    // Find Current University
-                    $u_stmt = $db->prepare("
-                        SELECT id, full_name, short_name, slug, mode, location, official_url
-                        FROM universities 
-                        WHERE (LOWER(slug) = LOWER(?) OR LOWER(short_name) = LOWER(?) OR LOWER(full_name) = LOWER(?) OR LOWER(slug) LIKE LOWER(?)) 
-                          AND is_active = 1 
-                        LIMIT 1
-                    ");
-                    $search_like = '%' . strtolower($uni_slug) . '%';
-                    $u_stmt->execute([$uni_slug, $uni_slug, $uni_slug, $search_like]);
-                    $current_uni = $u_stmt->fetch(PDO::FETCH_ASSOC);
+                    // Fetch all active universities & dynamically match
+                    $all_active_stmt = $db->query("SELECT id, full_name, short_name, slug, mode, location, official_url FROM universities WHERE is_active = 1 ORDER BY id ASC");
+                    $all_active_unis = $all_active_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    if (!$current_uni) {
-                        $fallback_stmt = $db->query("SELECT id, full_name, short_name, slug, mode, location, official_url FROM universities WHERE is_active = 1 ORDER BY id ASC LIMIT 1");
-                        $current_uni = $fallback_stmt->fetch(PDO::FETCH_ASSOC);
+                    $current_uni = sode_find_matching_university($all_active_unis, $uni_slug);
+                    if (!$current_uni && !empty($all_active_unis)) {
+                        $current_uni = $all_active_unis[0];
                     }
 
                     if ($current_uni) {
@@ -412,17 +461,36 @@ if (!function_exists('sode_render_uni_fees_row_cells')) {
 if (!function_exists('sode_render_university_fees_table')) {
     function sode_render_university_fees_table($atts = [])
     {
+        $raw_atts = (array) ($atts ?: []);
+        $explicit_uni = !empty($raw_atts['uni']) ? $raw_atts['uni'] : (!empty($raw_atts['university']) ? $raw_atts['university'] : '');
+        if (empty($explicit_uni)) {
+            foreach ($raw_atts as $k => $v) {
+                if (is_numeric($k) && is_string($v) && !empty($v)) {
+                    if (strpos($v, '=') !== false) {
+                        list($pk, $pv) = explode('=', $v, 2);
+                        if (in_array(strtolower(trim($pk)), ['uni', 'university'])) {
+                            $explicit_uni = trim($pv, " '\"\t\n\r\0\x0B");
+                            break;
+                        }
+                    } else {
+                        $explicit_uni = trim($v, " '\"\t\n\r\0\x0B");
+                        break;
+                    }
+                }
+            }
+        }
+
         $atts = shortcode_atts([
-            'uni' => '',
-            'university' => '',
+            'uni' => $explicit_uni,
+            'university' => $explicit_uni,
             'visible_rows' => UNI_FEES_TABLE_VISIBLE_ROWS,
             'limit' => '',
             'heading' => '',
             'description' => '',
             'class' => '',
-        ], $atts);
+        ], $raw_atts);
 
-        $uni_slug = !empty($atts['uni']) ? $atts['uni'] : $atts['university'];
+        $uni_slug = !empty($atts['uni']) ? $atts['uni'] : (!empty($atts['university']) ? $atts['university'] : $explicit_uni);
         $data = get_university_fees_table_data($uni_slug);
 
         if (empty($data) || empty($data['universities']) || empty($data['columns'])) {

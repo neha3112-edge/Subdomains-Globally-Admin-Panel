@@ -22,7 +22,7 @@ try {
         throw new Exception('Database connection failed');
     }
 
-    $uni_input = trim($_GET['uni'] ?? ($_POST['uni'] ?? ''));
+    $uni_input = trim($_GET['uni'] ?? ($_POST['uni'] ?? ($_GET['university'] ?? ($_POST['university'] ?? ''))));
     if (empty($uni_input)) {
         $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
         $parts = explode('.', $host);
@@ -34,27 +34,71 @@ try {
         $uni_input = 'dsu';
     }
 
-    // 1. Find Current University
-    $u_stmt = $db->prepare("
-        SELECT id, full_name, short_name, slug, mode, location, official_url
-        FROM universities 
-        WHERE (LOWER(slug) = LOWER(?) OR LOWER(short_name) = LOWER(?) OR LOWER(full_name) = LOWER(?) OR LOWER(slug) LIKE LOWER(?)) 
-          AND is_active = 1 
-        LIMIT 1
-    ");
-    $search_like = '%' . strtolower($uni_input) . '%';
-    $u_stmt->execute([$uni_input, $uni_input, $uni_input, $search_like]);
-    $current_uni = $u_stmt->fetch(PDO::FETCH_ASSOC);
+    // Helper: Dynamically find matching university from database records
+    if (!function_exists('sode_find_matching_university')) {
+        function sode_find_matching_university($unis, $search_term) {
+            if (empty($search_term) || empty($unis)) return null;
+            $term = strtolower(trim(preg_replace('/[^a-z0-9]+/', '', (string)$search_term)));
+            if ($term === '') return null;
 
-    if (!$current_uni) {
-        // Fallback to first active university
-        $fallback_stmt = $db->query("SELECT id, full_name, short_name, slug, mode, location, official_url FROM universities WHERE is_active = 1 ORDER BY id ASC LIMIT 1");
-        $current_uni = $fallback_stmt->fetch(PDO::FETCH_ASSOC);
+            // 1. Exact match on slug, short_name, or full_name
+            foreach ($unis as $u) {
+                $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+                $clean_short = strtolower(str_replace(['-', '_', ' ', '.'], '', $u['short_name'] ?? ''));
+                $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+                if ($term === $clean_slug || $term === $clean_short || $term === $clean_full) {
+                    return $u;
+                }
+            }
+
+            // 2. Dynamic Acronym / Initials match (e.g. cu, dsu, lpu, smu, vgu, muj)
+            foreach ($unis as $u) {
+                $slug_parts = explode('-', strtolower($u['slug'] ?? ''));
+                $slug_ac = '';
+                foreach ($slug_parts as $sp) {
+                    if ($sp !== '') $slug_ac .= $sp[0];
+                }
+                if ($term === $slug_ac) {
+                    return $u;
+                }
+
+                $full_words = preg_split('/[\s,\-\.]+/', strtolower($u['full_name'] ?? ''));
+                $full_ac = '';
+                foreach ($full_words as $fw) {
+                    if ($fw !== '' && !in_array($fw, ['and', 'of', 'for', 'the', 'in'])) {
+                        $full_ac .= $fw[0];
+                    }
+                }
+                if ($term === $full_ac) {
+                    return $u;
+                }
+            }
+
+            // 3. Substring / Prefix match on slug or name
+            foreach ($unis as $u) {
+                $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+                $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+                if (strpos($clean_slug, $term) !== false || strpos($clean_full, $term) !== false) {
+                    return $u;
+                }
+            }
+
+            return null;
+        }
     }
 
-    if (!$current_uni) {
+    // 1. Fetch All Active Universities & Match Dynamically
+    $all_active_stmt = $db->query("SELECT id, full_name, short_name, slug, mode, location, official_url FROM universities WHERE is_active = 1 ORDER BY id ASC");
+    $all_active_unis = $all_active_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($all_active_unis)) {
         echo json_encode(['success' => false, 'message' => 'No active university found']);
         exit;
+    }
+
+    $current_uni = sode_find_matching_university($all_active_unis, $uni_input);
+    if (!$current_uni) {
+        $current_uni = $all_active_unis[0];
     }
 
     // 2. Fetch Mapped Courses for Current University

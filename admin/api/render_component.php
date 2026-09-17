@@ -73,8 +73,11 @@ if (file_exists($root_dir . '/university-fees-table-universal.php')) {
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
 $params = array_merge($_GET, $_POST);
 
-if (!isset($params['university']) && isset($params['uni'])) {
+if (!empty($params['uni']) && empty($params['university'])) {
     $params['university'] = $params['uni'];
+}
+if (!empty($params['university']) && empty($params['uni'])) {
+    $params['uni'] = $params['university'];
 }
 
 // 3. Dispatch Component Render
