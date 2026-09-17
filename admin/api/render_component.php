@@ -60,6 +60,10 @@ if (file_exists($root_dir . '/gallabox-widget-universal.php')) {
 if (file_exists($root_dir . '/university-dates-table-universal.php')) {
     require_once $root_dir . '/university-dates-table-universal.php';
 }
+if (file_exists($root_dir . '/alternate-universities-universal.php')) {
+    require_once $root_dir . '/alternate-universities-universal.php';
+}
+
 
 
 // 2. Resolve Component and Request Parameters
@@ -212,6 +216,16 @@ switch ($component) {
     case 'university_dates_table':
         echo sode_university_dates_table_render($params);
         break;
+
+    case 'alternate_universities':
+    case 'alternative_universities':
+    case 'alternatives_universities':
+    case 'alternate_university_list':
+    case 'alternative_university_list':
+    case 'alternatives_list':
+        echo function_exists('sode_alternate_universities_render') ? sode_alternate_universities_render($params) : '';
+        break;
+
 
     case 'lead_form':
     case 'custom_lead_form':
