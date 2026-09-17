@@ -338,7 +338,6 @@ if (!function_exists('sode_alternate_universities_render')) {
                 max-width: 1180px;
                 margin: 0 auto;
                 box-sizing: border-box;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 color: #1f2937;
             }
             .sode-alt-container *, .sode-alt-container *::before, .sode-alt-container *::after {
@@ -499,7 +498,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
-                gap: 18px;
+                gap: 22px;
                 font-size: 14px;
                 margin-bottom: 18px;
                 line-height: 1.5;
@@ -507,7 +506,7 @@ if (!function_exists('sode_alternate_universities_render')) {
             .sode-alt-meta-item {
                 display: inline-flex;
                 align-items: center;
-                gap: 4px;
+                gap: 5px;
             }
             .sode-alt-meta-label {
                 color: #0c2340;
@@ -606,17 +605,18 @@ if (!function_exists('sode_alternate_universities_render')) {
             .sode-alt-table thead th {
                 background: #e9f5fe;
                 color: #0c2340;
-                font-size: 12.5px;
-                font-weight: 700;
+                font-size: 13px;
+                font-weight: 800;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
-                padding: 12px 16px;
-                border-bottom: 1px solid #cbd5e1;
+                letter-spacing: 0.6px;
+                padding: 13px 16px;
+                border-bottom: 2px solid #cbd5e1;
                 white-space: nowrap;
             }
             .sode-alt-table th:nth-child(1) { width: 22%; }
             .sode-alt-table th:nth-child(2) { width: 56%; }
             .sode-alt-table th:nth-child(3) { width: 22%; }
+
 
             .sode-alt-table tbody td {
                 padding: 12px 16px;
@@ -755,14 +755,9 @@ if (!function_exists('sode_alternate_universities_render')) {
                 font-size: 20px;
                 font-weight: 800;
                 color: #0c2340;
-                margin: 0 0 4px;
+                margin: 0;
                 line-height: 1.3;
                 padding-right: 28px;
-            }
-            .sode-alt-modal-subtitle {
-                font-size: 13.5px;
-                color: #64748b;
-                margin: 0;
             }
             .sode-alt-modal-body {
                 padding: 20px 24px 24px;
@@ -774,8 +769,8 @@ if (!function_exists('sode_alternate_universities_render')) {
                 background: #f8fafc;
                 border: 1px dashed #cbd5e1;
                 border-radius: 8px;
-                padding: 20px;
-                min-height: 240px;
+                padding: 16px;
+                min-height: 200px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -783,130 +778,13 @@ if (!function_exists('sode_alternate_universities_render')) {
             }
             .sode-degree-img {
                 max-width: 100%;
-                max-height: 65vh;
+                max-height: 72vh;
                 object-fit: contain;
                 border-radius: 6px;
                 box-shadow: 0 4px 14px rgba(0,0,0,0.1);
             }
-            .sode-degree-mockup {
-                border: 2px solid #e2e8f0;
-                background: #ffffff;
-                border-radius: 8px;
-                padding: 30px 24px;
-                width: 100%;
-                max-width: 480px;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-            }
-            .sode-degree-gold-seal {
-                width: 56px;
-                height: 56px;
-                margin: 0 auto 12px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                color: #ffffff;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 26px;
-                box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
-            }
-            .sode-degree-mockup-uni {
-                font-size: 18px;
-                font-weight: 800;
-                color: #0c2340;
-                margin-bottom: 6px;
-            }
-            .sode-degree-mockup-text {
-                font-size: 13px;
-                color: #64748b;
-                line-height: 1.5;
-                margin-bottom: 16px;
-            }
-
-            /* Get Help Form Inputs */
-            .sode-alt-form-group {
-                margin-bottom: 14px;
-            }
-            .sode-alt-label {
-                display: block;
-                font-size: 12.5px;
-                font-weight: 700;
-                color: #334155;
-                margin-bottom: 5px;
-            }
-            .sode-alt-input, .sode-alt-select {
-                width: 100%;
-                padding: 10px 12px;
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-                font-size: 14px;
-                color: #1e293b;
-                background: #ffffff;
-                outline: none;
-                transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            }
-            .sode-alt-input:focus, .sode-alt-select:focus {
-                border-color: #0284c7;
-                box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
-            }
-            .sode-alt-phone-row {
-                display: flex;
-                gap: 8px;
-            }
-            .sode-alt-code-select {
-                width: 110px;
-                flex-shrink: 0;
-            }
-            .sode-alt-form-consent {
-                display: flex;
-                align-items: flex-start;
-                gap: 8px;
-                font-size: 11.5px;
-                color: #64748b;
-                margin: 14px 0 18px;
-                line-height: 1.4;
-                cursor: pointer;
-            }
-            .sode-alt-form-consent input {
-                margin-top: 2px;
-            }
-            .sode-alt-submit-btn {
-                width: 100%;
-                background: #2e7d32;
-                color: #ffffff;
-                border: none;
-                padding: 12px;
-                font-size: 15px;
-                font-weight: 700;
-                border-radius: 6px;
-                cursor: pointer;
-                transition: background 0.2s ease;
-            }
-            .sode-alt-submit-btn:hover {
-                background: #256628;
-            }
-            .sode-alt-submit-btn:disabled {
-                background: #94a3b8;
-                cursor: not-allowed;
-            }
-            .sode-alt-form-success {
-                display: none;
-                text-align: center;
-                padding: 24px 16px;
-            }
-            .sode-alt-form-success .sode-success-icon {
-                width: 52px;
-                height: 52px;
-                border-radius: 50%;
-                background: #dcfce7;
-                color: #16a34a;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 28px;
-                margin: 0 auto 12px;
-            }
         </style>
+
 
         <div class="sode-alt-container <?php echo esc_attr($atts['class']); ?>">
             <?php if (!empty($atts['heading'])): ?>
@@ -998,14 +876,20 @@ if (!function_exists('sode_alternate_universities_render')) {
                                             <span class="sode-alt-meta-val"><?php echo esc_html($uni['approvals_string']); ?></span>
                                         </div>
                                     <?php endif; ?>
+
+                                    <?php if (!empty($uni['advantage_text'])): ?>
+                                        <div class="sode-alt-meta-item">
+                                            <span class="sode-alt-meta-label">Advantage :</span>
+                                            <span class="sode-alt-meta-val"><?php echo esc_html($uni['advantage_text']); ?></span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <!-- Action Buttons -->
                                 <div class="sode-alt-btn-group">
-                                    <button type="button" class="sode-alt-btn-help sode-open-help-modal"
+                                    <button type="button" class="sode-alt-btn-help applynow"
                                             data-uni-name="<?php echo esc_attr($uni_name); ?>"
-                                            data-uni-slug="<?php echo esc_attr($uni_slug); ?>"
-                                            data-courses='<?php echo $courses_json; ?>'>
+                                            data-uni-slug="<?php echo esc_attr($uni_slug); ?>">
                                         Get Help
                                     </button>
 
@@ -1057,108 +941,17 @@ if (!function_exists('sode_alternate_universities_render')) {
         </div>
 
         <!-- ========================================================= -->
-        <!-- POPUP 1: SAMPLE DEGREE MODAL                             -->
+        <!-- POPUP: SAMPLE DEGREE MODAL (ONLY HEADING & IMAGE)        -->
         <!-- ========================================================= -->
         <div id="sodeAltSampleModal" class="sode-alt-modal-overlay">
             <div class="sode-alt-modal-box is-wide">
                 <button type="button" class="sode-alt-modal-close sode-close-modal" aria-label="Close">&times;</button>
                 <div class="sode-alt-modal-head">
-                    <h3 class="sode-alt-modal-title" id="sodeSampleModalTitle">Sample Degree Certificate</h3>
-                    <p class="sode-alt-modal-subtitle">Official verified sample degree preview accredited by UGC-DEB</p>
+                    <h3 class="sode-alt-modal-title" id="sodeSampleModalTitle">Sample Degree</h3>
                 </div>
                 <div class="sode-alt-modal-body">
                     <div id="sodeSampleModalContent" class="sode-degree-preview-container">
-                        <!-- Injected via JavaScript -->
-                    </div>
-                    <div style="margin-top: 18px; text-align: center; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                        <button type="button" id="sodeSampleHelpBtn" class="sode-alt-btn-help">
-                            Get Admission & Degree Assistance
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- POPUP 2: GET HELP INQUIRY FORM MODAL                     -->
-        <!-- ========================================================= -->
-        <div id="sodeAltHelpModal" class="sode-alt-modal-overlay">
-            <div class="sode-alt-modal-box">
-                <button type="button" class="sode-alt-modal-close sode-close-modal" aria-label="Close">&times;</button>
-                <div class="sode-alt-modal-head">
-                    <h3 class="sode-alt-modal-title" id="sodeHelpModalTitle">Get Free Admission Assistance</h3>
-                    <p class="sode-alt-modal-subtitle" id="sodeHelpModalSubtitle">Speak with an expert counselor for personalized guidance</p>
-                </div>
-                <div class="sode-alt-modal-body">
-                    <form id="sodeAltLeadForm" class="customLeadForm" data-form-name="Alternate University Help Popup" method="POST">
-                        <input type="hidden" name="uni_slug" id="sodeHelpUniSlug" value="dsu">
-                        <input type="hidden" name="action" value="send_lead">
-                        <input type="hidden" name="form_name" value="Alternate University Help Popup">
-                        <input type="hidden" name="source" value="ALT_UNI_POPUP">
-
-                        <div class="sode-alt-form-group">
-                            <label class="sode-alt-label">Full Name *</label>
-                            <input type="text" name="name" class="sode-alt-input" placeholder="Enter Your Full Name" required>
-                        </div>
-
-                        <div class="sode-alt-form-group">
-                            <label class="sode-alt-label">Mobile Number *</label>
-                            <div class="sode-alt-phone-row">
-                                <select name="country_code" class="sode-alt-select sode-alt-code-select country_code" required>
-                                    <option value="91" selected>🇮🇳 +91</option>
-                                    <option value="971">🇦🇪 +971</option>
-                                    <option value="1">🇺🇸 +1</option>
-                                    <option value="44">🇬🇧 +44</option>
-                                    <option value="1">🇨🇦 +1</option>
-                                    <option value="61">🇦🇺 +61</option>
-                                    <option value="966">🇸🇦 +966</option>
-                                    <option value="974">🇶🇦 +974</option>
-                                    <option value="968">🇴🇲 +968</option>
-                                    <option value="65">🇸🇬 +65</option>
-                                </select>
-                                <input type="tel" name="phone" class="sode-alt-input phone" placeholder="10-digit mobile number" maxlength="10" required>
-                            </div>
-                        </div>
-
-                        <div class="sode-alt-form-group">
-                            <label class="sode-alt-label">Email Address *</label>
-                            <input type="email" name="email" class="sode-alt-input" placeholder="Enter Your Email Address" required>
-                        </div>
-
-                        <div class="sode-alt-form-group">
-                            <label class="sode-alt-label">Select Course *</label>
-                            <select name="course" id="sodeHelpCourseSelect" class="sode-alt-select" required>
-                                <option value="">Select Interested Course</option>
-                            </select>
-                        </div>
-
-                        <div class="sode-alt-form-group">
-                            <label class="sode-alt-label">State *</label>
-                            <select name="state" class="sode-alt-select" required>
-                                <option value="">Select State</option>
-                                <?php foreach ($indian_states as $st): ?>
-                                    <option value="<?php echo esc_attr($st); ?>"><?php echo esc_html($st); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <!-- Honeypot -->
-                        <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
-
-                        <label class="sode-alt-form-consent">
-                            <input type="checkbox" name="consent" checked required>
-                            <span>I authorize Distance Education School & university representatives to contact me via Call/SMS/WhatsApp for admission guidance.</span>
-                        </label>
-
-                        <button type="submit" class="sode-alt-submit-btn submitBtn" id="sodeAltSubmitBtn">
-                            Get Free Counseling
-                        </button>
-                    </form>
-
-                    <div id="sodeAltSuccessBox" class="sode-alt-form-success">
-                        <div class="sode-success-icon">✓</div>
-                        <h4 style="font-size: 18px; color: #0c2340; margin: 0 0 8px;">Thank You!</h4>
-                        <p style="color: #64748b; font-size: 14px; margin: 0;">Your counseling request has been received. Our academic advisor will contact you shortly.</p>
+                        <!-- Injected via JavaScript (Only Image or Clean Preview) -->
                     </div>
                 </div>
             </div>
@@ -1195,93 +988,30 @@ if (!function_exists('sode_alternate_universities_render')) {
                     });
                 });
 
-                // Modals Elements
+                // 2. Sample Degree Modal (Only Heading & Image)
                 const sampleModal = document.getElementById('sodeAltSampleModal');
-                const helpModal = document.getElementById('sodeAltHelpModal');
                 const sampleModalTitle = document.getElementById('sodeSampleModalTitle');
                 const sampleModalContent = document.getElementById('sodeSampleModalContent');
-                const sampleHelpBtn = document.getElementById('sodeSampleHelpBtn');
-                
-                const helpModalTitle = document.getElementById('sodeHelpModalTitle');
-                const helpModalSubtitle = document.getElementById('sodeHelpModalSubtitle');
-                const helpUniSlug = document.getElementById('sodeHelpUniSlug');
-                const helpCourseSelect = document.getElementById('sodeHelpCourseSelect');
-                const helpForm = document.getElementById('sodeAltLeadForm');
-                const successBox = document.getElementById('sodeAltSuccessBox');
 
-                let currentUniData = null;
-
-                function closeModal() {
+                function closeSampleModal() {
                     if (sampleModal) sampleModal.classList.remove('is-visible');
-                    if (helpModal) helpModal.classList.remove('is-visible');
                     document.body.style.overflow = '';
                 }
 
                 document.querySelectorAll('.sode-close-modal').forEach(b => {
-                    b.addEventListener('click', closeModal);
+                    b.addEventListener('click', closeSampleModal);
                 });
 
-                [sampleModal, helpModal].forEach(m => {
-                    if (!m) return;
-                    m.addEventListener('click', function(e) {
-                        if (e.target === this) closeModal();
+                if (sampleModal) {
+                    sampleModal.addEventListener('click', function(e) {
+                        if (e.target === this) closeSampleModal();
                     });
-                });
+                }
 
                 document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape') closeModal();
+                    if (e.key === 'Escape') closeSampleModal();
                 });
 
-                // Helper: Populate Course Dropdown
-                function populateCourseDropdown(coursesRaw) {
-                    if (!helpCourseSelect) return;
-                    helpCourseSelect.innerHTML = '<option value="">Select Interested Course</option>';
-                    let courses = [];
-                    try {
-                        courses = typeof coursesRaw === 'string' ? JSON.parse(coursesRaw) : coursesRaw;
-                    } catch(err) {
-                        courses = [];
-                    }
-
-                    if (Array.isArray(courses) && courses.length > 0) {
-                        courses.forEach(c => {
-                            const opt = document.createElement('option');
-                            opt.value = c.name || c.short_name || c.full || c;
-                            opt.textContent = (c.name ? c.name : (c.full ? c.full : c));
-                            helpCourseSelect.appendChild(opt);
-                        });
-                    } else {
-                        // Standard fallback
-                        ['MBA', 'MCA', 'BBA', 'BCA', 'B.Com', 'M.Com', 'MA', 'BA'].forEach(c => {
-                            const opt = document.createElement('option');
-                            opt.value = c;
-                            opt.textContent = c;
-                            helpCourseSelect.appendChild(opt);
-                        });
-                    }
-                }
-
-                // Helper: Open Get Help Modal
-                function openHelpModal(uniName, uniSlug, coursesRaw) {
-                    currentUniData = { name: uniName, slug: uniSlug, courses: coursesRaw };
-                    if (helpModalTitle) helpModalTitle.textContent = 'Get Free Admission Assistance - ' + uniName;
-                    if (helpModalSubtitle) helpModalSubtitle.textContent = 'Speak with an expert counselor for ' + uniName + ' courses, fees & eligibility.';
-                    if (helpUniSlug) helpUniSlug.value = uniSlug || 'dsu';
-
-                    populateCourseDropdown(coursesRaw);
-
-                    if (helpForm) {
-                        helpForm.style.display = 'block';
-                        helpForm.dataset.uniSlug = uniSlug || 'dsu';
-                    }
-                    if (successBox) successBox.style.display = 'none';
-
-                    if (sampleModal) sampleModal.classList.remove('is-visible');
-                    if (helpModal) helpModal.classList.add('is-visible');
-                    document.body.style.overflow = 'hidden';
-                }
-
-                // 2. Open Sample Degree Modal
                 const sampleBtns = document.querySelectorAll('.sode-open-sample-modal');
                 sampleBtns.forEach(btn => {
                     if (btn.dataset.initialized) return;
@@ -1291,10 +1021,6 @@ if (!function_exists('sode_alternate_universities_render')) {
                         e.preventDefault();
                         const uniName = this.dataset.uniName || 'University';
                         const sampleImg = this.dataset.sampleImg;
-                        const uniSlug = this.dataset.uniSlug;
-                        const coursesRaw = this.dataset.courses;
-
-                        currentUniData = { name: uniName, slug: uniSlug, courses: coursesRaw };
 
                         if (sampleModalTitle) {
                             sampleModalTitle.textContent = uniName + ' - Sample Degree';
@@ -1305,16 +1031,13 @@ if (!function_exists('sode_alternate_universities_render')) {
                                 sampleModalContent.innerHTML = '<img src="' + sampleImg + '" alt="' + uniName + ' Sample Degree" class="sode-degree-img" loading="lazy">';
                             } else {
                                 sampleModalContent.innerHTML = `
-                                    <div class="sode-degree-mockup">
-                                        <div class="sode-degree-gold-seal">★</div>
-                                        <div class="sode-degree-mockup-uni">${uniName}</div>
-                                        <div style="font-size:12px; font-weight:700; color:#0284c7; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">
-                                            UGC-DEB & NAAC Accredited Sample Degree
-                                        </div>
-                                        <p class="sode-degree-mockup-text">
-                                            Official sample degree copy verified by Distance Education School. 
-                                            Contact an academic counselor to receive the complete sample degree transcript and curriculum prospectus on WhatsApp/Email.
-                                        </p>
+                                    <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 15px;">
+                                        <svg style="width:48px; height:48px; margin:0 auto 12px; display:block; stroke:#94a3b8;" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        Sample Degree image for <strong>${uniName}</strong> will be updated soon.
                                     </div>
                                 `;
                             }
@@ -1324,90 +1047,6 @@ if (!function_exists('sode_alternate_universities_render')) {
                         document.body.style.overflow = 'hidden';
                     });
                 });
-
-                if (sampleHelpBtn) {
-                    sampleHelpBtn.addEventListener('click', function() {
-                        if (currentUniData) {
-                            openHelpModal(currentUniData.name, currentUniData.slug, currentUniData.courses);
-                        } else {
-                            openHelpModal('University', 'dsu', []);
-                        }
-                    });
-                }
-
-                // 3. Open Help Modal on "Get Help" Click
-                const helpBtns = document.querySelectorAll('.sode-open-help-modal');
-                helpBtns.forEach(btn => {
-                    if (btn.dataset.initialized) return;
-                    btn.dataset.initialized = 'true';
-
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const uniName = this.dataset.uniName || 'University';
-                        const uniSlug = this.dataset.uniSlug || 'dsu';
-                        const coursesRaw = this.dataset.courses;
-                        openHelpModal(uniName, uniSlug, coursesRaw);
-                    });
-                });
-
-                // 4. Form Submit Handler Fallback (if central lead script isn't globally bound)
-                if (helpForm && !helpForm.dataset.fallbackBound) {
-                    helpForm.dataset.fallbackBound = 'true';
-
-                    helpForm.addEventListener('submit', function(e) {
-                        // If window.sodeFormHandlerAttached is active, let it handle, else handle here
-                        if (window.sodeFormHandlerAttached) return;
-
-                        e.preventDefault();
-                        const btn = document.getElementById('sodeAltSubmitBtn');
-                        const phoneInput = helpForm.querySelector('.phone');
-                        const phoneVal = phoneInput ? phoneInput.value.trim() : '';
-
-                        if (!/^[6-9]\d{9}$/.test(phoneVal)) {
-                            alert('Please enter a valid 10-digit Indian mobile number');
-                            if (phoneInput) phoneInput.focus();
-                            return;
-                        }
-
-                        if (btn) {
-                            btn.disabled = true;
-                            btn.textContent = 'Submitting...';
-                        }
-
-                        const formData = new FormData(helpForm);
-                        const countryCode = helpForm.querySelector('.country_code') ? helpForm.querySelector('.country_code').value : '91';
-                        formData.set('phone', countryCode + phoneVal);
-
-                        fetch('/wp-admin/admin-ajax.php?action=send_lead', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(r => r.json())
-                        .then(res => {
-                            if (res.success) {
-                                helpForm.style.display = 'none';
-                                if (successBox) successBox.style.display = 'block';
-                                setTimeout(() => {
-                                    window.location.href = '/thank-you';
-                                }, 1500);
-                            } else {
-                                alert(res.data || 'Submission failed. Please try again.');
-                                if (btn) {
-                                    btn.disabled = false;
-                                    btn.textContent = 'Get Free Counseling';
-                                }
-                            }
-                        })
-                        .catch(() => {
-                            // Friendly fallback: redirect to thank-you
-                            helpForm.style.display = 'none';
-                            if (successBox) successBox.style.display = 'block';
-                            setTimeout(() => {
-                                window.location.href = '/thank-you';
-                            }, 1200);
-                        });
-                    });
-                }
             }
 
             if (document.readyState === 'loading') {
