@@ -888,6 +888,53 @@ add_shortcode('subdomain_fees_table', $uni_compare_fees_handler);
 add_shortcode('subdomain_course_fees_table', $uni_compare_fees_handler);
 
 // ====================================================
+// 2.10.2. UNIVERSITIES PROGRAMMES TABLE (UGC-DEB APPROVED) SHORTCODES
+// [subdomain_programmes_table], [university_programmes_table], [uni_programmes_table], [ugc_deb_approved_courses_table]
+// ====================================================
+if (file_exists(__DIR__ . '/university-programmes-table-universal.php')) {
+    include_once __DIR__ . '/university-programmes-table-universal.php';
+}
+
+$uni_programmes_table_handler = function ($atts) {
+    $raw_atts = (array) ($atts ?: []);
+    $explicit_uni = !empty($raw_atts['uni']) ? $raw_atts['uni'] : (!empty($raw_atts['university']) ? $raw_atts['university'] : '');
+    if (empty($explicit_uni)) {
+        foreach ($raw_atts as $k => $v) {
+            if (is_numeric($k) && is_string($v) && !empty($v)) {
+                if (strpos($v, '=') !== false) {
+                    list($pk, $pv) = explode('=', $v, 2);
+                    if (in_array(strtolower(trim($pk)), ['uni', 'university'])) {
+                        $explicit_uni = trim($pv, " '\"\t\n\r\0\x0B");
+                        break;
+                    }
+                } else {
+                    $explicit_uni = trim($v, " '\"\t\n\r\0\x0B");
+                    break;
+                }
+            }
+        }
+    }
+    if (!empty($explicit_uni)) {
+        $raw_atts['uni'] = $explicit_uni;
+        $raw_atts['university'] = $explicit_uni;
+    }
+
+    if (function_exists('sode_render_university_programmes_table')) {
+        return sode_render_university_programmes_table($raw_atts);
+    }
+    $res = sode_fetch_remote_component('subdomain_programmes_table', $raw_atts);
+    if (empty($res)) {
+        $res = sode_fetch_remote_component('university_programmes_table', $raw_atts);
+    }
+    return $res;
+};
+add_shortcode('subdomain_programmes_table', $uni_programmes_table_handler);
+add_shortcode('university_programmes_table', $uni_programmes_table_handler);
+add_shortcode('uni_programmes_table', $uni_programmes_table_handler);
+add_shortcode('ugc_deb_approved_courses_table', $uni_programmes_table_handler);
+add_shortcode('university_ugc_courses_table', $uni_programmes_table_handler);
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 
