@@ -12,11 +12,13 @@
  *  5. Includes 'Add to Compare' (floating compare dock) & 'View More / View Less'
  * 
  * Shortcodes:
- *  - [university_fees_table]
- *  - [universities_fees_table]
+ *  - [compare_universities_table]
+ *  - [universities_comparison_table]
+ *  - [compare_universities_fees]
+ *  - [universities_fee_comparison]
+ *  - [alternate_universities_fees]
  *  - [alternate_universities_fees_table]
  *  - [subdomain_fees_table]
- *  - [uni_fees_table]
  * ====================================================================
  */
 
@@ -1013,10 +1015,12 @@ if (!function_exists('sode_render_university_fees_table')) {
 
 // Register Shortcodes
 if (function_exists('add_shortcode')) {
-    add_shortcode('university_fees_table', 'sode_render_university_fees_table');
-    add_shortcode('universities_fees_table', 'sode_render_university_fees_table');
+    add_shortcode('compare_universities_table', 'sode_render_university_fees_table');
+    add_shortcode('universities_comparison_table', 'sode_render_university_fees_table');
+    add_shortcode('compare_universities_fees', 'sode_render_university_fees_table');
+    add_shortcode('universities_fee_comparison', 'sode_render_university_fees_table');
+    add_shortcode('alternate_universities_fees', 'sode_render_university_fees_table');
     add_shortcode('alternate_universities_fees_table', 'sode_render_university_fees_table');
     add_shortcode('subdomain_fees_table', 'sode_render_university_fees_table');
-    add_shortcode('uni_fees_table', 'sode_render_university_fees_table');
     add_shortcode('subdomain_course_fees_table', 'sode_render_university_fees_table');
 }

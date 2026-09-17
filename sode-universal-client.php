@@ -828,6 +828,29 @@ add_shortcode('alternative_university_list', $alternate_unis_handler);
 add_shortcode('alternatives_list', $alternate_unis_handler);
 
 // ====================================================
+// 2.10.1. UNIVERSITIES COURSE FEES MATRIX TABLE SHORTCODES
+// [compare_universities_table], [universities_comparison_table], [compare_universities_fees], [universities_fee_comparison], [alternate_universities_fees], [alternate_universities_fees_table]
+// ====================================================
+if (file_exists(__DIR__ . '/university-fees-table-universal.php')) {
+    include_once __DIR__ . '/university-fees-table-universal.php';
+}
+
+$uni_compare_fees_handler = function ($atts) {
+    if (function_exists('sode_render_university_fees_table')) {
+        return sode_render_university_fees_table($atts ?: []);
+    }
+    return sode_fetch_remote_component('compare_universities_table', $atts ?: []);
+};
+add_shortcode('compare_universities_table', $uni_compare_fees_handler);
+add_shortcode('universities_comparison_table', $uni_compare_fees_handler);
+add_shortcode('compare_universities_fees', $uni_compare_fees_handler);
+add_shortcode('universities_fee_comparison', $uni_compare_fees_handler);
+add_shortcode('alternate_universities_fees', $uni_compare_fees_handler);
+add_shortcode('alternate_universities_fees_table', $uni_compare_fees_handler);
+add_shortcode('subdomain_fees_table', $uni_compare_fees_handler);
+add_shortcode('subdomain_course_fees_table', $uni_compare_fees_handler);
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 

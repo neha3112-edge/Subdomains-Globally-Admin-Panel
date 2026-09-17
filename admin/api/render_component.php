@@ -229,11 +229,13 @@ switch ($component) {
         echo function_exists('sode_alternate_universities_render') ? sode_alternate_universities_render($params) : '';
         break;
 
-    case 'university_fees_table':
-    case 'universities_fees_table':
+    case 'compare_universities_table':
+    case 'universities_comparison_table':
+    case 'compare_universities_fees':
+    case 'universities_fee_comparison':
+    case 'alternate_universities_fees':
     case 'alternate_universities_fees_table':
     case 'subdomain_fees_table':
-    case 'uni_fees_table':
     case 'subdomain_course_fees_table':
         echo function_exists('sode_render_university_fees_table') ? sode_render_university_fees_table($params) : '';
         break;
