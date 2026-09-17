@@ -807,8 +807,30 @@ add_shortcode('sode_application_process', function ($atts) {
 });
 
 // ====================================================
+// 2.10. ALTERNATIVE UNIVERSITIES SHOWCASE SHORTCODES
+// [alternative_universities], [alternate_universities], [alternatives_universities], [alternate_university_list], [alternative_university_list], [alternatives_list]
+// ====================================================
+if (file_exists(__DIR__ . '/alternate-universities-universal.php')) {
+    include_once __DIR__ . '/alternate-universities-universal.php';
+}
+
+$alternate_unis_handler = function ($atts) {
+    if (function_exists('sode_alternate_universities_render')) {
+        return sode_alternate_universities_render($atts ?: []);
+    }
+    return sode_fetch_remote_component('alternate_universities', $atts ?: []);
+};
+add_shortcode('alternative_universities', $alternate_unis_handler);
+add_shortcode('alternate_universities', $alternate_unis_handler);
+add_shortcode('alternatives_universities', $alternate_unis_handler);
+add_shortcode('alternate_university_list', $alternate_unis_handler);
+add_shortcode('alternative_university_list', $alternate_unis_handler);
+add_shortcode('alternatives_list', $alternate_unis_handler);
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
+
 add_shortcode('site_year', function ($atts) {
     return date('Y');
 });
