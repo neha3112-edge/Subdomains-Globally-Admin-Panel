@@ -191,28 +191,28 @@ if (!function_exists('sode_get_alternate_universities_list')) {
                             }
 
                             $desktop_img = !empty($u['alt_desktop_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['alt_desktop_img']) : $u['alt_desktop_img']) : '';
-                            $mobile_img  = !empty($u['alt_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['alt_mobile_img']) : $u['alt_mobile_img']) : '';
-                            $sample_img  = !empty($u['sample_degree_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['sample_degree_img']) : $u['sample_degree_img']) : '';
-                            $logo_img    = !empty($u['logo_url']) ? (function_exists('get_asset_url') ? get_asset_url($u['logo_url']) : $u['logo_url']) : '';
-                            $campus_img  = !empty($u['campus_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['campus_mobile_img']) : $u['campus_mobile_img']) : '';
+                            $mobile_img = !empty($u['alt_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['alt_mobile_img']) : $u['alt_mobile_img']) : '';
+                            $sample_img = !empty($u['sample_degree_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['sample_degree_img']) : $u['sample_degree_img']) : '';
+                            $logo_img = !empty($u['logo_url']) ? (function_exists('get_asset_url') ? get_asset_url($u['logo_url']) : $u['logo_url']) : '';
+                            $campus_img = !empty($u['campus_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['campus_mobile_img']) : $u['campus_mobile_img']) : '';
 
                             $result[] = [
-                                'id'               => (int) $u['id'],
-                                'full_name'        => $u['full_name'],
-                                'short_name'       => $u['short_name'],
-                                'slug'             => $u['slug'],
-                                'mode'             => $u['mode'],
-                                'location'         => $u['location'] ?? '',
-                                'advantage_text'   => $u['advantage_text'] ?? '',
-                                'alt_desktop_img'  => $desktop_img,
-                                'alt_mobile_img'   => $mobile_img,
-                                'sample_degree_img'=> $sample_img,
-                                'logo_url'         => $logo_img,
-                                'campus_img'       => $campus_img,
-                                'alt_description'  => $desc,
-                                'approvals'        => $acc_titles,
+                                'id' => (int) $u['id'],
+                                'full_name' => $u['full_name'],
+                                'short_name' => $u['short_name'],
+                                'slug' => $u['slug'],
+                                'mode' => $u['mode'],
+                                'location' => $u['location'] ?? '',
+                                'advantage_text' => $u['advantage_text'] ?? '',
+                                'alt_desktop_img' => $desktop_img,
+                                'alt_mobile_img' => $mobile_img,
+                                'sample_degree_img' => $sample_img,
+                                'logo_url' => $logo_img,
+                                'campus_img' => $campus_img,
+                                'alt_description' => $desc,
+                                'approvals' => $acc_titles,
                                 'approvals_string' => implode(' | ', $acc_titles),
-                                'courses'          => $courses,
+                                'courses' => $courses,
                             ];
                         }
 
@@ -260,13 +260,13 @@ if (!function_exists('sode_alternate_universities_render')) {
     function sode_alternate_universities_render($atts = [])
     {
         $atts = shortcode_atts([
-            'limit'      => -1,
-            'exclude'    => '',
-            'course'     => '',
-            'state'      => '',
-            'heading'    => '',
+            'limit' => -1,
+            'exclude' => '',
+            'course' => '',
+            'state' => '',
+            'heading' => '',
             'subheading' => '',
-            'class'      => '',
+            'class' => '',
         ], $atts, 'alternative_universities');
 
         $universities = sode_get_alternate_universities_list();
@@ -290,7 +290,8 @@ if (!function_exists('sode_alternate_universities_render')) {
         if (!empty($atts['course'])) {
             $course_filter = strtolower(trim($atts['course']));
             $universities = array_filter($universities, function ($u) use ($course_filter) {
-                if (empty($u['courses'])) return false;
+                if (empty($u['courses']))
+                    return false;
                 foreach ($u['courses'] as $c) {
                     if (strtolower($c['short_name']) === $course_filter || stripos($c['full_name'], $course_filter) !== false) {
                         return true;
@@ -320,13 +321,39 @@ if (!function_exists('sode_alternate_universities_render')) {
 
         // Preload states for the inquiry popup
         $indian_states = [
-            "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-            "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
-            "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-            "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan",
-            "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
-            "Uttarakhand", "West Bengal", "Chandigarh", "Jammu and Kashmir",
-            "Ladakh", "Puducherry"
+            "Andhra Pradesh",
+            "Arunachal Pradesh",
+            "Assam",
+            "Bihar",
+            "Chhattisgarh",
+            "Delhi",
+            "Goa",
+            "Gujarat",
+            "Haryana",
+            "Himachal Pradesh",
+            "Jharkhand",
+            "Karnataka",
+            "Kerala",
+            "Madhya Pradesh",
+            "Maharashtra",
+            "Manipur",
+            "Meghalaya",
+            "Mizoram",
+            "Nagaland",
+            "Odisha",
+            "Punjab",
+            "Rajasthan",
+            "Sikkim",
+            "Tamil Nadu",
+            "Telangana",
+            "Tripura",
+            "Uttar Pradesh",
+            "Uttarakhand",
+            "West Bengal",
+            "Chandigarh",
+            "Jammu and Kashmir",
+            "Ladakh",
+            "Puducherry"
         ];
 
         ob_start();
@@ -340,13 +367,18 @@ if (!function_exists('sode_alternate_universities_render')) {
                 box-sizing: border-box;
                 color: #1f2937;
             }
-            .sode-alt-container *, .sode-alt-container *::before, .sode-alt-container *::after {
+
+            .sode-alt-container *,
+            .sode-alt-container *::before,
+            .sode-alt-container *::after {
                 box-sizing: border-box;
             }
+
             .sode-alt-header-area {
                 margin-bottom: 28px;
                 text-align: center;
             }
+
             .sode-alt-main-heading {
                 font-size: 28px;
                 font-weight: 800;
@@ -354,16 +386,19 @@ if (!function_exists('sode_alternate_universities_render')) {
                 margin: 0 0 8px;
                 line-height: 1.3;
             }
+
             .sode-alt-sub-heading {
                 font-size: 15px;
                 color: #4b5563;
                 margin: 0;
             }
+
             .sode-alt-list {
                 display: flex;
                 flex-direction: column;
                 gap: 26px;
             }
+
             .sode-alt-card {
                 background: #ffffff;
                 border: 1px solid #e2e8f0;
@@ -373,10 +408,12 @@ if (!function_exists('sode_alternate_universities_render')) {
                 position: relative;
                 transition: box-shadow 0.25s ease, border-color 0.25s ease;
             }
+
             .sode-alt-card:hover {
                 box-shadow: 0 8px 24px rgba(12, 35, 64, 0.08);
                 border-color: #cbd5e1;
             }
+
             /* Sample Degree Link (Top Right) */
             .sode-alt-top-actions {
                 position: absolute;
@@ -384,6 +421,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 right: 24px;
                 z-index: 2;
             }
+
             .sode-alt-sample-btn {
                 display: inline-flex;
                 align-items: center;
@@ -399,11 +437,13 @@ if (!function_exists('sode_alternate_universities_render')) {
                 border-radius: 4px;
                 transition: color 0.2s ease, background 0.2s ease;
             }
+
             .sode-alt-sample-btn:hover {
                 color: #0284c7;
                 background: #f0f9ff;
                 text-decoration: underline;
             }
+
             .sode-alt-sample-btn svg {
                 width: 17px;
                 height: 17px;
@@ -417,6 +457,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 align-items: flex-start;
                 gap: 24px;
             }
+
             .sode-alt-img-box {
                 width: 240px;
                 min-width: 240px;
@@ -431,12 +472,14 @@ if (!function_exists('sode_alternate_universities_render')) {
                 position: relative;
                 flex-shrink: 0;
             }
+
             .sode-alt-img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
                 display: block;
             }
+
             .sode-alt-placeholder {
                 width: 100%;
                 height: 100%;
@@ -448,12 +491,14 @@ if (!function_exists('sode_alternate_universities_render')) {
                 background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
                 text-align: center;
             }
+
             .sode-alt-placeholder-logo {
                 max-width: 120px;
                 max-height: 60px;
                 object-fit: contain;
                 margin-bottom: 8px;
             }
+
             .sode-alt-placeholder-badge {
                 width: 52px;
                 height: 52px;
@@ -469,6 +514,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 margin-bottom: 8px;
                 box-shadow: 0 4px 10px rgba(12, 35, 64, 0.2);
             }
+
             .sode-alt-placeholder-name {
                 font-size: 13px;
                 font-weight: 700;
@@ -479,8 +525,10 @@ if (!function_exists('sode_alternate_universities_render')) {
             .sode-alt-info-box {
                 flex: 1;
                 min-width: 0;
-                padding-right: 180px; /* Space for top-right sample degree link */
+                padding-right: 100px;
+                /* Space for top-right sample degree link */
             }
+
             .sode-alt-uni-title {
                 font-size: 22px;
                 font-weight: 700;
@@ -488,12 +536,14 @@ if (!function_exists('sode_alternate_universities_render')) {
                 margin: 0 0 10px 0;
                 line-height: 1.3;
             }
+
             .sode-alt-uni-desc {
                 font-size: 14px;
                 color: #374151;
                 line-height: 1.6;
                 margin: 0 0 14px 0;
             }
+
             .sode-alt-meta-row {
                 display: flex;
                 flex-wrap: wrap;
@@ -503,15 +553,18 @@ if (!function_exists('sode_alternate_universities_render')) {
                 margin-bottom: 18px;
                 line-height: 1.5;
             }
+
             .sode-alt-meta-item {
                 display: inline-flex;
                 align-items: center;
                 gap: 5px;
             }
+
             .sode-alt-meta-label {
                 color: #0c2340;
                 font-weight: 700;
             }
+
             .sode-alt-meta-val {
                 color: #e11d48;
                 font-weight: 600;
@@ -524,6 +577,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 gap: 14px;
                 margin-top: 6px;
             }
+
             .sode-alt-btn-help {
                 background: #2e7d32;
                 color: #ffffff !important;
@@ -540,10 +594,12 @@ if (!function_exists('sode_alternate_universities_render')) {
                 transition: background 0.2s ease, transform 0.1s ease;
                 box-shadow: 0 2px 6px rgba(46, 125, 50, 0.25);
             }
+
             .sode-alt-btn-help:hover {
                 background: #256628;
                 color: #ffffff !important;
             }
+
             .sode-alt-btn-courses {
                 background: #f59e0b;
                 color: #111827 !important;
@@ -561,16 +617,19 @@ if (!function_exists('sode_alternate_universities_render')) {
                 transition: background 0.2s ease, transform 0.1s ease;
                 box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
             }
+
             .sode-alt-btn-courses:hover {
-                background: #d97706;
+                background: #e9830fff;
                 color: #111827 !important;
             }
+
             .sode-alt-btn-courses .sode-chevron {
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 display: inline-block;
                 width: 14px;
                 height: 14px;
             }
+
             .sode-alt-btn-courses.is-active .sode-chevron {
                 transform: rotate(180deg);
             }
@@ -583,11 +642,13 @@ if (!function_exists('sode_alternate_universities_render')) {
                 transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
                 margin-top: 0;
             }
+
             .sode-alt-courses-wrap.is-open {
                 max-height: 2500px;
                 opacity: 1;
                 margin-top: 22px;
             }
+
             .sode-alt-table-scroll {
                 width: 100%;
                 overflow-x: auto;
@@ -595,6 +656,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 border: 1px solid #e2e8f0;
                 border-radius: 6px;
             }
+
             .sode-alt-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -602,6 +664,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 font-size: 13.5px;
                 text-align: left;
             }
+
             .sode-alt-table thead th {
                 background: #e9f5fe;
                 color: #0c2340;
@@ -613,9 +676,18 @@ if (!function_exists('sode_alternate_universities_render')) {
                 border-bottom: 2px solid #cbd5e1;
                 white-space: nowrap;
             }
-            .sode-alt-table th:nth-child(1) { width: 22%; }
-            .sode-alt-table th:nth-child(2) { width: 56%; }
-            .sode-alt-table th:nth-child(3) { width: 22%; }
+
+            .sode-alt-table th:nth-child(1) {
+                width: 22%;
+            }
+
+            .sode-alt-table th:nth-child(2) {
+                width: 56%;
+            }
+
+            .sode-alt-table th:nth-child(3) {
+                width: 22%;
+            }
 
 
             .sode-alt-table tbody td {
@@ -624,17 +696,21 @@ if (!function_exists('sode_alternate_universities_render')) {
                 vertical-align: middle;
                 color: #374151;
             }
+
             .sode-alt-table tbody tr:first-child td {
                 border-top: none;
             }
+
             .sode-alt-course-name {
                 font-weight: 700;
                 color: #0c2340;
             }
+
             .sode-alt-course-elig {
                 color: #4b5563;
                 line-height: 1.5;
             }
+
             .sode-alt-course-fee {
                 font-weight: 600;
                 color: #111827;
@@ -646,6 +722,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 .sode-alt-info-box {
                     padding-right: 0;
                 }
+
                 .sode-alt-top-actions {
                     position: static;
                     margin-bottom: 12px;
@@ -658,40 +735,49 @@ if (!function_exists('sode_alternate_universities_render')) {
                 .sode-alt-card {
                     padding: 18px;
                 }
+
                 .sode-alt-card-main {
                     flex-direction: column;
                     gap: 16px;
                 }
+
                 .sode-alt-img-box {
                     width: 100%;
                     min-width: 100%;
                     height: 190px;
                 }
+
                 .sode-alt-top-actions {
                     position: static;
                     margin-bottom: 8px;
                     display: flex;
                     justify-content: flex-end;
                 }
+
                 .sode-alt-uni-title {
                     font-size: 19px;
                 }
+
                 .sode-alt-meta-row {
                     flex-direction: column;
                     align-items: flex-start;
                     gap: 6px;
                 }
+
                 .sode-alt-btn-group {
                     width: 100%;
                 }
+
                 .sode-alt-btn-courses,
                 .sode-alt-btn-help {
                     flex: 1;
-                    padding: 10px 14px;
-                    font-size: 13.5px;
+                    padding: 9px 12px;
+                    font-size: 13px;
                     text-align: center;
                 }
-                .sode-alt-table th, .sode-alt-table td {
+
+                .sode-alt-table th,
+                .sode-alt-table td {
                     padding: 10px 12px;
                     font-size: 12.5px;
                 }
@@ -709,9 +795,11 @@ if (!function_exists('sode_alternate_universities_render')) {
                 justify-content: center;
                 padding: 16px;
             }
+
             .sode-alt-modal-overlay.is-visible {
                 display: flex;
             }
+
             .sode-alt-modal-box {
                 background: #ffffff;
                 border-radius: 12px;
@@ -723,13 +811,23 @@ if (!function_exists('sode_alternate_universities_render')) {
                 position: relative;
                 animation: sodeAltModalPop 0.25s ease-out;
             }
+
             .sode-alt-modal-box.is-wide {
                 max-width: 780px;
             }
+
             @keyframes sodeAltModalPop {
-                from { transform: scale(0.95); opacity: 0; }
-                to { transform: scale(1); opacity: 1; }
+                from {
+                    transform: scale(0.95);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: scale(1);
+                    opacity: 1;
+                }
             }
+
             .sode-alt-modal-close {
                 position: absolute;
                 top: 14px;
@@ -744,13 +842,16 @@ if (!function_exists('sode_alternate_universities_render')) {
                 z-index: 10;
                 transition: color 0.15s ease;
             }
+
             .sode-alt-modal-close:hover {
                 color: #e11d48;
             }
+
             .sode-alt-modal-head {
                 padding: 24px 24px 16px;
                 border-bottom: 1px solid #f1f5f9;
             }
+
             .sode-alt-modal-title {
                 font-size: 20px;
                 font-weight: 800;
@@ -759,6 +860,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 line-height: 1.3;
                 padding-right: 28px;
             }
+
             .sode-alt-modal-body {
                 padding: 20px 24px 24px;
             }
@@ -776,12 +878,13 @@ if (!function_exists('sode_alternate_universities_render')) {
                 align-items: center;
                 justify-content: center;
             }
+
             .sode-degree-img {
                 max-width: 100%;
                 max-height: 72vh;
                 object-fit: contain;
                 border-radius: 6px;
-                box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
             }
         </style>
 
@@ -797,34 +900,34 @@ if (!function_exists('sode_alternate_universities_render')) {
             <?php endif; ?>
 
             <div class="sode-alt-list">
-                <?php foreach ($universities as $uni): 
+                <?php foreach ($universities as $uni):
                     $uni_id = $uni['id'];
                     $uni_name = $uni['full_name'];
                     $uni_slug = $uni['slug'];
                     $sample_img = $uni['sample_degree_img'];
                     $courses = $uni['courses'] ?? [];
-                    
+
                     // Desktop / Mobile image determination
                     $img_src = !empty($uni['alt_desktop_img']) ? $uni['alt_desktop_img'] : (!empty($uni['campus_img']) ? $uni['campus_img'] : '');
                     $logo_src = !empty($uni['logo_url']) ? $uni['logo_url'] : '';
-                    
+
                     // Format course names for JSON data attribute
-                    $courses_json = htmlspecialchars(json_encode(array_map(function($c) {
+                    $courses_json = htmlspecialchars(json_encode(array_map(function ($c) {
                         return [
                             'name' => $c['short_name'],
                             'full' => $c['full_name']
                         ];
                     }, $courses)), ENT_QUOTES, 'UTF-8');
-                ?>
+                    ?>
                     <div class="sode-alt-card" id="uni-alt-card-<?php echo esc_attr($uni_id); ?>">
                         <!-- Top-Right View Sample Degree Link -->
                         <div class="sode-alt-top-actions">
                             <button type="button" class="sode-alt-sample-btn sode-open-sample-modal"
-                                    data-uni-name="<?php echo esc_attr($uni_name); ?>"
-                                    data-sample-img="<?php echo esc_url($sample_img); ?>"
-                                    data-uni-slug="<?php echo esc_attr($uni_slug); ?>"
-                                    data-courses='<?php echo $courses_json; ?>'>
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                data-uni-name="<?php echo esc_attr($uni_name); ?>"
+                                data-sample-img="<?php echo esc_url($sample_img); ?>"
+                                data-uni-slug="<?php echo esc_attr($uni_slug); ?>" data-courses='<?php echo $courses_json; ?>'>
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
@@ -836,14 +939,13 @@ if (!function_exists('sode_alternate_universities_render')) {
                             <!-- Left: Image Box -->
                             <div class="sode-alt-img-box">
                                 <?php if (!empty($img_src)): ?>
-                                    <img src="<?php echo esc_url($img_src); ?>" 
-                                         alt="<?php echo esc_attr($uni_name); ?>" 
-                                         class="sode-alt-img"
-                                         loading="lazy">
+                                    <img src="<?php echo esc_url($img_src); ?>" alt="<?php echo esc_attr($uni_name); ?>"
+                                        class="sode-alt-img" loading="lazy">
                                 <?php else: ?>
                                     <div class="sode-alt-placeholder">
                                         <?php if (!empty($logo_src)): ?>
-                                            <img src="<?php echo esc_url($logo_src); ?>" alt="<?php echo esc_attr($uni_name); ?>" class="sode-alt-placeholder-logo">
+                                            <img src="<?php echo esc_url($logo_src); ?>" alt="<?php echo esc_attr($uni_name); ?>"
+                                                class="sode-alt-placeholder-logo">
                                         <?php else: ?>
                                             <div class="sode-alt-placeholder-badge">
                                                 <?php echo esc_html(substr($uni['short_name'] ?: $uni_name, 0, 3)); ?>
@@ -857,7 +959,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                             <!-- Right: Info Box -->
                             <div class="sode-alt-info-box">
                                 <h3 class="sode-alt-uni-title"><?php echo esc_html($uni_name); ?></h3>
-                                
+
                                 <?php if (!empty($uni['alt_description'])): ?>
                                     <div class="sode-alt-uni-desc"><?php echo esc_html($uni['alt_description']); ?></div>
                                 <?php endif; ?>
@@ -888,15 +990,16 @@ if (!function_exists('sode_alternate_universities_render')) {
                                 <!-- Action Buttons -->
                                 <div class="sode-alt-btn-group">
                                     <button type="button" class="sode-alt-btn-help applynow"
-                                            data-uni-name="<?php echo esc_attr($uni_name); ?>"
-                                            data-uni-slug="<?php echo esc_attr($uni_slug); ?>">
+                                        data-uni-name="<?php echo esc_attr($uni_name); ?>"
+                                        data-uni-slug="<?php echo esc_attr($uni_slug); ?>">
                                         Get Help
                                     </button>
 
                                     <button type="button" class="sode-alt-btn-courses sode-toggle-courses"
-                                            data-target="courses-wrap-<?php echo esc_attr($uni_id); ?>">
+                                        data-target="courses-wrap-<?php echo esc_attr($uni_id); ?>">
                                         <span>View course List</span>
-                                        <svg class="sode-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="sode-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="6 9 12 15 18 9"></polyline>
                                         </svg>
                                     </button>
@@ -920,8 +1023,12 @@ if (!function_exists('sode_alternate_universities_render')) {
                                             <?php foreach ($courses as $c): ?>
                                                 <tr>
                                                     <td class="sode-alt-course-name"><?php echo esc_html($c['short_name']); ?></td>
-                                                    <td class="sode-alt-course-elig"><?php echo esc_html($c['eligibility_text'] ?: '10+2 / Graduation as per university norms'); ?></td>
-                                                    <td class="sode-alt-course-fee"><?php echo esc_html(sode_alt_format_fee($c['per_semester_fee'])); ?></td>
+                                                    <td class="sode-alt-course-elig">
+                                                        <?php echo esc_html($c['eligibility_text'] ?: '10+2 / Graduation as per university norms'); ?>
+                                                    </td>
+                                                    <td class="sode-alt-course-fee">
+                                                        <?php echo esc_html(sode_alt_format_fee($c['per_semester_fee'])); ?>
+                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
@@ -959,78 +1066,78 @@ if (!function_exists('sode_alternate_universities_render')) {
 
         <!-- SODE ALTERNATIVE UNIVERSITIES CLIENT SCRIPT -->
         <script>
-        (function() {
-            function initAlternateUniversities() {
-                // 1. Accordion Toggle: View Course List ▾
-                const toggleBtns = document.querySelectorAll('.sode-toggle-courses');
-                toggleBtns.forEach(btn => {
-                    if (btn.dataset.initialized) return;
-                    btn.dataset.initialized = 'true';
+            (function () {
+                function initAlternateUniversities() {
+                    // 1. Accordion Toggle: View Course List ▾
+                    const toggleBtns = document.querySelectorAll('.sode-toggle-courses');
+                    toggleBtns.forEach(btn => {
+                        if (btn.dataset.initialized) return;
+                        btn.dataset.initialized = 'true';
 
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const targetId = this.dataset.target;
-                        const wrap = document.getElementById(targetId);
-                        if (!wrap) return;
+                        btn.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            const targetId = this.dataset.target;
+                            const wrap = document.getElementById(targetId);
+                            if (!wrap) return;
 
-                        const isOpen = wrap.classList.contains('is-open');
-                        if (isOpen) {
-                            wrap.classList.remove('is-open');
-                            this.classList.remove('is-active');
-                            const span = this.querySelector('span');
-                            if (span) span.textContent = 'View course List';
-                        } else {
-                            wrap.classList.add('is-open');
-                            this.classList.add('is-active');
-                            const span = this.querySelector('span');
-                            if (span) span.textContent = 'Hide course List';
-                        }
-                    });
-                });
-
-                // 2. Sample Degree Modal (Only Heading & Image)
-                const sampleModal = document.getElementById('sodeAltSampleModal');
-                const sampleModalTitle = document.getElementById('sodeSampleModalTitle');
-                const sampleModalContent = document.getElementById('sodeSampleModalContent');
-
-                function closeSampleModal() {
-                    if (sampleModal) sampleModal.classList.remove('is-visible');
-                    document.body.style.overflow = '';
-                }
-
-                document.querySelectorAll('.sode-close-modal').forEach(b => {
-                    b.addEventListener('click', closeSampleModal);
-                });
-
-                if (sampleModal) {
-                    sampleModal.addEventListener('click', function(e) {
-                        if (e.target === this) closeSampleModal();
-                    });
-                }
-
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape') closeSampleModal();
-                });
-
-                const sampleBtns = document.querySelectorAll('.sode-open-sample-modal');
-                sampleBtns.forEach(btn => {
-                    if (btn.dataset.initialized) return;
-                    btn.dataset.initialized = 'true';
-
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const uniName = this.dataset.uniName || 'University';
-                        const sampleImg = this.dataset.sampleImg;
-
-                        if (sampleModalTitle) {
-                            sampleModalTitle.textContent = uniName + ' - Sample Degree';
-                        }
-
-                        if (sampleModalContent) {
-                            if (sampleImg && sampleImg.trim() !== '') {
-                                sampleModalContent.innerHTML = '<img src="' + sampleImg + '" alt="' + uniName + ' Sample Degree" class="sode-degree-img" loading="lazy">';
+                            const isOpen = wrap.classList.contains('is-open');
+                            if (isOpen) {
+                                wrap.classList.remove('is-open');
+                                this.classList.remove('is-active');
+                                const span = this.querySelector('span');
+                                if (span) span.textContent = 'View course List';
                             } else {
-                                sampleModalContent.innerHTML = `
+                                wrap.classList.add('is-open');
+                                this.classList.add('is-active');
+                                const span = this.querySelector('span');
+                                if (span) span.textContent = 'Hide course List';
+                            }
+                        });
+                    });
+
+                    // 2. Sample Degree Modal (Only Heading & Image)
+                    const sampleModal = document.getElementById('sodeAltSampleModal');
+                    const sampleModalTitle = document.getElementById('sodeSampleModalTitle');
+                    const sampleModalContent = document.getElementById('sodeSampleModalContent');
+
+                    function closeSampleModal() {
+                        if (sampleModal) sampleModal.classList.remove('is-visible');
+                        document.body.style.overflow = '';
+                    }
+
+                    document.querySelectorAll('.sode-close-modal').forEach(b => {
+                        b.addEventListener('click', closeSampleModal);
+                    });
+
+                    if (sampleModal) {
+                        sampleModal.addEventListener('click', function (e) {
+                            if (e.target === this) closeSampleModal();
+                        });
+                    }
+
+                    document.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape') closeSampleModal();
+                    });
+
+                    const sampleBtns = document.querySelectorAll('.sode-open-sample-modal');
+                    sampleBtns.forEach(btn => {
+                        if (btn.dataset.initialized) return;
+                        btn.dataset.initialized = 'true';
+
+                        btn.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            const uniName = this.dataset.uniName || 'University';
+                            const sampleImg = this.dataset.sampleImg;
+
+                            if (sampleModalTitle) {
+                                sampleModalTitle.textContent = uniName + ' - Sample Degree';
+                            }
+
+                            if (sampleModalContent) {
+                                if (sampleImg && sampleImg.trim() !== '') {
+                                    sampleModalContent.innerHTML = '<img src="' + sampleImg + '" alt="' + uniName + ' Sample Degree" class="sode-degree-img" loading="lazy">';
+                                } else {
+                                    sampleModalContent.innerHTML = `
                                     <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 15px;">
                                         <svg style="width:48px; height:48px; margin:0 auto 12px; display:block; stroke:#94a3b8;" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -1040,21 +1147,21 @@ if (!function_exists('sode_alternate_universities_render')) {
                                         Sample Degree image for <strong>${uniName}</strong> will be updated soon.
                                     </div>
                                 `;
+                                }
                             }
-                        }
 
-                        if (sampleModal) sampleModal.classList.add('is-visible');
-                        document.body.style.overflow = 'hidden';
+                            if (sampleModal) sampleModal.classList.add('is-visible');
+                            document.body.style.overflow = 'hidden';
+                        });
                     });
-                });
-            }
+                }
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initAlternateUniversities);
-            } else {
-                initAlternateUniversities();
-            }
-        })();
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initAlternateUniversities);
+                } else {
+                    initAlternateUniversities();
+                }
+            })();
         </script>
         <?php
         return ob_get_clean();
