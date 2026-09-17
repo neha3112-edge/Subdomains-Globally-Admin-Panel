@@ -101,9 +101,11 @@ if (!defined('UNI_FEES_TABLE_API_URL')) {
 if (!function_exists('sode_find_matching_university')) {
     function sode_find_matching_university($unis, $search_term)
     {
-        if (empty($search_term) || empty($unis)) return null;
-        $term = strtolower(trim(preg_replace('/[^a-z0-9]+/', '', (string)$search_term)));
-        if ($term === '') return null;
+        if (empty($search_term) || empty($unis))
+            return null;
+        $term = strtolower(trim(preg_replace('/[^a-z0-9]+/', '', (string) $search_term)));
+        if ($term === '')
+            return null;
 
         // 1. Exact match on slug, short_name, or full_name
         foreach ($unis as $u) {
@@ -120,7 +122,8 @@ if (!function_exists('sode_find_matching_university')) {
             $slug_parts = explode('-', strtolower($u['slug'] ?? ''));
             $slug_ac = '';
             foreach ($slug_parts as $sp) {
-                if ($sp !== '') $slug_ac .= $sp[0];
+                if ($sp !== '')
+                    $slug_ac .= $sp[0];
             }
             if ($term === $slug_ac) {
                 return $u;
@@ -610,7 +613,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                 /* Universities Fees Matrix Table Styles */
                 .sode-uni-fees-table-wrap {
                     width: 100%;
-                    margin: 24px 0;
+                    margin: 0px;
                     box-sizing: border-box;
                 }
 
