@@ -7,51 +7,58 @@
  * ====================================================================
  */
 
-if ( defined( 'SODE_LEAD_FORM_UNIVERSAL_LOADED' ) ) {
+if (defined('SODE_LEAD_FORM_UNIVERSAL_LOADED')) {
     return;
 }
-define( 'SODE_LEAD_FORM_UNIVERSAL_LOADED', true );
+define('SODE_LEAD_FORM_UNIVERSAL_LOADED', true);
 
 // Safe polyfills for WP helpers
-if ( ! function_exists( 'sanitize_title' ) ) {
-    function sanitize_title( $title ) {
-        return strtolower( trim( preg_replace( '/[^A-Za-z0-9-]+/', '-', (string)$title ), '-' ) );
+if (!function_exists('sanitize_title')) {
+    function sanitize_title($title)
+    {
+        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string) $title), '-'));
     }
 }
-if ( ! function_exists( 'sanitize_text_field' ) ) {
-    function sanitize_text_field( $str ) {
-        return trim( strip_tags( (string)$str ) );
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field($str)
+    {
+        return trim(strip_tags((string) $str));
     }
 }
-if ( ! function_exists( 'sanitize_email' ) ) {
-    function sanitize_email( $email ) {
-        return filter_var( trim( (string)$email ), FILTER_SANITIZE_EMAIL );
+if (!function_exists('sanitize_email')) {
+    function sanitize_email($email)
+    {
+        return filter_var(trim((string) $email), FILTER_SANITIZE_EMAIL);
     }
 }
-if ( ! function_exists( 'esc_html' ) ) {
-    function esc_html( $text ) {
-        return htmlspecialchars( (string)$text, ENT_QUOTES, 'UTF-8' );
+if (!function_exists('esc_html')) {
+    function esc_html($text)
+    {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
     }
 }
-if ( ! function_exists( 'esc_attr' ) ) {
-    function esc_attr( $text ) {
-        return htmlspecialchars( (string)$text, ENT_QUOTES, 'UTF-8' );
+if (!function_exists('esc_attr')) {
+    function esc_attr($text)
+    {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
     }
 }
-if ( ! function_exists( 'esc_url' ) ) {
-    function esc_url( $url ) {
-        return filter_var( (string)$url, FILTER_SANITIZE_URL );
+if (!function_exists('esc_url')) {
+    function esc_url($url)
+    {
+        return filter_var((string) $url, FILTER_SANITIZE_URL);
     }
 }
-if ( ! function_exists( 'shortcode_atts' ) ) {
-    function shortcode_atts( $pairs, $atts, $shortcode = '' ) {
-        $atts = (array)$atts;
+if (!function_exists('shortcode_atts')) {
+    function shortcode_atts($pairs, $atts, $shortcode = '')
+    {
+        $atts = (array) $atts;
         $out = array();
-        foreach ( $pairs as $name => $default ) {
-            if ( array_key_exists( $name, $atts ) ) {
-                $out[ $name ] = $atts[ $name ];
+        foreach ($pairs as $name => $default) {
+            if (array_key_exists($name, $atts)) {
+                $out[$name] = $atts[$name];
             } else {
-                $out[ $name ] = $default;
+                $out[$name] = $default;
             }
         }
         return $out;
@@ -59,26 +66,27 @@ if ( ! function_exists( 'shortcode_atts' ) ) {
 }
 
 // ---------- CONFIGURATION: Central Admin API Endpoint ----------
-if ( ! defined( 'SODE_FORM_CONFIG_API_URL' ) ) {
-    define( 'SODE_FORM_CONFIG_API_URL', 'https://admin.distanceeducationschool.com/api/get_form_config.php' );
+if (!defined('SODE_FORM_CONFIG_API_URL')) {
+    define('SODE_FORM_CONFIG_API_URL', 'https://admin.distanceeducationschool.com/api/get_form_config.php');
 }
 
 /**
  * Helper: Detect current university slug
  */
-if ( ! function_exists( 'sode_form_detect_uni_slug' ) ) {
-    function sode_form_detect_uni_slug( $explicit = '' ) {
-        if ( ! empty( $explicit ) ) {
-            return sanitize_title( $explicit );
+if (!function_exists('sode_form_detect_uni_slug')) {
+    function sode_form_detect_uni_slug($explicit = '')
+    {
+        if (!empty($explicit)) {
+            return sanitize_title($explicit);
         }
-        if ( defined( 'SODE_UNIVERSITY_SLUG' ) && SODE_UNIVERSITY_SLUG ) {
-            return sanitize_title( SODE_UNIVERSITY_SLUG );
+        if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+            return sanitize_title(SODE_UNIVERSITY_SLUG);
         }
-        $host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( $_SERVER['HTTP_HOST'] ) : '';
-        if ( $host ) {
-            $parts = explode( '.', $host );
-            if ( count( $parts ) >= 3 && ! in_array( $parts[0], array( 'www', 'mail', 'webmail', 'admin', 'cpanel' ) ) ) {
-                return sanitize_title( $parts[0] );
+        $host = isset($_SERVER['HTTP_HOST']) ? strtolower($_SERVER['HTTP_HOST']) : '';
+        if ($host) {
+            $parts = explode('.', $host);
+            if (count($parts) >= 3 && !in_array($parts[0], array('www', 'mail', 'webmail', 'admin', 'cpanel'))) {
+                return sanitize_title($parts[0]);
             }
         }
         return 'dsu';
@@ -88,16 +96,17 @@ if ( ! function_exists( 'sode_form_detect_uni_slug' ) ) {
 /**
  * Helper: Fetch University Form & Lead Configurations
  */
-if ( ! function_exists( 'sode_get_university_form_config' ) ) {
-    function sode_get_university_form_config( $slug = '' ) {
-        $slug = sode_form_detect_uni_slug( $slug );
+if (!function_exists('sode_get_university_form_config')) {
+    function sode_get_university_form_config($slug = '')
+    {
+        $slug = sode_form_detect_uni_slug($slug);
 
         // 1. Check local DB connection if available on same server
         $local_config = __DIR__ . '/admin/config/config.php';
-        if ( file_exists( $local_config ) ) {
+        if (file_exists($local_config)) {
             try {
                 require_once $local_config;
-                if ( function_exists( 'get_db_connection' ) ) {
+                if (function_exists('get_db_connection')) {
                     $db = get_db_connection();
 
                     // Global API settings
@@ -112,39 +121,39 @@ if ( ! function_exists( 'sode_get_university_form_config' ) ) {
                     ");
                     $stmt->execute([$slug, strtolower($slug)]);
                     $row = $stmt->fetch();
-                    if ( $row ) {
-                        $row['crm_api_url']          = $global_rows['crm_api_url'] ?? (getenv('CRM_API_URL') ?: 'https://api.crm.mysode.com/api/lead/apicreated');
-                        $row['crm_api_key']          = $global_rows['crm_api_key'] ?? (getenv('CRM_API_KEY') ?: '');
-                        $row['crm_secret']           = $global_rows['crm_secret'] ?? (getenv('CRM_SECRET') ?: '');
-                        $row['brevo_api_url']        = $global_rows['brevo_api_url'] ?? (getenv('BREVO_API_URL') ?: 'https://api.brevo.com/v3/contacts');
-                        $row['brevo_api_key']        = $global_rows['brevo_api_key'] ?? (getenv('BREVO_API_KEY') ?: '');
+                    if ($row) {
+                        $row['crm_api_url'] = $global_rows['crm_api_url'] ?? (getenv('CRM_API_URL') ?: 'https://api.crm.mysode.com/api/lead/apicreated');
+                        $row['crm_api_key'] = $global_rows['crm_api_key'] ?? (getenv('CRM_API_KEY') ?: '');
+                        $row['crm_secret'] = $global_rows['crm_secret'] ?? (getenv('CRM_SECRET') ?: '');
+                        $row['brevo_api_url'] = $global_rows['brevo_api_url'] ?? (getenv('BREVO_API_URL') ?: 'https://api.brevo.com/v3/contacts');
+                        $row['brevo_api_key'] = $global_rows['brevo_api_key'] ?? (getenv('BREVO_API_KEY') ?: '');
                         $row['gallabox_webhook_url'] = $global_rows['gallabox_webhook_url'] ?? (getenv('GALLABOX_WEBHOOK_URL') ?: '');
                         return $row;
                     }
                 }
-            } catch ( Exception $e ) {
+            } catch (Exception $e) {
                 // fallback to HTTP API
             }
         }
 
         // 2. HTTP Remote API with Transient Cache
-        $transient_key = 'sode_form_cfg_' . md5( $slug );
-        if ( function_exists( 'get_transient' ) ) {
-            $cached = get_transient( $transient_key );
-            if ( ! empty( $cached ) && is_array( $cached ) ) {
+        $transient_key = 'sode_form_cfg_' . md5($slug);
+        if (function_exists('get_transient')) {
+            $cached = get_transient($transient_key);
+            if (!empty($cached) && is_array($cached)) {
                 return $cached;
             }
         }
 
-        if ( function_exists( 'wp_remote_get' ) ) {
-            $api_url = add_query_arg( array( 'uni' => $slug, 't' => time() ), SODE_FORM_CONFIG_API_URL );
-            $resp = wp_remote_get( $api_url, array( 'timeout' => 8, 'headers' => array( 'Cache-Control' => 'no-cache' ) ) );
-            if ( ! is_wp_error( $resp ) && wp_remote_retrieve_response_code( $resp ) === 200 ) {
-                $body = wp_remote_retrieve_body( $resp );
-                $json = json_decode( $body, true );
-                if ( ! empty( $json['success'] ) ) {
-                    if ( function_exists( 'set_transient' ) ) {
-                        set_transient( $transient_key, $json, 600 );
+        if (function_exists('wp_remote_get')) {
+            $api_url = add_query_arg(array('uni' => $slug, 't' => time()), SODE_FORM_CONFIG_API_URL);
+            $resp = wp_remote_get($api_url, array('timeout' => 8, 'headers' => array('Cache-Control' => 'no-cache')));
+            if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
+                $body = wp_remote_retrieve_body($resp);
+                $json = json_decode($body, true);
+                if (!empty($json['success'])) {
+                    if (function_exists('set_transient')) {
+                        set_transient($transient_key, $json, 600);
                     }
                     return $json;
                 }
@@ -172,7 +181,7 @@ if ( ! function_exists( 'sode_get_university_form_config' ) ) {
 }
 
 
-if ( function_exists('add_action') ) {
+if (function_exists('add_action')) {
     // ====================================================
     // 🔥 STEP 1 — EARLY TOKEN BLOCK (init hook)
     // ====================================================
@@ -210,13 +219,13 @@ function sode_send_lead_to_crm()
 {
     // Token consume (one-time use)
     $token = $_SERVER['HTTP_X_LEAD_TOKEN'] ?? '';
-    if ( function_exists('delete_transient') ) {
+    if (function_exists('delete_transient')) {
         delete_transient('lead_token_' . $token);
     }
 
     // ✅ HONEYPOT
     if (!empty($_POST['website'])) {
-        if ( function_exists('wp_send_json_error') ) {
+        if (function_exists('wp_send_json_error')) {
             wp_send_json_error('Spam detected');
         } else {
             echo json_encode(['success' => false, 'data' => 'Spam detected']);
@@ -228,8 +237,8 @@ function sode_send_lead_to_crm()
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $key = 'lead_limit_' . md5($ip);
 
-    if ( function_exists('get_transient') && get_transient($key) ) {
-        if ( function_exists('wp_send_json_error') ) {
+    if (function_exists('get_transient') && get_transient($key)) {
+        if (function_exists('wp_send_json_error')) {
             wp_send_json_error('Too many requests. Please wait.');
         } else {
             echo json_encode(['success' => false, 'data' => 'Too many requests. Please wait.']);
@@ -237,7 +246,7 @@ function sode_send_lead_to_crm()
         }
     }
 
-    if ( function_exists('set_transient') ) {
+    if (function_exists('set_transient')) {
         set_transient($key, true, 30);
     }
 
@@ -246,7 +255,7 @@ function sode_send_lead_to_crm()
     $email = sanitize_email($_POST['email'] ?? '');
 
     if (strlen($phone) < 10) {
-        if ( function_exists('wp_send_json_error') ) {
+        if (function_exists('wp_send_json_error')) {
             wp_send_json_error('Invalid phone number');
         } else {
             echo json_encode(['success' => false, 'data' => 'Invalid phone number']);
@@ -255,7 +264,7 @@ function sode_send_lead_to_crm()
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        if ( function_exists('wp_send_json_error') ) {
+        if (function_exists('wp_send_json_error')) {
             wp_send_json_error('Invalid email address');
         } else {
             echo json_encode(['success' => false, 'data' => 'Invalid email address']);
@@ -268,16 +277,16 @@ function sode_send_lead_to_crm()
     $cfg = sode_get_university_form_config($uni_slug);
 
     // Dynamic configuration variables
-    $configured_source       = ! empty($_POST['source']) ? sanitize_text_field($_POST['source']) : (!empty($cfg['source']) ? $cfg['source'] : 'MISC');
-    $configured_crm_url      = ! empty($cfg['crm_api_url']) ? $cfg['crm_api_url'] : (getenv('CRM_API_URL') ?: 'https://api.crm.mysode.com/api/lead/apicreated');
-    $configured_crm_key      = ! empty($cfg['crm_api_key']) ? $cfg['crm_api_key'] : (getenv('CRM_API_KEY') ?: '');
-    $configured_crm_secret   = ! empty($cfg['crm_secret']) ? $cfg['crm_secret'] : (getenv('CRM_SECRET') ?: '');
-    $configured_brevo_url    = ! empty($cfg['brevo_api_url']) ? $cfg['brevo_api_url'] : (getenv('BREVO_API_URL') ?: 'https://api.brevo.com/v3/contacts');
-    $configured_brevo_key    = ! empty($cfg['brevo_api_key']) ? $cfg['brevo_api_key'] : (getenv('BREVO_API_KEY') ?: '');
-    $configured_brevo_list_id= ! empty($cfg['brevo_list_id']) ? (int)$cfg['brevo_list_id'] : 124;
-    $configured_brevo_source = ! empty($cfg['brevo_source']) ? $cfg['brevo_source'] : 'MISC';
-    $configured_gallabox_src = ! empty($cfg['gallabox_source']) ? $cfg['gallabox_source'] : 'MISC';
-    $configured_gallabox_url = ! empty($cfg['gallabox_webhook_url']) ? $cfg['gallabox_webhook_url'] : (getenv('GALLABOX_WEBHOOK_URL') ?: '');
+    $configured_source = !empty($_POST['source']) ? sanitize_text_field($_POST['source']) : (!empty($cfg['source']) ? $cfg['source'] : 'MISC');
+    $configured_crm_url = !empty($cfg['crm_api_url']) ? $cfg['crm_api_url'] : (getenv('CRM_API_URL') ?: 'https://api.crm.mysode.com/api/lead/apicreated');
+    $configured_crm_key = !empty($cfg['crm_api_key']) ? $cfg['crm_api_key'] : (getenv('CRM_API_KEY') ?: '');
+    $configured_crm_secret = !empty($cfg['crm_secret']) ? $cfg['crm_secret'] : (getenv('CRM_SECRET') ?: '');
+    $configured_brevo_url = !empty($cfg['brevo_api_url']) ? $cfg['brevo_api_url'] : (getenv('BREVO_API_URL') ?: 'https://api.brevo.com/v3/contacts');
+    $configured_brevo_key = !empty($cfg['brevo_api_key']) ? $cfg['brevo_api_key'] : (getenv('BREVO_API_KEY') ?: '');
+    $configured_brevo_list_id = !empty($cfg['brevo_list_id']) ? (int) $cfg['brevo_list_id'] : 124;
+    $configured_brevo_source = !empty($cfg['brevo_source']) ? $cfg['brevo_source'] : 'MISC';
+    $configured_gallabox_src = !empty($cfg['gallabox_source']) ? $cfg['gallabox_source'] : 'MISC';
+    $configured_gallabox_url = !empty($cfg['gallabox_webhook_url']) ? $cfg['gallabox_webhook_url'] : (getenv('GALLABOX_WEBHOOK_URL') ?: '');
 
     // ✅ COMMON LEAD DATA
     $name = sanitize_text_field($_POST['name'] ?? '');
@@ -321,7 +330,7 @@ function sode_send_lead_to_crm()
 
     error_log('🔵 [CRM] Sending data for ' . $uni_slug . ' to ' . $configured_crm_url . ': ' . json_encode($crm_data));
 
-    if ( function_exists('wp_remote_post') ) {
+    if (function_exists('wp_remote_post')) {
         $crm_response = wp_remote_post($configured_crm_url, [
             'method' => 'POST',
             'timeout' => 15,
@@ -364,7 +373,7 @@ function sode_send_lead_to_crm()
 
     error_log('🟢 [BREVO] Sending data for ' . $uni_slug . ' to ' . $configured_brevo_url . ': ' . json_encode($brevo_data));
 
-    if ( function_exists('wp_remote_post') ) {
+    if (function_exists('wp_remote_post')) {
         $brevo_response = wp_remote_post($configured_brevo_url, [
             'method' => 'POST',
             'timeout' => 15,
@@ -387,7 +396,7 @@ function sode_send_lead_to_crm()
     // ============================================================
     // 🟡 3. GALLABOX — Webhook
     // ============================================================
-    if ( ! empty($configured_gallabox_url) ) {
+    if (!empty($configured_gallabox_url)) {
         $gallabox_webhook_data = [
             "name" => $name,
             "phone" => (str_starts_with($phone, '+') ? $phone : '+' . $phone),
@@ -404,7 +413,7 @@ function sode_send_lead_to_crm()
 
         error_log('🟡 [GALLABOX WEBHOOK] Sending data for ' . $uni_slug . ': ' . json_encode($gallabox_webhook_data));
 
-        if ( function_exists('wp_remote_post') ) {
+        if (function_exists('wp_remote_post')) {
             $gallabox_response = wp_remote_post($configured_gallabox_url, [
                 'method' => 'POST',
                 'timeout' => 15,
@@ -428,7 +437,7 @@ function sode_send_lead_to_crm()
     // ✅ DONE
     // ============================================================
     error_log('✅ [LEAD] All API calls completed for: ' . $phone . ' / ' . $email . ' (' . $uni_slug . ')');
-    if ( function_exists('wp_send_json_success') ) {
+    if (function_exists('wp_send_json_success')) {
         wp_send_json_success('Lead Sent Successfully');
     } else {
         echo json_encode(['success' => true, 'data' => 'Lead Sent Successfully']);
@@ -445,17 +454,17 @@ function custom_lead_form_shortcode($atts = [])
     $uni_slug = sode_form_detect_uni_slug($atts['university'] ?? '');
     $cfg = sode_get_university_form_config($uni_slug);
 
-    $full_uni_name = ! empty($cfg['full_name']) ? $cfg['full_name'] : 'Dayananda Sagar University';
-    $short_uni_name = ! empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
+    $full_uni_name = !empty($cfg['full_name']) ? $cfg['full_name'] : 'Dayananda Sagar University';
+    $short_uni_name = !empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
 
     $atts = shortcode_atts([
-        'heading'     => 'Book 100% Free Counseling',
+        'heading' => 'Book 100% Free Counseling',
         'sub-heading' => 'Get 1 to 1 Expert Guidance from SODE™',
-        'subheading'  => 'Get 1 to 1 Expert Guidance from SODE™',
-        'form_name'   => $short_uni_name . ' Lead Form',
+        'subheading' => 'Get 1 to 1 Expert Guidance from SODE™',
+        'form_name' => $short_uni_name . ' Lead Form',
         'button_text' => 'Submit',
-        'university'  => $uni_slug,
-        'phone'       => '',
+        'university' => $uni_slug,
+        'phone' => '',
     ], $atts);
 
     // Dynamic key replacements in heading & form name
@@ -466,25 +475,28 @@ function custom_lead_form_shortcode($atts = [])
     $form_name = str_replace(['{UNIVERSITY_NAME}', '{UNI}', '{SHORT_NAME}'], [$full_uni_name, $short_uni_name, $short_uni_name], $atts['form_name']);
 
     // Allowed courses list (Label & Key support)
-    $courses_raw = ! empty($cfg['allowed_courses_json']) ? $cfg['allowed_courses_json'] : 'MBA, MCA, MCOM, MA, MSC, MLIS, BBA, BCA, BCOM, BA, BSC, BLIS, Other';
+    $courses_raw = !empty($cfg['allowed_courses_json']) ? $cfg['allowed_courses_json'] : 'MBA, MCA, MCOM, MA, MSC, MLIS, BBA, BCA, BCOM, BA, BSC, BLIS, Other';
     $courses_list = [];
 
     $decoded_courses = json_decode($courses_raw, true);
     if (is_array($decoded_courses)) {
         foreach ($decoded_courses as $c_row) {
-            if (!is_array($c_row)) continue;
+            if (!is_array($c_row))
+                continue;
             // Only include enabled items
             if (isset($c_row['enabled']) && !$c_row['enabled']) {
                 continue;
             }
             $lbl = trim($c_row['label'] ?? '');
             $k = strtoupper(trim($c_row['key'] ?? ''));
-            if ($lbl === '') continue;
-            if ($k === '') $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+            if ($lbl === '')
+                continue;
+            if ($k === '')
+                $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
 
             $courses_list[] = [
                 'label' => $lbl,
-                'key'   => $k
+                'key' => $k
             ];
         }
     } else {
@@ -494,16 +506,16 @@ function custom_lead_form_shortcode($atts = [])
             $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $p));
             $courses_list[] = [
                 'label' => $p,
-                'key'   => $k
+                'key' => $k
             ];
         }
     }
 
     // Default UTM parameters from Admin
-    $default_utm_source = ! empty($cfg['default_utm_source']) ? $cfg['default_utm_source'] : 'Organic';
-    $default_utm_medium = ! empty($cfg['default_utm_medium']) ? $cfg['default_utm_medium'] : ($short_uni_name . '_Organic');
-    $default_utm_campaign = ! empty($cfg['default_utm_campaign']) ? $cfg['default_utm_campaign'] : ($short_uni_name . '_Organic');
-    $default_source = ! empty($cfg['source']) ? $cfg['source'] : 'MISC';
+    $default_utm_source = !empty($cfg['default_utm_source']) ? $cfg['default_utm_source'] : 'Organic';
+    $default_utm_medium = !empty($cfg['default_utm_medium']) ? $cfg['default_utm_medium'] : ($short_uni_name . '_Organic');
+    $default_utm_campaign = !empty($cfg['default_utm_campaign']) ? $cfg['default_utm_campaign'] : ($short_uni_name . '_Organic');
+    $default_source = !empty($cfg['source']) ? $cfg['source'] : 'MISC';
 
     ob_start();
     ?>
@@ -638,24 +650,25 @@ function custom_lead_form_shortcode($atts = [])
         }
     </style>
 
-    <form class="customLeadForm" translate="no" 
-          data-form-name="<?php echo esc_attr($form_name); ?>"
-          data-uni-slug="<?php echo esc_attr($uni_slug); ?>"
-          data-default-source="<?php echo esc_attr($default_source); ?>"
-          data-default-utm-source="<?php echo esc_attr($default_utm_source); ?>"
-          data-default-utm-medium="<?php echo esc_attr($default_utm_medium); ?>"
-          data-default-utm-campaign="<?php echo esc_attr($default_utm_campaign); ?>">
+    <form class="customLeadForm" translate="no" data-form-name="<?php echo esc_attr($form_name); ?>"
+        data-uni-slug="<?php echo esc_attr($uni_slug); ?>" data-default-source="<?php echo esc_attr($default_source); ?>"
+        data-default-utm-source="<?php echo esc_attr($default_utm_source); ?>"
+        data-default-utm-medium="<?php echo esc_attr($default_utm_medium); ?>"
+        data-default-utm-campaign="<?php echo esc_attr($default_utm_campaign); ?>">
 
         <h2 style="margin-bottom:4px;"><?php echo esc_html($heading); ?></h2>
         <p style="margin-bottom:15px;"><?php echo esc_html($subheading); ?></p>
 
-        <?php if (!empty($atts['phone'])): 
+        <?php if (!empty($atts['phone'])):
             $clean_phone = preg_replace('/[^0-9+]/', '', $atts['phone']);
-        ?>
+            ?>
             <div class="lead-phone-direct-wrap" style="text-align:center; margin:-6px 0 16px 0;">
-                <a href="tel:<?php echo esc_attr($clean_phone); ?>" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; color:#074a76; font-size:16px; font-weight:700; text-decoration:none;">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display:inline-block; vertical-align:middle;">
-                        <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                <a href="tel:<?php echo esc_attr($clean_phone); ?>"
+                    style="display:inline-flex; align-items:center; justify-content:center; gap:8px; color:#074a76; font-size:16px; font-weight:700; text-decoration:none;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"
+                        style="display:inline-block; vertical-align:middle;">
+                        <path
+                            d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
                     </svg>
                     <span><?php echo esc_html($atts['phone']); ?></span>
                 </a>
@@ -769,7 +782,8 @@ function custom_lead_form_shortcode($atts = [])
             <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
         </select>
 
-        <label style="display:flex; align-items:flex-start; gap:4px; margin:10px 0; font-size:10px; line-height:1.4; cursor:pointer;">
+        <label
+            style="display:flex; align-items:flex-start; gap:4px; margin:10px 0; font-size:10px; line-height:1.4; cursor:pointer;">
             <input type="checkbox" name="consent" required>
             <div class="checkbox_content">
                 I consent to share my details with UGC-DEB approved universities and receive updates via email/mobile.
@@ -979,7 +993,7 @@ function custom_lead_form_shortcode($atts = [])
     <?php
     return ob_get_clean();
 }
-if ( function_exists('add_shortcode') ) {
+if (function_exists('add_shortcode')) {
     add_shortcode('custom_lead_form', 'custom_lead_form_shortcode');
 }
 
@@ -992,17 +1006,17 @@ function compare_universities_form_shortcode($atts = [])
 {
     $uni_slug = sode_form_detect_uni_slug($atts['university'] ?? '');
     $cfg = sode_get_university_form_config($uni_slug);
-    $short_name = ! empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
+    $short_name = !empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
 
     $atts = shortcode_atts([
-        'heading'     => 'Compare Universities',
+        'heading' => 'Compare Universities',
         'sub-heading' => 'Get expert help to compare universities',
-        'form_name'   => 'Compare Universities Form',
-        'university'  => $uni_slug
+        'form_name' => 'Compare Universities Form',
+        'university' => $uni_slug
     ], $atts);
     return custom_lead_form_shortcode($atts);
 }
-if ( function_exists('add_shortcode') ) {
+if (function_exists('add_shortcode')) {
     add_shortcode('compare_universities_form', 'compare_universities_form_shortcode');
 }
 
@@ -1016,14 +1030,14 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
     $uni_slug = sode_form_detect_uni_slug($raw_atts['uni'] ?? ($raw_atts['university'] ?? ''));
 
     $atts = shortcode_atts([
-        'heading'     => 'Book 100% Free Counseling',
-        'subheading'  => 'Get upto 20% Scholarship Coupon Code.',
-        'phone'       => '+91 7065 7777 55',
+        'heading' => 'Book 100% Free Counseling',
+        'subheading' => 'Get upto 20% Scholarship Coupon Code.',
+        'phone' => '+91 7065 7777 55',
         'button_text' => 'Submit',
-        'form_name'   => 'Counseling Box Form',
-        'university'  => $uni_slug,
-        'class'       => '',
-        'shadow'      => 'true',
+        'form_name' => 'Counseling Box Form',
+        'university' => $uni_slug,
+        'class' => '',
+        'shadow' => 'true',
     ], $raw_atts);
 
     $extra_class = !empty($atts['class']) ? ' ' . esc_attr($atts['class']) : '';
@@ -1043,12 +1057,13 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
                 box-sizing: border-box;
                 box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
                 border: 1px solid rgba(0, 0, 0, 0.06);
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             }
+
             .sode-counseling-lead-form-box .customLeadForm {
                 margin: 0;
                 padding: 0;
             }
+
             .sode-counseling-lead-form-box .customLeadForm h2 {
                 color: #e03a1d !important;
                 font-size: 18px !important;
@@ -1056,6 +1071,7 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
                 margin: 0 0 6px 0 !important;
                 text-align: center !important;
             }
+
             .sode-counseling-lead-form-box .customLeadForm p {
                 color: #4b5563 !important;
                 font-size: 13px !important;
@@ -1063,6 +1079,7 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
                 margin: 0 0 10px 0 !important;
                 text-align: center !important;
             }
+
             .sode-counseling-lead-form-box .customLeadForm .submitBtn {
                 background: #e03a1d !important;
                 color: #ffffff !important;
@@ -1074,9 +1091,11 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
                 box-shadow: 0 4px 12px rgba(224, 58, 29, 0.28) !important;
                 transition: background 0.2s ease, transform 0.1s ease !important;
             }
+
             .sode-counseling-lead-form-box .customLeadForm .submitBtn:hover {
                 background: #c83217 !important;
             }
+
             .sode-counseling-lead-form-box .customLeadForm input:not([type="checkbox"]),
             .sode-counseling-lead-form-box .customLeadForm select {
                 border: 1px solid #d1d5db !important;
@@ -1086,13 +1105,16 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
                 color: #374151 !important;
                 margin-bottom: 12px !important;
             }
+
             .sode-counseling-lead-form-box .phone-wrapper {
                 margin-bottom: 0px !important;
             }
+
             .sode-counseling-lead-form-box .phone-wrapper select,
             .sode-counseling-lead-form-box .phone-wrapper input {
                 margin-bottom: 12px !important;
             }
+
             @media (max-width: 480px) {
                 .sode-counseling-lead-form-box {
                     padding: 20px 16px 16px;
@@ -1106,7 +1128,7 @@ function sode_counseling_lead_form_box_shortcode($atts = [])
     <?php
     return ob_get_clean();
 }
-if ( function_exists('add_shortcode') ) {
+if (function_exists('add_shortcode')) {
     add_shortcode('counseling_lead_form', 'sode_counseling_lead_form_box_shortcode');
     add_shortcode('counseling_form', 'sode_counseling_lead_form_box_shortcode');
     add_shortcode('lead_form_box', 'sode_counseling_lead_form_box_shortcode');
@@ -1120,11 +1142,11 @@ if ( function_exists('add_shortcode') ) {
 function sode_counseling_button_shortcode($atts = [])
 {
     $atts = shortcode_atts([
-        'text'       => 'Get 100% Free Counseling',
-        'class'      => '',
-        'course'     => '',
+        'text' => 'Get 100% Free Counseling',
+        'class' => '',
+        'course' => '',
         'university' => '',
-        'uni'        => '',
+        'uni' => '',
     ], (array) $atts);
 
     $text = !empty($atts['text']) ? $atts['text'] : 'Get 100% Free Counseling';
@@ -1141,7 +1163,7 @@ function sode_counseling_button_shortcode($atts = [])
     ob_start();
     ?>
     <div class="sode-counseling-btn-wrap">
-        <button type="button" class="applynow sode-counseling-cta-btn<?php echo $custom_class; ?>"<?php echo $course_attr . $uni_attr; ?>>
+        <button type="button" class="applynow sode-counseling-cta-btn<?php echo $custom_class; ?>" <?php echo $course_attr . $uni_attr; ?>>
             <?php echo esc_html($text); ?>
         </button>
     </div>
@@ -1154,6 +1176,7 @@ function sode_counseling_button_shortcode($atts = [])
             justify-content: center !important;
             align-items: center !important;
         }
+
         .sode-counseling-cta-btn.applynow {
             display: inline-flex;
             align-items: center;
@@ -1171,11 +1194,13 @@ function sode_counseling_button_shortcode($atts = [])
             box-shadow: 0 4px 12px rgba(0, 128, 0, 0.25) !important;
             transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
         }
+
         .sode-counseling-cta-btn.applynow:hover {
             background: #006b00 !important;
             box-shadow: 0 6px 16px rgba(0, 128, 0, 0.35) !important;
             transform: translateY(-1px) !important;
         }
+
         .sode-counseling-cta-btn.applynow:active {
             transform: translateY(0) !important;
         }
@@ -1183,7 +1208,7 @@ function sode_counseling_button_shortcode($atts = [])
     <?php
     return ob_get_clean();
 }
-if ( function_exists('add_shortcode') ) {
+if (function_exists('add_shortcode')) {
     add_shortcode('counseling_button', 'sode_counseling_button_shortcode');
     add_shortcode('counseling_btn', 'sode_counseling_button_shortcode');
     add_shortcode('apply_now_button', 'sode_counseling_button_shortcode');
@@ -1197,7 +1222,7 @@ if ( function_exists('add_shortcode') ) {
 // ✅ STEP 5.5 — POPUP MODAL SYSTEM (Counseling / Apply Now)
 // Class: .applynow, .apply-now, .open-counseling-modal-btn, .open-counseling-popup
 // ====================================================
-if ( function_exists('add_action') ) {
+if (function_exists('add_action')) {
     add_action('wp_footer', 'sode_counseling_form_popup_modal');
     add_action('wp_footer', 'sode_compare_form_popup_modal');
     add_action('wp_footer', 'sode_auto_open_brochure_on_thankyou');
@@ -1207,7 +1232,8 @@ if ( function_exists('add_action') ) {
 function sode_counseling_form_popup_modal()
 {
     static $rendered = false;
-    if ($rendered) return;
+    if ($rendered)
+        return;
     $rendered = true;
     ?>
 
@@ -1225,9 +1251,11 @@ function sode_counseling_form_popup_modal()
             justify-content: center;
             align-items: center;
         }
+
         #counselingFormPopupOverlay.active {
             display: flex;
         }
+
         #counselingFormPopupBox {
             background: #fff;
             border-radius: 12px;
@@ -1240,10 +1268,19 @@ function sode_counseling_form_popup_modal()
             box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
             animation: counselingPopupSlideIn 0.3s ease;
         }
+
         @keyframes counselingPopupSlideIn {
-            from { transform: translateY(-25px); opacity: 0; }
-            to   { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-25px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
+
         .counseling-popup-close {
             position: absolute;
             top: 12px;
@@ -1257,7 +1294,10 @@ function sode_counseling_form_popup_modal()
             z-index: 10;
             padding: 0;
         }
-        .counseling-popup-close:hover { color: #e11d48; }
+
+        .counseling-popup-close:hover {
+            color: #e11d48;
+        }
     </style>
 
     <div id="counselingFormPopupOverlay">
@@ -1324,7 +1364,8 @@ function sode_counseling_form_popup_modal()
 function sode_compare_form_popup_modal()
 {
     static $rendered = false;
-    if ($rendered) return;
+    if ($rendered)
+        return;
     $rendered = true;
     ?>
 
@@ -1341,9 +1382,11 @@ function sode_compare_form_popup_modal()
             justify-content: center;
             align-items: center;
         }
+
         #compareFormPopupOverlay.active {
             display: flex;
         }
+
         #compareFormPopupBox {
             background: #fff;
             border-radius: 10px;
@@ -1356,10 +1399,19 @@ function sode_compare_form_popup_modal()
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: popupSlideIn 0.3s ease;
         }
+
         @keyframes popupSlideIn {
-            from { transform: translateY(-30px); opacity: 0; }
-            to   { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
+
         .compare-popup-close {
             position: absolute;
             top: 10px;
@@ -1372,7 +1424,10 @@ function sode_compare_form_popup_modal()
             line-height: 1;
             z-index: 1;
         }
-        .compare-popup-close:hover { color: #e00; }
+
+        .compare-popup-close:hover {
+            color: #e00;
+        }
     </style>
 
     <div id="compareFormPopupOverlay">
@@ -1423,30 +1478,31 @@ function sode_compare_form_popup_modal()
 // ✅ STEP 7 — AUTO OPEN BROCHURE ON THANK YOU PAGE
 // Dynamically pulls brochure URL from Admin Panel
 // ====================================================
-function sode_auto_open_brochure_on_thankyou() {
+function sode_auto_open_brochure_on_thankyou()
+{
     $uni_slug = sode_form_detect_uni_slug();
     $cfg = sode_get_university_form_config($uni_slug);
-    $brochure_url = ! empty($cfg['brochure_pdf_url']) ? $cfg['brochure_pdf_url'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/dsu_main_brochure.pdf';
+    $brochure_url = !empty($cfg['brochure_pdf_url']) ? $cfg['brochure_pdf_url'] : 'https://dsu.distanceeducationschool.com/wp-content/uploads/2026/08/dsu_main_brochure.pdf';
     ?>
     <script>
-    (function(){
-        var params = new URLSearchParams(window.location.search);
-        if (params.get('download_brochure') === '1') {
-            setTimeout(function(){
-                var a = document.createElement('a');
-                a.href = '<?php echo esc_url($brochure_url); ?>';
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }, 1000);
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('download_brochure') === '1') {
+                setTimeout(function () {
+                    var a = document.createElement('a');
+                    a.href = '<?php echo esc_url($brochure_url); ?>';
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }, 1000);
 
-            var cleanUrl = new URL(window.location);
-            cleanUrl.searchParams.delete('download_brochure');
-            window.history.replaceState({}, '', cleanUrl);
-        }
-    })();
+                var cleanUrl = new URL(window.location);
+                cleanUrl.searchParams.delete('download_brochure');
+                window.history.replaceState({}, '', cleanUrl);
+            }
+        })();
     </script>
     <?php
 }
@@ -1460,17 +1516,17 @@ function brochure_download_form_shortcode($atts = [])
 {
     $uni_slug = sode_form_detect_uni_slug($atts['university'] ?? '');
     $cfg = sode_get_university_form_config($uni_slug);
-    $short_name = ! empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
+    $short_name = !empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
 
     $atts = shortcode_atts([
-        'heading'     => 'Download Brochure',
+        'heading' => 'Download Brochure',
         'sub-heading' => 'Fill the form to get your free brochure',
-        'form_name'   => $short_name . ' Brochure Download Form',
-        'university'  => $uni_slug
+        'form_name' => $short_name . ' Brochure Download Form',
+        'university' => $uni_slug
     ], $atts);
     return custom_lead_form_shortcode($atts);
 }
-if ( function_exists('add_shortcode') ) {
+if (function_exists('add_shortcode')) {
     add_shortcode('brochure_download_form', 'brochure_download_form_shortcode');
 }
 
@@ -1483,19 +1539,19 @@ function scholarship_coupon_form_shortcode($atts = [])
 {
     $uni_slug = sode_form_detect_uni_slug($atts['university'] ?? '');
     $cfg = sode_get_university_form_config($uni_slug);
-    $short_name = ! empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
+    $short_name = !empty($cfg['short_name']) ? $cfg['short_name'] : 'DSU';
 
     $atts = shortcode_atts([
-        'heading'     => 'Get Scholarship Coupon Code',
+        'heading' => 'Get Scholarship Coupon Code',
         'sub-heading' => 'Get expert academic guidance and claim your exclusive scholarship today!',
-        'form_name'   => $short_name . ' Scholarship Coupon Form',
+        'form_name' => $short_name . ' Scholarship Coupon Form',
         'button_text' => 'Claim Scholarship Code',
-        'university'  => $uni_slug
+        'university' => $uni_slug
     ], $atts);
 
     return custom_lead_form_shortcode($atts);
 }
-if ( function_exists('add_shortcode') ) {
+if (function_exists('add_shortcode')) {
     add_shortcode('scholarship_coupon_form', 'scholarship_coupon_form_shortcode');
 }
 
@@ -1508,7 +1564,8 @@ if ( function_exists('add_shortcode') ) {
 function sode_brochure_form_popup_modal()
 {
     static $rendered = false;
-    if ($rendered) return;
+    if ($rendered)
+        return;
     $rendered = true;
     ?>
 
