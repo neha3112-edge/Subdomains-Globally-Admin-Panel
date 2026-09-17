@@ -29,7 +29,8 @@ define('SODE_UNI_FEES_TABLE_UNIVERSAL_LOADED', true);
 
 // Polyfills for standalone / SSR execution
 if (!function_exists('shortcode_atts')) {
-    function shortcode_atts($pairs, $atts, $shortcode = '') {
+    function shortcode_atts($pairs, $atts, $shortcode = '')
+    {
         $atts = (array) $atts;
         $out = [];
         foreach ($pairs as $name => $default) {
@@ -43,38 +44,45 @@ if (!function_exists('shortcode_atts')) {
     }
 }
 if (!function_exists('esc_html')) {
-    function esc_html($text) {
+    function esc_html($text)
+    {
         return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
     }
 }
 if (!function_exists('esc_attr')) {
-    function esc_attr($text) {
+    function esc_attr($text)
+    {
         return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
     }
 }
 if (!function_exists('esc_url')) {
-    function esc_url($url) {
+    function esc_url($url)
+    {
         return filter_var($url, FILTER_SANITIZE_URL);
     }
 }
 if (!function_exists('wp_rand')) {
-    function wp_rand($min = 0, $max = 999999) {
+    function wp_rand($min = 0, $max = 999999)
+    {
         return mt_rand($min, $max);
     }
 }
 if (!function_exists('sanitize_title')) {
-    function sanitize_title($title) {
+    function sanitize_title($title)
+    {
         return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string) $title), '-'));
     }
 }
 if (!function_exists('did_action')) {
-    function did_action($tag) {
+    function did_action($tag)
+    {
         global $sode_did_actions;
         return !empty($sode_did_actions[$tag]);
     }
 }
 if (!function_exists('do_action')) {
-    function do_action($tag) {
+    function do_action($tag)
+    {
         global $sode_did_actions;
         $sode_did_actions[$tag] = true;
     }
@@ -91,7 +99,8 @@ if (!defined('UNI_FEES_TABLE_API_URL')) {
  * Helper: Detect current university slug
  */
 if (!function_exists('sode_detect_matrix_uni_slug')) {
-    function sode_detect_matrix_uni_slug($explicit = '') {
+    function sode_detect_matrix_uni_slug($explicit = '')
+    {
         if (!empty($explicit)) {
             return sanitize_title($explicit);
         }
@@ -100,7 +109,8 @@ if (!function_exists('sode_detect_matrix_uni_slug')) {
         }
         if (function_exists('sode_client_detect_uni')) {
             $u = sode_client_detect_uni();
-            if ($u) return sanitize_title($u);
+            if ($u)
+                return sanitize_title($u);
         }
         $host = isset($_SERVER['HTTP_HOST']) ? strtolower($_SERVER['HTTP_HOST']) : '';
         if ($host) {
@@ -117,8 +127,9 @@ if (!function_exists('sode_detect_matrix_uni_slug')) {
  * Helper: Format fee with Indian Rupee symbol
  */
 if (!function_exists('sode_matrix_format_fee')) {
-    function sode_matrix_format_fee($fee) {
-        $fee = trim((string)$fee);
+    function sode_matrix_format_fee($fee)
+    {
+        $fee = trim((string) $fee);
         if ($fee === '' || $fee === '0' || strtolower($fee) === 'n/a') {
             return 'N/A';
         }
@@ -126,7 +137,7 @@ if (!function_exists('sode_matrix_format_fee')) {
             return $fee;
         }
         if (is_numeric(str_replace([',', ' '], '', $fee))) {
-            return '₹ ' . number_format((float)str_replace([',', ' '], '', $fee));
+            return '₹ ' . number_format((float) str_replace([',', ' '], '', $fee));
         }
         return '₹ ' . $fee;
     }
@@ -137,7 +148,8 @@ if (!function_exists('sode_matrix_format_fee')) {
  * Uses direct local database query if available, with Central API fallback.
  */
 if (!function_exists('get_university_fees_table_data')) {
-    function get_university_fees_table_data($uni_slug = '') {
+    function get_university_fees_table_data($uni_slug = '')
+    {
         static $cache = [];
         $uni_slug = sode_detect_matrix_uni_slug($uni_slug);
 
@@ -196,10 +208,22 @@ if (!function_exists('get_university_fees_table_data')) {
 
                         // Sort order: Masters first, then Bachelors
                         $course_ranks = [
-                            'mba' => 1, 'mca' => 2, 'mcom' => 3, 'm.com' => 3, 'ma' => 4, 'msc' => 5, 'm.sc' => 5,
-                            'bba' => 10, 'bcom' => 11, 'b.com' => 11, 'bca' => 12, 'ba' => 13, 'bsc' => 14, 'b.sc' => 14
+                            'mba' => 1,
+                            'mca' => 2,
+                            'mcom' => 3,
+                            'm.com' => 3,
+                            'ma' => 4,
+                            'msc' => 5,
+                            'm.sc' => 5,
+                            'bba' => 10,
+                            'bcom' => 11,
+                            'b.com' => 11,
+                            'bca' => 12,
+                            'ba' => 13,
+                            'bsc' => 14,
+                            'b.sc' => 14
                         ];
-                        usort($current_courses, function($a, $b) use ($course_ranks) {
+                        usort($current_courses, function ($a, $b) use ($course_ranks) {
                             $k_a = strtolower(str_replace(['.', ' '], '', $a['short_name']));
                             $k_b = strtolower(str_replace(['.', ' '], '', $b['short_name']));
                             $r_a = $course_ranks[$k_a] ?? 50;
@@ -212,9 +236,9 @@ if (!function_exists('get_university_fees_table_data')) {
                         foreach ($current_courses as $c) {
                             $clean_name = strtoupper(str_replace(['.', ' '], '', trim($c['short_name'])));
                             $columns[] = [
-                                'course_id'   => (int) $c['course_id'],
-                                'short_name'  => trim($c['short_name']),
-                                'clean_name'  => $clean_name,
+                                'course_id' => (int) $c['course_id'],
+                                'short_name' => trim($c['short_name']),
+                                'clean_name' => $clean_name,
                                 'header_text' => $clean_name . ' SEMESTER FEE',
                             ];
                         }
@@ -232,7 +256,7 @@ if (!function_exists('get_university_fees_table_data')) {
                         $all_unis[] = array_merge($current_uni, ['is_current' => true]);
 
                         foreach ($alt_unis as $alt) {
-                            if ((int)$alt['id'] === (int)$current_uni['id']) {
+                            if ((int) $alt['id'] === (int) $current_uni['id']) {
                                 continue;
                             }
                             $all_unis[] = array_merge($alt, ['is_current' => false]);
@@ -252,8 +276,8 @@ if (!function_exists('get_university_fees_table_data')) {
 
                         $uni_fees_map = [];
                         foreach ($all_mappings as $m) {
-                            $u_id = (int)$m['university_id'];
-                            $c_id = (int)$m['course_id'];
+                            $u_id = (int) $m['university_id'];
+                            $c_id = (int) $m['course_id'];
                             $clean_c = strtolower(str_replace(['.', ' '], '', $m['short_name']));
                             $uni_fees_map[$u_id]['by_id'][$c_id] = $m['per_semester_fee'];
                             $uni_fees_map[$u_id]['by_name'][$clean_c] = $m['per_semester_fee'];
@@ -261,7 +285,7 @@ if (!function_exists('get_university_fees_table_data')) {
 
                         $rows = [];
                         foreach ($all_unis as $u) {
-                            $u_id = (int)$u['id'];
+                            $u_id = (int) $u['id'];
                             $is_curr = !empty($u['is_current']);
 
                             // Display name formatting: use full university name consistently
@@ -276,26 +300,26 @@ if (!function_exists('get_university_fees_table_data')) {
                             }
 
                             $rows[] = [
-                                'id'         => $u_id,
-                                'name'       => $disp_name,
+                                'id' => $u_id,
+                                'name' => $disp_name,
                                 'short_name' => $u['short_name'] ?? '',
-                                'full_name'  => $u['full_name'] ?? '',
-                                'slug'       => $u['slug'] ?? '',
-                                'link'       => '',
+                                'full_name' => $u['full_name'] ?? '',
+                                'slug' => $u['slug'] ?? '',
+                                'link' => '',
                                 'is_current' => $is_curr,
-                                'fees'       => $fees_row,
+                                'fees' => $fees_row,
                             ];
                         }
 
                         $data = [
                             'current_university' => [
-                                'id'           => (int)$current_uni['id'],
-                                'full_name'    => $current_uni['full_name'],
-                                'short_name'   => $current_uni['short_name'],
-                                'slug'         => $current_uni['slug'],
+                                'id' => (int) $current_uni['id'],
+                                'full_name' => $current_uni['full_name'],
+                                'short_name' => $current_uni['short_name'],
+                                'slug' => $current_uni['slug'],
                                 'display_name' => !empty($current_uni['full_name']) ? $current_uni['full_name'] : $current_uni['short_name'],
                             ],
-                            'columns'      => $columns,
+                            'columns' => $columns,
                             'universities' => $rows,
                         ];
 
@@ -339,17 +363,15 @@ if (!function_exists('get_university_fees_table_data')) {
  * Helper: Render Row Cells for University Fees Table
  */
 if (!function_exists('sode_render_uni_fees_row_cells')) {
-    function sode_render_uni_fees_row_cells($uni, $columns, $primary_course) {
+    function sode_render_uni_fees_row_cells($uni, $columns, $primary_course)
+    {
         $name = !empty($uni['full_name']) ? $uni['full_name'] : (!empty($uni['name']) ? $uni['name'] : $uni['short_name']);
         $slug = !empty($uni['slug']) ? $uni['slug'] : sanitize_title($name);
         ?>
         <!-- Mobile Compare Column (First) -->
         <td class="sode-uni-td-compare sode-col-mobile-only">
-            <button type="button"
-                class="uni-compare-toggle-btn"
-                data-uni-name="<?php echo esc_attr($name); ?>"
-                data-uni-slug="<?php echo esc_attr($slug); ?>"
-                data-course="<?php echo esc_attr($primary_course); ?>"
+            <button type="button" class="uni-compare-toggle-btn" data-uni-name="<?php echo esc_attr($name); ?>"
+                data-uni-slug="<?php echo esc_attr($slug); ?>" data-course="<?php echo esc_attr($primary_course); ?>"
                 aria-label="Compare <?php echo esc_attr($name); ?>">
                 <span class="compare-icon">+</span>
                 <span class="compare-text">Compare</span>
@@ -362,10 +384,10 @@ if (!function_exists('sode_render_uni_fees_row_cells')) {
         </td>
 
         <!-- Course Fee Columns -->
-        <?php foreach ($columns as $col): 
+        <?php foreach ($columns as $col):
             $val = $uni['fees'][$col['clean_name']] ?? 'N/A';
             $is_na = ($val === 'N/A');
-        ?>
+            ?>
             <td class="sode-uni-td-fee <?php echo $is_na ? 'is-na' : ''; ?>">
                 <?php echo esc_html($val); ?>
             </td>
@@ -373,11 +395,8 @@ if (!function_exists('sode_render_uni_fees_row_cells')) {
 
         <!-- Desktop Compare Column (Last) -->
         <td class="sode-uni-td-compare sode-col-desktop-only">
-            <button type="button"
-                class="uni-compare-toggle-btn"
-                data-uni-name="<?php echo esc_attr($name); ?>"
-                data-uni-slug="<?php echo esc_attr($slug); ?>"
-                data-course="<?php echo esc_attr($primary_course); ?>"
+            <button type="button" class="uni-compare-toggle-btn" data-uni-name="<?php echo esc_attr($name); ?>"
+                data-uni-slug="<?php echo esc_attr($slug); ?>" data-course="<?php echo esc_attr($primary_course); ?>"
                 aria-label="Compare <?php echo esc_attr($name); ?>">
                 <span class="compare-icon">+</span>
                 <span class="compare-text">Add to Compare</span>
@@ -391,15 +410,16 @@ if (!function_exists('sode_render_uni_fees_row_cells')) {
  * Render University Fees Table
  */
 if (!function_exists('sode_render_university_fees_table')) {
-    function sode_render_university_fees_table($atts = []) {
+    function sode_render_university_fees_table($atts = [])
+    {
         $atts = shortcode_atts([
-            'uni'          => '',
-            'university'   => '',
+            'uni' => '',
+            'university' => '',
             'visible_rows' => UNI_FEES_TABLE_VISIBLE_ROWS,
-            'limit'        => '',
-            'heading'      => '',
-            'description'  => '',
-            'class'        => '',
+            'limit' => '',
+            'heading' => '',
+            'description' => '',
+            'class' => '',
         ], $atts);
 
         $uni_slug = !empty($atts['uni']) ? $atts['uni'] : $atts['university'];
@@ -413,8 +433,9 @@ if (!function_exists('sode_render_university_fees_table')) {
         $universities = $data['universities'];
         $total_rows = count($universities);
 
-        $visible_rows = !empty($atts['limit']) ? (int)$atts['limit'] : (int)$atts['visible_rows'];
-        if ($visible_rows <= 0) $visible_rows = 6;
+        $visible_rows = !empty($atts['limit']) ? (int) $atts['limit'] : (int) $atts['visible_rows'];
+        if ($visible_rows <= 0)
+            $visible_rows = 6;
         $has_more = $total_rows > $visible_rows;
 
         static $inst_count = 0;
@@ -450,9 +471,10 @@ if (!function_exists('sode_render_university_fees_table')) {
                     </thead>
                     <tbody>
                         <?php foreach ($universities as $idx => $uni):
-                            if ($idx >= $visible_rows) break;
+                            if ($idx >= $visible_rows)
+                                break;
                             $is_current = !empty($uni['is_current']);
-                        ?>
+                            ?>
                             <tr class="<?php echo $is_current ? 'sode-row-current-uni' : ''; ?>">
                                 <?php sode_render_uni_fees_row_cells($uni, $columns, $primary_course); ?>
                             </tr>
@@ -461,9 +483,10 @@ if (!function_exists('sode_render_university_fees_table')) {
                     <?php if ($has_more): ?>
                         <tbody class="sode-uni-fees-extra-rows" style="display:none;">
                             <?php foreach ($universities as $idx => $uni):
-                                if ($idx < $visible_rows) continue;
+                                if ($idx < $visible_rows)
+                                    continue;
                                 $is_current = !empty($uni['is_current']);
-                            ?>
+                                ?>
                                 <tr class="<?php echo $is_current ? 'sode-row-current-uni' : ''; ?>">
                                     <?php sode_render_uni_fees_row_cells($uni, $columns, $primary_course); ?>
                                 </tr>
@@ -502,7 +525,8 @@ if (!function_exists('sode_render_university_fees_table')) {
                         <button type="button" class="uni-compare-clear-btn" id="uni-compare-clear-btn">Clear</button>
                         <button type="button" class="uni-compare-submit-btn" id="uni-compare-submit-btn">
                             <span>Compare Now</span>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
@@ -515,597 +539,657 @@ if (!function_exists('sode_render_university_fees_table')) {
             <div id="uni-compare-toast" class="uni-compare-toast" style="display:none;"></div>
 
             <style>
-            /* Universities Fees Matrix Table Styles */
-            .sode-uni-fees-table-wrap {
-                width: 100%;
-                margin: 24px 0;
-                box-sizing: border-box;
-            }
-            .sode-uni-fees-heading {
-                font-size: 24px;
-                font-weight: 700;
-                color: #0c2340;
-                margin: 0 0 8px 0;
-            }
-            .sode-uni-fees-description {
-                font-size: 14px;
-                color: #4b5563;
-                margin: 0 0 16px 0;
-                line-height: 1.5;
-            }
-            .sode-uni-fees-scroll {
-                width: 100%;
-                overflow-x: visible;
-                overflow-y: visible;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                background: #ffffff;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            }
-            .sode-uni-fees-table {
-                width: 100%;
-                min-width: 0;
-                border-collapse: collapse !important;
-                font-size: 13px;
-                margin: 0;
-                table-layout: auto;
-            }
-            .sode-uni-fees-table thead th {
-                background-color: #e0f2fe !important;
-                color: #0c2340 !important;
-                text-align: left;
-                padding: 10px 10px;
-                font-weight: 700;
-                font-size: 11.5px;
-                text-transform: uppercase;
-                letter-spacing: 0.2px;
-                white-space: normal;
-                line-height: 1.25;
-                border-bottom: 1px solid #cbd5e1 !important;
-                border-right: 1px solid #cbd5e1 !important;
-            }
-            .sode-uni-fees-table thead th:last-child {
-                border-right: none !important;
-            }
-            .sode-uni-th-name {
-                width: auto;
-                max-width: 210px;
-            }
-            .sode-uni-th-fee {
-                text-align: left;
-            }
-            .sode-uni-th-compare {
-                width: 125px;
-                text-align: center !important;
-                white-space: nowrap;
-            }
-            .sode-uni-fees-table tbody td {
-                padding: 10px 10px;
-                border-bottom: 1px solid #e2e8f0 !important;
-                border-right: 1px solid #e2e8f0 !important;
-                vertical-align: middle;
-                color: #1f2937;
-                font-size: 12.5px;
-            }
-            .sode-uni-fees-table tbody td:last-child {
-                border-right: none !important;
-            }
-            .sode-col-mobile-only {
-                display: none !important;
-            }
-            .sode-col-desktop-only {
-                display: table-cell !important;
-            }
-            .sode-uni-fees-table tbody tr:hover {
-                background-color: #f8fafc;
-            }
-            /* First Row: Current Domain University */
-            .sode-row-current-uni td {
-                background-color: #ffffff;
-            }
-            .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text {
-                font-weight: 800;
-                color: #000000;
-                font-size: 13px;
-            }
-            .sode-uni-name-text {
-                font-weight: 700;
-                color: #0c2340;
-                display: inline-block;
-                line-height: 1.35;
-            }
-            .sode-uni-td-fee {
-                font-weight: 500;
-                color: #111827;
-                white-space: nowrap;
-            }
-            .sode-uni-td-fee.is-na {
-                color: #94a3b8;
-                font-weight: 600;
-            }
-            .sode-uni-td-compare {
-                text-align: center;
-                white-space: nowrap;
-            }
-
-            /* COMPARE BUTTON */
-            .uni-compare-toggle-btn {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 5px;
-                padding: 6px 12px;
-                font-size: 11.5px;
-                font-weight: 600;
-                color: #2563eb;
-                background-color: #eff6ff;
-                border: 1px solid #bfdbfe;
-                border-radius: 20px;
-                cursor: pointer;
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                user-select: none;
-            }
-            .uni-compare-toggle-btn:hover {
-                background-color: #dbeafe;
-                border-color: #93c5fd;
-                transform: translateY(-1px);
-            }
-            .uni-compare-toggle-btn.is-active {
-                background-color: #2563eb;
-                color: #ffffff;
-                border-color: #2563eb;
-                box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
-            }
-
-            /* View More / View Less Toggle Button */
-            .sode-uni-fees-btn-wrap {
-                text-align: center;
-                margin-top: 20px;
-            }
-            .sode-uni-fees-toggle-btn {
-                padding: 10px 28px;
-                background-color: #2563eb;
-                color: #ffffff;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-weight: 700;
-                font-size: 14px;
-                box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-                transition: background-color 0.2s ease, transform 0.1s ease;
-            }
-            .sode-uni-fees-toggle-btn:hover {
-                background-color: #1d4ed8;
-                transform: translateY(-1px);
-            }
-
-            /* FLOATING COMPARE DOCK */
-            .uni-compare-dock {
-                position: fixed;
-                bottom: 24px;
-                left: 50%;
-                transform: translateX(-50%) translateY(0);
-                z-index: 2147483647 !important;
-                width: calc(100% - 32px);
-                max-width: 900px;
-                background: rgba(15, 23, 42, 0.94);
-                backdrop-filter: blur(14px);
-                -webkit-backdrop-filter: blur(14px);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 18px;
-                box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
-                color: #ffffff;
-                padding: 14px 20px;
-                animation: sodeDockSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                box-sizing: border-box;
-            }
-            @keyframes sodeDockSlideUp {
-                from { transform: translateX(-50%) translateY(120px); opacity: 0; }
-                to { transform: translateX(-50%) translateY(0); opacity: 1; }
-            }
-            .uni-compare-dock-container {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 16px;
-            }
-            .uni-compare-dock-info {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                flex: 1;
-                min-width: 0;
-            }
-            .uni-compare-dock-title-wrap {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                white-space: nowrap;
-            }
-            .uni-compare-dock-title {
-                font-weight: 700;
-                font-size: 14px;
-                color: #f8fafc;
-                letter-spacing: 0.2px;
-            }
-            .uni-compare-dock-badge {
-                background: #2563eb;
-                color: #ffffff;
-                font-size: 11px;
-                font-weight: 700;
-                padding: 2px 7px;
-                border-radius: 10px;
-            }
-            .uni-compare-chips-list {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                overflow-x: auto;
-                padding: 2px 0;
-            }
-            .uni-compare-chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                background: rgba(255, 255, 255, 0.12);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                padding: 5px 10px;
-                border-radius: 8px;
-                font-size: 12px;
-                font-weight: 500;
-                color: #ffffff;
-                white-space: nowrap;
-            }
-            .uni-compare-chip-remove {
-                background: none;
-                border: none;
-                color: #cbd5e1;
-                font-size: 16px;
-                line-height: 1;
-                cursor: pointer;
-                padding: 0;
-                display: flex;
-                align-items: center;
-            }
-            .uni-compare-chip-remove:hover {
-                color: #f87171;
-            }
-            .uni-compare-chip-slot {
-                border: 1px dashed rgba(255, 255, 255, 0.3);
-                border-radius: 8px;
-                padding: 5px 10px;
-                font-size: 12px;
-                color: #94a3b8;
-                white-space: nowrap;
-            }
-            .uni-compare-dock-actions {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                white-space: nowrap;
-            }
-            .uni-compare-clear-btn {
-                background: transparent;
-                border: 1px solid rgba(255, 255, 255, 0.25);
-                color: #cbd5e1;
-                font-size: 12px;
-                font-weight: 600;
-                padding: 8px 14px;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.15s ease;
-            }
-            .uni-compare-clear-btn:hover {
-                background: rgba(255, 255, 255, 0.1);
-                color: #ffffff;
-            }
-            .uni-compare-submit-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                background: #2563eb;
-                color: #ffffff;
-                border: none;
-                font-size: 13px;
-                font-weight: 700;
-                padding: 9px 18px;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: background-color 0.15s ease, transform 0.1s ease;
-                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-            }
-            .uni-compare-submit-btn:hover {
-                background: #1d4ed8;
-                transform: translateY(-1px);
-            }
-            .uni-compare-toast {
-                position: fixed;
-                bottom: 96px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #ef4444;
-                color: #ffffff;
-                padding: 10px 18px;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 600;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-                z-index: 2147483647 !important;
-            }
-
-            @media (max-width: 768px) {
-                /* Mobile: Horizontal scroll active */
-                .sode-uni-fees-scroll {
-                    overflow-x: auto !important;
-                    overflow-y: hidden !important;
-                    -webkit-overflow-scrolling: touch !important;
-                }
-                .sode-uni-fees-table {
-                    min-width: 500px !important;
-                    width: max-content !important;
-                }
-
-                /* Mobile: Compare column 1st, Hide desktop compare column */
-                .sode-col-mobile-only {
-                    display: table-cell !important;
-                }
-                .sode-col-desktop-only {
-                    display: none !important;
-                }
-
-                /* Slimmer column widths & paddings for mobile */
-                .sode-uni-fees-table thead th {
-                    padding: 7px 6px !important;
-                    font-size: 10px !important;
-                    line-height: 1.25 !important;
-                    letter-spacing: 0 !important;
-                }
-                .sode-uni-fees-table tbody td {
-                    padding: 7px 6px !important;
-                    font-size: 11px !important;
-                }
-                .sode-uni-th-compare,
-                .sode-uni-td-compare {
-                    width: 78px !important;
-                    min-width: 74px !important;
-                    max-width: 82px !important;
-                    padding: 5px 3px !important;
-                }
-                .sode-uni-th-name,
-                .sode-uni-td-name {
-                    min-width: 110px !important;
-                    max-width: 135px !important;
-                    font-size: 11px !important;
-                    line-height: 1.25 !important;
-                }
-                .sode-uni-th-fee,
-                .sode-uni-td-fee {
-                    min-width: 68px !important;
-                    font-size: 11px !important;
-                }
-                .uni-compare-toggle-btn {
-                    padding: 4px 6px !important;
-                    font-size: 10px !important;
-                    gap: 3px !important;
-                    border-radius: 12px !important;
-                    white-space: nowrap !important;
-                }
-                .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text {
-                    font-size: 11.5px !important;
-                }
-
-                .uni-compare-dock {
-                    bottom: 12px;
-                    padding: 12px 14px;
-                    width: calc(100% - 20px);
-                    border-radius: 14px;
-                }
-                .uni-compare-dock-container {
-                    flex-direction: column;
-                    align-items: stretch;
-                    gap: 10px;
-                }
-                .uni-compare-dock-info {
-                    min-width: 100%;
-                    justify-content: space-between;
-                }
-                .uni-compare-dock-actions {
-                    justify-content: flex-end;
-                }
-                .uni-compare-submit-btn {
-                    flex: 1;
-                    justify-content: center;
-                }
-                .uni-compare-toast {
-                    bottom: 135px;
-                    width: calc(100% - 32px);
-                    text-align: center;
+                /* Universities Fees Matrix Table Styles */
+                .sode-uni-fees-table-wrap {
+                    width: 100%;
+                    margin: 24px 0;
                     box-sizing: border-box;
                 }
 
-                /* HIDE WHATSAPP & FLOATING WIDGETS ON MOBILE WHEN COMPARE DOCK IS OPEN */
-                body.has-uni-compare-dock-open #gb-waw-iframe,
-                body.has-uni-compare-dock-open [id*="gb-waw"],
-                body.has-uni-compare-dock-open [class*="gb-waw"],
-                body.has-uni-compare-dock-open [class*="whatsapp"],
-                body.has-uni-compare-dock-open [id*="whatsapp"],
-                body.has-uni-compare-dock-open [class*="joinchat"],
-                body.has-uni-compare-dock-open [id*="joinchat"],
-                body.has-uni-compare-dock-open [class*="ht-ctc"],
-                body.has-uni-compare-dock-open [id*="ht-ctc"],
-                body.has-uni-compare-dock-open [class*="chaty"],
-                body.has-uni-compare-dock-open [id*="chaty"],
-                body.has-uni-compare-dock-open [class*="qlwapp"],
-                body.has-uni-compare-dock-open [id*="qlwapp"],
-                body.has-uni-compare-dock-open [class*="get-help"],
-                body.has-uni-compare-dock-open [id*="get-help"] {
-                    display: none !important;
-                    visibility: hidden !important;
-                    opacity: 0 !important;
-                    pointer-events: none !important;
+                .sode-uni-fees-heading {
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: #0c2340;
+                    margin: 0 0 8px 0;
                 }
-            }
+
+                .sode-uni-fees-description {
+                    font-size: 14px;
+                    color: #4b5563;
+                    margin: 0 0 16px 0;
+                    line-height: 1.5;
+                }
+
+                .sode-uni-fees-scroll {
+                    width: 100%;
+                    overflow-x: visible;
+                    overflow-y: visible;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                }
+
+                .sode-uni-fees-table {
+                    width: 100%;
+                    min-width: 0;
+                    border-collapse: collapse !important;
+                    font-size: 13px;
+                    margin: 0;
+                    table-layout: auto;
+                }
+
+                .sode-uni-fees-table thead th {
+                    background-color: #e0f2fe !important;
+                    color: #0c2340 !important;
+                    text-align: left;
+                    padding: 10px 10px;
+                    font-weight: 700;
+                    font-size: 11.5px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.2px;
+                    white-space: normal;
+                    line-height: 1.25;
+                    border-bottom: 1px solid #cbd5e1 !important;
+                    border-right: 1px solid #cbd5e1 !important;
+                }
+
+                .sode-uni-fees-table thead th:last-child {
+                    border-right: none !important;
+                }
+
+                .sode-uni-th-name {
+                    width: auto;
+                    max-width: 210px;
+                }
+
+                .sode-uni-th-fee {
+                    text-align: left;
+                }
+
+                .sode-uni-th-compare {
+                    width: 125px;
+                    text-align: center !important;
+                    white-space: nowrap;
+                }
+
+                .sode-uni-fees-table tbody td {
+                    padding: 10px 10px;
+                    border-bottom: 1px solid #e2e8f0 !important;
+                    border-right: 1px solid #e2e8f0 !important;
+                    vertical-align: middle;
+                    color: #1f2937;
+                    font-size: 12.5px;
+                }
+
+                .sode-uni-fees-table tbody td:last-child {
+                    border-right: none !important;
+                }
+
+                .sode-col-mobile-only {
+                    display: none !important;
+                }
+
+                .sode-col-desktop-only {
+                    display: table-cell !important;
+                }
+
+                .sode-uni-fees-table tbody tr:hover {
+                    background-color: #f8fafc;
+                }
+
+                /* First Row: Current Domain University */
+                .sode-row-current-uni td {
+                    background-color: #ffffff;
+                }
+
+                .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text {
+                    font-size: 13px;
+                }
+
+                .sode-uni-name-text {
+                    font-weight: 700;
+                    color: #0c2340;
+                    display: inline-block;
+                    line-height: 1.35;
+                }
+
+                .sode-uni-td-fee {
+                    font-weight: 500;
+                    color: #111827;
+                    white-space: nowrap;
+                }
+
+                .sode-uni-td-fee.is-na {
+                    color: #94a3b8;
+                    font-weight: 600;
+                }
+
+                .sode-uni-td-compare {
+                    text-align: center;
+                    white-space: nowrap;
+                }
+
+                /* COMPARE BUTTON */
+                .uni-compare-toggle-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 5px;
+                    padding: 6px 12px;
+                    font-size: 11.5px;
+                    font-weight: 600;
+                    color: #2563eb;
+                    background-color: #eff6ff;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    user-select: none;
+                }
+
+                .uni-compare-toggle-btn:hover {
+                    background-color: #dbeafe;
+                    border-color: #93c5fd;
+                    transform: translateY(-1px);
+                }
+
+                .uni-compare-toggle-btn.is-active {
+                    background-color: #2563eb;
+                    color: #ffffff;
+                    border-color: #2563eb;
+                    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+                }
+
+                /* View More / View Less Toggle Button */
+                .sode-uni-fees-btn-wrap {
+                    text-align: center;
+                    margin-top: 20px;
+                }
+
+                .sode-uni-fees-toggle-btn {
+                    padding: 10px 28px;
+                    background-color: #2563eb;
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 700;
+                    font-size: 14px;
+                    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+                    transition: background-color 0.2s ease, transform 0.1s ease;
+                }
+
+                .sode-uni-fees-toggle-btn:hover {
+                    background-color: #1d4ed8;
+                    transform: translateY(-1px);
+                }
+
+                /* FLOATING COMPARE DOCK */
+                .uni-compare-dock {
+                    position: fixed;
+                    bottom: 24px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(0);
+                    z-index: 2147483647 !important;
+                    width: calc(100% - 32px);
+                    max-width: 900px;
+                    background: rgba(15, 23, 42, 0.94);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 18px;
+                    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+                    color: #ffffff;
+                    padding: 14px 20px;
+                    animation: sodeDockSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    box-sizing: border-box;
+                }
+
+                @keyframes sodeDockSlideUp {
+                    from {
+                        transform: translateX(-50%) translateY(120px);
+                        opacity: 0;
+                    }
+
+                    to {
+                        transform: translateX(-50%) translateY(0);
+                        opacity: 1;
+                    }
+                }
+
+                .uni-compare-dock-container {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 16px;
+                }
+
+                .uni-compare-dock-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .uni-compare-dock-title-wrap {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    white-space: nowrap;
+                }
+
+                .uni-compare-dock-title {
+                    font-weight: 700;
+                    font-size: 14px;
+                    color: #f8fafc;
+                    letter-spacing: 0.2px;
+                }
+
+                .uni-compare-dock-badge {
+                    background: #2563eb;
+                    color: #ffffff;
+                    font-size: 11px;
+                    font-weight: 700;
+                    padding: 2px 7px;
+                    border-radius: 10px;
+                }
+
+                .uni-compare-chips-list {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    overflow-x: auto;
+                    padding: 2px 0;
+                }
+
+                .uni-compare-chip {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: rgba(255, 255, 255, 0.12);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    padding: 5px 10px;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: #ffffff;
+                    white-space: nowrap;
+                }
+
+                .uni-compare-chip-remove {
+                    background: none;
+                    border: none;
+                    color: #cbd5e1;
+                    font-size: 16px;
+                    line-height: 1;
+                    cursor: pointer;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .uni-compare-chip-remove:hover {
+                    color: #f87171;
+                }
+
+                .uni-compare-chip-slot {
+                    border: 1px dashed rgba(255, 255, 255, 0.3);
+                    border-radius: 8px;
+                    padding: 5px 10px;
+                    font-size: 12px;
+                    color: #94a3b8;
+                    white-space: nowrap;
+                }
+
+                .uni-compare-dock-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    white-space: nowrap;
+                }
+
+                .uni-compare-clear-btn {
+                    background: transparent;
+                    border: 1px solid rgba(255, 255, 255, 0.25);
+                    color: #cbd5e1;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 8px 14px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                }
+
+                .uni-compare-clear-btn:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    color: #ffffff;
+                }
+
+                .uni-compare-submit-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: #2563eb;
+                    color: #ffffff;
+                    border: none;
+                    font-size: 13px;
+                    font-weight: 700;
+                    padding: 9px 18px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: background-color 0.15s ease, transform 0.1s ease;
+                    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+                }
+
+                .uni-compare-submit-btn:hover {
+                    background: #1d4ed8;
+                    transform: translateY(-1px);
+                }
+
+                .uni-compare-toast {
+                    position: fixed;
+                    bottom: 96px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #ef4444;
+                    color: #ffffff;
+                    padding: 10px 18px;
+                    border-radius: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+                    z-index: 2147483647 !important;
+                }
+
+                @media (max-width: 768px) {
+
+                    /* Mobile: Horizontal scroll active */
+                    .sode-uni-fees-scroll {
+                        overflow-x: auto !important;
+                        overflow-y: hidden !important;
+                        -webkit-overflow-scrolling: touch !important;
+                    }
+
+                    .sode-uni-fees-table {
+                        min-width: 500px !important;
+                        width: max-content !important;
+                    }
+
+                    /* Mobile: Compare column 1st, Hide desktop compare column */
+                    .sode-col-mobile-only {
+                        display: table-cell !important;
+                    }
+
+                    .sode-col-desktop-only {
+                        display: none !important;
+                    }
+
+                    /* Slimmer column widths & paddings for mobile */
+                    .sode-uni-fees-table thead th {
+                        padding: 7px 6px !important;
+                        font-size: 10px !important;
+                        line-height: 1.25 !important;
+                        letter-spacing: 0 !important;
+                    }
+
+                    .sode-uni-fees-table tbody td {
+                        padding: 7px 6px !important;
+                        font-size: 11px !important;
+                    }
+
+                    .sode-uni-th-compare,
+                    .sode-uni-td-compare {
+                        width: 78px !important;
+                        min-width: 74px !important;
+                        max-width: 82px !important;
+                        padding: 5px 3px !important;
+                    }
+
+                    .sode-uni-th-name,
+                    .sode-uni-td-name {
+                        min-width: 110px !important;
+                        max-width: 135px !important;
+                        font-size: 11px !important;
+                        line-height: 1.25 !important;
+                    }
+
+                    .sode-uni-th-fee,
+                    .sode-uni-td-fee {
+                        min-width: 68px !important;
+                        font-size: 11px !important;
+                    }
+
+                    .uni-compare-toggle-btn {
+                        padding: 4px 6px !important;
+                        font-size: 10px !important;
+                        gap: 3px !important;
+                        border-radius: 12px !important;
+                        white-space: nowrap !important;
+                    }
+
+                    .sode-row-current-uni .sode-uni-td-name .sode-uni-name-text {
+                        font-size: 11.5px !important;
+                    }
+
+                    .uni-compare-dock {
+                        bottom: 12px;
+                        padding: 12px 14px;
+                        width: calc(100% - 20px);
+                        border-radius: 14px;
+                    }
+
+                    .uni-compare-dock-container {
+                        flex-direction: column;
+                        align-items: stretch;
+                        gap: 10px;
+                    }
+
+                    .uni-compare-dock-info {
+                        min-width: 100%;
+                        justify-content: space-between;
+                    }
+
+                    .uni-compare-dock-actions {
+                        justify-content: flex-end;
+                    }
+
+                    .uni-compare-submit-btn {
+                        flex: 1;
+                        justify-content: center;
+                    }
+
+                    .uni-compare-toast {
+                        bottom: 135px;
+                        width: calc(100% - 32px);
+                        text-align: center;
+                        box-sizing: border-box;
+                    }
+
+                    /* HIDE WHATSAPP & FLOATING WIDGETS ON MOBILE WHEN COMPARE DOCK IS OPEN */
+                    body.has-uni-compare-dock-open #gb-waw-iframe,
+                    body.has-uni-compare-dock-open [id*="gb-waw"],
+                    body.has-uni-compare-dock-open [class*="gb-waw"],
+                    body.has-uni-compare-dock-open [class*="whatsapp"],
+                    body.has-uni-compare-dock-open [id*="whatsapp"],
+                    body.has-uni-compare-dock-open [class*="joinchat"],
+                    body.has-uni-compare-dock-open [id*="joinchat"],
+                    body.has-uni-compare-dock-open [class*="ht-ctc"],
+                    body.has-uni-compare-dock-open [id*="ht-ctc"],
+                    body.has-uni-compare-dock-open [class*="chaty"],
+                    body.has-uni-compare-dock-open [id*="chaty"],
+                    body.has-uni-compare-dock-open [class*="qlwapp"],
+                    body.has-uni-compare-dock-open [id*="qlwapp"],
+                    body.has-uni-compare-dock-open [class*="get-help"],
+                    body.has-uni-compare-dock-open [id*="get-help"] {
+                        display: none !important;
+                        visibility: hidden !important;
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                    }
+                }
             </style>
 
             <script>
-            (function() {
-                var selectedUnis = []; // { name, slug, course }
-                var maxSelections = 3;
-                var toastTimer = null;
+                (function () {
+                    var selectedUnis = []; // { name, slug, course }
+                    var maxSelections = 3;
+                    var toastTimer = null;
 
-                function showToast(message) {
-                    var toast = document.getElementById('uni-compare-toast');
-                    if (!toast) return;
-                    toast.textContent = message;
-                    toast.style.display = 'block';
-                    if (toastTimer) clearTimeout(toastTimer);
-                    toastTimer = setTimeout(function() {
-                        toast.style.display = 'none';
-                    }, 2800);
-                }
-
-                function setExternalWidgetVisibility(visible) {
-                    var waEl = document.getElementById('gb-waw-iframe');
-                    if (waEl) {
-                        if (window.innerWidth <= 768) {
-                            waEl.style.setProperty('display', visible ? '' : 'none', 'important');
-                            waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
-                        } else {
-                            waEl.style.removeProperty('display');
-                            waEl.style.removeProperty('visibility');
-                        }
+                    function showToast(message) {
+                        var toast = document.getElementById('uni-compare-toast');
+                        if (!toast) return;
+                        toast.textContent = message;
+                        toast.style.display = 'block';
+                        if (toastTimer) clearTimeout(toastTimer);
+                        toastTimer = setTimeout(function () {
+                            toast.style.display = 'none';
+                        }, 2800);
                     }
-                }
 
-                function updateUI() {
-                    var dock = document.getElementById('uni-compare-dock');
-                    var countBadge = document.getElementById('uni-compare-count-badge');
-                    var chipsList = document.getElementById('uni-compare-chips-list');
-
-                    // Update all compare buttons across the page
-                    var allBtns = document.querySelectorAll('.uni-compare-toggle-btn');
-                    allBtns.forEach(function(btn) {
-                        var slug = btn.getAttribute('data-uni-slug');
-                        var isSelected = selectedUnis.some(function(item) { return item.slug === slug; });
-                        if (isSelected) {
-                            btn.classList.add('is-active');
-                            var icon = btn.querySelector('.compare-icon');
-                            if (icon) icon.textContent = '✓';
-                            var text = btn.querySelector('.compare-text');
-                            if (text) text.textContent = 'Selected';
-                        } else {
-                            btn.classList.remove('is-active');
-                            var icon = btn.querySelector('.compare-icon');
-                            if (icon) icon.textContent = '+';
-                            var text = btn.querySelector('.compare-text');
-                            if (text) {
-                                text.textContent = btn.closest('.sode-col-mobile-only') ? 'Compare' : 'Add to Compare';
+                    function setExternalWidgetVisibility(visible) {
+                        var waEl = document.getElementById('gb-waw-iframe');
+                        if (waEl) {
+                            if (window.innerWidth <= 768) {
+                                waEl.style.setProperty('display', visible ? '' : 'none', 'important');
+                                waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
+                            } else {
+                                waEl.style.removeProperty('display');
+                                waEl.style.removeProperty('visibility');
                             }
                         }
-                    });
-
-                    if (!dock || !countBadge || !chipsList) return;
-
-                    if (selectedUnis.length === 0) {
-                        document.body.classList.remove('has-uni-compare-dock-open');
-                        setExternalWidgetVisibility(true);
-                        dock.style.display = 'none';
-                        return;
                     }
 
-                    document.body.classList.add('has-uni-compare-dock-open');
-                    setExternalWidgetVisibility(false);
-                    dock.style.display = 'block';
-                    countBadge.textContent = selectedUnis.length + '/' + maxSelections;
+                    function updateUI() {
+                        var dock = document.getElementById('uni-compare-dock');
+                        var countBadge = document.getElementById('uni-compare-count-badge');
+                        var chipsList = document.getElementById('uni-compare-chips-list');
 
-                    var html = '';
-                    selectedUnis.forEach(function(item) {
-                        var safeName = document.createElement('div');
-                        safeName.textContent = item.name;
-                        html += '<div class="uni-compare-chip">' +
-                            '<span>' + safeName.innerHTML + '</span>' +
-                            '<button type="button" class="uni-compare-chip-remove" data-slug="' + item.slug + '" aria-label="Remove ' + safeName.innerHTML + '">&times;</button>' +
-                            '</div>';
-                    });
+                        // Update all compare buttons across the page
+                        var allBtns = document.querySelectorAll('.uni-compare-toggle-btn');
+                        allBtns.forEach(function (btn) {
+                            var slug = btn.getAttribute('data-uni-slug');
+                            var isSelected = selectedUnis.some(function (item) { return item.slug === slug; });
+                            if (isSelected) {
+                                btn.classList.add('is-active');
+                                var icon = btn.querySelector('.compare-icon');
+                                if (icon) icon.textContent = '✓';
+                                var text = btn.querySelector('.compare-text');
+                                if (text) text.textContent = 'Selected';
+                            } else {
+                                btn.classList.remove('is-active');
+                                var icon = btn.querySelector('.compare-icon');
+                                if (icon) icon.textContent = '+';
+                                var text = btn.querySelector('.compare-text');
+                                if (text) {
+                                    text.textContent = btn.closest('.sode-col-mobile-only') ? 'Compare' : 'Add to Compare';
+                                }
+                            }
+                        });
 
-                    var remaining = maxSelections - selectedUnis.length;
-                    for (var i = 0; i < remaining; i++) {
-                        html += '<div class="uni-compare-chip-slot">+ Add University</div>';
-                    }
-                    chipsList.innerHTML = html;
-                }
+                        if (!dock || !countBadge || !chipsList) return;
 
-                window.addEventListener('resize', function() {
-                    if (selectedUnis.length > 0) {
+                        if (selectedUnis.length === 0) {
+                            document.body.classList.remove('has-uni-compare-dock-open');
+                            setExternalWidgetVisibility(true);
+                            dock.style.display = 'none';
+                            return;
+                        }
+
+                        document.body.classList.add('has-uni-compare-dock-open');
                         setExternalWidgetVisibility(false);
-                    } else {
-                        setExternalWidgetVisibility(true);
-                    }
-                });
+                        dock.style.display = 'block';
+                        countBadge.textContent = selectedUnis.length + '/' + maxSelections;
 
-                document.addEventListener('click', function(e) {
-                    // 1. Toggle Button
-                    var toggleBtn = e.target.closest('.uni-compare-toggle-btn');
-                    if (toggleBtn) {
-                        var slug = toggleBtn.getAttribute('data-uni-slug');
-                        var name = toggleBtn.getAttribute('data-uni-name');
-                        var course = toggleBtn.getAttribute('data-course');
+                        var html = '';
+                        selectedUnis.forEach(function (item) {
+                            var safeName = document.createElement('div');
+                            safeName.textContent = item.name;
+                            html += '<div class="uni-compare-chip">' +
+                                '<span>' + safeName.innerHTML + '</span>' +
+                                '<button type="button" class="uni-compare-chip-remove" data-slug="' + item.slug + '" aria-label="Remove ' + safeName.innerHTML + '">&times;</button>' +
+                                '</div>';
+                        });
 
-                        var idx = selectedUnis.findIndex(function(item) { return item.slug === slug; });
-                        if (idx > -1) {
-                            selectedUnis.splice(idx, 1);
-                        } else {
-                            if (selectedUnis.length >= maxSelections) {
-                                showToast('You can compare a maximum of 3 universities.');
-                                return;
-                            }
-                            selectedUnis.push({ name: name, slug: slug, course: course });
+                        var remaining = maxSelections - selectedUnis.length;
+                        for (var i = 0; i < remaining; i++) {
+                            html += '<div class="uni-compare-chip-slot">+ Add University</div>';
                         }
-                        updateUI();
-                        return;
+                        chipsList.innerHTML = html;
                     }
 
-                    // 2. Chip Remove Button
-                    var removeBtn = e.target.closest('.uni-compare-chip-remove');
-                    if (removeBtn) {
-                        var removeSlug = removeBtn.getAttribute('data-slug');
-                        selectedUnis = selectedUnis.filter(function(item) { return item.slug !== removeSlug; });
-                        updateUI();
-                        return;
-                    }
+                    window.addEventListener('resize', function () {
+                        if (selectedUnis.length > 0) {
+                            setExternalWidgetVisibility(false);
+                        } else {
+                            setExternalWidgetVisibility(true);
+                        }
+                    });
 
-                    // 3. Clear All Button
-                    if (e.target.closest('#uni-compare-clear-btn')) {
-                        selectedUnis = [];
-                        updateUI();
-                        return;
-                    }
+                    document.addEventListener('click', function (e) {
+                        // 1. Toggle Button
+                        var toggleBtn = e.target.closest('.uni-compare-toggle-btn');
+                        if (toggleBtn) {
+                            var slug = toggleBtn.getAttribute('data-uni-slug');
+                            var name = toggleBtn.getAttribute('data-uni-name');
+                            var course = toggleBtn.getAttribute('data-course');
 
-                    // 4. Submit Button
-                    if (e.target.closest('#uni-compare-submit-btn')) {
-                        if (selectedUnis.length === 0) return;
-                        var slugs = selectedUnis.map(function(item) { return item.slug; }).join(',');
-                        var course = selectedUnis[0].course || 'mba';
-                        var redirectUrl = 'https://distanceeducationschool.com/compare-university/?university=' + slugs + '&course=' + encodeURIComponent(course);
-                        window.open(redirectUrl, '_blank');
-                        return;
-                    }
+                            var idx = selectedUnis.findIndex(function (item) { return item.slug === slug; });
+                            if (idx > -1) {
+                                selectedUnis.splice(idx, 1);
+                            } else {
+                                if (selectedUnis.length >= maxSelections) {
+                                    showToast('You can compare a maximum of 3 universities.');
+                                    return;
+                                }
+                                selectedUnis.push({ name: name, slug: slug, course: course });
+                            }
+                            updateUI();
+                            return;
+                        }
 
-                    // 5. View More / View Less Toggle
-                    var viewMoreBtn = e.target.closest('.sode-uni-fees-toggle-btn');
-                    if (viewMoreBtn) {
-                        var table = document.getElementById(viewMoreBtn.getAttribute('data-target'));
-                        if (!table) return;
-                        var extraTbody = table.querySelector('.sode-uni-fees-extra-rows');
-                        if (!extraTbody) return;
+                        // 2. Chip Remove Button
+                        var removeBtn = e.target.closest('.uni-compare-chip-remove');
+                        if (removeBtn) {
+                            var removeSlug = removeBtn.getAttribute('data-slug');
+                            selectedUnis = selectedUnis.filter(function (item) { return item.slug !== removeSlug; });
+                            updateUI();
+                            return;
+                        }
 
-                        var isHidden = (extraTbody.style.display === 'none' || extraTbody.style.display === '');
-                        extraTbody.style.display = isHidden ? 'table-row-group' : 'none';
-                        viewMoreBtn.textContent = isHidden ? 'View Less' : 'View More';
-                        return;
-                    }
-                });
-            })();
+                        // 3. Clear All Button
+                        if (e.target.closest('#uni-compare-clear-btn')) {
+                            selectedUnis = [];
+                            updateUI();
+                            return;
+                        }
+
+                        // 4. Submit Button
+                        if (e.target.closest('#uni-compare-submit-btn')) {
+                            if (selectedUnis.length === 0) return;
+                            var slugs = selectedUnis.map(function (item) { return item.slug; }).join(',');
+                            var course = selectedUnis[0].course || 'mba';
+                            var redirectUrl = 'https://distanceeducationschool.com/compare-university/?university=' + slugs + '&course=' + encodeURIComponent(course);
+                            window.open(redirectUrl, '_blank');
+                            return;
+                        }
+
+                        // 5. View More / View Less Toggle
+                        var viewMoreBtn = e.target.closest('.sode-uni-fees-toggle-btn');
+                        if (viewMoreBtn) {
+                            var table = document.getElementById(viewMoreBtn.getAttribute('data-target'));
+                            if (!table) return;
+                            var extraTbody = table.querySelector('.sode-uni-fees-extra-rows');
+                            if (!extraTbody) return;
+
+                            var isHidden = (extraTbody.style.display === 'none' || extraTbody.style.display === '');
+                            extraTbody.style.display = isHidden ? 'table-row-group' : 'none';
+                            viewMoreBtn.textContent = isHidden ? 'View Less' : 'View More';
+                            return;
+                        }
+                    });
+                })();
             </script>
             <?php
         }
