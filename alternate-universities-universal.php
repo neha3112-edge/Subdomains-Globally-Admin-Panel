@@ -890,24 +890,57 @@ if (!function_exists('sode_alternate_universities_render')) {
                 border: 1px dashed #cbd5e1;
                 border-radius: 8px;
                 padding: 16px;
-                min-height: 200px;
+                min-height: 220px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                position: relative;
             }
 
             .sode-degree-img {
                 max-width: 100%;
                 max-height: 72vh;
+                width: auto;
+                height: auto;
                 object-fit: contain;
                 border-radius: 6px;
                 box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+                display: block;
+                margin: 0 auto;
+                opacity: 0;
+                transition: opacity 0.2s ease-in-out;
+            }
+
+            .sode-degree-img.is-loaded {
+                opacity: 1;
+            }
+
+            .sode-degree-spinner {
+                position: absolute;
+                width: 36px;
+                height: 36px;
+                border: 3px solid #e2e8f0;
+                border-top-color: #0c2340;
+                border-radius: 50%;
+                animation: sodeDegreeSpin 0.7s linear infinite;
+            }
+
+            @keyframes sodeDegreeSpin {
+                to {
+                    transform: rotate(360deg);
+                }
             }
         </style>
 
 
         <div class="sode-alt-container <?php echo esc_attr($atts['class']); ?>">
+            <?php foreach ($universities as $u_pre): ?>
+                <?php if (!empty($u_pre['sample_degree_img'])): ?>
+                    <link rel="prefetch" href="<?php echo esc_url($u_pre['sample_degree_img']); ?>" as="image">
+                <?php endif; ?>
+            <?php endforeach; ?>
+
             <?php if (!empty($atts['heading'])): ?>
                 <div class="sode-alt-header-area">
                     <h2 class="sode-alt-main-heading"><?php echo esc_html($atts['heading']); ?></h2>
@@ -1147,34 +1180,85 @@ if (!function_exists('sode_alternate_universities_render')) {
                         if (e.key === 'Escape') closeSampleModal();
                     });
 
+                    // Preload all sample degree images into memory cache so they open with 0ms delay
+                    const sampleImageCache = {};
+                    function preloadSampleImage(url) {
+                        if (!url) return null;
+                        const cleanUrl = url.trim();
+                        if (!cleanUrl) return null;
+                        if (sampleImageCache[cleanUrl]) return sampleImageCache[cleanUrl];
+                        const img = new Image();
+                        img.decoding = 'async';
+                        img.src = cleanUrl;
+                        sampleImageCache[cleanUrl] = img;
+                        return img;
+                    }
+
                     const sampleBtns = document.querySelectorAll('.sode-open-sample-modal');
                     sampleBtns.forEach(btn => {
+                        const sampleImg = btn.dataset.sampleImg;
+                        if (sampleImg) {
+                            preloadSampleImage(sampleImg);
+                            // Also preload immediately on hover / touchstart
+                            btn.addEventListener('mouseenter', () => preloadSampleImage(sampleImg), { passive: true });
+                            btn.addEventListener('touchstart', () => preloadSampleImage(sampleImg), { passive: true });
+                        }
+
                         if (btn.dataset.initialized) return;
                         btn.dataset.initialized = 'true';
 
                         btn.addEventListener('click', function (e) {
                             e.preventDefault();
                             const uniName = this.dataset.uniName || 'University';
-                            const sampleImg = this.dataset.sampleImg;
+                            const sampleImg = this.dataset.sampleImg ? this.dataset.sampleImg.trim() : '';
 
                             if (sampleModalTitle) {
                                 sampleModalTitle.textContent = uniName + ' - Sample Degree';
                             }
 
                             if (sampleModalContent) {
-                                if (sampleImg && sampleImg.trim() !== '') {
-                                    sampleModalContent.innerHTML = '<img src="' + sampleImg + '" alt="' + uniName + ' Sample Degree" class="sode-degree-img" loading="lazy">';
+                                if (sampleImg !== '') {
+                                    const cached = preloadSampleImage(sampleImg);
+                                    const imgEl = document.createElement('img');
+                                    imgEl.className = 'sode-degree-img';
+                                    imgEl.alt = uniName + ' Sample Degree';
+                                    imgEl.decoding = 'async';
+                                    imgEl.setAttribute('fetchpriority', 'high');
+                                    imgEl.src = sampleImg;
+
+                                    if (cached && cached.complete && cached.naturalWidth > 0) {
+                                        // Image is already loaded in browser cache - render instantly with 0ms wait!
+                                        imgEl.classList.add('is-loaded');
+                                        sampleModalContent.innerHTML = '';
+                                        sampleModalContent.appendChild(imgEl);
+                                    } else {
+                                        // Cold load fallback: spinner then smooth fade in
+                                        sampleModalContent.innerHTML = '<div class="sode-degree-spinner" aria-hidden="true"></div>';
+                                        imgEl.onload = function () {
+                                            imgEl.classList.add('is-loaded');
+                                            const spinner = sampleModalContent.querySelector('.sode-degree-spinner');
+                                            if (spinner) spinner.remove();
+                                        };
+                                        imgEl.onerror = function () {
+                                            sampleModalContent.innerHTML = `
+                                                <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 15px;">
+                                                    Sample Degree image could not be loaded. Please try again later.
+                                                </div>
+                                            `;
+                                        };
+                                        sampleModalContent.appendChild(imgEl);
+                                    }
                                 } else {
                                     sampleModalContent.innerHTML = `
-                                    <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 15px;">
-                                        <svg style="width:48px; height:48px; margin:0 auto 12px; display:block; stroke:#94a3b8;" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                            <polyline points="21 15 16 10 5 21"></polyline>
-                                        </svg>
-                                        Sample Degree image for <strong>${uniName}</strong> will be updated soon.
-                                    </div>
-                                `;
+                                        <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 15px;">
+                                            <svg style="width:48px; height:48px; margin:0 auto 12px; display:block; stroke:#94a3b8;" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                <polyline points="21 15 16 10 5 21"></polyline>
+                                            </svg>
+                                            Sample Degree image for <strong>${uniName}</strong> will be updated soon.
+                                        </div>
+                                    `;
                                 }
                             }
 
