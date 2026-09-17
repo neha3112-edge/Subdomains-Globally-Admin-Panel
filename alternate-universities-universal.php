@@ -461,7 +461,6 @@ if (!function_exists('sode_alternate_universities_render')) {
             .sode-alt-img-box {
                 width: 240px;
                 min-width: 240px;
-                height: 200px;
                 border: 1px solid #e2e8f0;
                 border-radius: 6px;
                 overflow: hidden;
@@ -471,6 +470,12 @@ if (!function_exists('sode_alternate_universities_render')) {
                 justify-content: center;
                 position: relative;
                 flex-shrink: 0;
+            }
+
+            .sode-alt-picture {
+                width: 100%;
+                height: 100%;
+                display: block;
             }
 
             .sode-alt-img {
@@ -742,7 +747,19 @@ if (!function_exists('sode_alternate_universities_render')) {
                 .sode-alt-img-box {
                     width: 100%;
                     min-width: 100%;
-                    height: 190px;
+                    height: auto;
+                }
+
+                .sode-alt-picture {
+                    width: 100%;
+                    display: block;
+                }
+
+                .sode-alt-img {
+                    width: 100%;
+                    height: auto;
+                    object-fit: cover;
+                    display: block;
                 }
 
                 .sode-alt-top-actions {
@@ -906,7 +923,9 @@ if (!function_exists('sode_alternate_universities_render')) {
                     $courses = $uni['courses'] ?? [];
 
                     // Desktop / Mobile image determination
-                    $img_src = !empty($uni['alt_desktop_img']) ? $uni['alt_desktop_img'] : (!empty($uni['campus_img']) ? $uni['campus_img'] : '');
+                    $desktop_img = !empty($uni['alt_desktop_img']) ? $uni['alt_desktop_img'] : (!empty($uni['campus_img']) ? $uni['campus_img'] : '');
+                    $mobile_img = !empty($uni['alt_mobile_img']) ? $uni['alt_mobile_img'] : $desktop_img;
+                    $fallback_img = !empty($desktop_img) ? $desktop_img : $mobile_img;
                     $logo_src = !empty($uni['logo_url']) ? $uni['logo_url'] : '';
 
                     // Format course names for JSON data attribute
@@ -936,9 +955,17 @@ if (!function_exists('sode_alternate_universities_render')) {
                         <div class="sode-alt-card-main">
                             <!-- Left: Image Box -->
                             <div class="sode-alt-img-box">
-                                <?php if (!empty($img_src)): ?>
-                                    <img src="<?php echo esc_url($img_src); ?>" alt="<?php echo esc_attr($uni_name); ?>"
-                                        class="sode-alt-img" loading="lazy">
+                                <?php if (!empty($fallback_img)): ?>
+                                    <picture class="sode-alt-picture">
+                                        <?php if (!empty($mobile_img)): ?>
+                                            <source media="(max-width: 768px)" srcset="<?php echo esc_url($mobile_img); ?>">
+                                        <?php endif; ?>
+                                        <?php if (!empty($desktop_img)): ?>
+                                            <source media="(min-width: 769px)" srcset="<?php echo esc_url($desktop_img); ?>">
+                                        <?php endif; ?>
+                                        <img src="<?php echo esc_url($fallback_img); ?>" alt="<?php echo esc_attr($uni_name); ?>"
+                                            class="sode-alt-img" loading="lazy">
+                                    </picture>
                                 <?php else: ?>
                                     <div class="sode-alt-placeholder">
                                         <?php if (!empty($logo_src)): ?>
