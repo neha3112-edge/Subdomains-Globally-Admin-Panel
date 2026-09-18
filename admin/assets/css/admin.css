@@ -619,6 +619,10 @@ body {
     background: linear-gradient(90deg, #f59e0b, #fbbf24);
 }
 
+.stat-card.accent-cyan::before {
+    background: linear-gradient(90deg, #06b6d4, #38bdf8);
+}
+
 .stat-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
@@ -638,6 +642,10 @@ body {
 
 .stat-card.accent-amber:hover {
     border-color: rgba(245, 158, 11, 0.5);
+}
+
+.stat-card.accent-cyan:hover {
+    border-color: rgba(6, 182, 212, 0.5);
 }
 
 .stat-card-top {
@@ -845,9 +853,9 @@ body {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     transition: all 0.25s ease;
     min-height: 155px;
+    gap: 14px;
 }
 
 .shortcode-card-slide:hover {
@@ -861,7 +869,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
 }
 
 .shortcode-name {

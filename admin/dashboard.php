@@ -16,6 +16,19 @@ $total_unis = (int)$db->query("SELECT COUNT(*) FROM universities")->fetchColumn(
 $total_courses = (int)$db->query("SELECT COUNT(*) FROM courses")->fetchColumn();
 $total_mappings = (int)$db->query("SELECT COUNT(*) FROM university_course_mappings")->fetchColumn();
 
+// Global Keys count & recent
+$total_global_keys = 0;
+$recent_global_keys = [];
+try {
+    $total_global_keys = (int)$db->query("SELECT COUNT(*) FROM global_keys WHERE is_active = 1")->fetchColumn();
+    $recent_global_keys = $db->query("
+        SELECT id, key_code, key_value, description, is_active 
+        FROM global_keys 
+        WHERE is_active = 1 
+        ORDER BY id DESC LIMIT 5
+    ")->fetchAll();
+} catch (Exception $e) {}
+
 // Fetch admin users ONLY if Super Admin
 $total_users = $is_super ? (int)$db->query("SELECT COUNT(*) FROM users")->fetchColumn() : 0;
 
@@ -42,7 +55,7 @@ $recent_mappings = $db->query("
     ORDER BY ucm.id DESC LIMIT 5
 ")->fetchAll();
 
-// 5. Complete Catalog of Universal Shortcodes (20 Production Modules)
+// 5. Complete Catalog of Universal Shortcodes (21 Production Modules)
 $universal_shortcodes = [
     // 1. Tables & Fees
     [
@@ -162,7 +175,15 @@ $universal_shortcodes = [
         'code' => '[apply_now_button]',
     ],
 
-    // 4. Dynamic Widgets & Layout
+    // 4. Dynamic Widgets, Tokens & Layout
+    [
+        'category' => 'widgets',
+        'badge' => 'Global Token',
+        'badge_cls' => 'badge-info',
+        'name' => 'Dynamic Global Key',
+        'desc' => 'Renders any active global key variable (e.g. $YEAR$, $session$) dynamically across all subdomains.',
+        'code' => '[gkey code="$session$"]',
+    ],
     [
         'category' => 'widgets',
         'badge' => '4-Step Flow',
@@ -238,7 +259,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <?php endif; ?>
             </div>
             <div class="dash-hero-subtitle">
-                Centralized universal subdomains, courses, fees comparison & dynamic shortcodes hub.
+                Centralized universal subdomains, courses, fees comparison, global keys & shortcodes hub.
             </div>
         </div>
     </div>
@@ -252,9 +273,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 Add University
             </a>
-            <a href="<?php echo BASE_URL; ?>/modules/mappings/create.php" class="btn-sm" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main);">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Map Course
+            <a href="<?php echo BASE_URL; ?>/modules/global_keys/index.php" class="btn-sm" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Global Keys
             </a>
         </div>
     </div>
@@ -330,7 +351,30 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
     </a>
 
-    <!-- Card 4: Admin Users (ONLY VISIBLE TO SUPER ADMIN) -->
+    <!-- Card 4: Global Keys -->
+    <a href="<?php echo BASE_URL; ?>/modules/global_keys/index.php" class="stat-card accent-cyan">
+        <div>
+            <div class="stat-card-top">
+                <div>
+                    <div class="stat-label">Global Keys</div>
+                    <div class="stat-number"><?php echo number_format($total_global_keys); ?></div>
+                </div>
+                <div class="stat-icon-wrap" style="color:#06b6d4; background:rgba(6,182,212,0.14);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-sub">Dynamic tokens & variables</div>
+        </div>
+        <div class="stat-card-footer">
+            <span style="color:var(--text-dim);">Global replacements</span>
+            <span class="stat-link-arrow">Manage &rarr;</span>
+        </div>
+    </a>
+
+    <!-- Card 5: Admin Users (ONLY VISIBLE TO SUPER ADMIN) -->
     <?php if ($is_super): ?>
     <a href="<?php echo BASE_URL; ?>/modules/users/index.php" class="stat-card accent-amber">
         <div>
@@ -396,7 +440,7 @@ require_once ADMIN_PATH . '/includes/header.php';
             📝 Forms & CTAs (5)
         </button>
         <button type="button" class="sc-filter-btn" onclick="filterShortcodes('widgets', this)">
-            ⚡ Widgets & Layout (6)
+            ⚡ Widgets & Global Tokens (7)
         </button>
     </div>
 
@@ -478,6 +522,19 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
     </a>
 
+    <a href="<?php echo BASE_URL; ?>/modules/global_keys/index.php" class="action-card">
+        <div class="action-icon" style="color:#06b6d4; background:rgba(6,182,212,0.12);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </div>
+        <div>
+            <div class="action-title">Global Keys</div>
+            <div class="action-desc">Dynamic site tokens ($YEAR$, etc.)</div>
+        </div>
+    </a>
+
     <?php if ($is_super): ?>
     <a href="<?php echo BASE_URL; ?>/modules/users/index.php" class="action-card">
         <div class="action-icon" style="color:#f59e0b; background:rgba(245,158,11,0.12);">
@@ -488,21 +545,11 @@ require_once ADMIN_PATH . '/includes/header.php';
             <div class="action-desc">Roles, access & permissions</div>
         </div>
     </a>
-    <?php else: ?>
-    <a href="<?php echo BASE_URL; ?>/modules/settings/api_health.php" class="action-card">
-        <div class="action-icon" style="color:#f59e0b; background:rgba(245,158,11,0.12);">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
-        <div>
-            <div class="action-title">System Status</div>
-            <div class="action-desc">Health check & metrics</div>
-        </div>
-    </a>
     <?php endif; ?>
 </div>
 
-<!-- 5. Recent Tables Section (3 Columns) -->
-<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+<!-- 5. Recent Tables Section (Responsive Grid) -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap:24px;">
     
     <!-- Recent Universities -->
     <div class="admin-card card-overflow-hidden">
@@ -539,7 +586,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                         <?php endif; ?>
                                         <div>
                                             <strong style="font-size:13.5px; color:var(--text-main);"><?php echo htmlspecialchars($u['short_name']); ?></strong>
-                                            <div style="font-size:11px; color:var(--text-dim); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                            <div style="font-size:11px; color:var(--text-dim); max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                                                 <?php echo htmlspecialchars($u['full_name']); ?>
                                             </div>
                                         </div>
@@ -585,13 +632,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <tr>
                         <th>Course</th>
                         <th>Level</th>
-                        <th>Added</th>
                         <th style="text-align:right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($recent_courses)): ?>
-                        <tr><td colspan="4" style="text-align:center; color:var(--text-dim); padding:30px;">No courses added yet.</td></tr>
+                        <tr><td colspan="3" style="text-align:center; color:var(--text-dim); padding:30px;">No courses added yet.</td></tr>
                     <?php else: ?>
                         <?php foreach ($recent_courses as $c): ?>
                             <tr>
@@ -605,9 +651,6 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 </td>
                                 <td>
                                     <span class="badge badge-info"><?php echo htmlspecialchars($c['level'] ?? 'PG'); ?></span>
-                                </td>
-                                <td style="color:var(--text-dim); font-size:12px;">
-                                    <?php echo date('d M Y', strtotime($c['created_at'])); ?>
                                 </td>
                                 <td style="text-align:right;">
                                     <a href="<?php echo BASE_URL; ?>/modules/courses/index.php?edit_id=<?php echo $c['id']; ?>" class="action-btn" title="Edit Course">
@@ -667,6 +710,53 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 </td>
                                 <td style="text-align:right;">
                                     <a href="<?php echo BASE_URL; ?>/modules/mappings/edit.php?id=<?php echo $m['id']; ?>" class="action-btn" title="Edit Mapping">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Active Global Keys -->
+    <div class="admin-card card-overflow-hidden">
+        <div class="card-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span class="card-title">Global Keys</span>
+                <span class="badge badge-info"><?php echo count($recent_global_keys); ?></span>
+            </div>
+            <a href="<?php echo BASE_URL; ?>/modules/global_keys/index.php" class="badge badge-info" style="text-decoration:none; padding:4px 10px;">Manage all &rarr;</a>
+        </div>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Key Token</th>
+                        <th>Value</th>
+                        <th style="text-align:right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($recent_global_keys)): ?>
+                        <tr><td colspan="3" style="text-align:center; color:var(--text-dim); padding:30px;">No global keys found.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($recent_global_keys as $k): ?>
+                            <tr>
+                                <td>
+                                    <span style="font-family:monospace; background:rgba(6,182,212,0.12); color:#06b6d4; padding:3px 7px; border-radius:4px; font-weight:700; font-size:11px; border:1px solid rgba(6,182,212,0.25);">
+                                        <?php echo htmlspecialchars($k['key_code']); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="font-size:12px; font-weight:600; color:var(--text-main); max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<?php echo htmlspecialchars($k['key_value']); ?>">
+                                        <?php echo htmlspecialchars($k['key_value']); ?>
+                                    </div>
+                                </td>
+                                <td style="text-align:right;">
+                                    <a href="<?php echo BASE_URL; ?>/modules/global_keys/index.php?edit_id=<?php echo $k['id']; ?>" class="action-btn" title="Edit Key">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     </a>
                                 </td>
