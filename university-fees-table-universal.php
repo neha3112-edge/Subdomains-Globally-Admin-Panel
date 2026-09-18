@@ -1110,6 +1110,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                     var selectedUnis = []; // { name, slug, course }
                     var maxSelections = 3;
                     var toastTimer = null;
+                    var isInitialSilent = true; // True only on page load until user interacts
 
                     // Auto-select current subdomain university on load
                     function initCurrentUniversity() {
@@ -1177,8 +1178,11 @@ if (!function_exists('sode_render_university_fees_table')) {
 
                         if (!dock || !countBadge || !chipsList) return;
 
-                        // Only show compare dock when at least 2 universities are selected (e.g. current + another)
-                        if (selectedUnis.length < 2) {
+                        // Dock stays hidden on initial load when only the auto-selected current university is present.
+                        // As soon as user adds another university OR unselects current and selects any university, dock opens!
+                        var shouldHideDock = (selectedUnis.length === 0) || (isInitialSilent && selectedUnis.length === 1);
+
+                        if (shouldHideDock) {
                             document.body.classList.remove('has-uni-compare-dock-open');
                             setExternalWidgetVisibility(true);
                             dock.style.display = 'none';
@@ -1208,7 +1212,8 @@ if (!function_exists('sode_render_university_fees_table')) {
                     }
 
                     window.addEventListener('resize', function () {
-                        if (selectedUnis.length >= 2) {
+                        var shouldHideDock = (selectedUnis.length === 0) || (isInitialSilent && selectedUnis.length === 1);
+                        if (!shouldHideDock) {
                             setExternalWidgetVisibility(false);
                         } else {
                             setExternalWidgetVisibility(true);
@@ -1219,6 +1224,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                         // 1. Toggle Button
                         var toggleBtn = e.target.closest('.uni-compare-toggle-btn');
                         if (toggleBtn) {
+                            isInitialSilent = false; // User manually interacted
                             var slug = toggleBtn.getAttribute('data-uni-slug');
                             var name = toggleBtn.getAttribute('data-uni-name');
                             var course = toggleBtn.getAttribute('data-course');
@@ -1240,6 +1246,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                         // 2. Chip Remove Button
                         var removeBtn = e.target.closest('.uni-compare-chip-remove');
                         if (removeBtn) {
+                            isInitialSilent = false;
                             var removeSlug = removeBtn.getAttribute('data-slug');
                             selectedUnis = selectedUnis.filter(function (item) { return item.slug !== removeSlug; });
                             updateUI();
@@ -1248,6 +1255,7 @@ if (!function_exists('sode_render_university_fees_table')) {
 
                         // 3. Clear All Button
                         if (e.target.closest('#uni-compare-clear-btn')) {
+                            isInitialSilent = false;
                             selectedUnis = [];
                             updateUI();
                             return;
