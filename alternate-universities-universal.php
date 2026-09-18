@@ -261,6 +261,8 @@ if (!function_exists('sode_alternate_universities_render')) {
     {
         $atts = shortcode_atts([
             'limit' => -1,
+            'visible_items' => 10,
+            'visible' => 10,
             'exclude' => '',
             'course' => '',
             'state' => '',
@@ -319,6 +321,13 @@ if (!function_exists('sode_alternate_universities_render')) {
         if (empty($universities)) {
             return '';
         }
+
+        $visible_limit = isset($atts['visible_items']) ? (int) $atts['visible_items'] : (isset($atts['visible']) ? (int) $atts['visible'] : 10);
+        if ($visible_limit <= 0) {
+            $visible_limit = 10;
+        }
+        $total_unis = count($universities);
+        $uid = 'sode_alt_' . (function_exists('wp_rand') ? wp_rand(1000, 99999) : mt_rand(1000, 99999));
 
         // Preload states for the inquiry popup
         $indian_states = [
@@ -932,10 +941,52 @@ if (!function_exists('sode_alternate_universities_render')) {
                     transform: rotate(360deg);
                 }
             }
+
+            /* View More / View Less Toggle */
+            .sode-alt-view-more-wrap {
+                margin-top: 32px;
+                text-align: center;
+                display: flex;
+                justify-content: center;
+            }
+
+            .sode-alt-view-more-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 12px 28px;
+                background: #ffffff;
+                color: #0c2340;
+                font-size: 15px;
+                font-weight: 700;
+                border: 2px solid #0c2340;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 8px rgba(12, 35, 64, 0.08);
+            }
+
+            .sode-alt-view-more-btn:hover {
+                background: #0c2340;
+                color: #ffffff;
+                box-shadow: 0 4px 14px rgba(12, 35, 64, 0.18);
+                transform: translateY(-1px);
+            }
+
+            .sode-alt-view-more-btn svg {
+                width: 18px;
+                height: 18px;
+                transition: transform 0.25s ease;
+            }
+
+            .sode-alt-view-more-btn.is-expanded svg {
+                transform: rotate(180deg);
+            }
         </style>
 
 
-        <div class="sode-alt-container <?php echo esc_attr($atts['class']); ?>">
+        <div class="sode-alt-container <?php echo esc_attr($atts['class']); ?>" id="<?php echo esc_attr($uid); ?>">
             <?php foreach ($universities as $u_pre): ?>
                 <?php if (!empty($u_pre['sample_degree_img'])): ?>
                     <link rel="prefetch" href="<?php echo esc_url($u_pre['sample_degree_img']); ?>" as="image">
@@ -956,6 +1007,9 @@ if (!function_exists('sode_alternate_universities_render')) {
                 $uni_idx = 0;
                 foreach ($universities as $uni):
                     $uni_idx++;
+                    $is_extra = ($total_unis > $visible_limit && $uni_idx > $visible_limit);
+                    $card_class = 'sode-alt-card' . ($is_extra ? ' sode-alt-card-extra' : '');
+                    $card_style = $is_extra ? 'style="display: none;"' : '';
                     $uni_id = $uni['id'];
                     $uni_name = $uni['full_name'];
                     $uni_slug = $uni['slug'];
@@ -984,7 +1038,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                         ];
                     }, $courses)), ENT_QUOTES, 'UTF-8');
                     ?>
-                    <div class="sode-alt-card" id="uni-alt-card-<?php echo esc_attr($uni_id); ?>">
+                    <div class="<?php echo esc_attr($card_class); ?>" id="uni-alt-card-<?php echo esc_attr($uni_id); ?>" <?php echo $card_style; ?>>
                         <!-- Top-Right View Sample Degree Link -->
                         <div class="sode-alt-top-actions">
                             <button type="button" class="sode-alt-sample-btn sode-open-sample-modal"
@@ -1118,6 +1172,17 @@ if (!function_exists('sode_alternate_universities_render')) {
                     </div>
                 <?php endforeach; ?>
             </div>
+
+            <?php if ($total_unis > $visible_limit): ?>
+                <div class="sode-alt-view-more-wrap">
+                    <button type="button" class="sode-alt-view-more-btn" data-target="<?php echo esc_attr($uid); ?>">
+                        <span class="sode-alt-view-more-text">View More</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- ========================================================= -->
@@ -1276,6 +1341,45 @@ if (!function_exists('sode_alternate_universities_render')) {
 
                             if (sampleModal) sampleModal.classList.add('is-visible');
                             document.body.style.overflow = 'hidden';
+                        });
+                    });
+
+                    // 3. View More / View Less Toggle
+                    const viewMoreBtns = document.querySelectorAll('.sode-alt-view-more-btn');
+                    viewMoreBtns.forEach(btn => {
+                        if (btn.dataset.initialized) return;
+                        btn.dataset.initialized = 'true';
+
+                        btn.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            const targetId = btn.dataset.target;
+                            const container = (targetId ? document.getElementById(targetId) : null) || btn.closest('.sode-alt-container');
+                            if (!container) return;
+
+                            const extraCards = container.querySelectorAll('.sode-alt-card-extra');
+                            if (!extraCards.length) return;
+
+                            const isCurrentlyExpanded = btn.classList.contains('is-expanded');
+                            const textSpan = btn.querySelector('.sode-alt-view-more-text');
+
+                            if (isCurrentlyExpanded) {
+                                extraCards.forEach(card => {
+                                    card.style.display = 'none';
+                                });
+                                btn.classList.remove('is-expanded');
+                                if (textSpan) textSpan.textContent = 'View More';
+
+                                const rect = container.getBoundingClientRect();
+                                if (rect.top < 0) {
+                                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                            } else {
+                                extraCards.forEach(card => {
+                                    card.style.display = '';
+                                });
+                                btn.classList.add('is-expanded');
+                                if (textSpan) textSpan.textContent = 'View Less';
+                            }
                         });
                     });
                 }
