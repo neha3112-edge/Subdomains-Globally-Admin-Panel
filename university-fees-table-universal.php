@@ -1177,7 +1177,8 @@ if (!function_exists('sode_render_university_fees_table')) {
 
                         if (!dock || !countBadge || !chipsList) return;
 
-                        if (selectedUnis.length === 0) {
+                        // Only show compare dock when at least 2 universities are selected (e.g. current + another)
+                        if (selectedUnis.length < 2) {
                             document.body.classList.remove('has-uni-compare-dock-open');
                             setExternalWidgetVisibility(true);
                             dock.style.display = 'none';
@@ -1207,7 +1208,7 @@ if (!function_exists('sode_render_university_fees_table')) {
                     }
 
                     window.addEventListener('resize', function () {
-                        if (selectedUnis.length > 0) {
+                        if (selectedUnis.length >= 2) {
                             setExternalWidgetVisibility(false);
                         } else {
                             setExternalWidgetVisibility(true);
@@ -1254,7 +1255,10 @@ if (!function_exists('sode_render_university_fees_table')) {
 
                         // 4. Submit Button
                         if (e.target.closest('#uni-compare-submit-btn')) {
-                            if (selectedUnis.length === 0) return;
+                            if (selectedUnis.length < 2) {
+                                showToast('Please select at least 2 universities to compare.');
+                                return;
+                            }
                             var slugs = selectedUnis.map(function (item) { return item.slug; }).join(',');
                             var course = selectedUnis[0].course || 'mba';
                             var redirectUrl = 'https://distanceeducationschool.com/compare-university/?university=' + slugs + '&course=' + encodeURIComponent(course);
