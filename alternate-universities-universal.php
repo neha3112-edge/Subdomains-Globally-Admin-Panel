@@ -260,9 +260,11 @@ if (!function_exists('sode_alternate_universities_render')) {
     function sode_alternate_universities_render($atts = [])
     {
         $atts = shortcode_atts([
-            'limit' => -1,
-            'visible_items' => 10,
-            'visible' => 10,
+            'limit' => 10,
+            'visible_items' => '',
+            'visible' => '',
+            'max' => -1,
+            'total' => -1,
             'exclude' => '',
             'course' => '',
             'state' => '',
@@ -312,19 +314,29 @@ if (!function_exists('sode_alternate_universities_render')) {
             });
         }
 
-        // Apply Limit
-        $limit = (int) $atts['limit'];
-        if ($limit > 0 && count($universities) > $limit) {
-            $universities = array_slice($universities, 0, $limit);
+        // Hard Total Cap (if max/total specified)
+        $max_limit = -1;
+        if (!empty($atts['max']) && (int) $atts['max'] > 0) {
+            $max_limit = (int) $atts['max'];
+        } elseif (!empty($atts['total']) && (int) $atts['total'] > 0) {
+            $max_limit = (int) $atts['total'];
+        }
+        if ($max_limit > 0 && count($universities) > $max_limit) {
+            $universities = array_slice($universities, 0, $max_limit);
         }
 
         if (empty($universities)) {
             return '';
         }
 
-        $visible_limit = isset($atts['visible_items']) ? (int) $atts['visible_items'] : (isset($atts['visible']) ? (int) $atts['visible'] : 10);
-        if ($visible_limit <= 0) {
-            $visible_limit = 10;
+        // Visible Items Limit (Default 10, supports visible_items, visible, limit)
+        $visible_limit = 10;
+        if (!empty($atts['visible_items']) && (int) $atts['visible_items'] > 0) {
+            $visible_limit = (int) $atts['visible_items'];
+        } elseif (!empty($atts['visible']) && (int) $atts['visible'] > 0) {
+            $visible_limit = (int) $atts['visible'];
+        } elseif (!empty($atts['limit']) && (int) $atts['limit'] > 0) {
+            $visible_limit = (int) $atts['limit'];
         }
         $total_unis = count($universities);
         $uid = 'sode_alt_' . (function_exists('wp_rand') ? wp_rand(1000, 99999) : mt_rand(1000, 99999));
@@ -422,6 +434,19 @@ if (!function_exists('sode_alternate_universities_render')) {
             .sode-alt-card:hover {
                 box-shadow: 0 8px 24px rgba(12, 35, 64, 0.08);
                 border-color: #cbd5e1;
+            }
+
+            /* Extra cards hidden by default (beyond visible limit) */
+            .sode-alt-card.sode-alt-card-extra,
+            .sode-alt-card-extra {
+                display: none !important;
+            }
+
+            /* Extra cards visible when container is expanded */
+            .sode-alt-container.is-expanded .sode-alt-card.sode-alt-card-extra,
+            .sode-alt-container.is-expanded .sode-alt-card-extra,
+            .sode-alt-card.sode-alt-card-extra.is-expanded-card {
+                display: block !important;
             }
 
             /* Sample Degree Link (Top Right) */
@@ -1009,7 +1034,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                     $uni_idx++;
                     $is_extra = ($total_unis > $visible_limit && $uni_idx > $visible_limit);
                     $card_class = 'sode-alt-card' . ($is_extra ? ' sode-alt-card-extra' : '');
-                    $card_style = $is_extra ? 'style="display: none;"' : '';
+                    $card_style = $is_extra ? 'style="display: none !important;"' : '';
                     $uni_id = $uni['id'];
                     $uni_name = $uni['full_name'];
                     $uni_slug = $uni['slug'];
@@ -1359,12 +1384,14 @@ if (!function_exists('sode_alternate_universities_render')) {
                             const extraCards = container.querySelectorAll('.sode-alt-card-extra');
                             if (!extraCards.length) return;
 
-                            const isCurrentlyExpanded = btn.classList.contains('is-expanded');
+                            const isCurrentlyExpanded = container.classList.contains('is-expanded') || btn.classList.contains('is-expanded');
                             const textSpan = btn.querySelector('.sode-alt-view-more-text');
 
                             if (isCurrentlyExpanded) {
+                                container.classList.remove('is-expanded');
                                 extraCards.forEach(card => {
-                                    card.style.display = 'none';
+                                    card.classList.remove('is-expanded-card');
+                                    card.style.setProperty('display', 'none', 'important');
                                 });
                                 btn.classList.remove('is-expanded');
                                 if (textSpan) textSpan.textContent = 'View More';
@@ -1374,8 +1401,10 @@ if (!function_exists('sode_alternate_universities_render')) {
                                     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                 }
                             } else {
+                                container.classList.add('is-expanded');
                                 extraCards.forEach(card => {
-                                    card.style.display = '';
+                                    card.classList.add('is-expanded-card');
+                                    card.style.setProperty('display', 'block', 'important');
                                 });
                                 btn.classList.add('is-expanded');
                                 if (textSpan) textSpan.textContent = 'View Less';
