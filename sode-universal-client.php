@@ -380,8 +380,8 @@ if (!function_exists('sode_fetch_remote_component')) {
         $args['university'] = $uni;
         $args['component'] = $component;
 
-        // Build unique cache key (v8 cache buster for silent initial auto-select compare dock behavior)
-        $cache_key = 'sode_ssr_v8_' . md5($component . '_' . $uni . '_' . serialize($args));
+        // Build unique cache key (v9 cache buster for auto-select course_table compare dock behavior)
+        $cache_key = 'sode_ssr_v9_' . md5($component . '_' . $uni . '_' . serialize($args));
 
         // Check if admin is previewing or cache bypass requested (including Elementor editor)
         $bypass_cache = isset($_GET['nocache']) ||

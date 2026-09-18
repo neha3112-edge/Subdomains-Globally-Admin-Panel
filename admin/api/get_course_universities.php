@@ -51,6 +51,93 @@ try {
             if (is_array($dec_cols)) $cols = $dec_cols;
         }
 
+        $current_uni = null;
+        $uni_slug = strtolower(trim($_GET['uni'] ?? ''));
+        if (!empty($uni_slug)) {
+            $u_stmt = $db->query("SELECT id, full_name, short_name, slug, location, official_url, advantage_text FROM universities WHERE is_active = 1 ORDER BY id ASC");
+            $all_unis = $u_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $matched_u = null;
+            $term = strtolower(trim(preg_replace('/[^a-z0-9]+/', '', $uni_slug)));
+            if ($term !== '') {
+                foreach ($all_unis as $u) {
+                    $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+                    $clean_short = strtolower(str_replace(['-', '_', ' ', '.'], '', $u['short_name'] ?? ''));
+                    $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+                    if ($term === $clean_slug || $term === $clean_short || $term === $clean_full) {
+                        $matched_u = $u;
+                        break;
+                    }
+                }
+                if (!$matched_u) {
+                    foreach ($all_unis as $u) {
+                        $slug_parts = explode('-', strtolower($u['slug'] ?? ''));
+                        $slug_ac = '';
+                        foreach ($slug_parts as $sp) {
+                            if ($sp !== '') $slug_ac .= $sp[0];
+                        }
+                        if ($term === $slug_ac) {
+                            $matched_u = $u;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($matched_u) {
+                $c_stmt = $db->prepare("
+                    SELECT ucm.per_semester_fee, ucm.course_link, c.short_name as c_short, c.full_name as c_full
+                    FROM university_course_mappings ucm
+                    JOIN courses c ON ucm.course_id = c.id
+                    WHERE ucm.university_id = ? AND (LOWER(c.short_name) = LOWER(?) OR LOWER(c.full_name) LIKE LOWER(?))
+                    LIMIT 1
+                ");
+                $c_stmt->execute([$matched_u['id'], $course_slug, '%' . $course_slug . '%']);
+                $course_map = $c_stmt->fetch(PDO::FETCH_ASSOC);
+
+                $fee_display = '₹ --';
+                if (!empty($course_map['per_semester_fee'])) {
+                    $raw_fee = trim($course_map['per_semester_fee']);
+                    if (strpos($raw_fee, '₹') !== false) {
+                        $fee_display = $raw_fee;
+                    } else {
+                        $clean_num = str_replace([',', ' '], '', $raw_fee);
+                        if (is_numeric($clean_num)) {
+                            $fee_display = '₹' . number_format((float) $clean_num);
+                        } else {
+                            $fee_display = '₹' . $raw_fee;
+                        }
+                    }
+                }
+
+                $a_stmt = $db->prepare("
+                    SELECT a.title 
+                    FROM university_accreditations ua 
+                    JOIN accreditations a ON ua.accreditation_id = a.id 
+                    WHERE ua.university_id = ?
+                    ORDER BY ua.id ASC
+                ");
+                $a_stmt->execute([$matched_u['id']]);
+                $acc_titles = $a_stmt->fetchAll(PDO::FETCH_COLUMN);
+                $accreditation_str = !empty($acc_titles) ? implode(', ', $acc_titles) : 'UGC, NAAC A+';
+
+                $link = !empty($course_map['course_link']) ? $course_map['course_link'] : (!empty($matched_u['official_url']) ? $matched_u['official_url'] : '');
+                $advantage = !empty($matched_u['advantage_text']) ? $matched_u['advantage_text'] : 'Dedicated Career Support';
+
+                $current_uni = [
+                    'name'          => $matched_u['full_name'],
+                    'slug'          => $matched_u['slug'],
+                    'fees'          => $fee_display,
+                    'location'      => $matched_u['location'] ?: 'India',
+                    'accreditation' => $accreditation_str,
+                    'advantage'     => $advantage,
+                    'link'          => $link,
+                    'new_tab'       => 1,
+                    'is_current'    => true,
+                ];
+            }
+        }
+
         echo json_encode([
             'success'            => true,
             'course_slug'        => $row['course_slug'],
@@ -59,7 +146,8 @@ try {
             'description'        => $row['description'],
             'columns'            => $cols,
             'total_universities' => count($unis),
-            'universities'       => $unis
+            'universities'       => $unis,
+            'current_university' => $current_uni
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }

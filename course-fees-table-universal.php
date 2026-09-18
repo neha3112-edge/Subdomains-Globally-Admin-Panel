@@ -84,18 +84,207 @@ if ( ! defined( 'COURSE_UNIVERSITIES_API_URL' ) ) {
 }
 
 /**
+ * Helper: Find matching university by slug, short name, full name, or acronym
+ */
+if (!function_exists('sode_find_matching_university')) {
+    function sode_find_matching_university($unis, $search_term)
+    {
+        if (empty($search_term) || empty($unis))
+            return null;
+        $term = strtolower(trim(preg_replace('/[^a-z0-9]+/', '', (string) $search_term)));
+        if ($term === '')
+            return null;
+
+        // 1. Exact match on slug, short_name, or full_name
+        foreach ($unis as $u) {
+            $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+            $clean_short = strtolower(str_replace(['-', '_', ' ', '.'], '', $u['short_name'] ?? ''));
+            $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+            if ($term === $clean_slug || $term === $clean_short || $term === $clean_full) {
+                return $u;
+            }
+        }
+
+        // 2. Dynamic Acronym / Initials match (e.g. cu, dsu, lpu, smu, vgu, muj)
+        foreach ($unis as $u) {
+            $slug_parts = explode('-', strtolower($u['slug'] ?? ''));
+            $slug_ac = '';
+            foreach ($slug_parts as $sp) {
+                if ($sp !== '')
+                    $slug_ac .= $sp[0];
+            }
+            if ($term === $slug_ac) {
+                return $u;
+            }
+
+            $full_words = preg_split('/[\s,\-\.]+/', strtolower($u['full_name'] ?? ''));
+            $full_ac = '';
+            foreach ($full_words as $fw) {
+                if ($fw !== '' && !in_array($fw, ['and', 'of', 'for', 'the', 'in'])) {
+                    $full_ac .= $fw[0];
+                }
+            }
+            if ($term === $full_ac) {
+                return $u;
+            }
+        }
+
+        // 3. Substring / Prefix match on slug or name
+        foreach ($unis as $u) {
+            $clean_slug = strtolower(str_replace(['-', '_', ' '], '', $u['slug'] ?? ''));
+            $clean_full = strtolower(str_replace(['-', '_', ' ', '.', ','], '', $u['full_name'] ?? ''));
+            if (strpos($clean_slug, $term) !== false || strpos($clean_full, $term) !== false) {
+                return $u;
+            }
+        }
+
+        return null;
+    }
+}
+
+/**
+ * Helper: Detect current university slug for course table
+ */
+if (!function_exists('sode_detect_course_table_uni_slug')) {
+    function sode_detect_course_table_uni_slug($explicit = '') {
+        $explicit = trim((string) $explicit);
+        if (!empty($explicit)) {
+            return strtolower(preg_replace('/[^a-z0-9\-]/i', '', $explicit));
+        }
+        if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+            return strtolower(preg_replace('/[^a-z0-9\-]/i', '', SODE_UNIVERSITY_SLUG));
+        }
+        if (function_exists('sode_client_detect_uni')) {
+            $u = sode_client_detect_uni();
+            if ($u) {
+                return strtolower(preg_replace('/[^a-z0-9\-]/i', '', $u));
+            }
+        }
+        $host = isset($_SERVER['HTTP_HOST']) ? strtolower($_SERVER['HTTP_HOST']) : '';
+        if ($host) {
+            $parts = explode('.', $host);
+            if (count($parts) >= 3 && !in_array($parts[0], ['www', 'mail', 'webmail', 'admin', 'cpanel'])) {
+                return strtolower(preg_replace('/[^a-z0-9\-]/i', '', $parts[0]));
+            }
+        }
+        return '';
+    }
+}
+
+/**
+ * Helper: Fetch current university row for specific course from database
+ */
+if (!function_exists('sode_get_current_uni_row_for_course')) {
+    function sode_get_current_uni_row_for_course($uni_slug, $course_key) {
+        if (empty($uni_slug)) return null;
+
+        if (!function_exists('get_db_connection')) {
+            $possible_configs = [
+                __DIR__ . '/admin/config/config.php',
+                dirname(__DIR__) . '/admin/config/config.php',
+                dirname(__DIR__, 2) . '/admin/config/config.php',
+            ];
+            foreach ($possible_configs as $cfg) {
+                if (file_exists($cfg)) {
+                    require_once $cfg;
+                    break;
+                }
+            }
+        }
+
+        if (!function_exists('get_db_connection')) {
+            return null;
+        }
+
+        try {
+            $db = get_db_connection();
+            if (!$db) return null;
+
+            // Fetch all active universities
+            $stmt = $db->query("SELECT id, full_name, short_name, slug, location, official_url, advantage_text FROM universities WHERE is_active = 1 ORDER BY id ASC");
+            $all_unis = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $uni = sode_find_matching_university($all_unis, $uni_slug);
+            if (!$uni) {
+                return null;
+            }
+
+            // Fetch course fee and link from university_course_mappings
+            $c_stmt = $db->prepare("
+                SELECT ucm.per_semester_fee, ucm.course_link, c.short_name as c_short, c.full_name as c_full
+                FROM university_course_mappings ucm
+                JOIN courses c ON ucm.course_id = c.id
+                WHERE ucm.university_id = ? AND (LOWER(c.short_name) = LOWER(?) OR LOWER(c.full_name) LIKE LOWER(?))
+                LIMIT 1
+            ");
+            $c_stmt->execute([$uni['id'], $course_key, '%' . $course_key . '%']);
+            $course_map = $c_stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Format fee
+            $fee_display = '₹ --';
+            if (!empty($course_map['per_semester_fee'])) {
+                $raw_fee = trim($course_map['per_semester_fee']);
+                if (strpos($raw_fee, '₹') !== false) {
+                    $fee_display = $raw_fee;
+                } else {
+                    $clean_num = str_replace([',', ' '], '', $raw_fee);
+                    if (is_numeric($clean_num)) {
+                        $fee_display = '₹' . number_format((float) $clean_num);
+                    } else {
+                        $fee_display = '₹' . $raw_fee;
+                    }
+                }
+            }
+
+            // Fetch accreditations
+            $a_stmt = $db->prepare("
+                SELECT a.title 
+                FROM university_accreditations ua 
+                JOIN accreditations a ON ua.accreditation_id = a.id 
+                WHERE ua.university_id = ?
+                ORDER BY ua.id ASC
+            ");
+            $a_stmt->execute([$uni['id']]);
+            $acc_titles = $a_stmt->fetchAll(PDO::FETCH_COLUMN);
+            $accreditation_str = !empty($acc_titles) ? implode(', ', $acc_titles) : 'UGC, NAAC A+';
+
+            // URL link: prefer course_link, fallback to official_url
+            $link = !empty($course_map['course_link']) ? $course_map['course_link'] : (!empty($uni['official_url']) ? $uni['official_url'] : '');
+
+            // Advantage: prefer advantage_text
+            $advantage = !empty($uni['advantage_text']) ? $uni['advantage_text'] : 'Dedicated Career Support';
+
+            return [
+                'name'          => $uni['full_name'],
+                'slug'          => $uni['slug'],
+                'fees'          => $fee_display,
+                'location'      => $uni['location'] ?: 'India',
+                'accreditation' => $accreditation_str,
+                'advantage'     => $advantage,
+                'link'          => $link,
+                'new_tab'       => 1,
+                'is_current'    => true,
+            ];
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+}
+
+/**
  * Fetch course universities table data from Database or Central API
  */
-function get_course_table_data( $course_key ) {
+function get_course_table_data( $course_key, $uni_slug = '' ) {
     static $cache = [];
     $course_key = strtolower( trim( $course_key ) );
+    $uni_slug   = strtolower( trim( $uni_slug ) );
 
     if ( empty( $course_key ) ) {
         $course_key = 'mba';
     }
 
-    if ( isset( $cache[$course_key] ) ) {
-        return $cache[$course_key];
+    $cache_id = $course_key . '_' . $uni_slug;
+    if ( isset( $cache[$cache_id] ) ) {
+        return $cache[$cache_id];
     }
 
     // 1. Try Local Database Connection
@@ -151,7 +340,7 @@ function get_course_table_data( $course_key ) {
                         'columns'      => $cols,
                         'universities' => $unis
                     ];
-                    $cache[$course_key] = $data;
+                    $cache[$cache_id] = $data;
                     return $data;
                 }
             }
@@ -161,7 +350,7 @@ function get_course_table_data( $course_key ) {
     }
 
     // 2. Central API Fallback (for remote subdomains)
-    $api_url = COURSE_UNIVERSITIES_API_URL . '?course=' . urlencode($course_key);
+    $api_url = COURSE_UNIVERSITIES_API_URL . '?course=' . urlencode($course_key) . (!empty($uni_slug) ? '&uni=' . urlencode($uni_slug) : '');
     $json_content = null;
 
     if (function_exists('wp_remote_get')) {
@@ -185,14 +374,15 @@ function get_course_table_data( $course_key ) {
         $api_res = json_decode($json_content, true);
         if (!empty($api_res['success']) && !empty($api_res['universities'])) {
             $data = [
-                'course_slug'  => $api_res['course_slug'] ?? $course_key,
-                'course_name'  => $api_res['course_name'] ?? strtoupper($course_key),
-                'heading'      => $api_res['heading'] ?? '',
-                'description'  => $api_res['description'] ?? '',
-                'columns'      => $api_res['columns'] ?? ["University Name", "Fee (Per Semester)", "Location", "Approvals & Accreditation", "Advantage"],
-                'universities' => $api_res['universities']
+                'course_slug'        => $api_res['course_slug'] ?? $course_key,
+                'course_name'        => $api_res['course_name'] ?? strtoupper($course_key),
+                'heading'            => $api_res['heading'] ?? '',
+                'description'        => $api_res['description'] ?? '',
+                'columns'            => $api_res['columns'] ?? ["University Name", "Fee (Per Semester)", "Location", "Approvals & Accreditation", "Advantage"],
+                'universities'       => $api_res['universities'],
+                'current_university' => $api_res['current_university'] ?? null
             ];
-            $cache[$course_key] = $data;
+            $cache[$cache_id] = $data;
             return $data;
         }
     }
@@ -208,6 +398,11 @@ function get_course_table_data( $course_key ) {
  * "Lovely Professional University (LPU)" -> "lovely-professional-university-lpu"
  */
 function get_uni_compare_slug( $uni ) {
+    if ( ! empty( $uni['slug'] ) ) {
+        $slug = strtolower( trim( $uni['slug'] ) );
+        $slug = preg_replace( '/[^a-z0-9]+/i', '-', $slug );
+        return trim( $slug, '-' );
+    }
     $name = isset( $uni['name'] ) ? $uni['name'] : '';
     $slug = strtolower( trim( $name ) );
     $slug = preg_replace( '/[^a-z0-9]+/i', '-', $slug );
@@ -225,16 +420,18 @@ function get_uni_compare_slug( $uni ) {
 function render_course_table_row_cells( $uni, $course_key = '' ) {
     $uni_name = isset( $uni['name'] ) ? $uni['name'] : '';
     $uni_slug = get_uni_compare_slug( $uni );
+    $is_curr  = !empty( $uni['is_current'] );
     ?>
     <td class="course-table-compare-cell course-table-col-mobile-only">
         <button type="button"
-            class="uni-compare-toggle-btn"
+            class="uni-compare-toggle-btn<?php echo $is_curr ? ' is-active' : ''; ?>"
             data-uni-name="<?php echo esc_attr( $uni_name ); ?>"
             data-uni-slug="<?php echo esc_attr( $uni_slug ); ?>"
             data-course="<?php echo esc_attr( $course_key ); ?>"
+            <?php if ( $is_curr ) : ?>data-is-current="1"<?php endif; ?>
             aria-label="Compare <?php echo esc_attr( $uni_name ); ?>">
-            <span class="compare-icon">+</span>
-            <span class="compare-text">Compare</span>
+            <span class="compare-icon"><?php echo $is_curr ? '✓' : '+'; ?></span>
+            <span class="compare-text"><?php echo $is_curr ? 'Selected' : 'Compare'; ?></span>
         </button>
     </td>
     <td>
@@ -257,13 +454,14 @@ function render_course_table_row_cells( $uni, $course_key = '' ) {
     <?php endif; ?>
     <td class="course-table-compare-cell course-table-col-desktop-only">
         <button type="button"
-            class="uni-compare-toggle-btn"
+            class="uni-compare-toggle-btn<?php echo $is_curr ? ' is-active' : ''; ?>"
             data-uni-name="<?php echo esc_attr( $uni_name ); ?>"
             data-uni-slug="<?php echo esc_attr( $uni_slug ); ?>"
             data-course="<?php echo esc_attr( $course_key ); ?>"
+            <?php if ( $is_curr ) : ?>data-is-current="1"<?php endif; ?>
             aria-label="Compare <?php echo esc_attr( $uni_name ); ?>">
-            <span class="compare-icon">+</span>
-            <span class="compare-text">Compare</span>
+            <span class="compare-icon"><?php echo $is_curr ? '✓' : '+'; ?></span>
+            <span class="compare-text"><?php echo $is_curr ? 'Selected' : 'Compare'; ?></span>
         </button>
     </td>
     <?php
@@ -276,9 +474,27 @@ function render_course_table_row_cells( $uni, $course_key = '' ) {
  */
 function course_table_shortcode( $atts ) {
 
+    $raw_atts = (array) ($atts ?: []);
+    $explicit_uni = !empty($raw_atts['uni']) ? $raw_atts['uni'] : (!empty($raw_atts['university']) ? $raw_atts['university'] : '');
+    if (empty($explicit_uni)) {
+        foreach ($raw_atts as $k => $v) {
+            if (is_numeric($k) && is_string($v) && !empty($v)) {
+                if (strpos($v, '=') !== false) {
+                    list($pk, $pv) = explode('=', $v, 2);
+                    if (in_array(strtolower(trim($pk)), ['uni', 'university'])) {
+                        $explicit_uni = trim($pv, " '\"\t\n\r\0\x0B");
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     $atts = shortcode_atts( array(
-        'course' => '',
-    ), $atts );
+        'course'     => '',
+        'uni'        => $explicit_uni,
+        'university' => $explicit_uni,
+    ), $raw_atts );
 
     $course_key = strtolower( trim( $atts['course'] ) );
 
@@ -286,7 +502,8 @@ function course_table_shortcode( $atts ) {
         return '<p><em>Course table: course attribute missing.</em></p>';
     }
 
-    $course_data = get_course_table_data( $course_key );
+    $current_slug = sode_detect_course_table_uni_slug( !empty($atts['uni']) ? $atts['uni'] : $atts['university'] );
+    $course_data = get_course_table_data( $course_key, $current_slug );
 
     // Agar data hi nahi mila (JSON down ho ya course exist na kare)
     if ( empty( $course_data ) || empty( $course_data['universities'] ) ) {
@@ -304,6 +521,33 @@ function course_table_shortcode( $atts ) {
 
     $columns      = isset( $course_data['columns'] ) ? $course_data['columns'] : array();
     $universities = $course_data['universities'];
+
+    // Dynamic current subdomain university insertion at Row 1 (Index 0)
+    if ( !empty($current_slug) ) {
+        $current_row = sode_get_current_uni_row_for_course( $current_slug, $course_key );
+        if ( !$current_row && !empty($course_data['current_university']) ) {
+            $current_row = $course_data['current_university'];
+        }
+
+        if ( $current_row ) {
+            $curr_compare_slug = get_uni_compare_slug( $current_row );
+            $clean_curr = strtolower(str_replace(['-', '_', ' '], '', $curr_compare_slug));
+            $clean_input_slug = strtolower(str_replace(['-', '_', ' '], '', $current_slug));
+
+            $filtered = [];
+            foreach ( $universities as $u ) {
+                $u_slug = get_uni_compare_slug( $u );
+                $clean_u = strtolower(str_replace(['-', '_', ' '], '', $u_slug));
+                if ($clean_u === $clean_curr || (!empty($clean_input_slug) && $clean_u === $clean_input_slug)) {
+                    continue; // Deduplicate: omit duplicate entry of current university
+                }
+                $filtered[] = $u;
+            }
+            array_unshift( $filtered, $current_row );
+            $universities = $filtered;
+        }
+    }
+
     $total_rows   = count( $universities );
     $visible_rows = COURSE_TABLE_VISIBLE_ROWS;
     $has_more     = $total_rows > $visible_rows;
@@ -340,7 +584,7 @@ function course_table_shortcode( $atts ) {
                     <?php foreach ( $universities as $index => $uni ) :
                         if ( $index >= $visible_rows ) { break; }
                         ?>
-                        <tr>
+                        <tr class="<?php echo !empty($uni['is_current']) ? 'sode-row-current-uni' : ''; ?>">
                             <?php render_course_table_row_cells( $uni, $course_key ); ?>
                         </tr>
                     <?php endforeach; ?>
@@ -350,7 +594,7 @@ function course_table_shortcode( $atts ) {
                     <?php foreach ( $universities as $index => $uni ) :
                         if ( $index < $visible_rows ) { continue; }
                         ?>
-                        <tr>
+                        <tr class="<?php echo !empty($uni['is_current']) ? 'sode-row-current-uni' : ''; ?>">
                             <?php render_course_table_row_cells( $uni, $course_key ); ?>
                         </tr>
                     <?php endforeach; ?>
@@ -458,6 +702,12 @@ function course_table_shortcode( $atts ) {
         }
         .course-fees-table tbody tr:hover {
             background-color: #f9fafb;
+        }
+        .course-fees-table tbody tr.sode-row-current-uni td {
+            background-color: #f8fafc;
+        }
+        .course-fees-table tbody tr.sode-row-current-uni:hover td {
+            background-color: #f1f5f9;
         }
         .course-table-uni-link {
             color: #1ab1f0;
@@ -828,6 +1078,20 @@ function course_table_shortcode( $atts ) {
             var selectedUnis = []; // Array of { name, slug, course }
             var maxSelections = 3;
             var toastTimer = null;
+            var isInitialSilent = true; // True only on page load until user interacts
+
+            // Auto-select current subdomain university on load
+            function initCurrentUniversity() {
+                var currentBtn = document.querySelector('.uni-compare-toggle-btn[data-is-current="1"]') || document.querySelector('.sode-row-current-uni .uni-compare-toggle-btn');
+                if (currentBtn) {
+                    var slug = currentBtn.getAttribute('data-uni-slug');
+                    var name = currentBtn.getAttribute('data-uni-name');
+                    var course = currentBtn.getAttribute('data-course');
+                    if (slug && !selectedUnis.some(function(item) { return item.slug === slug; })) {
+                        selectedUnis.push({ name: name, slug: slug, course: course });
+                    }
+                }
+            }
 
             function showToast(message) {
                 var toast = document.getElementById('uni-compare-toast');
@@ -838,6 +1102,19 @@ function course_table_shortcode( $atts ) {
                 toastTimer = setTimeout(function() {
                     toast.style.display = 'none';
                 }, 2800);
+            }
+
+            function setExternalWidgetVisibility(visible) {
+                var waEl = document.getElementById('gb-waw-iframe');
+                if (waEl) {
+                    if (window.innerWidth <= 768) {
+                        waEl.style.setProperty('display', visible ? '' : 'none', 'important');
+                        waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
+                    } else {
+                        waEl.style.removeProperty('display');
+                        waEl.style.removeProperty('visibility');
+                    }
+                }
             }
 
             function updateUI() {
@@ -852,31 +1129,26 @@ function course_table_shortcode( $atts ) {
                     var isSelected = selectedUnis.some(function(item) { return item.slug === slug; });
                     if (isSelected) {
                         btn.classList.add('is-active');
-                        btn.querySelector('.compare-icon').textContent = '✓';
-                        btn.querySelector('.compare-text').textContent = 'Selected';
+                        var icon = btn.querySelector('.compare-icon');
+                        if (icon) icon.textContent = '✓';
+                        var text = btn.querySelector('.compare-text');
+                        if (text) text.textContent = 'Selected';
                     } else {
                         btn.classList.remove('is-active');
-                        btn.querySelector('.compare-icon').textContent = '+';
-                        btn.querySelector('.compare-text').textContent = 'Compare';
+                        var icon = btn.querySelector('.compare-icon');
+                        if (icon) icon.textContent = '+';
+                        var text = btn.querySelector('.compare-text');
+                        if (text) text.textContent = 'Compare';
                     }
                 });
 
-                function setExternalWidgetVisibility(visible) {
-                    var waEl = document.getElementById('gb-waw-iframe');
-                    if (waEl) {
-                        if (window.innerWidth <= 768) {
-                            waEl.style.setProperty('display', visible ? '' : 'none', 'important');
-                            waEl.style.setProperty('visibility', visible ? '' : 'hidden', 'important');
-                        } else {
-                            waEl.style.removeProperty('display');
-                            waEl.style.removeProperty('visibility');
-                        }
-                    }
-                }
-
                 if (!dock || !countBadge || !chipsList) return;
 
-                if (selectedUnis.length === 0) {
+                // Dock stays hidden on initial load when only the auto-selected current university is present.
+                // As soon as user adds another university OR unselects current and selects any university, dock opens!
+                var shouldHideDock = (selectedUnis.length === 0) || (isInitialSilent && selectedUnis.length === 1);
+
+                if (shouldHideDock) {
                     document.body.classList.remove('has-uni-compare-dock-open');
                     setExternalWidgetVisibility(true);
                     dock.style.display = 'none';
@@ -890,10 +1162,11 @@ function course_table_shortcode( $atts ) {
 
                 // Render selected chips
                 var html = '';
-                selectedUnis.forEach(function(item, idx) {
+                selectedUnis.forEach(function(item) {
+                    var safeName = escapeHTML(item.name);
                     html += '<div class="uni-compare-chip">' +
-                        '<span>' + escapeHTML(item.name) + '</span>' +
-                        '<button type="button" class="uni-compare-chip-remove" data-slug="' + escapeHTML(item.slug) + '" aria-label="Remove ' + escapeHTML(item.name) + '">&times;</button>' +
+                        '<span>' + safeName + '</span>' +
+                        '<button type="button" class="uni-compare-chip-remove" data-slug="' + escapeHTML(item.slug) + '" aria-label="Remove ' + safeName + '">&times;</button>' +
                         '</div>';
                 });
 
@@ -912,11 +1185,26 @@ function course_table_shortcode( $atts ) {
                 return div.innerHTML;
             }
 
+            window.addEventListener('resize', function() {
+                var shouldHideDock = (selectedUnis.length === 0) || (isInitialSilent && selectedUnis.length === 1);
+                var waEl = document.getElementById('gb-waw-iframe');
+                if (waEl) {
+                    if (!shouldHideDock && window.innerWidth <= 768) {
+                        waEl.style.setProperty('display', 'none', 'important');
+                        waEl.style.setProperty('visibility', 'hidden', 'important');
+                    } else {
+                        waEl.style.removeProperty('display');
+                        waEl.style.removeProperty('visibility');
+                    }
+                }
+            });
+
             // Global Click Delegation
             document.addEventListener('click', function(e) {
                 // 1. Toggle Button in Table
                 var toggleBtn = e.target.closest('.uni-compare-toggle-btn');
                 if (toggleBtn) {
+                    isInitialSilent = false; // User manually interacted
                     var slug = toggleBtn.getAttribute('data-uni-slug');
                     var name = toggleBtn.getAttribute('data-uni-name');
                     var course = toggleBtn.getAttribute('data-course');
@@ -939,6 +1227,7 @@ function course_table_shortcode( $atts ) {
                 // 2. Remove Chip in Dock
                 var removeBtn = e.target.closest('.uni-compare-chip-remove');
                 if (removeBtn) {
+                    isInitialSilent = false; // User manually interacted
                     var removeSlug = removeBtn.getAttribute('data-slug');
                     selectedUnis = selectedUnis.filter(function(item) { return item.slug !== removeSlug; });
                     updateUI();
@@ -947,6 +1236,7 @@ function course_table_shortcode( $atts ) {
 
                 // 3. Clear All Button
                 if (e.target.closest('#uni-compare-clear-btn')) {
+                    isInitialSilent = false; // User manually interacted
                     selectedUnis = [];
                     updateUI();
                     return;
@@ -980,6 +1270,10 @@ function course_table_shortcode( $atts ) {
                     btn.textContent = isHidden ? 'View Less' : 'View More';
                 }
             });
+
+            // Initialize auto-selection on load
+            initCurrentUniversity();
+            updateUI();
         })();
         </script>
         <?php
