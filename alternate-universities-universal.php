@@ -997,6 +997,7 @@ if (!function_exists('sode_alternate_universities_render')) {
                 box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
                 transform: translateY(-1px);
                 color: #ffffff;
+                border: 2px solid #2563eb;
             }
 
             .sode-alt-view-more-btn svg {
