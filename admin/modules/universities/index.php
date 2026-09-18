@@ -27,9 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     verify_csrf();
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {
-        $stmt = $db->prepare("DELETE FROM universities WHERE id = ?");
-        $stmt->execute([$id]);
-        set_flash_message('University deleted successfully!', 'success');
+        $u_info = $db->query("SELECT short_name, full_name FROM universities WHERE id = $id")->fetch();
+        $title = $u_info['short_name'] ?? ($u_info['full_name'] ?? 'University');
+        move_to_trash('universities', $id, $title);
+        set_flash_message('University moved to Trash! You can restore it anytime.', 'success');
         redirect(BASE_URL . '/modules/universities/index.php');
     }
 }

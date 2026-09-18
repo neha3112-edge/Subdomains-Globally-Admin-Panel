@@ -89,9 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $dur_id = (int)($_POST['dur_id'] ?? 0);
         if ($dur_id > 0) {
-            $stmt = $db->prepare("DELETE FROM course_durations_master WHERE id = ?");
-            $stmt->execute([$dur_id]);
-            set_flash_message('Duration deleted from master library.', 'success');
+            $d_info = $db->query("SELECT duration_text FROM course_durations_master WHERE id = $dur_id")->fetch();
+            $title = $d_info['duration_text'] ?? 'Course Duration';
+            move_to_trash('course_durations_master', $dur_id, $title);
+            set_flash_message('Duration moved to Trash! You can restore it anytime.', 'success');
         }
         redirect(BASE_URL . '/modules/durations/index.php');
     }

@@ -14,9 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     verify_csrf();
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {
-        $stmt = $db->prepare("DELETE FROM university_course_mappings WHERE id = ?");
-        $stmt->execute([$id]);
-        set_flash_message('Course mapping deleted successfully!', 'success');
+        $m_info = $db->query("
+            SELECT u.short_name AS u_name, c.short_name AS c_name 
+            FROM university_course_mappings m 
+            LEFT JOIN universities u ON m.university_id = u.id 
+            LEFT JOIN courses c ON m.course_id = c.id 
+            WHERE m.id = $id
+        ")->fetch();
+        $title = ($m_info['u_name'] ?? 'Uni') . ' - ' . ($m_info['c_name'] ?? 'Course');
+        move_to_trash('university_course_mappings', $id, $title);
+        set_flash_message('Course mapping moved to Trash! You can restore it anytime.', 'success');
         redirect(BASE_URL . '/modules/mappings/index.php');
     }
 }

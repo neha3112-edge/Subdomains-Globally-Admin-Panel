@@ -390,4 +390,28 @@ INSERT INTO `admission_process_steps` (`university_id`, `step_number`, `color_he
 (NULL, 8, '#2C3E7A', 'Admission Confirmation', 'You will get a confirmation email once your admission is successfully verified.', '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path><polyline points="9 11 11 13 15 9"></polyline><path d="M8.5 14.5L7 22l5-3 5 3-1.5-7.5"></path></svg>')
 ON DUPLICATE KEY UPDATE `title`=VALUES(`title`);
 
+-- Admin Trash & Recycle Bin Table
+CREATE TABLE IF NOT EXISTS `admin_trash` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `item_type` VARCHAR(50) NOT NULL,
+  `item_title` VARCHAR(255) NOT NULL,
+  `source_table` VARCHAR(64) NOT NULL,
+  `original_id` INT UNSIGNED NOT NULL,
+  `data_payload` LONGTEXT NOT NULL,
+  `file_path` VARCHAR(500) NULL DEFAULT NULL,
+  `trash_file_path` VARCHAR(500) NULL DEFAULT NULL,
+  `deleted_by_user_id` INT UNSIGNED NULL DEFAULT NULL,
+  `deleted_by_user_name` VARCHAR(100) NULL DEFAULT NULL,
+  `deleted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_item_type` (`item_type`),
+  INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_source` (`source_table`, `original_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Register Trash in Sidebar Items
+INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
+SELECT 'Trash', 'modules/trash/index.php', 99, 'trash', 'trash', 'SYSTEM', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"></line><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"></line></svg>', 0, 1
+WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/trash/index.php');
+
 SET FOREIGN_KEY_CHECKS = 1;
+

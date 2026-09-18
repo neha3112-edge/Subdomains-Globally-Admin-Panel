@@ -141,9 +141,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($used_count > 0) {
                     set_flash_message("Cannot delete '{$lvl_row['level_name']}' because it is currently assigned to {$used_count} course(s).", 'error');
                 } else {
-                    $stmt = $db->prepare("DELETE FROM degree_levels_master WHERE id = ?");
-                    $stmt->execute([$level_id]);
-                    set_flash_message('Degree level deleted successfully.', 'success');
+                    $title = $lvl_row['level_name'] ?? 'Degree Level';
+                    move_to_trash('degree_levels_master', $level_id, $title);
+                    set_flash_message('Degree level moved to Trash! You can restore it anytime.', 'success');
                 }
             }
         }

@@ -27,9 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
         if ($map_count > 0) {
             set_flash_message("Cannot delete course because it is currently mapped to {$map_count} university(ies). Please remove those mappings first.", 'error');
         } else {
-            $stmt = $db->prepare("DELETE FROM courses WHERE id = ?");
-            $stmt->execute([$id]);
-            set_flash_message('Course deleted successfully!', 'success');
+            $c_info = $db->query("SELECT full_name, short_name FROM courses WHERE id = $id")->fetch();
+            $title = $c_info['short_name'] ?? ($c_info['full_name'] ?? 'Course');
+            move_to_trash('courses', $id, $title);
+            set_flash_message('Course moved to Trash! You can restore it anytime.', 'success');
         }
         redirect(BASE_URL . '/modules/courses/index.php');
     }

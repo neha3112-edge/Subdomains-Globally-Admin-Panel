@@ -42,6 +42,12 @@ $current_page_key = $active_page_key ?? 'dashboard';
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle></svg>
                                 <?php endif; ?>
                                 <span><?php echo htmlspecialchars($item['display_name']); ?></span>
+                                <?php if ($item['active_page_key'] === 'trash' && function_exists('get_trash_count')): 
+                                    $tc = get_trash_count();
+                                    if ($tc > 0): ?>
+                                        <span class="badge badge-danger" style="margin-left:auto; font-size:10px; padding:2px 6px;"><?php echo $tc; ?></span>
+                                    <?php endif; 
+                                endif; ?>
                             </a>
                         </li>
                     <?php endforeach; ?>

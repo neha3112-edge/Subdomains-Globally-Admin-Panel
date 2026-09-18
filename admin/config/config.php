@@ -27,3 +27,4 @@ require_once ADMIN_PATH . '/config/database.php';
 require_once ADMIN_PATH . '/includes/helpers.php';
 require_once ADMIN_PATH . '/includes/auth.php';
 require_once ADMIN_PATH . '/includes/rbac.php';
+require_once ADMIN_PATH . '/includes/trash.php';

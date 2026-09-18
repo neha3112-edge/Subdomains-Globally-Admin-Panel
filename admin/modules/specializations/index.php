@@ -89,9 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $spec_id = (int)($_POST['spec_id'] ?? 0);
         if ($spec_id > 0) {
-            $stmt = $db->prepare("DELETE FROM course_specializations_master WHERE id = ?");
-            $stmt->execute([$spec_id]);
-            set_flash_message('Specialization deleted from master library.', 'success');
+            $sp_info = $db->query("SELECT name FROM course_specializations_master WHERE id = $spec_id")->fetch();
+            $title = $sp_info['name'] ?? 'Specialization';
+            move_to_trash('course_specializations_master', $spec_id, $title);
+            set_flash_message('Specialization moved to Trash! You can restore it anytime.', 'success');
         }
         redirect(BASE_URL . '/modules/specializations/index.php');
     }

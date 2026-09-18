@@ -38,9 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $stmt = $db->prepare("DELETE FROM accreditations WHERE id = ?");
-            $stmt->execute([$id]);
-            set_flash_message('Accreditation deleted successfully!', 'success');
+            $a_info = $db->query("SELECT name, short_name FROM accreditations WHERE id = $id")->fetch();
+            $title = $a_info['short_name'] ?? ($a_info['name'] ?? 'Accreditation');
+            move_to_trash('accreditations', $id, $title);
+            set_flash_message('Accreditation moved to Trash! You can restore it anytime.', 'success');
             redirect(BASE_URL . '/modules/accreditations/index.php');
         }
     }

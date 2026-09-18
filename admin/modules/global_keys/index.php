@@ -55,11 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $stmt = $db->prepare("DELETE FROM global_keys WHERE id = ?");
-            $stmt->execute([$id]);
-            // Auto-flush cache on all active subdomains
-            sode_bust_all_subdomain_caches($db);
-            set_flash_message('Global key deleted successfully!', 'success');
+            $k_info = $db->query("SELECT key_code FROM global_keys WHERE id = $id")->fetch();
+            $title = $k_info['key_code'] ?? 'Global Key';
+            move_to_trash('global_keys', $id, $title);
+            set_flash_message('Global key moved to Trash! You can restore it anytime.', 'success');
             redirect(BASE_URL . '/modules/global_keys/index.php');
         }
     }

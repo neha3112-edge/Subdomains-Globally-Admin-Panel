@@ -88,9 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $subject_id = (int)($_POST['subject_id'] ?? 0);
         if ($subject_id > 0) {
-            $stmt = $db->prepare("DELETE FROM course_syllabus_subjects_master WHERE id = ?");
-            $stmt->execute([$subject_id]);
-            set_flash_message('Subject deleted from master library.', 'success');
+            $sub_info = $db->query("SELECT subject_name FROM course_syllabus_subjects_master WHERE id = $subject_id")->fetch();
+            $title = $sub_info['subject_name'] ?? 'Syllabus Subject';
+            move_to_trash('course_syllabus_subjects_master', $subject_id, $title);
+            set_flash_message('Subject moved to Trash! You can restore it anytime.', 'success');
         }
         redirect(BASE_URL . '/modules/syllabus/index.php');
     }

@@ -148,7 +148,11 @@ if (!function_exists('sode_fire_and_forget')) {
     function sode_fire_and_forget($url) {
         // Method 1: Background shell process (fastest, zero wait)
         if (function_exists('exec') && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
-            @exec("curl -k -s --max-time 5 '" . addslashes($url) . "' > /dev/null 2>&1 &");
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                @pclose(@popen("start /B curl -k -s --max-time 5 \"" . addslashes($url) . "\" > NUL 2>&1", "r"));
+            } else {
+                @exec("curl -k -s --max-time 5 '" . addslashes($url) . "' > /dev/null 2>&1 &");
+            }
             return;
         }
 

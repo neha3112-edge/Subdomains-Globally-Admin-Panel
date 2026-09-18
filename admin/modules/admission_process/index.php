@@ -50,9 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $stmt = $db->prepare("DELETE FROM admission_process_steps WHERE id = ?");
-            $stmt->execute([$id]);
-            set_flash_message('Step deleted successfully!', 'success');
+            $s_info = $db->query("SELECT title, step_number FROM admission_process_steps WHERE id = $id")->fetch();
+            $title = !empty($s_info['title']) ? 'Step ' . ($s_info['step_number'] ?? '') . ': ' . $s_info['title'] : 'Admission Step';
+            move_to_trash('admission_process_steps', $id, $title);
+            set_flash_message('Admission step moved to Trash! You can restore it anytime.', 'success');
             redirect(BASE_URL . '/modules/admission_process/index.php' . ($selected_uni_id ? '?uni_id=' . $selected_uni_id : ''));
         }
     }

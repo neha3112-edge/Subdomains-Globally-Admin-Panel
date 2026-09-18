@@ -32,17 +32,11 @@ if (!$media) {
     exit;
 }
 
-// Delete physical file if exists
-$clean_rel = ltrim($media['file_path'] ?? '', '/');
-$physical_path = (strpos($clean_rel, 'uploads/') === 0) 
-    ? ADMIN_PATH . '/' . $clean_rel 
-    : ADMIN_PATH . '/uploads/' . $clean_rel;
+// Move to Trash (quarantines physical file into uploads/trash/ and archives metadata)
+$moved = move_to_trash('media_library', $id, $media['file_name'] ?? 'Media File');
 
-if (!empty($clean_rel) && file_exists($physical_path)) {
-    @unlink($physical_path);
+if ($moved) {
+    echo json_encode(['success' => true, 'message' => 'File moved to Trash. You can restore it anytime.']);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Failed to move file to Trash.']);
 }
-
-$del_stmt = $db->prepare("DELETE FROM media_library WHERE id = ?");
-$del_stmt->execute([$id]);
-
-echo json_encode(['success' => true, 'message' => 'File deleted successfully']);
