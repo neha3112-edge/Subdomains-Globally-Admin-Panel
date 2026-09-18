@@ -271,7 +271,7 @@ if (!function_exists('sode_alternate_universities_render')) {
             'heading' => '',
             'subheading' => '',
             'class' => '',
-            'prefix' => '#1',
+            'prefix' => 'auto',
         ], $atts, 'alternative_universities');
 
         $universities = sode_get_alternate_universities_list();
@@ -1042,9 +1042,11 @@ if (!function_exists('sode_alternate_universities_render')) {
                     $sample_img = $uni['sample_degree_img'];
                     $courses = $uni['courses'] ?? [];
 
-                    $prefix_opt = isset($atts['prefix']) ? trim($atts['prefix']) : '#1';
-                    if ($prefix_opt === 'rank' || $prefix_opt === 'number' || $prefix_opt === 'auto') {
-                        $prefix = '#' . $uni_idx;
+                    $prefix_opt = isset($atts['prefix']) ? trim($atts['prefix']) : 'auto';
+                    if ($prefix_opt === '' || $prefix_opt === 'none' || $prefix_opt === 'false' || $prefix_opt === 'no') {
+                        $prefix = '';
+                    } elseif ($prefix_opt === 'auto' || $prefix_opt === 'number' || $prefix_opt === 'rank' || $prefix_opt === 'count' || $prefix_opt === '1' || $prefix_opt === '#1' || $prefix_opt === 'dot') {
+                        $prefix = $uni_idx . '.';
                     } else {
                         $prefix = $prefix_opt;
                     }
