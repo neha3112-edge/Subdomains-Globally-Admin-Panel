@@ -358,7 +358,7 @@ if (!function_exists('sode_announcements_list_render')) {
                         <div class="sode-announcement-heading">
                             <?php if (!empty($date)): ?>
                                 <span class="sode-announcement-date-text"><?php echo esc_html($date); ?></span>
-                                <span class="sode-announcement-date-sep">—</span>
+                                <span class="sode-announcement-date-sep">|</span>
                             <?php endif; ?>
                             <span class="sode-announcement-title-text"><?php echo esc_html($title); ?></span>
                         </div>
