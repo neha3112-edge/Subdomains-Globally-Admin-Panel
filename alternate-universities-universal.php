@@ -980,12 +980,12 @@ if (!function_exists('sode_alternate_universities_render')) {
                 align-items: center;
                 justify-content: center;
                 gap: 8px;
-                padding: 12px 28px;
-                background: #ffffff;
-                color: #0c2340;
+                padding: 10px 20px;
+                background: #2563eb;
+                color: #fff;
                 font-size: 15px;
                 font-weight: 700;
-                border: 2px solid #0c2340;
+                border: 2px solid #2563eb;
                 border-radius: 8px;
                 cursor: pointer;
                 transition: all 0.2s ease;
@@ -993,10 +993,10 @@ if (!function_exists('sode_alternate_universities_render')) {
             }
 
             .sode-alt-view-more-btn:hover {
-                background: #0c2340;
-                color: #ffffff;
-                box-shadow: 0 4px 14px rgba(12, 35, 64, 0.18);
+                background: #1d4ed8;
+                box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
                 transform: translateY(-1px);
+                color: #ffffff;
             }
 
             .sode-alt-view-more-btn svg {
@@ -1028,7 +1028,7 @@ if (!function_exists('sode_alternate_universities_render')) {
             <?php endif; ?>
 
             <div class="sode-alt-list">
-                <?php 
+                <?php
                 $uni_idx = 0;
                 foreach ($universities as $uni):
                     $uni_idx++;
@@ -1090,8 +1090,8 @@ if (!function_exists('sode_alternate_universities_render')) {
                                         <?php if (!empty($desktop_img)): ?>
                                             <source media="(min-width: 769px)" srcset="<?php echo esc_url($desktop_img); ?>">
                                         <?php endif; ?>
-                                        <img src="<?php echo esc_url($fallback_img); ?>" alt="<?php echo esc_attr($display_uni_name); ?>"
-                                            class="sode-alt-img" loading="lazy">
+                                        <img src="<?php echo esc_url($fallback_img); ?>"
+                                            alt="<?php echo esc_attr($display_uni_name); ?>" class="sode-alt-img" loading="lazy">
                                     </picture>
                                 <?php else: ?>
                                     <div class="sode-alt-placeholder">
@@ -1202,7 +1202,8 @@ if (!function_exists('sode_alternate_universities_render')) {
                 <div class="sode-alt-view-more-wrap">
                     <button type="button" class="sode-alt-view-more-btn" data-target="<?php echo esc_attr($uid); ?>">
                         <span class="sode-alt-view-more-text">View More</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                            stroke-linejoin="round">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
