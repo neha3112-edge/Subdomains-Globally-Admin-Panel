@@ -89,10 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $spec_id = (int)($_POST['spec_id'] ?? 0);
         if ($spec_id > 0) {
-            $sp_info = $db->query("SELECT name FROM course_specializations_master WHERE id = $spec_id")->fetch();
-            $title = $sp_info['name'] ?? 'Specialization';
-            move_to_trash('course_specializations_master', $spec_id, $title);
-            set_flash_message('Specialization moved to Trash! You can restore it anytime.', 'success');
+            $ok = move_to_trash('course_specializations_master', $spec_id);
+            if ($ok) {
+                set_flash_message('Specialization moved to Trash! You can restore it anytime.', 'success');
+            } else {
+                set_flash_message('Failed to move specialization to Trash.', 'error');
+            }
         }
         redirect(BASE_URL . '/modules/specializations/index.php');
     }

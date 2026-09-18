@@ -34,10 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $n_info = $db->query("SELECT news_text FROM news_items WHERE id = $id")->fetch();
-            $title = !empty($n_info['news_text']) ? mb_substr(strip_tags($n_info['news_text']), 0, 40) . '...' : 'Announcement';
-            move_to_trash('news_items', $id, $title);
-            set_flash_message('Universal announcement moved to Trash! You can restore it anytime.', 'success');
+            $ok = move_to_trash('news_items', $id);
+            if ($ok) {
+                set_flash_message('Universal announcement moved to Trash! You can restore it anytime.', 'success');
+            } else {
+                set_flash_message('Failed to move announcement to Trash.', 'error');
+            }
             redirect(BASE_URL . '/modules/universal_news/index.php');
         }
     } elseif ($action === 'toggle_active') {

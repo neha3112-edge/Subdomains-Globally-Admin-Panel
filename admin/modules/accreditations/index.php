@@ -38,10 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $a_info = $db->query("SELECT name, short_name FROM accreditations WHERE id = $id")->fetch();
-            $title = $a_info['short_name'] ?? ($a_info['name'] ?? 'Accreditation');
-            move_to_trash('accreditations', $id, $title);
-            set_flash_message('Accreditation moved to Trash! You can restore it anytime.', 'success');
+            $ok = move_to_trash('accreditations', $id);
+            if ($ok) {
+                set_flash_message('Accreditation moved to Trash! You can restore it anytime.', 'success');
+            } else {
+                set_flash_message('Failed to move accreditation to Trash.', 'error');
+            }
             redirect(BASE_URL . '/modules/accreditations/index.php');
         }
     }

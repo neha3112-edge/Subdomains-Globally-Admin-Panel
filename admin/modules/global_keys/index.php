@@ -55,10 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $k_info = $db->query("SELECT key_code FROM global_keys WHERE id = $id")->fetch();
-            $title = $k_info['key_code'] ?? 'Global Key';
-            move_to_trash('global_keys', $id, $title);
-            set_flash_message('Global key moved to Trash! You can restore it anytime.', 'success');
+            $ok = move_to_trash('global_keys', $id);
+            if ($ok) {
+                set_flash_message('Global key moved to Trash! You can restore it anytime.', 'success');
+            } else {
+                set_flash_message('Failed to move global key to Trash.', 'error');
+            }
             redirect(BASE_URL . '/modules/global_keys/index.php');
         }
     }

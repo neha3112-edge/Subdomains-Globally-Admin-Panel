@@ -90,10 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $mode_id = (int)($_POST['mode_id'] ?? 0);
         if ($mode_id > 0) {
-            $m_info = $db->query("SELECT mode_name FROM education_modes_master WHERE id = $mode_id")->fetch();
-            $title = $m_info['mode_name'] ?? 'Education Mode';
-            move_to_trash('education_modes_master', $mode_id, $title);
-            set_flash_message('Education mode moved to Trash! You can restore it anytime.', 'success');
+            $ok = move_to_trash('education_modes_master', $mode_id);
+            if ($ok) {
+                set_flash_message('Education mode moved to Trash! You can restore it anytime.', 'success');
+            } else {
+                set_flash_message('Failed to move education mode to Trash.', 'error');
+            }
         }
         redirect(BASE_URL . '/modules/settings/modes.php');
     }

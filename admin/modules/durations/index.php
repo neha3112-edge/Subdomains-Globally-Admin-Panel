@@ -89,10 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $dur_id = (int)($_POST['dur_id'] ?? 0);
         if ($dur_id > 0) {
-            $d_info = $db->query("SELECT duration_text FROM course_durations_master WHERE id = $dur_id")->fetch();
-            $title = $d_info['duration_text'] ?? 'Course Duration';
-            move_to_trash('course_durations_master', $dur_id, $title);
-            set_flash_message('Duration moved to Trash! You can restore it anytime.', 'success');
+            $ok = move_to_trash('course_durations_master', $dur_id);
+            if ($ok) {
+                set_flash_message('Duration moved to Trash! You can restore it anytime.', 'success');
+            } else {
+                set_flash_message('Failed to move duration to Trash.', 'error');
+            }
         }
         redirect(BASE_URL . '/modules/durations/index.php');
     }

@@ -79,26 +79,35 @@ function move_to_trash(string $source_table, int $original_id, string $item_titl
     $db = get_db_connection();
     sode_ensure_trash_system($db);
 
-    // 1. Fetch main record
-    $stmt = $db->prepare("SELECT * FROM `{$source_table}` WHERE id = ?");
-    $stmt->execute([$original_id]);
-    $main_row = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        // 1. Fetch main record
+        $stmt = $db->prepare("SELECT * FROM `{$source_table}` WHERE id = ?");
+        $stmt->execute([$original_id]);
+        $main_row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$main_row) {
-        return false;
-    }
+        if (!$main_row) {
+            return false;
+        }
 
-    // Determine clean human-readable title if empty
-    if (empty($item_title)) {
-        $item_title = $main_row['short_name'] 
-            ?? $main_row['full_name'] 
-            ?? $main_row['title'] 
-            ?? $main_row['name'] 
-            ?? $main_row['file_name'] 
-            ?? $main_row['key_code'] 
-            ?? $main_row['subject_name'] 
-            ?? ("Item #" . $original_id);
-    }
+        // Determine clean human-readable title if empty
+        if (empty($item_title)) {
+            $item_title = $main_row['duration_title']
+                ?? $main_row['specialization_name']
+                ?? $main_row['mode_name']
+                ?? $main_row['level_name']
+                ?? $main_row['short_name'] 
+                ?? $main_row['full_name'] 
+                ?? $main_row['title'] 
+                ?? $main_row['name'] 
+                ?? $main_row['file_name'] 
+                ?? $main_row['key_code'] 
+                ?? $main_row['subject_name'] 
+                ?? $main_row['news_text']
+                ?? ("Item #" . $original_id);
+            if (strlen($item_title) > 60) {
+                $item_title = mb_substr(strip_tags($item_title), 0, 57) . '...';
+            }
+        }
 
     // Determine normalized item_type
     $type_map = [
@@ -239,6 +248,10 @@ function move_to_trash(string $source_table, int $original_id, string $item_titl
     }
 
     return true;
+    } catch (Throwable $e) {
+        error_log("move_to_trash error: " . $e->getMessage());
+        return false;
+    }
 }
 
 /**
@@ -251,7 +264,8 @@ function restore_from_trash(int $trash_id): array {
     $db = get_db_connection();
     sode_ensure_trash_system($db);
 
-    $stmt = $db->prepare("SELECT * FROM admin_trash WHERE id = ?");
+    try {
+        $stmt = $db->prepare("SELECT * FROM admin_trash WHERE id = ?");
     $stmt->execute([$trash_id]);
     $trash_item = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -373,6 +387,10 @@ function restore_from_trash(int $trash_id): array {
         'success' => true, 
         'message' => 'Item "' . htmlspecialchars($trash_item['item_title']) . '" restored successfully!'
     ];
+    } catch (Throwable $e) {
+        error_log("restore_from_trash error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Restore failed: ' . $e->getMessage()];
+    }
 }
 
 /**
