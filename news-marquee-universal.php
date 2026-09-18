@@ -296,7 +296,6 @@ if (!function_exists('sode_news_marquee_render')) {
                 padding: 22px 20px 18px 20px;
                 box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
                 border: 1px solid rgba(191, 219, 254, 0.85);
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                 color: #1e3a8a;
                 box-sizing: border-box;
                 position: relative;
@@ -365,6 +364,7 @@ if (!function_exists('sode_news_marquee_render')) {
                 color: #243c7c;
                 display: block;
                 transition: color 0.2s ease, transform 0.2s ease;
+                font-family: "Poppins", Sans-serif !important;
             }
 
             #<?php echo esc_attr($unique_id); ?> .sode-news-link:hover {
@@ -385,6 +385,7 @@ if (!function_exists('sode_news_marquee_render')) {
                 font-weight: 500;
                 color: #243c7c;
                 display: inline;
+                font-family: "Poppins", Sans-serif !important;
             }
 
             #<?php echo esc_attr($unique_id); ?> .sode-news-badge {
