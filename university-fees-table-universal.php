@@ -419,14 +419,16 @@ if (!function_exists('sode_render_uni_fees_row_cells')) {
     {
         $name = !empty($uni['full_name']) ? $uni['full_name'] : (!empty($uni['name']) ? $uni['name'] : $uni['short_name']);
         $slug = !empty($uni['slug']) ? $uni['slug'] : sanitize_title($name);
+        $is_curr = !empty($uni['is_current']);
         ?>
         <!-- Mobile Compare Column (First) -->
         <td class="sode-uni-td-compare sode-col-mobile-only">
-            <button type="button" class="uni-compare-toggle-btn" data-uni-name="<?php echo esc_attr($name); ?>"
+            <button type="button" class="uni-compare-toggle-btn<?php echo $is_curr ? ' is-active' : ''; ?>" data-uni-name="<?php echo esc_attr($name); ?>"
                 data-uni-slug="<?php echo esc_attr($slug); ?>" data-course="<?php echo esc_attr($primary_course); ?>"
+                <?php if ($is_curr): ?>data-is-current="1"<?php endif; ?>
                 aria-label="Compare <?php echo esc_attr($name); ?>">
-                <span class="compare-icon">+</span>
-                <span class="compare-text">Compare</span>
+                <span class="compare-icon"><?php echo $is_curr ? '✓' : '+'; ?></span>
+                <span class="compare-text"><?php echo $is_curr ? 'Selected' : 'Compare'; ?></span>
             </button>
         </td>
 
@@ -447,11 +449,12 @@ if (!function_exists('sode_render_uni_fees_row_cells')) {
 
         <!-- Desktop Compare Column (Last) -->
         <td class="sode-uni-td-compare sode-col-desktop-only">
-            <button type="button" class="uni-compare-toggle-btn" data-uni-name="<?php echo esc_attr($name); ?>"
+            <button type="button" class="uni-compare-toggle-btn<?php echo $is_curr ? ' is-active' : ''; ?>" data-uni-name="<?php echo esc_attr($name); ?>"
                 data-uni-slug="<?php echo esc_attr($slug); ?>" data-course="<?php echo esc_attr($primary_course); ?>"
+                <?php if ($is_curr): ?>data-is-current="1"<?php endif; ?>
                 aria-label="Compare <?php echo esc_attr($name); ?>">
-                <span class="compare-icon">+</span>
-                <span class="compare-text">Add to Compare</span>
+                <span class="compare-icon"><?php echo $is_curr ? '✓' : '+'; ?></span>
+                <span class="compare-text"><?php echo $is_curr ? 'Selected' : 'Add to Compare'; ?></span>
             </button>
         </td>
         <?php
@@ -1108,6 +1111,19 @@ if (!function_exists('sode_render_university_fees_table')) {
                     var maxSelections = 3;
                     var toastTimer = null;
 
+                    // Auto-select current subdomain university on load
+                    function initCurrentUniversity() {
+                        var currentBtn = document.querySelector('.uni-compare-toggle-btn[data-is-current="1"]') || document.querySelector('.sode-row-current-uni .uni-compare-toggle-btn');
+                        if (currentBtn) {
+                            var slug = currentBtn.getAttribute('data-uni-slug');
+                            var name = currentBtn.getAttribute('data-uni-name');
+                            var course = currentBtn.getAttribute('data-course');
+                            if (slug && !selectedUnis.some(function (item) { return item.slug === slug; })) {
+                                selectedUnis.push({ name: name, slug: slug, course: course });
+                            }
+                        }
+                    }
+
                     function showToast(message) {
                         var toast = document.getElementById('uni-compare-toast');
                         if (!toast) return;
@@ -1260,6 +1276,17 @@ if (!function_exists('sode_render_university_fees_table')) {
                             return;
                         }
                     });
+
+                    // Initialize auto-selection for current subdomain university
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', function () {
+                            initCurrentUniversity();
+                            updateUI();
+                        });
+                    } else {
+                        initCurrentUniversity();
+                        updateUI();
+                    }
                 })();
             </script>
             <?php
