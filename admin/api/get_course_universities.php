@@ -85,56 +85,64 @@ try {
             }
 
             if ($matched_u) {
+                $clean_ck = str_replace('.', '', strtolower($course_slug));
                 $c_stmt = $db->prepare("
                     SELECT ucm.per_semester_fee, ucm.course_link, c.short_name as c_short, c.full_name as c_full
                     FROM university_course_mappings ucm
                     JOIN courses c ON ucm.course_id = c.id
-                    WHERE ucm.university_id = ? AND (LOWER(c.short_name) = LOWER(?) OR LOWER(c.full_name) LIKE LOWER(?))
+                    WHERE ucm.university_id = ? AND (
+                        REPLACE(LOWER(c.short_name), '.', '') = ? 
+                        OR LOWER(c.short_name) = LOWER(?) 
+                        OR LOWER(c.full_name) LIKE LOWER(?)
+                    )
                     LIMIT 1
                 ");
-                $c_stmt->execute([$matched_u['id'], $course_slug, '%' . $course_slug . '%']);
+                $c_stmt->execute([$matched_u['id'], $clean_ck, $course_slug, '%' . $course_slug . '%']);
                 $course_map = $c_stmt->fetch(PDO::FETCH_ASSOC);
 
-                $fee_display = '₹ --';
-                if (!empty($course_map['per_semester_fee'])) {
-                    $raw_fee = trim($course_map['per_semester_fee']);
-                    if (strpos($raw_fee, '₹') !== false) {
-                        $fee_display = $raw_fee;
-                    } else {
-                        $clean_num = str_replace([',', ' '], '', $raw_fee);
-                        if (is_numeric($clean_num)) {
-                            $fee_display = '₹' . number_format((float) $clean_num);
+                // Agar university me ye course mapped hai tabhi current_uni return karo
+                if ($course_map) {
+                    $fee_display = '₹ --';
+                    if (!empty($course_map['per_semester_fee'])) {
+                        $raw_fee = trim($course_map['per_semester_fee']);
+                        if (strpos($raw_fee, '₹') !== false) {
+                            $fee_display = $raw_fee;
                         } else {
-                            $fee_display = '₹' . $raw_fee;
+                            $clean_num = str_replace([',', ' '], '', $raw_fee);
+                            if (is_numeric($clean_num)) {
+                                $fee_display = '₹' . number_format((float) $clean_num);
+                            } else {
+                                $fee_display = '₹' . $raw_fee;
+                            }
                         }
                     }
+
+                    $a_stmt = $db->prepare("
+                        SELECT a.title 
+                        FROM university_accreditations ua 
+                        JOIN accreditations a ON ua.accreditation_id = a.id 
+                        WHERE ua.university_id = ?
+                        ORDER BY ua.id ASC
+                    ");
+                    $a_stmt->execute([$matched_u['id']]);
+                    $acc_titles = $a_stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $accreditation_str = !empty($acc_titles) ? implode(', ', $acc_titles) : 'UGC, NAAC A+';
+
+                    $link = !empty($course_map['course_link']) ? $course_map['course_link'] : (!empty($matched_u['official_url']) ? $matched_u['official_url'] : '');
+                    $advantage = !empty($matched_u['advantage_text']) ? $matched_u['advantage_text'] : 'Dedicated Career Support';
+
+                    $current_uni = [
+                        'name'          => $matched_u['full_name'],
+                        'slug'          => $matched_u['slug'],
+                        'fees'          => $fee_display,
+                        'location'      => $matched_u['location'] ?: 'India',
+                        'accreditation' => $accreditation_str,
+                        'advantage'     => $advantage,
+                        'link'          => $link,
+                        'new_tab'       => 1,
+                        'is_current'    => true,
+                    ];
                 }
-
-                $a_stmt = $db->prepare("
-                    SELECT a.title 
-                    FROM university_accreditations ua 
-                    JOIN accreditations a ON ua.accreditation_id = a.id 
-                    WHERE ua.university_id = ?
-                    ORDER BY ua.id ASC
-                ");
-                $a_stmt->execute([$matched_u['id']]);
-                $acc_titles = $a_stmt->fetchAll(PDO::FETCH_COLUMN);
-                $accreditation_str = !empty($acc_titles) ? implode(', ', $acc_titles) : 'UGC, NAAC A+';
-
-                $link = !empty($course_map['course_link']) ? $course_map['course_link'] : (!empty($matched_u['official_url']) ? $matched_u['official_url'] : '');
-                $advantage = !empty($matched_u['advantage_text']) ? $matched_u['advantage_text'] : 'Dedicated Career Support';
-
-                $current_uni = [
-                    'name'          => $matched_u['full_name'],
-                    'slug'          => $matched_u['slug'],
-                    'fees'          => $fee_display,
-                    'location'      => $matched_u['location'] ?: 'India',
-                    'accreditation' => $accreditation_str,
-                    'advantage'     => $advantage,
-                    'link'          => $link,
-                    'new_tab'       => 1,
-                    'is_current'    => true,
-                ];
             }
         }
 

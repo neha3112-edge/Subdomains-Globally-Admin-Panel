@@ -209,15 +209,26 @@ if (!function_exists('sode_get_current_uni_row_for_course')) {
             }
 
             // Fetch course fee and link from university_course_mappings
+            $clean_ck = str_replace('.', '', strtolower($course_key));
             $c_stmt = $db->prepare("
                 SELECT ucm.per_semester_fee, ucm.course_link, c.short_name as c_short, c.full_name as c_full
                 FROM university_course_mappings ucm
                 JOIN courses c ON ucm.course_id = c.id
-                WHERE ucm.university_id = ? AND (LOWER(c.short_name) = LOWER(?) OR LOWER(c.full_name) LIKE LOWER(?))
+                WHERE ucm.university_id = ? AND (
+                    REPLACE(LOWER(c.short_name), '.', '') = ? 
+                    OR LOWER(c.short_name) = LOWER(?) 
+                    OR LOWER(c.full_name) LIKE LOWER(?)
+                )
                 LIMIT 1
             ");
-            $c_stmt->execute([$uni['id'], $course_key, '%' . $course_key . '%']);
+            $c_stmt->execute([$uni['id'], $clean_ck, $course_key, '%' . $course_key . '%']);
             $course_map = $c_stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Agar university me ye course available hi nahi hai, to dynamically add mat karo
+            // Taaki table me normal universities ka data render ho
+            if (!$course_map) {
+                return null;
+            }
 
             // Format fee
             $fee_display = '₹ --';
