@@ -244,7 +244,7 @@ if (!function_exists('sode_announcements_list_render')) {
         ];
 
         ob_start();
-        $unique_id = 'sode-announcements-' . wp_rand(1000, 9999);
+        $unique_id = 'sode-announcements-' . substr(md5($uni_info['slug'] ?? 'dsu'), 0, 6);
         ?>
         <style>
             .sode-announcements-box {

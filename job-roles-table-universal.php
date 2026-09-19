@@ -242,7 +242,7 @@ function sode_job_roles_table_render($atts)
 
     static $table_instance = 0;
     $table_instance++;
-    $unique_id = 'job-roles-table-' . preg_replace('/[^a-z0-9]/', '', $course_key) . '-' . $table_instance . '-' . wp_rand(100, 999);
+    $unique_id = 'job-roles-table-' . preg_replace('/[^a-z0-9]/', '', $course_key) . '-' . $table_instance . '-' . substr(md5($current_uni_slug ?? 'dsu'), 0, 4);
 
     ob_start();
     ?>

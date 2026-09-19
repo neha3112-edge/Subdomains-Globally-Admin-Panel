@@ -213,7 +213,7 @@ if (!function_exists('sode_course_syllabus_render')) {
             }
         }
 
-        $uid = 'sode_syl_' . substr(md5(uniqid()), 0, 6);
+        $uid = 'sode_syl_' . substr(md5(($uni_slug ?? 'dsu') . '_' . ($course_slug ?? 'all')), 0, 6);
         $col_count = count($semesters);
         $col_percent = $col_count > 0 ? (100 / $col_count) : 25;
 

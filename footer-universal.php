@@ -369,7 +369,7 @@ if (!function_exists('sode_footer_render')) {
         }
 
         $tool_count = count($tools);
-        $uid = 'sode_footer_' . substr(md5(uniqid()), 0, 6);
+        $uid = 'sode_footer_' . substr(md5($uni_slug ?? 'dsu'), 0, 6);
         $use_slider_desktop = $tool_count > 4;
         $use_slider_mobile = $tool_count > 1;
 

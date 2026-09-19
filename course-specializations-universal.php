@@ -275,7 +275,7 @@ if (!function_exists('sode_course_specializations_render')) {
             ];
         }
 
-        $uid = 'sode_spec_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $uid = 'sode_spec_' . substr(md5(($uni_slug ?? 'dsu') . '_' . ($course_slug ?? 'all')), 0, 8);
 
         ob_start();
         ?>

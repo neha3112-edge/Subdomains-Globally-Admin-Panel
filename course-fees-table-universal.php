@@ -565,7 +565,7 @@ function course_table_shortcode( $atts ) {
     // Har table instance ka unique ID (agar ek hi page pe 2+ tables ho to conflict na ho)
     static $table_instance = 0;
     $table_instance++;
-    $unique_id = 'course-table-' . $course_key . '-' . $table_instance . '-' . wp_rand( 100, 999 );
+    $unique_id = 'course-table-' . $course_key . '-' . $table_instance . '-' . substr(md5($current_uni_slug ?? 'dsu'), 0, 4);
 
     ob_start();
     ?>

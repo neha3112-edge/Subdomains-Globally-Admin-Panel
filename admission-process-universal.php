@@ -310,7 +310,20 @@ if (!function_exists('sode_application_process_render')) {
             $gradient_stops[] = $s['color'];
         }
         $gradient_css = implode(', ', $gradient_stops);
-        $unique_id = 'sode_proc_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $unique_id = 'sode_proc_' . substr(md5($uni_profile['slug'] ?? 'dsu'), 0, 8);
+
+        if (!function_exists('sode_normalize_admission_svg')) {
+            function sode_normalize_admission_svg($svg_markup)
+            {
+                if (empty($svg_markup)) return '';
+                if (stripos($svg_markup, '<svg') !== false) {
+                    $clean_svg = preg_replace('/\s*(width|height)=["\'][^"\']*["\']/i', '', $svg_markup);
+                    $clean_svg = preg_replace('/<svg\b/i', '<svg width="18" height="18" style="width:18px!important;height:18px!important;max-width:18px!important;max-height:18px!important;display:block;margin:auto;"', $clean_svg);
+                    return $clean_svg;
+                }
+                return $svg_markup;
+            }
+        }
 
         ob_start();
         ?>
@@ -334,8 +347,8 @@ if (!function_exists('sode_application_process_render')) {
                         $isOdd = (($i + 1) % 2 === 1); ?>
                         <?php if ($isOdd): ?>
                             <div class="idolx-flex-item idolx-card">
-                                <div class="idolx-icon" style="background:<?php echo esc_attr($step['color']); ?>;">
-                                    <?php echo $step['icon']; ?></div>
+                                <div class="idolx-icon" style="background:<?php echo esc_attr($step['color']); ?>; width:36px!important; height:36px!important; min-width:36px!important; min-height:36px!important; max-width:36px!important; max-height:36px!important; border-radius:9px!important; display:inline-flex!important; align-items:center!important; justify-content:center!important; flex-shrink:0!important; margin-bottom:12px!important; box-shadow:0 3px 8px rgba(0,0,0,.18)!important;">
+                                    <?php echo sode_normalize_admission_svg($step['icon']); ?></div>
                                 <p class="idolx-card-title"><?php echo esc_html($step['title']); ?></p>
                                 <p class="idolx-card-desc"><?php echo esc_html($step['desc']); ?></p>
                             </div>
@@ -386,8 +399,8 @@ if (!function_exists('sode_application_process_render')) {
                         $isOdd = (($i + 1) % 2 === 1); ?>
                         <?php if (!$isOdd): ?>
                             <div class="idolx-flex-item idolx-card">
-                                <div class="idolx-icon" style="background:<?php echo esc_attr($step['color']); ?>;">
-                                    <?php echo $step['icon']; ?></div>
+                                <div class="idolx-icon" style="background:<?php echo esc_attr($step['color']); ?>; width:36px!important; height:36px!important; min-width:36px!important; min-height:36px!important; max-width:36px!important; max-height:36px!important; border-radius:9px!important; display:inline-flex!important; align-items:center!important; justify-content:center!important; flex-shrink:0!important; margin-bottom:12px!important; box-shadow:0 3px 8px rgba(0,0,0,.18)!important;">
+                                    <?php echo sode_normalize_admission_svg($step['icon']); ?></div>
                                 <p class="idolx-card-title"><?php echo esc_html($step['title']); ?></p>
                                 <p class="idolx-card-desc"><?php echo esc_html($step['desc']); ?></p>
                             </div>
@@ -406,8 +419,8 @@ if (!function_exists('sode_application_process_render')) {
                         <div class="idolx-node idolx-m-node" style="background:<?php echo esc_attr($step['color']); ?>;">
                             <?php echo esc_html($step['num']); ?></div>
                         <div class="idolx-card">
-                            <div class="idolx-icon" style="background:<?php echo esc_attr($step['color']); ?>;">
-                                <?php echo $step['icon']; ?></div>
+                            <div class="idolx-icon" style="background:<?php echo esc_attr($step['color']); ?>; width:36px!important; height:36px!important; min-width:36px!important; min-height:36px!important; max-width:36px!important; max-height:36px!important; border-radius:9px!important; display:inline-flex!important; align-items:center!important; justify-content:center!important; flex-shrink:0!important; margin-bottom:12px!important; box-shadow:0 3px 8px rgba(0,0,0,.18)!important;">
+                                <?php echo sode_normalize_admission_svg($step['icon']); ?></div>
                             <p class="idolx-card-title"><?php echo esc_html($step['title']); ?></p>
                             <p class="idolx-card-desc"><?php echo esc_html($step['desc']); ?></p>
                         </div>
@@ -418,6 +431,7 @@ if (!function_exists('sode_application_process_render')) {
         </section>
 
         <style>
+            .idolx-section,
             #<?php echo esc_attr($unique_id); ?>.idolx-section {
                 --ink: #10213B;
                 --paper: #F3F5F9;
@@ -428,15 +442,18 @@ if (!function_exists('sode_application_process_render')) {
                 width: 100%;
             }
 
+            .idolx-section *,
             #<?php echo esc_attr($unique_id); ?> * {
                 box-sizing: border-box;
             }
 
+            .idolx-section .idolx-head,
             #<?php echo esc_attr($unique_id); ?> .idolx-head {
                 margin: 0 auto 56px;
                 text-align: center;
             }
 
+            .idolx-section .idolx-title,
             #<?php echo esc_attr($unique_id); ?> .idolx-title {
                 font-weight: 800;
                 font-size: clamp(26px, 3.6vw, 42px);
@@ -445,10 +462,12 @@ if (!function_exists('sode_application_process_render')) {
                 line-height: 1.2;
             }
 
+            .idolx-section .idolx-title .idolx-grad,
             #<?php echo esc_attr($unique_id); ?> .idolx-title .idolx-grad {
                 color: #1E3A8A;
             }
 
+            .idolx-section .idolx-card,
             #<?php echo esc_attr($unique_id); ?> .idolx-card {
                 position: relative;
                 background: #fff;
@@ -463,28 +482,42 @@ if (!function_exists('sode_application_process_render')) {
                 transition: transform .2s ease, box-shadow .2s ease;
             }
 
+            .idolx-section .idolx-card:hover,
             #<?php echo esc_attr($unique_id); ?> .idolx-card:hover {
                 transform: translateY(-3px);
                 box-shadow: 0 10px 26px rgba(16, 33, 59, .12);
             }
 
+            .idolx-section .idolx-icon,
             #<?php echo esc_attr($unique_id); ?> .idolx-icon {
-                width: 36px;
-                height: 36px;
-                border-radius: 9px;
-                margin-bottom: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 3px 8px rgba(0, 0, 0, .18);
-                flex-shrink: 0;
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                min-height: 36px !important;
+                max-width: 36px !important;
+                max-height: 36px !important;
+                border-radius: 9px !important;
+                margin-bottom: 12px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, .18) !important;
+                flex-shrink: 0 !important;
             }
 
+            .idolx-section .idolx-icon svg,
             #<?php echo esc_attr($unique_id); ?> .idolx-icon svg {
-                width: 18px;
-                height: 18px;
+                width: 18px !important;
+                height: 18px !important;
+                min-width: 18px !important;
+                min-height: 18px !important;
+                max-width: 18px !important;
+                max-height: 18px !important;
+                display: block !important;
+                margin: auto !important;
             }
 
+            .idolx-section .idolx-card-title,
             #<?php echo esc_attr($unique_id); ?> .idolx-card-title {
                 font-size: 14px;
                 font-weight: 700;
@@ -494,6 +527,7 @@ if (!function_exists('sode_application_process_render')) {
                 text-align: center;
             }
 
+            .idolx-section .idolx-card-desc,
             #<?php echo esc_attr($unique_id); ?> .idolx-card-desc {
                 font-size: 12px;
                 font-weight: 400;
@@ -503,6 +537,7 @@ if (!function_exists('sode_application_process_render')) {
                 text-align: center;
             }
 
+            .idolx-section .idolx-node,
             #<?php echo esc_attr($unique_id); ?> .idolx-node {
                 width: 40px;
                 height: 40px;
@@ -519,6 +554,7 @@ if (!function_exists('sode_application_process_render')) {
                 flex-shrink: 0;
             }
 
+            .idolx-section .idolx-desktop,
             #<?php echo esc_attr($unique_id); ?> .idolx-desktop {
                 width: 100%;
                 max-width: 1560px;
@@ -526,6 +562,7 @@ if (!function_exists('sode_application_process_render')) {
                 position: relative;
             }
 
+            .idolx-section .idolx-flex-row,
             #<?php echo esc_attr($unique_id); ?> .idolx-flex-row {
                 display: grid;
                 grid-template-columns: repeat(8, 1fr);
@@ -535,7 +572,9 @@ if (!function_exists('sode_application_process_render')) {
                 position: relative;
             }
 
+            .idolx-section .idolx-flex-row.idolx-top-row,
             #<?php echo esc_attr($unique_id); ?> .idolx-flex-row.idolx-top-row,
+            .idolx-section .idolx-flex-row.idolx-bottom-row,
             #<?php echo esc_attr($unique_id); ?> .idolx-flex-row.idolx-bottom-row {
                 width: 94%;
                 margin-left: auto;
@@ -543,17 +582,20 @@ if (!function_exists('sode_application_process_render')) {
                 float: none;
             }
 
+            .idolx-section .idolx-flex-item,
             #<?php echo esc_attr($unique_id); ?> .idolx-flex-item {
                 min-width: 0;
                 visibility: hidden;
             }
 
+            .idolx-section .idolx-flex-item.idolx-card,
             #<?php echo esc_attr($unique_id); ?> .idolx-flex-item.idolx-card {
                 visibility: visible;
                 width: 100%;
                 min-width: 0;
             }
 
+            .idolx-section .idolx-stem-row,
             #<?php echo esc_attr($unique_id); ?> .idolx-stem-row {
                 display: grid;
                 grid-template-columns: repeat(8, 1fr);
@@ -563,6 +605,7 @@ if (!function_exists('sode_application_process_render')) {
                 gap: 0;
             }
 
+            .idolx-section .idolx-stem-cell,
             #<?php echo esc_attr($unique_id); ?> .idolx-stem-cell {
                 min-width: 0;
                 display: flex;
@@ -570,12 +613,14 @@ if (!function_exists('sode_application_process_render')) {
                 align-items: flex-start;
             }
 
+            .idolx-section .idolx-stem,
             #<?php echo esc_attr($unique_id); ?> .idolx-stem {
                 width: 0;
                 height: 26px;
                 border-left: 2px dashed var(--c);
             }
 
+            .idolx-section .idolx-track-row,
             #<?php echo esc_attr($unique_id); ?> .idolx-track-row {
                 position: relative;
                 display: grid;
@@ -587,6 +632,7 @@ if (!function_exists('sode_application_process_render')) {
                 align-items: center;
             }
 
+            .idolx-section .idolx-track-line,
             #<?php echo esc_attr($unique_id); ?> .idolx-track-line {
                 position: absolute;
                 left: 6.25%;
@@ -601,6 +647,7 @@ if (!function_exists('sode_application_process_render')) {
                 z-index: 1;
             }
 
+            .idolx-section .idolx-node-cell,
             #<?php echo esc_attr($unique_id); ?> .idolx-node-cell {
                 min-width: 0;
                 display: flex;
@@ -610,19 +657,23 @@ if (!function_exists('sode_application_process_render')) {
                 z-index: 3;
             }
 
+            .idolx-section .idolx-mobile,
             #<?php echo esc_attr($unique_id); ?> .idolx-mobile {
                 display: none;
             }
 
             @media (max-width: 900px) {
+                .idolx-section,
                 #<?php echo esc_attr($unique_id); ?>.idolx-section {
                     padding: 40px 20px;
                 }
 
+                .idolx-section .idolx-desktop,
                 #<?php echo esc_attr($unique_id); ?> .idolx-desktop {
                     display: none;
                 }
 
+                .idolx-section .idolx-mobile,
                 #<?php echo esc_attr($unique_id); ?> .idolx-mobile {
                     display: block;
                     width: 100%;
@@ -632,6 +683,7 @@ if (!function_exists('sode_application_process_render')) {
                     padding-left: 56px;
                 }
 
+                .idolx-section .idolx-mobile::before,
                 #<?php echo esc_attr($unique_id); ?> .idolx-mobile::before {
                     content: "";
                     position: absolute;
@@ -645,15 +697,18 @@ if (!function_exists('sode_application_process_render')) {
                         );
                 }
 
+                .idolx-section .idolx-m-item,
                 #<?php echo esc_attr($unique_id); ?> .idolx-m-item {
                     position: relative;
                     margin-bottom: 10px;
                 }
 
+                .idolx-section .idolx-m-item:last-child,
                 #<?php echo esc_attr($unique_id); ?> .idolx-m-item:last-child {
                     margin-bottom: 0;
                 }
 
+                .idolx-section .idolx-m-node,
                 #<?php echo esc_attr($unique_id); ?> .idolx-m-node {
                     position: absolute;
                     left: -56px;
@@ -661,24 +716,29 @@ if (!function_exists('sode_application_process_render')) {
                     transform: translateY(-50%);
                 }
 
+                .idolx-section .idolx-head,
                 #<?php echo esc_attr($unique_id); ?> .idolx-head {
                     margin-bottom: 44px;
                 }
 
+                .idolx-section .idolx-card,
                 #<?php echo esc_attr($unique_id); ?> .idolx-card {
                     align-items: flex-start;
                     text-align: left;
                 }
 
+                .idolx-section .idolx-icon,
                 #<?php echo esc_attr($unique_id); ?> .idolx-icon {
-                    margin-left: 0;
-                    margin-right: 0;
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
                 }
 
+                .idolx-section .idolx-card-title,
                 #<?php echo esc_attr($unique_id); ?> .idolx-card-title {
                     text-align: left;
                 }
 
+                .idolx-section .idolx-card-desc,
                 #<?php echo esc_attr($unique_id); ?> .idolx-card-desc {
                     text-align: left;
                 }
@@ -686,26 +746,34 @@ if (!function_exists('sode_application_process_render')) {
 
             @media only screen and (min-width: 769px) {
 
+                .idolx-section .idolx-flex-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-row,
+                .idolx-section .idolx-flex-row.idolx-top-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-row.idolx-top-row,
+                .idolx-section .idolx-flex-row.idolx-bottom-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-row.idolx-bottom-row,
+                .idolx-section .idolx-stem-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-stem-row,
+                .idolx-section .idolx-track-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-track-row {
                     width: 94%;
                     margin-left: auto;
                     margin-right: auto;
                 }
 
+                .idolx-section .idolx-flex-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-row {
                     display: grid;
                     grid-template-columns: repeat(8, 1fr);
                     gap: 0;
                 }
 
+                .idolx-section .idolx-flex-item,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-item {
                     visibility: hidden;
                 }
 
+                .idolx-section .idolx-flex-item.idolx-card,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-item.idolx-card {
                     display: flex !important;
                     visibility: visible;
@@ -714,12 +782,14 @@ if (!function_exists('sode_application_process_render')) {
                     justify-self: center;
                 }
 
+                .idolx-section .idolx-flex-row.idolx-bottom-row,
                 #<?php echo esc_attr($unique_id); ?> .idolx-flex-row.idolx-bottom-row {
                     float: none;
                 }
             }
 
             @media (prefers-reduced-motion: reduce) {
+                .idolx-section .idolx-card,
                 #<?php echo esc_attr($unique_id); ?> .idolx-card {
                     transition: none;
                 }

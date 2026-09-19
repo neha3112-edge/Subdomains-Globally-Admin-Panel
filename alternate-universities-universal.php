@@ -344,7 +344,7 @@ if (!function_exists('sode_alternate_universities_render')) {
             $visible_limit = (int) $atts['limit'];
         }
         $total_unis = count($universities);
-        $uid = 'sode_alt_' . (function_exists('wp_rand') ? wp_rand(1000, 99999) : mt_rand(1000, 99999));
+        $uid = 'sode_alt_' . substr(md5($current_uni_slug ?? 'dsu'), 0, 6);
 
         // Preload states for the inquiry popup
         $indian_states = [

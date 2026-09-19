@@ -233,7 +233,7 @@ if (!function_exists('sode_news_marquee_render')) {
         } else {
             $anim_duration = max(6, (int) ($count * 2.2)) . 's';
         }
-        $unique_id = 'sode_news_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $unique_id = 'sode_news_' . substr(md5($uni_slug ?? 'dsu'), 0, 8);
 
         ob_start();
         ?>

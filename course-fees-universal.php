@@ -315,7 +315,7 @@ if (!function_exists('sode_course_fees_render')) {
             ];
         }
 
-        $uid = 'sode_fees_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $uid = 'sode_fees_' . substr(md5(($uni_slug ?? 'dsu') . '_' . ($course_slug ?? 'all')), 0, 8);
 
         ob_start();
         ?>

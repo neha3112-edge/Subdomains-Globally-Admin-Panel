@@ -518,7 +518,7 @@ if (!function_exists('sode_render_university_fees_table')) {
 
         static $inst_count = 0;
         $inst_count++;
-        $table_id = 'sode-uni-fees-table-' . $inst_count . '-' . wp_rand(100, 999);
+        $table_id = 'sode-uni-fees-table-' . $inst_count . '-' . substr(md5($current_uni_slug ?? 'dsu'), 0, 4);
 
         // Primary course slug for compare button (first column)
         $primary_course = !empty($columns[0]['short_name']) ? strtolower(trim($columns[0]['short_name'])) : 'mba';

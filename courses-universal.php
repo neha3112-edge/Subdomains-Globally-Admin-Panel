@@ -344,7 +344,7 @@ if (!function_exists('sode_courses_tabs_render')) {
 
         // Active mode: default Online if available, else Distance
         $active_mode = $has_online ? 'online' : ($has_distance ? 'distance' : 'online');
-        $unique_id = 'sode_courses_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $unique_id = 'sode_courses_' . substr(md5($uni_slug ?? 'dsu'), 0, 8);
 
         ob_start();
         ?>
@@ -1377,7 +1377,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             return '';
         }
 
-        $table_id = 'sode_elig_tbl_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $table_id = 'sode_elig_tbl_' . substr(md5($uni_slug ?? 'dsu'), 0, 8);
 
         ob_start();
         ?>
@@ -1701,7 +1701,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             return '';
         }
 
-        $table_id = 'sode_prog_tbl_' . substr(md5(uniqid(rand(), true)), 0, 8);
+        $table_id = 'sode_prog_tbl_' . substr(md5($uni_slug ?? 'dsu'), 0, 8);
 
         ob_start();
         ?>
