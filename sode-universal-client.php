@@ -344,6 +344,59 @@ add_action('init', function () {
     exit;
 }, 1);
 
+// ====================================================
+// 🚀 WP ROCKET COMPATIBILITY & LAYOUT PROTECTION
+// Prevents WP Rocket from breaking layouts or delaying critical scripts
+// ====================================================
+add_filter('rocket_delay_js_exclusions', function ($exclusions) {
+    if (!is_array($exclusions)) $exclusions = [];
+    $sode_exclusions = [
+        'sode',
+        'sode-global-keys-engine',
+        'sf-ai-track',
+        'sf-slider',
+        'sf-cta',
+        'lead-form',
+        'edu_banner',
+        'custom_lead_form',
+        'disclaimer-main-popup',
+        'privacy-main-popup',
+        'term-main-popup'
+    ];
+    return array_unique(array_merge($exclusions, $sode_exclusions));
+}, 99);
+
+add_filter('rocket_exclude_js', function ($exclusions) {
+    if (!is_array($exclusions)) $exclusions = [];
+    $sode_exclusions = [
+        'sode-global-keys-engine',
+        'sode-universal-client'
+    ];
+    return array_unique(array_merge($exclusions, $sode_exclusions));
+}, 99);
+
+add_filter('rocket_rucss_safelist', function ($safelist) {
+    if (!is_array($safelist)) $safelist = [];
+    $sode_safelist = [
+        'sode.*',
+        'sf-.*',
+        'edu-.*',
+        'lead-.*',
+        'uni-.*',
+        'course-.*',
+        'table-.*',
+        '.*popup.*'
+    ];
+    return array_unique(array_merge($safelist, $sode_safelist));
+}, 99);
+
+add_filter('rocket_exclude_css', function ($exclusions) {
+    if (!is_array($exclusions)) $exclusions = [];
+    $exclusions[] = 'sode-universal-client';
+    $exclusions[] = 'footer-universal';
+    return array_unique($exclusions);
+}, 99);
+
 
 /**
  * Helper: Detect current university slug from subdomain or constant
