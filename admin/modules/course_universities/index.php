@@ -180,12 +180,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                     Courses are synced directly from Courses Master. This table reflects globally across client subdomains.
                 </p>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="btn-sm action-btn" style="text-decoration:none; font-size:12px; padding:5px 10px; display:inline-flex; align-items:center; gap:5px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:nowrap;">
+                <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="btn-secondary btn-sm" style="text-decoration:none; font-size:12px; padding:6px 14px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; border-radius:8px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
                     Courses Master
                 </a>
-                <span class="badge badge-info" style="font-size:12px; padding:6px 12px;">
+                <span class="badge badge-info" style="font-size:12px; padding:6px 12px; white-space:nowrap;">
                     Total Courses: <?php echo $total_courses; ?>
                 </span>
             </div>

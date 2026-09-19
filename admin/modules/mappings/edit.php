@@ -165,7 +165,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
     <span class="section-heading-sm" style="margin-bottom:0;">Edit Mapping: <?php echo htmlspecialchars($mapping['uni_short'] . ' - ' . $mapping['course_short']); ?></span>
-    <a href="<?php echo BASE_URL; ?>/modules/mappings/index.php" class="btn-sm action-btn" style="width:auto; padding:6px 14px; text-decoration:none;">&larr; Back to Mappings</a>
+    <a href="<?php echo BASE_URL; ?>/modules/mappings/index.php" class="btn-secondary btn-sm" style="text-decoration:none;">&larr; Back to Mappings</a>
 </div>
 
 <form method="POST" action="">

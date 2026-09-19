@@ -279,7 +279,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
     <span class="section-heading-sm" style="margin-bottom:0;">New University Details</span>
-    <a href="<?php echo BASE_URL; ?>/modules/universities/index.php" class="btn-sm action-btn" style="width:auto; padding:6px 14px; text-decoration:none;">&larr; Back to List</a>
+    <a href="<?php echo BASE_URL; ?>/modules/universities/index.php" class="btn-secondary btn-sm" style="text-decoration:none;">&larr; Back to List</a>
 </div>
 
 <form method="POST" action="">

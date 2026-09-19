@@ -124,7 +124,7 @@ require_once ADMIN_PATH . '/includes/header.php';
         <div style="font-size:12px; color:var(--text-dim);">Modify degree program title, slug, level tier, or descriptive syllabus overview</div>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
-        <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="btn-sm action-btn" style="width:auto; padding:7px 16px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+        <a href="<?php echo BASE_URL; ?>/modules/courses/index.php" class="btn-secondary btn-sm" style="text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
             &larr; Back to All Courses
         </a>
     </div>

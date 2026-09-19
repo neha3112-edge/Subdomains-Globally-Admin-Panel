@@ -454,8 +454,8 @@ require_once ADMIN_PATH . '/includes/header.php';
     <span class="section-heading-sm" style="margin-bottom:0;">Edit University:
         <?php echo htmlspecialchars($uni['short_name']); ?></span>
     <div style="display:flex; gap:10px;">
-        <a href="<?php echo BASE_URL; ?>/modules/universities/index.php" class="btn-sm action-btn"
-            style="width:auto; padding:6px 14px; text-decoration:none;">&larr; Back to List</a>
+        <a href="<?php echo BASE_URL; ?>/modules/universities/index.php" class="btn-secondary btn-sm"
+            style="text-decoration:none;">&larr; Back to List</a>
     </div>
 </div>
 

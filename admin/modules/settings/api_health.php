@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('settings');
@@ -237,8 +237,8 @@ require_once ADMIN_PATH . '/includes/header.php';
         <span class="last-checked-info" id="last-checked-info">Checking APIs…</span>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
-        <a href="<?php echo BASE_URL; ?>/modules/settings/api_integrations.php" class="btn-sm action-btn" style="display:flex;align-items:center;gap:6px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93l-1.41 1.41M4.93 19.07l1.41-1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
+        <a href="<?php echo BASE_URL; ?>/modules/settings/api_integrations.php" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93l-1.41 1.41M4.93 19.07l1.41-1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
             Configure APIs
         </a>
     </div>
