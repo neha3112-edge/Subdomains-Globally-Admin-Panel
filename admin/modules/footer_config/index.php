@@ -503,6 +503,10 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <strong>CSS Class</strong> (optional): <code>disclaimer-main-popup</code> | <code>privacy-main-popup</code> | <code>term-main-popup</code>. &nbsp;|&nbsp;
                 <strong>New Tab</strong> — check to open in <code>target="_blank"</code>.
             </p>
+            <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:12px; color:var(--text-light, #e2e8f0); display:flex; align-items:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#818cf8; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span><strong>Global Contact Info:</strong> <code>Phone | Email | Address</code> are rendered below the navigation links and automatically fetched from <a href="../global_keys/index.php" style="color:#818cf8; text-decoration:underline;">Global Keys</a> (<code>$PHONE$</code>, <code>$EMAIL$</code>, and <code>$ADDRESS$</code>).</span>
+            </div>
 
             <!-- Column headers -->
             <div class="fc-link-rows-header">

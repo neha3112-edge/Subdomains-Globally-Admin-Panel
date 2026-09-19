@@ -63,8 +63,38 @@ if (!empty($official_url) && strpos($legal_text, '{official_url}') !== false) {
     $legal_text = str_replace('{official_url}', $linked, $legal_text);
 }
 
-// Ensure about_logo_url is a full absolute URL
-$about_logo = !empty($row['about_logo_url']) ? get_asset_url($row['about_logo_url']) : '';
+// Fetch Global Keys for Contact Information (Phone, Email, Address)
+$contact_phone = '+91 70657 777 55';
+$contact_phone_link = 'tel:+917065777755';
+$contact_email = 'support@distanceeducationschool.com';
+$contact_email_link = 'mailto:support@distanceeducationschool.com';
+$contact_address = 'Unit No. 1, 3rd Floor Vardhman Trade Centre, Nehru Place, New Delhi - 110019';
+$contact_address_link = '';
+
+if ($db) {
+    try {
+        $gk_stmt = $db->query("SELECT key_code, key_value, link_url FROM global_keys WHERE is_active = 1");
+        $gk_rows = $gk_stmt ? $gk_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        foreach ($gk_rows as $gk) {
+            $code = strtoupper(trim($gk['key_code'], '$ '));
+            $val  = trim($gk['key_value']);
+            $url  = trim($gk['link_url'] ?? '');
+
+            if (in_array($code, ['PHONE', 'PHONE_NUMBER', 'MOBILE', 'CONTACT_NUMBER'])) {
+                if (!empty($val)) $contact_phone = $val;
+                $contact_phone_link = !empty($url) ? $url : ('tel:' . preg_replace('/[^0-9+]/', '', $val));
+            }
+            if (in_array($code, ['EMAIL', 'EMAIL_ADDRESS', 'SUPPORT_EMAIL', 'CONTACT_EMAIL'])) {
+                if (!empty($val)) $contact_email = $val;
+                $contact_email_link = !empty($url) ? $url : ('mailto:' . $val);
+            }
+            if (in_array($code, ['ADDRESS', 'OFFICE_ADDRESS', 'LOCATION', 'CONTACT_ADDRESS'])) {
+                if (!empty($val)) $contact_address = $val;
+                if (!empty($url)) $contact_address_link = $url;
+            }
+        }
+    } catch (Exception $e) {}
+}
 
 echo json_encode([
     'success'              => true,
@@ -80,13 +110,20 @@ echo json_encode([
     'ai_tools_heading'     => $row['ai_tools_heading'] ?? 'Explore AI Powered Tools',
     'ai_tools_subtext'     => $row['ai_tools_subtext'] ?? 'Make smarter education decisions with AI-powered tools',
     'ai_tools'             => $ai_tools,
-    'about_logo_url'       => $about_logo,
+    'about_logo_url'       => $row['about_logo_url'] ?? '',
     'about_title'          => $row['about_title']     ?? 'About SODE™',
     'about_subtitle'       => $row['about_subtitle']  ?? '(School of Online and Distance Education)',
     'about_sode'           => $row['about_sode_text'] ?? '',
     'legal_notice_heading' => $row['legal_notice_heading'] ?? 'Legal Notice',
     'legal_notice'         => $legal_text,
     'footer_links'         => $footer_links,
+    'contact_phone'        => $contact_phone,
+    'contact_phone_link'   => $contact_phone_link,
+    'contact_email'        => $contact_email,
+    'contact_email_link'   => $contact_email_link,
+    'contact_address'      => $contact_address,
+    'contact_address_link' => $contact_address_link,
     'copyright'            => $row['copyright_text'] ?? '© ' . date('Y') . ' SODE™ Counselling Services LLP',
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
 

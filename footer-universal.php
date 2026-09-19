@@ -122,6 +122,12 @@ if (!function_exists('sode_get_footer_config')) {
                             'legal_notice_heading' => $json['legal_notice_heading'] ?? '',
                             'legal_notice_text'    => $json['legal_notice']         ?? '',
                             'footer_links'         => $json['footer_links']         ?? [],
+                            'contact_phone'        => $json['contact_phone']        ?? '',
+                            'contact_phone_link'   => $json['contact_phone_link']   ?? '',
+                            'contact_email'        => $json['contact_email']        ?? '',
+                            'contact_email_link'   => $json['contact_email_link']   ?? '',
+                            'contact_address'      => $json['contact_address']      ?? '',
+                            'contact_address_link' => $json['contact_address_link'] ?? '',
                             'copyright_text'       => $json['copyright']            ?? '',
                             'official_url'         => $json['official_url']         ?? '',
                         ];
@@ -263,8 +269,61 @@ if (!function_exists('sode_footer_fallback_config')) {
                 ['label' => 'Privacy Policy', 'url' => '#privacy-popup', 'class' => 'privacy-main-popup'],
                 ['label' => 'Terms & Conditions', 'url' => '#terms-popup', 'class' => 'term-main-popup'],
             ],
+            'contact_phone' => '+91 70657 777 55',
+            'contact_phone_link' => 'tel:+917065777755',
+            'contact_email' => 'support@distanceeducationschool.com',
+            'contact_email_link' => 'mailto:support@distanceeducationschool.com',
+            'contact_address' => 'Unit No. 1, 3rd Floor Vardhman Trade Centre, Nehru Place, New Delhi - 110019',
+            'contact_address_link' => '',
             'copyright_text' => '© ' . date('Y') . ' SODE™ Counselling Services LLP',
         ];
+    }
+}
+
+// Helper: fetch contact info dynamically from global_keys or fallback to footer config
+if (!function_exists('sode_footer_get_contact_info')) {
+    function sode_footer_get_contact_info($cfg = [])
+    {
+        $contact = [
+            'phone'        => !empty($cfg['contact_phone']) ? $cfg['contact_phone'] : '+91 70657 777 55',
+            'phone_link'   => !empty($cfg['contact_phone_link']) ? $cfg['contact_phone_link'] : 'tel:+917065777755',
+            'email'        => !empty($cfg['contact_email']) ? $cfg['contact_email'] : 'support@distanceeducationschool.com',
+            'email_link'   => !empty($cfg['contact_email_link']) ? $cfg['contact_email_link'] : 'mailto:support@distanceeducationschool.com',
+            'address'      => !empty($cfg['contact_address']) ? $cfg['contact_address'] : 'Unit No. 1, 3rd Floor Vardhman Trade Centre, Nehru Place, New Delhi - 110019',
+            'address_link' => !empty($cfg['contact_address_link']) ? $cfg['contact_address_link'] : '',
+        ];
+
+        if (function_exists('get_db_connection')) {
+            try {
+                $db = get_db_connection();
+                if ($db) {
+                    $gk_stmt = $db->query("SELECT key_code, key_value, link_url FROM global_keys WHERE is_active = 1");
+                    if ($gk_stmt) {
+                        $gk_rows = $gk_stmt->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($gk_rows as $gk) {
+                            $code = strtoupper(trim($gk['key_code'], '$ '));
+                            $val  = trim($gk['key_value']);
+                            $url  = trim($gk['link_url'] ?? '');
+
+                            if (in_array($code, ['PHONE', 'PHONE_NUMBER', 'MOBILE', 'CONTACT_NUMBER'])) {
+                                if (!empty($val)) $contact['phone'] = $val;
+                                $contact['phone_link'] = !empty($url) ? $url : ('tel:' . preg_replace('/[^0-9+]/', '', $val));
+                            }
+                            if (in_array($code, ['EMAIL', 'EMAIL_ADDRESS', 'SUPPORT_EMAIL', 'CONTACT_EMAIL'])) {
+                                if (!empty($val)) $contact['email'] = $val;
+                                $contact['email_link'] = !empty($url) ? $url : ('mailto:' . $val);
+                            }
+                            if (in_array($code, ['ADDRESS', 'OFFICE_ADDRESS', 'LOCATION', 'CONTACT_ADDRESS'])) {
+                                if (!empty($val)) $contact['address'] = $val;
+                                if (!empty($url)) $contact['address_link'] = $url;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $e) {}
+        }
+
+        return $contact;
     }
 }
 
@@ -294,6 +353,7 @@ if (!function_exists('sode_footer_render')) {
         $cfg = sode_get_footer_config($uni_slug);
         $tools = $cfg['ai_tools'] ?? [];
         $links = $cfg['footer_links'] ?? [];
+        $contacts = sode_footer_get_contact_info($cfg);
 
         // Sort by sort_order
         if (!empty($tools)) {
@@ -518,6 +578,30 @@ if (!function_exists('sode_footer_render')) {
                             <?php if ($i > 0): ?><span class="sf-link-sep">|</span><?php endif; ?>
                             <a href="<?php echo $href; ?>" class="sf-footer-link <?php echo $cls; ?>" <?php echo $target; ?>><?php echo $label; ?></a>
                         <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($contacts['phone']) || !empty($contacts['email']) || !empty($contacts['address'])): ?>
+                    <div class="sf-footer-contacts">
+                        <?php 
+                        $has_prev = false;
+                        if (!empty($contacts['phone'])): 
+                            $has_prev = true;
+                        ?>
+                            <a href="<?php echo htmlspecialchars($contacts['phone_link']); ?>" class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['phone']); ?></a>
+                        <?php endif; ?>
+                        <?php if (!empty($contacts['email'])): ?>
+                            <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif; $has_prev = true; ?>
+                            <a href="<?php echo htmlspecialchars($contacts['email_link']); ?>" class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['email']); ?></a>
+                        <?php endif; ?>
+                        <?php if (!empty($contacts['address'])): ?>
+                            <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif; ?>
+                            <?php if (!empty($contacts['address_link'])): ?>
+                                <a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener" class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a>
+                            <?php else: ?>
+                                <span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -881,6 +965,36 @@ if (!function_exists('sode_footer_render')) {
             #<?php echo $uid; ?> .sf-link-sep {
                 color: rgba(255, 255, 255, 0.74);
                 font-size: 13px;
+            }
+
+            #<?php echo $uid; ?> .sf-footer-contacts {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                gap: 8px;
+                margin: 0 0 14px;
+                font-size: 12px;
+                color: #fff;
+                line-height: 1.5;
+            }
+
+            #<?php echo $uid; ?> .sf-footer-contact-link {
+                color: #fff;
+                text-decoration: underline;
+                font-size: 12px;
+                transition: color .2s;
+                cursor: pointer;
+            }
+
+            #<?php echo $uid; ?> .sf-footer-contact-link:hover {
+                color: #F5C518;
+                text-decoration: underline !important;
+            }
+
+            #<?php echo $uid; ?> .sf-footer-contact-text {
+                color: #fff;
+                font-size: 12px;
             }
 
             #<?php echo $uid; ?> .sf-copyright {
