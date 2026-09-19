@@ -592,23 +592,19 @@ if (!function_exists('sode_footer_render')) {
                         if (!empty($contacts['phone'])):
                             $has_prev = true;
                             ?>
-                            <a href="<?php echo htmlspecialchars($contacts['phone_link']); ?>"
-                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['phone']); ?></a>
+                            <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Phone:</strong> <a href="<?php echo htmlspecialchars($contacts['phone_link']); ?>"
+                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['phone']); ?></a></span>
                         <?php endif; ?>
                         <?php if (!empty($contacts['email'])): ?>
                             <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif;
                             $has_prev = true; ?>
-                            <a href="<?php echo htmlspecialchars($contacts['email_link']); ?>"
-                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['email']); ?></a>
+                            <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Email:</strong> <a href="<?php echo htmlspecialchars($contacts['email_link']); ?>"
+                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['email']); ?></a></span>
                         <?php endif; ?>
                         <?php if (!empty($contacts['address'])): ?>
                             <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif; ?>
-                            <?php if (!empty($contacts['address_link'])): ?>
-                                <a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
-                                    class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a>
-                            <?php else: ?>
-                                <span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span>
-                            <?php endif; ?>
+                            <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Address:</strong> <?php if (!empty($contacts['address_link'])): ?><a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
+                                    class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a><?php else: ?><span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span><?php endif; ?></span>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -987,6 +983,21 @@ if (!function_exists('sode_footer_render')) {
                 line-height: 1.5;
             }
 
+            .sode-footer-wrap .sf-footer-contact-item,
+            #<?php echo $uid; ?> .sf-footer-contact-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .sode-footer-wrap .sf-footer-contact-label,
+            #<?php echo $uid; ?> .sf-footer-contact-label {
+                color: #fff;
+                font-weight: 700;
+                font-size: 12px;
+            }
+
+            .sode-footer-wrap .sf-footer-contact-link,
             #<?php echo $uid; ?> .sf-footer-contact-link {
                 color: #fff;
                 font-size: 12px;
@@ -994,10 +1005,12 @@ if (!function_exists('sode_footer_render')) {
                 cursor: pointer;
             }
 
+            .sode-footer-wrap .sf-footer-contact-link:hover,
             #<?php echo $uid; ?> .sf-footer-contact-link:hover {
                 color: #F5C518;
             }
 
+            .sode-footer-wrap .sf-footer-contact-text,
             #<?php echo $uid; ?> .sf-footer-contact-text {
                 color: #fff;
                 font-size: 12px;
