@@ -76,15 +76,10 @@ if (!defined('JOB_ROLES_CENTRAL_API_URL')) {
  */
 function get_job_roles_table_data($course_key)
 {
-    static $cache = [];
     $course_key = strtolower(trim($course_key));
 
     if (empty($course_key)) {
         $course_key = 'mba';
-    }
-
-    if (isset($cache[$course_key])) {
-        return $cache[$course_key];
     }
 
     // 1. Try Local Database Connection
@@ -141,14 +136,17 @@ function get_job_roles_table_data($course_key)
         }
     }
 
-    // 2. Central API Fallback (for remote WordPress subdomains without direct DB access)
-    $api_url = JOB_ROLES_CENTRAL_API_URL . '?course=' . urlencode($course_key);
+    // 2. Central API Fallback (for remote WordPress subdomains - Live & Real-Time)
+    $api_url = JOB_ROLES_CENTRAL_API_URL . '?course=' . urlencode($course_key) . '&_t=' . time();
     $json_content = null;
 
     if (function_exists('wp_remote_get')) {
         $response = wp_remote_get($api_url, [
             'timeout' => 8,
-            'headers' => ['Cache-Control' => 'no-cache']
+            'headers' => [
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache'
+            ]
         ]);
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $json_content = wp_remote_retrieve_body($response);
@@ -157,7 +155,10 @@ function get_job_roles_table_data($course_key)
 
     if (!$json_content && function_exists('file_get_contents')) {
         $ctx = stream_context_create([
-            'http' => ['timeout' => 5]
+            'http' => [
+                'timeout' => 5,
+                'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+            ]
         ]);
         $json_content = @file_get_contents($api_url, false, $ctx);
     }
@@ -173,7 +174,6 @@ function get_job_roles_table_data($course_key)
                 'columns' => $api_res['columns'] ?? ["Job Role", "Role Description", "Salary Range in India"],
                 'roles' => $api_res['roles']
             ];
-            $cache[$course_key] = $data;
             return $data;
         }
     }

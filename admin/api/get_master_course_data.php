@@ -4,6 +4,9 @@ if (!headers_sent()) {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+    header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
 }
 
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

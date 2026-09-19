@@ -108,11 +108,6 @@ if (!function_exists('sode_alt_format_fee')) {
 if (!function_exists('sode_get_alternate_universities_list')) {
     function sode_get_alternate_universities_list()
     {
-        static $cached = null;
-        if ($cached !== null) {
-            return $cached;
-        }
-
         // 1. Try Local Database Connection
         if (!function_exists('get_db_connection')) {
             $possible_configs = [
@@ -225,12 +220,18 @@ if (!function_exists('sode_get_alternate_universities_list')) {
             }
         }
 
-        // 2. Fallback: Central API
-        $api_url = (defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com') . '/admin/api/get_alternate_universities.php';
+        // 2. Fallback: Central API (Live & Real-Time)
+        $api_url = (defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com') . '/admin/api/get_alternate_universities.php?_t=' . time();
 
         $data = null;
         if (function_exists('wp_remote_get')) {
-            $resp = wp_remote_get($api_url, ['timeout' => 8, 'headers' => ['Cache-Control' => 'no-cache']]);
+            $resp = wp_remote_get($api_url, [
+                'timeout' => 8, 
+                'headers' => [
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache'
+                ]
+            ]);
             if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                 $body = json_decode(wp_remote_retrieve_body($resp), true);
                 if (!empty($body['data'])) {
@@ -238,7 +239,12 @@ if (!function_exists('sode_get_alternate_universities_list')) {
                 }
             }
         } else {
-            $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+            $ctx = stream_context_create([
+                'http' => [
+                    'timeout' => 5,
+                    'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                ]
+            ]);
             $raw = @file_get_contents($api_url, false, $ctx);
             if ($raw) {
                 $body = json_decode($raw, true);
@@ -248,8 +254,7 @@ if (!function_exists('sode_get_alternate_universities_list')) {
             }
         }
 
-        $cached = is_array($data) ? $data : [];
-        return $cached;
+        return is_array($data) ? $data : [];
     }
 }
 

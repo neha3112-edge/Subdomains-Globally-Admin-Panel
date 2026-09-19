@@ -80,8 +80,6 @@ if (!function_exists('shortcode_atts')) {
 if (!function_exists('sode_get_university_dates_data')) {
     function sode_get_university_dates_data($uni_slug = '')
     {
-        static $dates_cache = [];
-
         // Auto-detect university slug from hostname or constant
         if (empty($uni_slug)) {
             if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
@@ -95,10 +93,6 @@ if (!function_exists('sode_get_university_dates_data')) {
             }
         }
         $uni_slug = strtolower(trim((string) $uni_slug));
-
-        if (isset($dates_cache[$uni_slug])) {
-            return $dates_cache[$uni_slug];
-        }
 
         $uni_data = null;
 
@@ -149,14 +143,20 @@ if (!function_exists('sode_get_university_dates_data')) {
             }
         }
 
-        // 2. Central API fallback (if running remotely)
+        // 2. Central API fallback (if running remotely - Live & Real-Time)
         if (!$uni_data) {
             $admin_url = defined('SODE_CENTRAL_ADMIN_URL') ? SODE_CENTRAL_ADMIN_URL : 'https://admin.distanceeducationschool.com';
-            $api_url = rtrim($admin_url, '/') . '/api/get_university_banner.php?uni=' . urlencode($uni_slug ?: 'dsu');
+            $api_url = rtrim($admin_url, '/') . '/api/get_university_banner.php?uni=' . urlencode($uni_slug ?: 'dsu') . '&_t=' . time();
 
             $body = false;
             if (function_exists('wp_remote_get')) {
-                $resp = wp_remote_get($api_url, ['timeout' => 5]);
+                $resp = wp_remote_get($api_url, [
+                    'timeout' => 5,
+                    'headers' => [
+                        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                        'Pragma' => 'no-cache'
+                    ]
+                ]);
                 if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                     $body = wp_remote_retrieve_body($resp);
                 }
@@ -166,6 +166,10 @@ if (!function_exists('sode_get_university_dates_data')) {
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_TIMEOUT => 5,
                     CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_HTTPHEADER => [
+                        'Cache-Control: no-cache, no-store, must-revalidate',
+                        'Pragma: no-cache'
+                    ]
                 ]);
                 $body = curl_exec($ch);
                 curl_close($ch);
@@ -195,7 +199,6 @@ if (!function_exists('sode_get_university_dates_data')) {
             ];
         }
 
-        $dates_cache[$uni_slug] = $uni_data;
         return $uni_data;
     }
 }

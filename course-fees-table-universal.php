@@ -285,17 +285,11 @@ if (!function_exists('sode_get_current_uni_row_for_course')) {
  * Fetch course universities table data from Database or Central API
  */
 function get_course_table_data( $course_key, $uni_slug = '' ) {
-    static $cache = [];
     $course_key = strtolower( trim( $course_key ) );
     $uni_slug   = strtolower( trim( $uni_slug ) );
 
     if ( empty( $course_key ) ) {
         $course_key = 'mba';
-    }
-
-    $cache_id = $course_key . '_' . $uni_slug;
-    if ( isset( $cache[$cache_id] ) ) {
-        return $cache[$cache_id];
     }
 
     // 1. Try Local Database Connection
@@ -360,14 +354,17 @@ function get_course_table_data( $course_key, $uni_slug = '' ) {
         }
     }
 
-    // 2. Central API Fallback (for remote subdomains)
-    $api_url = COURSE_UNIVERSITIES_API_URL . '?course=' . urlencode($course_key) . (!empty($uni_slug) ? '&uni=' . urlencode($uni_slug) : '');
+    // 2. Central API Fallback (for remote subdomains - Live & Real-Time)
+    $api_url = COURSE_UNIVERSITIES_API_URL . '?course=' . urlencode($course_key) . (!empty($uni_slug) ? '&uni=' . urlencode($uni_slug) : '') . '&_t=' . time();
     $json_content = null;
 
     if (function_exists('wp_remote_get')) {
         $response = wp_remote_get($api_url, [
             'timeout' => 8,
-            'headers' => ['Cache-Control' => 'no-cache']
+            'headers' => [
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache'
+            ]
         ]);
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $json_content = wp_remote_retrieve_body($response);
@@ -376,7 +373,10 @@ function get_course_table_data( $course_key, $uni_slug = '' ) {
 
     if (!$json_content && function_exists('file_get_contents')) {
         $ctx = stream_context_create([
-            'http' => ['timeout' => 5]
+            'http' => [
+                'timeout' => 5,
+                'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+            ]
         ]);
         $json_content = @file_get_contents($api_url, false, $ctx);
     }
@@ -393,7 +393,6 @@ function get_course_table_data( $course_key, $uni_slug = '' ) {
                 'universities'       => $api_res['universities'],
                 'current_university' => $api_res['current_university'] ?? null
             ];
-            $cache[$cache_id] = $data;
             return $data;
         }
     }

@@ -75,8 +75,6 @@ if (!function_exists('sode_format_spec_fee_display')) {
 if (!function_exists('sode_get_course_specializations_data')) {
     function sode_get_course_specializations_data($uni_slug = '', $course_slug = 'mba', $mode = 'Online')
     {
-        static $cache = [];
-
         // 1. Auto-detect uni_slug if empty
         if (empty($uni_slug)) {
             if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
@@ -97,11 +95,6 @@ if (!function_exists('sode_get_course_specializations_data')) {
 
         $course_slug = !empty($course_slug) ? trim(strtolower($course_slug)) : 'mba';
         $mode_clean = (stripos($mode, 'dist') !== false) ? 'Distance' : 'Online';
-
-        $cache_key = $uni_slug . '_' . $course_slug . '_' . strtolower($mode_clean);
-        if (isset($cache[$cache_key])) {
-            return $cache[$cache_key];
-        }
 
         $specializations = [];
         $uni_name = strtoupper($uni_slug);
@@ -178,13 +171,14 @@ if (!function_exists('sode_get_course_specializations_data')) {
             }
         }
 
-        // 3. Central Admin API Remote Call if empty
+        // 3. Central Admin API Remote Call if empty (Live & Real-Time)
         if (empty($specializations)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
             $params = http_build_query([
                 'uni'    => $uni_slug,
                 'course' => $course_slug,
-                'mode'   => $mode_clean
+                'mode'   => $mode_clean,
+                '_t'     => time()
             ]);
             $endpoints = [
                 $api_base . '/admin/api/get_course_specializations.php?' . $params,
@@ -194,12 +188,25 @@ if (!function_exists('sode_get_course_specializations_data')) {
             foreach ($endpoints as $url) {
                 $raw = '';
                 if (function_exists('wp_remote_get')) {
-                    $resp = wp_remote_get($url, ['timeout' => 8, 'sslverify' => false]);
+                    $resp = wp_remote_get($url, [
+                        'timeout' => 8, 
+                        'sslverify' => false,
+                        'headers' => [
+                            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                            'Pragma' => 'no-cache'
+                        ]
+                    ]);
                     if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                         $raw = wp_remote_retrieve_body($resp);
                     }
                 } elseif (function_exists('file_get_contents')) {
-                    $ctx = stream_context_create(['http' => ['timeout' => 8], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
+                    $ctx = stream_context_create([
+                        'http' => [
+                            'timeout' => 8,
+                            'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                        ], 
+                        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]
+                    ]);
                     $raw = @file_get_contents($url, false, $ctx);
                 }
 

@@ -208,8 +208,14 @@ if (!function_exists('sode_application_process_render')) {
         // 2. Try remote API (when running as WordPress plugin on client subdomain)
         if (empty($steps) && !function_exists('get_db_connection')) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
-            $api_url = $api_base . '/api/get_admission_steps.php?uni=' . urlencode($uni_profile['slug']);
-            $ctx = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+            $api_url = $api_base . '/api/get_admission_steps.php?uni=' . urlencode($uni_profile['slug']) . '&_t=' . time();
+            $ctx = stream_context_create([
+                'http' => [
+                    'timeout' => 5, 
+                    'ignore_errors' => true,
+                    'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                ]
+            ]);
             $raw = @file_get_contents($api_url, false, $ctx);
             if ($raw) {
                 $json = json_decode($raw, true);

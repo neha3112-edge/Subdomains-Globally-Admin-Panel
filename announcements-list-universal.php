@@ -158,7 +158,13 @@ if (!function_exists('sode_announcements_list_render')) {
 
             $body = false;
             if (function_exists('wp_remote_get')) {
-                $resp = wp_remote_get($api_url, ['timeout' => 5, 'headers' => ['Cache-Control' => 'no-cache']]);
+                $resp = wp_remote_get($api_url, [
+                    'timeout' => 5, 
+                    'headers' => [
+                        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                        'Pragma' => 'no-cache'
+                    ]
+                ]);
                 if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                     $body = wp_remote_retrieve_body($resp);
                 }

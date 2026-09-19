@@ -210,12 +210,7 @@ if (!function_exists('sode_matrix_format_fee')) {
 if (!function_exists('get_university_fees_table_data')) {
     function get_university_fees_table_data($uni_slug = '')
     {
-        static $cache = [];
         $uni_slug = sode_detect_matrix_uni_slug($uni_slug);
-
-        if (isset($cache[$uni_slug])) {
-            return $cache[$uni_slug];
-        }
 
         // 1. Try Direct Database Connection
         if (!function_exists('get_db_connection')) {
@@ -375,7 +370,6 @@ if (!function_exists('get_university_fees_table_data')) {
                             'universities' => $rows,
                         ];
 
-                        $cache[$uni_slug] = $data;
                         return $data;
                     }
                 }
@@ -384,25 +378,35 @@ if (!function_exists('get_university_fees_table_data')) {
             }
         }
 
-        // 2. Central API Fallback (for remote client subdomains)
-        $api_url = UNI_FEES_TABLE_API_URL . '?uni=' . urlencode($uni_slug);
+        // 2. Central API Fallback (for remote client subdomains - Live & Real-Time)
+        $api_url = UNI_FEES_TABLE_API_URL . '?uni=' . urlencode($uni_slug) . '&_t=' . time();
         $json_content = null;
 
         if (function_exists('wp_remote_get')) {
-            $resp = wp_remote_get($api_url, ['timeout' => 8, 'headers' => ['Cache-Control' => 'no-cache']]);
+            $resp = wp_remote_get($api_url, [
+                'timeout' => 8, 
+                'headers' => [
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache'
+                ]
+            ]);
             if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                 $json_content = wp_remote_retrieve_body($resp);
             }
         }
         if (!$json_content && function_exists('file_get_contents')) {
-            $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+            $ctx = stream_context_create([
+                'http' => [
+                    'timeout' => 5,
+                    'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                ]
+            ]);
             $json_content = @file_get_contents($api_url, false, $ctx);
         }
 
         if ($json_content) {
             $res = json_decode($json_content, true);
             if (!empty($res['success']) && !empty($res['universities'])) {
-                $cache[$uni_slug] = $res;
                 return $res;
             }
         }

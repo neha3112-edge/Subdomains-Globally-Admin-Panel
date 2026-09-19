@@ -49,8 +49,6 @@ if (!function_exists('shortcode_atts')) {
 if (!function_exists('sode_get_course_syllabus_data')) {
     function sode_get_course_syllabus_data($uni_slug = '', $course_slug = 'mba', $mode = 'Online')
     {
-        static $cache = [];
-
         // 1. Auto-detect uni_slug if empty
         if (empty($uni_slug)) {
             if (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
@@ -71,11 +69,6 @@ if (!function_exists('sode_get_course_syllabus_data')) {
 
         $course_slug = !empty($course_slug) ? trim(strtolower($course_slug)) : 'mba';
         $mode_clean = (stripos($mode, 'dist') !== false) ? 'Distance' : 'Online';
-
-        $cache_key = $uni_slug . '_' . $course_slug . '_' . strtolower($mode_clean);
-        if (isset($cache[$cache_key])) {
-            return $cache[$cache_key];
-        }
 
         $semesters = [];
         $uni_name = strtoupper($uni_slug);
@@ -138,20 +131,27 @@ if (!function_exists('sode_get_course_syllabus_data')) {
             }
         }
 
-        // 3. Central Admin API Remote Call if empty
+        // 3. Central Admin API Remote Call if empty (Live & Real-Time)
         if (empty($semesters)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
             $params = http_build_query([
                 'uni' => $uni_slug,
                 'course' => $course_slug,
-                'mode' => $mode_clean
+                'mode' => $mode_clean,
+                '_t' => time()
             ]);
             $endpoints = [
                 $api_base . '/admin/api/get_course_syllabus.php?' . $params,
                 $api_base . '/api/get_course_syllabus.php?' . $params,
             ];
 
-            $ctx = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+            $ctx = stream_context_create([
+                'http' => [
+                    'timeout' => 5, 
+                    'ignore_errors' => true,
+                    'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                ]
+            ]);
             foreach ($endpoints as $ep) {
                 $raw = @file_get_contents($ep, false, $ctx);
                 if ($raw) {
@@ -175,7 +175,6 @@ if (!function_exists('sode_get_course_syllabus_data')) {
             'semesters' => $semesters,
         ];
 
-        $cache[$cache_key] = $result;
         return $result;
     }
 }

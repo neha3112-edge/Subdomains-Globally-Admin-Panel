@@ -35,9 +35,6 @@ if (!function_exists('esc_attr')) {
  */
 if (!function_exists('sode_get_legal_pages')) {
     function sode_get_legal_pages() {
-        static $cache = null;
-        if ($cache !== null) return $cache;
-
         $pages = [];
 
         // 1. Direct DB
@@ -53,11 +50,17 @@ if (!function_exists('sode_get_legal_pages')) {
             } catch (Exception $e) {}
         }
 
-        // 2. Remote API
+        // 2. Remote API (Live & Real-Time)
         if (empty($pages)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
-            $ctx = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
-            $raw = @file_get_contents($api_base . '/api/get_legal_pages.php', false, $ctx);
+            $ctx = stream_context_create([
+                'http' => [
+                    'timeout' => 5, 
+                    'ignore_errors' => true,
+                    'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                ]
+            ]);
+            $raw = @file_get_contents($api_base . '/api/get_legal_pages.php?_t=' . time(), false, $ctx);
             if ($raw) {
                 $json = json_decode($raw, true);
                 if (!empty($json['pages'])) {
@@ -81,8 +84,7 @@ if (!function_exists('sode_get_legal_pages')) {
             }
         }
 
-        $cache = $pages;
-        return $cache;
+        return $pages;
     }
 }
 

@@ -136,25 +136,20 @@ if (!function_exists('sode_get_university_form_config')) {
             }
         }
 
-        // 2. HTTP Remote API with Transient Cache
-        $transient_key = 'sode_form_cfg_' . md5($slug);
-        if (function_exists('get_transient')) {
-            $cached = get_transient($transient_key);
-            if (!empty($cached) && is_array($cached)) {
-                return $cached;
-            }
-        }
-
+        // 2. HTTP Remote API (Live & Real-Time)
         if (function_exists('wp_remote_get')) {
             $api_url = add_query_arg(array('uni' => $slug, 't' => time()), SODE_FORM_CONFIG_API_URL);
-            $resp = wp_remote_get($api_url, array('timeout' => 8, 'headers' => array('Cache-Control' => 'no-cache')));
+            $resp = wp_remote_get($api_url, array(
+                'timeout' => 8, 
+                'headers' => array(
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache'
+                )
+            ));
             if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                 $body = wp_remote_retrieve_body($resp);
                 $json = json_decode($body, true);
                 if (!empty($json['success'])) {
-                    if (function_exists('set_transient')) {
-                        set_transient($transient_key, $json, 600);
-                    }
                     return $json;
                 }
             }

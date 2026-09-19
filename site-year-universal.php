@@ -38,10 +38,6 @@ if (!defined('SODE_CENTRAL_ADMIN_URL')) {
  */
 if (!function_exists('sode_get_all_global_keys')) {
     function sode_get_all_global_keys() {
-        static $memory_cache = null;
-        if ($memory_cache !== null) {
-            return $memory_cache;
-        }
 
         // 1. Direct Local DB check (if running on same server)
         $local_config = __DIR__ . '/admin/config/config.php';
@@ -56,8 +52,7 @@ if (!function_exists('sode_get_all_global_keys')) {
                         $keys[$row['key_code']] = $row['key_value'];
                     }
                     if (!empty($keys)) {
-                        $memory_cache = $keys;
-                        return $memory_cache;
+                        return $keys;
                     }
                 }
             } catch (Exception $e) {
@@ -74,7 +69,10 @@ if (!function_exists('sode_get_all_global_keys')) {
         if (function_exists('wp_remote_get')) {
             $resp = wp_remote_get($api_url, [
                 'timeout' => 5,
-                'headers' => ['Cache-Control' => 'no-cache']
+                'headers' => [
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache'
+                ]
             ]);
 
             if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
@@ -100,10 +98,7 @@ if (!function_exists('sode_get_all_global_keys')) {
             ];
         }
 
-        // (transient cache removed — no delay on key updates)
-
-        $memory_cache = $keys;
-        return $memory_cache;
+        return $keys;
     }
 }
 

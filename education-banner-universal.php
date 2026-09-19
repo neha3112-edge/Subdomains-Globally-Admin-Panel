@@ -209,18 +209,7 @@ if (!function_exists('sode_get_university_banner_data')) {
             }
         }
 
-        // 2. HTTP Remote API (for remote subdomains)
-        $transient_key = 'sode_uni_banner_' . md5($slug);
-
-        // Check transient cache
-        $force_refresh = isset($_GET['refresh_cache']) || (function_exists('is_user_logged_in') && is_user_logged_in() && isset($_GET['preview']));
-        if (!$force_refresh && function_exists('get_transient')) {
-            $cached = get_transient($transient_key);
-            if (!empty($cached) && is_array($cached)) {
-                return $cached;
-            }
-        }
-
+        // 2. HTTP Remote API (for remote subdomains - Live & Real-Time)
         $api_url = add_query_arg(array(
             'slug' => $slug,
             't' => time()
@@ -229,17 +218,16 @@ if (!function_exists('sode_get_university_banner_data')) {
         if (function_exists('wp_remote_get')) {
             $response = wp_remote_get($api_url, array(
                 'timeout' => 8,
-                'headers' => array('Cache-Control' => 'no-cache')
+                'headers' => array(
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache'
+                )
             ));
 
             if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
                 $body = wp_remote_retrieve_body($response);
                 $json = json_decode($body, true);
                 if (!empty($json['success']) && !empty($json['data'])) {
-                    if (function_exists('set_transient')) {
-                        // Cache for 10 minutes
-                        set_transient($transient_key, $json['data'], 600);
-                    }
                     return $json['data'];
                 }
             }

@@ -48,7 +48,6 @@ if (!function_exists('sode_footer_asset_url')) {
 if (!function_exists('sode_get_footer_config')) {
     function sode_get_footer_config($uni_slug = '')
     {
-        static $cache = [];
         if (empty($uni_slug)) {
             if (function_exists('sode_client_detect_uni')) {
                 $uni_slug = sode_client_detect_uni();
@@ -66,10 +65,6 @@ if (!function_exists('sode_get_footer_config')) {
         if (empty($uni_slug))
             $uni_slug = 'dsu';
         $cache_key = strtolower(trim($uni_slug));
-
-        if (isset($cache[$cache_key])) {
-            return $cache[$cache_key];
-        }
 
         $cfg = [];
 
@@ -93,13 +88,19 @@ if (!function_exists('sode_get_footer_config')) {
             }
         }
 
-        // 2. Remote API (WordPress Client environment)
+        // 2. Remote API (WordPress Client environment - Live & Real-Time)
         if (empty($cfg)) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
-            $ctx = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+            $ctx = stream_context_create([
+                'http' => [
+                    'timeout' => 5, 
+                    'ignore_errors' => true,
+                    'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
+                ]
+            ]);
             $endpoints = [
-                $api_base . '/admin/api/get_footer_config.php?uni=' . urlencode($cache_key),
-                $api_base . '/api/get_footer_config.php?uni=' . urlencode($cache_key),
+                $api_base . '/admin/api/get_footer_config.php?uni=' . urlencode($cache_key) . '&_t=' . time(),
+                $api_base . '/api/get_footer_config.php?uni=' . urlencode($cache_key) . '&_t=' . time(),
             ];
             foreach ($endpoints as $ep) {
                 $raw = @file_get_contents($ep, false, $ctx);
@@ -158,7 +159,6 @@ if (!function_exists('sode_get_footer_config')) {
             $cfg['footer_links'] = json_decode($cfg['footer_links_json'] ?? '[]', true) ?: $fallback['footer_links'];
         }
 
-        $cache[$cache_key] = $cfg;
         return $cfg;
     }
 }
@@ -167,7 +167,6 @@ if (!function_exists('sode_get_footer_config')) {
 if (!function_exists('sode_footer_get_official_url')) {
     function sode_footer_get_official_url($uni_slug = '')
     {
-        static $cached_urls = [];
         if (empty($uni_slug)) {
             if (function_exists('sode_client_detect_uni')) {
                 $uni_slug = sode_client_detect_uni();
@@ -187,8 +186,6 @@ if (!function_exists('sode_footer_get_official_url')) {
         if (empty($uni_slug))
             $uni_slug = 'dsu';
         $key = strtolower(trim($uni_slug));
-        if (isset($cached_urls[$key]))
-            return $cached_urls[$key];
 
         // 1. Direct DB lookup (matches slug, short_name e.g. DSU, or full_name)
         if (function_exists('get_db_connection')) {
@@ -199,7 +196,6 @@ if (!function_exists('sode_footer_get_official_url')) {
                     $stmt->execute([$key, $key, $key]);
                     $val = $stmt->fetchColumn();
                     if ($val) {
-                        $cached_urls[$key] = $val;
                         return $val;
                     }
                 }
@@ -209,7 +205,6 @@ if (!function_exists('sode_footer_get_official_url')) {
 
         // 2. Known subdomain mappings fallback
         if ($key === 'dsu' || strpos($key, 'dayananda') !== false) {
-            $cached_urls[$key] = 'https://dsuonline.com/';
             return 'https://dsuonline.com/';
         }
 

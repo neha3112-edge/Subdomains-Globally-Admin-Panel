@@ -369,7 +369,7 @@ if (!function_exists('sode_client_detect_uni')) {
 }
 
 /**
- * Helper: Fetch remote rendered component with high-speed transient caching
+ * Helper: Fetch remote rendered component (100% Live & Real-Time, No Caching)
  */
 if (!function_exists('sode_fetch_remote_component')) {
     function sode_fetch_remote_component($component, $args = [])
@@ -379,42 +379,33 @@ if (!function_exists('sode_fetch_remote_component')) {
         $args['uni'] = $uni;
         $args['university'] = $uni;
         $args['component'] = $component;
-
-        // Build unique cache key (v10 cache buster for conditional course mapping check)
-        $cache_key = 'sode_ssr_v10_' . md5($component . '_' . $uni . '_' . serialize($args));
-
-        // Check if admin is previewing or cache bypass requested (including Elementor editor)
-        $bypass_cache = isset($_GET['nocache']) ||
-            isset($_GET['preview']) ||
-            isset($_GET['elementor-preview']) ||
-            (function_exists('is_user_logged_in') && is_user_logged_in() && current_user_can('edit_posts'));
-
-        if (!$bypass_cache) {
-            $cached_html = get_transient($cache_key);
-            if ($cached_html !== false && !empty($cached_html)) {
-                return $cached_html;
-            }
-        }
+        $args['_t'] = time(); // Live cache-buster
 
         $admin_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/');
 
         // Primary endpoint: /admin/api/render_component.php (POST transmits long text/symbols cleanly)
-        $primary_url = $admin_url . '/admin/api/render_component.php';
+        $primary_url = $admin_url . '/admin/api/render_component.php?_t=' . time();
         $resp = wp_remote_post($primary_url, [
             'body' => $args,
             'timeout' => 12,
             'sslverify' => false,
-            'headers' => ['Cache-Control' => 'no-cache']
+            'headers' => [
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache'
+            ]
         ]);
 
         // Fallback endpoint: /api/render_component.php or GET fallback
         if (is_wp_error($resp) || wp_remote_retrieve_response_code($resp) !== 200) {
-            $fallback_url = $admin_url . '/api/render_component.php';
+            $fallback_url = $admin_url . '/api/render_component.php?_t=' . time();
             $resp = wp_remote_post($fallback_url, [
                 'body' => $args,
                 'timeout' => 12,
                 'sslverify' => false,
-                'headers' => ['Cache-Control' => 'no-cache']
+                'headers' => [
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache'
+                ]
             ]);
 
             // Final fallback to GET if POST was blocked by security firewall
@@ -423,7 +414,10 @@ if (!function_exists('sode_fetch_remote_component')) {
                 $resp = wp_remote_get($get_url, [
                     'timeout' => 12,
                     'sslverify' => false,
-                    'headers' => ['Cache-Control' => 'no-cache']
+                    'headers' => [
+                        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                        'Pragma' => 'no-cache'
+                    ]
                 ]);
             }
         }
@@ -441,11 +435,10 @@ if (!function_exists('sode_fetch_remote_component')) {
 
         $html = wp_remote_retrieve_body($resp);
         if (!empty($html)) {
-            // Never cache or display API fallback error message
+            // Never display API fallback error message
             if (strpos($html, 'SODE Universal Component SSR API Online') !== false) {
                 return '';
             }
-            set_transient($cache_key, $html, 600); // 10 minutes cache
         }
         return $html;
     }
