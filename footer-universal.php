@@ -585,27 +585,10 @@ if (!function_exists('sode_footer_render')) {
                     </div>
                 <?php endif; ?>
 
-                <?php if (!empty($contacts['phone']) || !empty($contacts['email']) || !empty($contacts['address'])): ?>
+                <?php if (!empty($contacts['address'])): ?>
                     <div class="sf-footer-contacts">
-                        <?php
-                        $has_prev = false;
-                        if (!empty($contacts['phone'])):
-                            $has_prev = true;
-                            ?>
-                            <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Phone:</strong> <a href="<?php echo htmlspecialchars($contacts['phone_link']); ?>"
-                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['phone']); ?></a></span>
-                        <?php endif; ?>
-                        <?php if (!empty($contacts['email'])): ?>
-                            <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif;
-                            $has_prev = true; ?>
-                            <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Email:</strong> <a href="<?php echo htmlspecialchars($contacts['email_link']); ?>"
-                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['email']); ?></a></span>
-                        <?php endif; ?>
-                        <?php if (!empty($contacts['address'])): ?>
-                            <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif; ?>
-                            <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Address:</strong> <?php if (!empty($contacts['address_link'])): ?><a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
-                                    class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a><?php else: ?><span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span><?php endif; ?></span>
-                        <?php endif; ?>
+                        <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Address:</strong> <?php if (!empty($contacts['address_link'])): ?><a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
+                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a><?php else: ?><span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span><?php endif; ?></span>
                     </div>
                 <?php endif; ?>
 
