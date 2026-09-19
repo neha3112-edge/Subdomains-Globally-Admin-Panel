@@ -21,15 +21,25 @@
             <!-- Tab 1: Library Grid -->
             <div id="tab-library" class="media-tab-content active">
                 <div class="media-toolbar">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <select id="media-filter-type" class="form-select" style="width:160px; padding:7px 12px; font-size:12.5px;">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <select id="media-filter-type" class="form-select" style="width:145px; padding:7px 12px; font-size:12.5px;">
                             <option value="all">All Media</option>
                             <option value="image">Images (PNG, JPG, WebP)</option>
-                            <option value="audio">Audio (MP3, M4A, WAV)</option>
+                            <option value="audio">Audio (MP3, WAV)</option>
                             <option value="pdf">PDF Documents</option>
-                            <option value="video">Videos (MP4, WebM)</option>
+                            <option value="video">Videos (MP4)</option>
                         </select>
-                        <input type="text" id="media-search-input" class="form-control" placeholder="Search by file name..." style="width:240px; padding:7px 12px; font-size:12.5px;">
+                        <select id="modal-media-date-filter" class="form-select" style="width:140px; padding:7px 12px; font-size:12.5px;">
+                            <option value="all">📅 All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="7days">Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="this_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <optgroup label="Months" id="modal-date-months-group"></optgroup>
+                        </select>
+                        <input type="text" id="media-search-input" class="form-control" placeholder="Search by name..." style="width:200px; padding:7px 12px; font-size:12.5px;">
                     </div>
                     <div style="font-size:12px; color:var(--text-dim);" id="media-count-label">Loading files...</div>
                 </div>

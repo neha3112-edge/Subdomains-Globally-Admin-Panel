@@ -86,6 +86,11 @@
         if (detailsPanel) detailsPanel.style.display = 'none';
     }
 
+    const dateFilter = document.getElementById('modal-media-date-filter');
+    const dateMonthsGroup = document.getElementById('modal-date-months-group');
+    let modalMonthsPopulated = false;
+    let modalAbortController = null;
+
     // 4. Fetch Media Items
     let searchTimeout = null;
     if (searchInput) {
@@ -94,12 +99,19 @@
             searchTimeout = setTimeout(() => {
                 modalCurrentPage = 1;
                 loadMediaList();
-            }, 300);
+            }, 250);
         });
     }
 
     if (filterType) {
         filterType.addEventListener('change', () => {
+            modalCurrentPage = 1;
+            loadMediaList();
+        });
+    }
+
+    if (dateFilter) {
+        dateFilter.addEventListener('change', () => {
             modalCurrentPage = 1;
             loadMediaList();
         });
@@ -126,20 +138,37 @@
 
     function loadMediaList() {
         if (!gridContainer) return;
+        if (modalAbortController) modalAbortController.abort();
+        modalAbortController = new AbortController();
+
         const type = filterType ? filterType.value : 'all';
         const q = searchInput ? searchInput.value.trim() : '';
+        const dFilter = dateFilter ? dateFilter.value : 'all';
 
-        gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-dim);">Loading media files...</div>';
+        gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-dim);"><div style="display:inline-block; width:24px; height:24px; border:2px solid var(--border-color); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:8px;"></div><br>Loading media files...</div>';
 
-        const url = `${window.location.origin}${window.location.pathname.replace(/\/modules\/.*|\/change_password\.php|\/dashboard\.php|\/login\.php|\/index\.php/, '')}/api/media_list.php?type=${encodeURIComponent(type)}&q=${encodeURIComponent(q)}&page=${modalCurrentPage}&limit=50`;
+        const apiOrigin = window.location.origin + (window.BASE_URL || window.location.pathname.replace(/\/modules\/.*|\/change_password\.php|\/dashboard\.php|\/login\.php|\/index\.php/, ''));
+        const url = `${apiOrigin}/api/media_list.php?type=${encodeURIComponent(type)}&q=${encodeURIComponent(q)}&date_filter=${encodeURIComponent(dFilter)}&page=${modalCurrentPage}&limit=50`;
 
-        fetch(url)
+        fetch(url, { signal: modalAbortController.signal })
             .then(res => res.json())
             .then(data => {
                 if (!data.success) {
                     gridContainer.innerHTML = `<div style="grid-column:1/-1; color:var(--danger); padding:20px;">${data.message || 'Error loading files'}</div>`;
                     if (modalPaginationBar) modalPaginationBar.style.display = 'none';
                     return;
+                }
+
+                // Populate dynamic months in modal dropdown
+                if (!modalMonthsPopulated && data.available_months && dateMonthsGroup) {
+                    dateMonthsGroup.innerHTML = '';
+                    data.available_months.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.ym;
+                        opt.textContent = m.ym_label || m.ym;
+                        dateMonthsGroup.appendChild(opt);
+                    });
+                    modalMonthsPopulated = true;
                 }
 
                 mediaItems = data.items || [];
@@ -163,7 +192,7 @@
                 }
 
                 if (mediaItems.length === 0) {
-                    gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:var(--text-dim);">No files uploaded yet. Click "Upload New File" above.</div>';
+                    gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:var(--text-dim);">No files match your filters. Click "Upload New File" above.</div>';
                     if (detailsPanel) detailsPanel.style.display = 'none';
                     return;
                 }
@@ -171,14 +200,15 @@
                 renderMediaGrid(mediaItems);
             })
             .catch(err => {
+                if (err.name === 'AbortError') return;
                 gridContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--danger);">Failed to load library items.</div>';
                 if (modalPaginationBar) modalPaginationBar.style.display = 'none';
             });
     }
 
-    // 5. Render Grid Cards
+    // 5. Render Grid Cards (Fast DocumentFragment Batch Render)
     function renderMediaGrid(items) {
-        gridContainer.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'media-card-item';
@@ -187,7 +217,7 @@
             let iconHtml = '';
             const previewUrl = item.display_url || item.file_url;
             if (item.file_type === 'image') {
-                iconHtml = `<img src="${previewUrl}" alt="${item.file_name}" class="media-thumb-img" loading="lazy">`;
+                iconHtml = `<img src="${previewUrl}" alt="${item.file_name}" class="media-thumb-img" loading="lazy" decoding="async">`;
             } else if (item.file_type === 'audio') {
                 iconHtml = `<div class="media-type-icon audio-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>`;
             } else if (item.file_type === 'pdf') {
@@ -214,8 +244,11 @@
                 useMediaItem(item);
             });
 
-            gridContainer.appendChild(card);
+            fragment.appendChild(card);
         });
+
+        gridContainer.innerHTML = '';
+        gridContainer.appendChild(fragment);
     }
 
     // 6. Show Details in Right Sidebar

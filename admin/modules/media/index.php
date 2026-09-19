@@ -117,6 +117,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    user-select: none;
 }
 
 .filter-pill-btn:hover {
@@ -133,10 +134,42 @@ require_once ADMIN_PATH . '/includes/header.php';
     box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
 }
 
+/* Date Filter Styling */
+.media-date-select {
+    height: 38px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    font-size: 12.5px;
+    padding: 0 30px 0 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    min-width: 155px;
+}
+
+.media-date-select:hover,
+.media-date-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.media-custom-date-box {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-input);
+    padding: 4px 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    animation: fadeIn 0.2s ease;
+}
+
 /* Search input wrapper */
 .media-search-wrap {
     position: relative;
-    min-width: 260px;
+    min-width: 220px;
 }
 
 .media-search-wrap svg {
@@ -150,7 +183,8 @@ require_once ADMIN_PATH . '/includes/header.php';
 
 .media-search-wrap input {
     width: 100%;
-    padding: 8px 32px 8px 36px;
+    height: 38px;
+    padding: 0 32px 0 36px;
     background: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -179,11 +213,12 @@ require_once ADMIN_PATH . '/includes/header.php';
     line-height: 1;
 }
 
-/* Grid Layout for Cards */
+/* High-Performance Grid Layout for Cards */
 .media-page-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;
+    contain: layout style;
 }
 
 .media-grid-card {
@@ -193,9 +228,12 @@ require_once ADMIN_PATH . '/includes/header.php';
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
     position: relative;
+    content-visibility: auto;
+    contain-intrinsic-size: 180px 200px;
+    will-change: transform;
 }
 
 .media-grid-card:hover {
@@ -207,19 +245,22 @@ require_once ADMIN_PATH . '/includes/header.php';
 .media-card-preview {
     width: 100%;
     height: 130px;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
+    aspect-ratio: 16 / 10;
 }
 
 .media-card-preview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.25s ease;
+    image-rendering: auto;
+    background: var(--bg-input);
 }
 
 .media-grid-card:hover .media-card-preview img {
@@ -676,12 +717,38 @@ require_once ADMIN_PATH . '/includes/header.php';
             <button type="button" class="filter-pill-btn" data-type="document">Documents</button>
         </div>
 
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <!-- Date Filter Selector -->
+            <div class="media-date-wrap">
+                <select id="direct-media-date" class="form-select media-date-select" title="Filter by date">
+                    <option value="all">📅 All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="7days">Last 7 Days</option>
+                    <option value="30days">Last 30 Days</option>
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                    <optgroup label="Months" id="direct-date-months-group"></optgroup>
+                    <option value="custom">Custom Date Range...</option>
+                </select>
+            </div>
+
+            <!-- Custom Date Range Picker (hidden by default) -->
+            <div id="direct-custom-date-box" class="media-custom-date-box">
+                <input type="date" id="direct-date-from" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; width:130px;" title="From Date">
+                <span style="color:var(--text-dim); font-size:12px;">to</span>
+                <input type="date" id="direct-date-to" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; width:130px;" title="To Date">
+                <button type="button" id="direct-apply-custom-date" class="btn-primary" style="width:auto; height:28px; padding:0 10px; font-size:11.5px; border-radius:6px;">Apply</button>
+                <button type="button" id="direct-clear-custom-date" class="btn-secondary" style="width:auto; height:28px; padding:0 8px; font-size:11.5px; border-radius:6px;" title="Reset date">&times;</button>
+            </div>
+
+            <!-- Search Input -->
             <div class="media-search-wrap">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="direct-media-search" placeholder="Search files by name...">
                 <button type="button" class="media-search-clear" id="direct-search-clear">&times;</button>
             </div>
+
             <div id="media-count-indicator" style="font-size:12.5px; color:var(--text-dim); white-space:nowrap;">
                 Loading...
             </div>
@@ -807,8 +874,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let itemsPerPage = 50;
     let currentType = 'all';
     let currentSearch = '';
+    let currentDateFilter = 'all';
+    let currentDateFrom = '';
+    let currentDateTo = '';
     let selectedFile = null;
     let searchTimer = null;
+    let activeAbortController = null;
+    let monthsPopulated = false;
 
     const gridEl = document.getElementById('direct-media-grid');
     const countIndicator = document.getElementById('media-count-indicator');
@@ -819,6 +891,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchClear = document.getElementById('direct-search-clear');
     const filterPills = document.querySelectorAll('.filter-pill-btn');
     const refreshBtn = document.getElementById('refresh-library-btn');
+    const dateSelect = document.getElementById('direct-media-date');
+    const dateMonthsGroup = document.getElementById('direct-date-months-group');
+    const customDateBox = document.getElementById('direct-custom-date-box');
+    const dateFromInput = document.getElementById('direct-date-from');
+    const dateToInput = document.getElementById('direct-date-to');
+    const applyCustomDateBtn = document.getElementById('direct-apply-custom-date');
+    const clearCustomDateBtn = document.getElementById('direct-clear-custom-date');
     const dropzone = document.getElementById('direct-media-dropzone');
     const fileInput = document.getElementById('direct-file-input');
     const uploadProgressWrap = document.getElementById('direct-upload-progress-wrap');
@@ -869,7 +948,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 3. Search Input Handling
+    // 3. Search Input Handling (Debounced 250ms)
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimer);
@@ -879,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentSearch = val;
                 currentPage = 1;
                 fetchMediaList();
-            }, 300);
+            }, 250);
         });
     }
 
@@ -893,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 4. Filter Pills
+    // 4. Filter Pills (File Type)
     filterPills.forEach(pill => {
         pill.addEventListener('click', function() {
             filterPills.forEach(p => p.classList.remove('active'));
@@ -904,8 +983,63 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 5. Fetch Media Items (AJAX with Pagination 50/page)
+    // 5. Date Filter Selector Handling
+    if (dateSelect) {
+        dateSelect.addEventListener('change', function() {
+            const val = this.value;
+            if (val === 'custom') {
+                if (customDateBox) customDateBox.style.display = 'inline-flex';
+                return;
+            } else {
+                if (customDateBox) customDateBox.style.display = 'none';
+                currentDateFilter = val;
+                currentDateFrom = '';
+                currentDateTo = '';
+                if (dateFromInput) dateFromInput.value = '';
+                if (dateToInput) dateToInput.value = '';
+                currentPage = 1;
+                fetchMediaList();
+            }
+        });
+    }
+
+    if (applyCustomDateBtn) {
+        applyCustomDateBtn.addEventListener('click', function() {
+            const from = dateFromInput ? dateFromInput.value : '';
+            const to = dateToInput ? dateToInput.value : '';
+            if (!from && !to) {
+                alert('Please select at least a From or To date.');
+                return;
+            }
+            currentDateFilter = 'custom';
+            currentDateFrom = from;
+            currentDateTo = to;
+            currentPage = 1;
+            fetchMediaList();
+        });
+    }
+
+    if (clearCustomDateBtn) {
+        clearCustomDateBtn.addEventListener('click', function() {
+            if (dateFromInput) dateFromInput.value = '';
+            if (dateToInput) dateToInput.value = '';
+            if (dateSelect) dateSelect.value = 'all';
+            if (customDateBox) customDateBox.style.display = 'none';
+            currentDateFilter = 'all';
+            currentDateFrom = '';
+            currentDateTo = '';
+            currentPage = 1;
+            fetchMediaList();
+        });
+    }
+
+    // 6. Fetch Media Items (High-Performance AJAX with AbortController)
     function fetchMediaList() {
+        if (activeAbortController) {
+            activeAbortController.abort();
+        }
+        activeAbortController = new AbortController();
+
         gridEl.innerHTML = `
             <div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--text-dim);">
                 <div style="display:inline-block; width:28px; height:28px; border:3px solid var(--border-color); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:12px;"></div>
@@ -913,25 +1047,46 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        const url = `${apiBasePath}/media_list.php?type=${encodeURIComponent(currentType)}&q=${encodeURIComponent(currentSearch)}&page=${currentPage}&limit=${itemsPerPage}`;
+        const params = new URLSearchParams({
+            type: currentType,
+            q: currentSearch,
+            date_filter: currentDateFilter,
+            date_from: currentDateFrom,
+            date_to: currentDateTo,
+            page: currentPage,
+            limit: itemsPerPage
+        });
 
-        fetch(url)
+        fetch(`${apiBasePath}/media_list.php?${params.toString()}`, { signal: activeAbortController.signal })
             .then(res => res.json())
             .then(data => {
                 if (!data.success) {
-                    gridEl.innerHTML = `<div style="grid-column:1/-1; color:var(--danger); padding:30px; text-align:center;">${data.message || 'Error fetching assets'}</div>`;
+                    gridEl.innerHTML = `<div style="grid-column:1/-1; color:var(--danger); padding:30px; text-align:center;">${escapeHtml(data.message || 'Error fetching assets')}</div>`;
                     return;
+                }
+
+                // Populate available months in dropdown if not already populated
+                if (!monthsPopulated && data.available_months && dateMonthsGroup) {
+                    dateMonthsGroup.innerHTML = '';
+                    data.available_months.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.ym;
+                        opt.textContent = m.ym_label || m.ym;
+                        dateMonthsGroup.appendChild(opt);
+                    });
+                    monthsPopulated = true;
                 }
 
                 renderMediaGrid(data.items || []);
                 renderPagination(data.total, data.page, data.limit, data.total_pages);
             })
             .catch(err => {
+                if (err.name === 'AbortError') return;
                 gridEl.innerHTML = `<div style="grid-column:1/-1; color:var(--danger); padding:30px; text-align:center;">Failed to load library items.</div>`;
             });
     }
 
-    // 6. Render Grid Cards
+    // 7. Render Grid Cards (Optimized Batch Rendering via DocumentFragment)
     function renderMediaGrid(items) {
         if (!items || items.length === 0) {
             gridEl.innerHTML = `
@@ -944,7 +1099,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        gridEl.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'media-grid-card';
@@ -955,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const ext = (item.file_name.split('.').pop() || item.file_type).toUpperCase();
 
             if (item.file_type === 'image') {
-                previewHtml = `<img src="${previewUrl}" alt="${escapeHtml(item.file_name)}" loading="lazy">`;
+                previewHtml = `<img src="${previewUrl}" alt="${escapeHtml(item.file_name)}" loading="lazy" decoding="async">`;
             } else if (item.file_type === 'audio') {
                 previewHtml = `<div class="media-type-icon audio-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>`;
             } else if (item.file_type === 'pdf') {
@@ -1014,11 +1170,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 openDetailsModal(item);
             });
 
-            gridEl.appendChild(card);
+            fragment.appendChild(card);
         });
+
+        gridEl.innerHTML = '';
+        gridEl.appendChild(fragment);
     }
 
-    // 7. Render Pagination (50 Items Per Page)
+    // 8. Render Pagination (50 Items Per Page)
     function renderPagination(total, page, limit, totalPages) {
         if (countIndicator) {
             countIndicator.textContent = `Total ${total} file(s) found`;
