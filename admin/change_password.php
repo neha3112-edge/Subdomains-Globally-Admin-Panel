@@ -33,6 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_hash = password_hash($new_pwd, PASSWORD_BCRYPT);
             $stmt = $db->prepare("UPDATE users SET password_hash = ?, plain_password = ? WHERE id = ?");
             $stmt->execute([$new_hash, $new_pwd, $current_user['id']]);
+
+            if (function_exists('log_activity')) {
+                log_activity('PASSWORD_CHANGE', 'auth', "User {$current_user['name']} updated account security password.", [
+                    'item_type' => 'User',
+                    'item_id' => $current_user['id'],
+                    'item_title' => $current_user['name']
+                ]);
+            }
+
             set_flash_message('Password changed successfully!', 'success');
             redirect(BASE_URL . '/change_password.php');
         }

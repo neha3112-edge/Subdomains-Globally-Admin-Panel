@@ -163,6 +163,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $cfg_gallabox_source, $cfg_brevo_source, $cfg_brevo_list_id, $cfg_allowed_courses
             ]);
 
+            if (function_exists('log_activity')) {
+                log_activity('CREATE', 'universities', "Created new University '{$full_name}' ({$slug})", [
+                    'item_type' => 'University',
+                    'item_id' => $uni_id,
+                    'item_title' => $full_name,
+                    'new_values' => ['full_name' => $full_name, 'short_name' => $short_name, 'slug' => $slug, 'mode' => $mode, 'location' => $location]
+                ]);
+            }
+
             set_flash_message('University added successfully!', 'success');
             redirect(BASE_URL . '/modules/universities/index.php');
         } catch (PDOException $e) {

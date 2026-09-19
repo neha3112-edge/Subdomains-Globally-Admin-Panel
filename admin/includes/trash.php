@@ -242,7 +242,17 @@ function move_to_trash(string $source_table, int $original_id, string $item_titl
     $del = $db->prepare("DELETE FROM `{$source_table}` WHERE id = ?");
     $del->execute([$original_id]);
 
-    // 7. Flush cache
+    // 7. Log Activity
+    if (function_exists('log_activity')) {
+        log_activity('DELETE', $source_table, "Moved {$item_type} '{$item_title}' (ID: #{$original_id}) to Trash.", [
+            'item_type' => $item_type,
+            'item_id' => $original_id,
+            'item_title' => $item_title,
+            'old_values' => $main_row
+        ]);
+    }
+
+    // 8. Flush cache
     if (function_exists('sode_bust_all_subdomain_caches')) {
         sode_bust_all_subdomain_caches($db);
     }
@@ -378,7 +388,17 @@ function restore_from_trash(int $trash_id): array {
     // 4. Remove from admin_trash
     $db->prepare("DELETE FROM admin_trash WHERE id = ?")->execute([$trash_id]);
 
-    // 5. Bust caches
+    // 5. Log Activity
+    if (function_exists('log_activity')) {
+        log_activity('RESTORE', $source_table, "Restored {$trash_item['item_type']} '{$trash_item['item_title']}' (ID: #{$trash_item['original_id']}) from Trash.", [
+            'item_type' => $trash_item['item_type'],
+            'item_id' => $trash_item['original_id'],
+            'item_title' => $trash_item['item_title'],
+            'new_values' => $main_row
+        ]);
+    }
+
+    // 6. Bust caches
     if (function_exists('sode_bust_all_subdomain_caches')) {
         sode_bust_all_subdomain_caches($db);
     }
@@ -420,6 +440,15 @@ function permanent_delete_from_trash(int $trash_id): array {
     }
 
     $db->prepare("DELETE FROM admin_trash WHERE id = ?")->execute([$trash_id]);
+
+    // Log Activity
+    if (function_exists('log_activity')) {
+        log_activity('PURGE', $item['source_table'], "Permanently deleted {$item['item_type']} '{$item['item_title']}' (ID: #{$item['original_id']}) from Trash.", [
+            'item_type' => $item['item_type'],
+            'item_id' => $item['original_id'],
+            'item_title' => $item['item_title']
+        ]);
+    }
 
     return [
         'success' => true,

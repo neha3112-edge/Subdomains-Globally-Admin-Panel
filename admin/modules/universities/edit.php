@@ -293,6 +293,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
                 $cfg_allowed_courses
             ]);
 
+            if (function_exists('log_activity')) {
+                log_activity('UPDATE', 'universities', "Updated University details for '{$full_name}' ({$slug})", [
+                    'item_type' => 'University',
+                    'item_id' => $id,
+                    'item_title' => $full_name,
+                    'old_values' => $uni,
+                    'new_values' => [
+                        'full_name' => $full_name,
+                        'short_name' => $short_name,
+                        'slug' => $slug,
+                        'mode' => $mode,
+                        'location' => $location,
+                        'official_url' => $official_url,
+                        'is_active' => $is_active
+                    ]
+                ]);
+            }
+
             set_flash_message('University updated successfully!', 'success');
             redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id);
         } catch (PDOException $e) {

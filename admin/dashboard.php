@@ -32,6 +32,12 @@ try {
 // Fetch admin users ONLY if Super Admin
 $total_users = $is_super ? (int)$db->query("SELECT COUNT(*) FROM users")->fetchColumn() : 0;
 
+// Fetch Recent Activities
+$recent_activities = [];
+if (function_exists('get_recent_activities')) {
+    $recent_activities = get_recent_activities(6);
+}
+
 // 2. Fetch Recent Universities
 $recent_unis = $db->query("
     SELECT id, full_name, short_name, rating, mode, created_at, logo_url 
@@ -772,6 +778,94 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
     </div>
 
+</div>
+
+<!-- 6. Live Activity & Audit Stream -->
+<div class="admin-card" style="margin-top:24px; border-radius:var(--radius-lg); overflow:hidden;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:32px; height:32px; border-radius:8px; background:rgba(99,102,241,0.1); color:#4f46e5; display:flex; align-items:center; justify-content:center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div>
+                <span class="card-title" style="font-size:15px; font-weight:700;">Live Activity & Change Stream</span>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Real-time audit log of recent updates and actions made by administrative users</div>
+            </div>
+        </div>
+        <a href="<?php echo BASE_URL; ?>/modules/activity_logs/index.php" class="badge badge-info" style="text-decoration:none; padding:5px 12px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+            View All History &rarr;
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="admin-table" style="font-size:13px;">
+            <thead>
+                <tr style="background:#f8fafc;">
+                    <th style="padding:10px 16px;">User</th>
+                    <th style="padding:10px 14px;">Action</th>
+                    <th style="padding:10px 14px;">Module</th>
+                    <th style="padding:10px 16px;">Activity Details</th>
+                    <th style="padding:10px 14px; text-align:right;">Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($recent_activities)): ?>
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:var(--text-dim); padding:28px;">
+                            No recent activity logs recorded yet.
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($recent_activities as $act): 
+                        $badge_color = '#64748b';
+                        $badge_bg = 'rgba(100, 116, 139, 0.1)';
+                        $type = strtoupper($act['action_type']);
+                        if (in_array($type, ['CREATE', 'RESTORE'])) {
+                            $badge_color = '#059669'; $badge_bg = 'rgba(16, 185, 129, 0.12)';
+                        } elseif ($type === 'UPDATE') {
+                            $badge_color = '#2563eb'; $badge_bg = 'rgba(59, 130, 246, 0.12)';
+                        } elseif (in_array($type, ['DELETE', 'PURGE'])) {
+                            $badge_color = '#dc2626'; $badge_bg = 'rgba(239, 68, 68, 0.12)';
+                        } elseif (in_array($type, ['LOGIN', 'LOGOUT'])) {
+                            $badge_color = '#7e22ce'; $badge_bg = 'rgba(147, 51, 234, 0.12)';
+                        }
+                    ?>
+                        <tr>
+                            <td style="padding:12px 16px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div style="width:26px; height:26px; border-radius:50%; background:#4f46e5; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;">
+                                        <?php echo htmlspecialchars(get_user_initials($act['user_name'] ?? 'U')); ?>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700; color:var(--text-main); font-size:12px;"><?php echo htmlspecialchars($act['user_name'] ?: 'System'); ?></div>
+                                        <div style="font-size:10px; color:var(--text-dim);"><?php echo htmlspecialchars($act['role_name'] ?: 'User'); ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:12px 14px;">
+                                <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; background:<?php echo $badge_bg; ?>; color:<?php echo $badge_color; ?>;">
+                                    <?php echo htmlspecialchars($act['action_type']); ?>
+                                </span>
+                            </td>
+                            <td style="padding:12px 14px;">
+                                <span style="font-weight:600; font-size:12px; color:var(--text-main);">
+                                    <?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $act['module_key']))); ?>
+                                </span>
+                            </td>
+                            <td style="padding:12px 16px;">
+                                <div style="font-size:12px; color:var(--text-main); line-height:1.3;">
+                                    <?php echo htmlspecialchars($act['description']); ?>
+                                </div>
+                            </td>
+                            <td style="padding:12px 14px; text-align:right; white-space:nowrap; font-size:11px; color:var(--text-dim);">
+                                <?php echo date('h:i A', strtotime($act['created_at'])); ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Interactive Slider & Copy Scripts -->

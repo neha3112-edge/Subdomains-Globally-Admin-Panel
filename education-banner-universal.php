@@ -352,7 +352,8 @@ function edu_banner_shortcode($atts)
     $uid = 'edb-' . substr(md5($heading . $audio_url . $video_url . $uni_slug), 0, 8);
 
     /* Detect home vs inner page */
-    $page_class = (function_exists('is_front_page') && (is_front_page() || is_home())) ? 'is-homepage' : 'is-innerpage';
+    $is_home = (function_exists('is_front_page') && is_front_page()) || (function_exists('is_home') && is_home());
+    $page_class = $is_home ? 'is-homepage' : 'is-innerpage';
 
     ob_start();
     ?>

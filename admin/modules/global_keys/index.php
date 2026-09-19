@@ -39,13 +39,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($key_code) || empty($key_value)) {
             set_flash_message('Key Code and Key Value are required.', 'error');
         } else {
+            $new_data = [
+                'key_code' => $key_code,
+                'key_value' => $key_value,
+                'link_url' => $link_url,
+                'description' => $description,
+                'is_active' => $is_active
+            ];
+
             if ($id) {
+                $old_data = $db->query("SELECT * FROM global_keys WHERE id = " . (int)$id)->fetch(PDO::FETCH_ASSOC);
                 $stmt = $db->prepare("UPDATE global_keys SET key_code = ?, key_value = ?, link_url = ?, description = ?, is_active = ? WHERE id = ?");
                 $stmt->execute([$key_code, $key_value, $link_url, $description, $is_active, $id]);
+
+                if (function_exists('log_activity')) {
+                    log_activity('UPDATE', 'global_keys', "Updated Global Key '{$key_code}'", [
+                        'item_type' => 'Global Key',
+                        'item_id' => $id,
+                        'item_title' => $key_code,
+                        'old_values' => $old_data,
+                        'new_values' => $new_data
+                    ]);
+                }
+
                 set_flash_message('Global key updated successfully!', 'success');
             } else {
                 $stmt = $db->prepare("INSERT INTO global_keys (key_code, key_value, link_url, description, is_active) VALUES (?, ?, ?, ?, ?)");
                 $stmt->execute([$key_code, $key_value, $link_url, $description, $is_active]);
+                $new_id = (int)$db->lastInsertId();
+
+                if (function_exists('log_activity')) {
+                    log_activity('CREATE', 'global_keys', "Created new Global Key '{$key_code}'", [
+                        'item_type' => 'Global Key',
+                        'item_id' => $new_id,
+                        'item_title' => $key_code,
+                        'new_values' => $new_data
+                    ]);
+                }
+
                 set_flash_message('Global key created successfully!', 'success');
             }
             // Auto-flush cache on all active subdomains

@@ -59,6 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$full_name, $short_name, $slug, $level, $description]);
                 $new_id = $db->lastInsertId();
 
+                if (function_exists('log_activity')) {
+                    log_activity('CREATE', 'courses', "Created new Course '{$full_name}' ({$short_name})", [
+                        'item_type' => 'Course',
+                        'item_id' => $new_id,
+                        'item_title' => $full_name,
+                        'new_values' => ['full_name' => $full_name, 'short_name' => $short_name, 'slug' => $slug, 'level' => $level]
+                    ]);
+                }
+
                 set_flash_message("Course '{$full_name}' ({$short_name}) created successfully!", 'success');
                 redirect(BASE_URL . '/modules/courses/index.php');
             } catch (PDOException $e) {

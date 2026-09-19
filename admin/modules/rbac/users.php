@@ -70,6 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'phone' => $phone, 'hash' => $hash, 'plain_password' => $password, 'team_id' => $team_id,
                             'role_id' => $role_id, 'is_superadmin' => $is_superadmin, 'is_active' => $is_active
                         ]);
+                        $new_uid = (int)$db->lastInsertId();
+
+                        if (function_exists('log_activity')) {
+                            log_activity('CREATE', 'rbac', "Created new user account '{$name}' (@{$username})", [
+                                'item_type' => 'User',
+                                'item_id' => $new_uid,
+                                'item_title' => $name,
+                                'new_values' => ['name' => $name, 'username' => $username, 'email' => $email, 'team_id' => $team_id, 'role_id' => $role_id, 'is_superadmin' => $is_superadmin, 'is_active' => $is_active]
+                            ]);
+                        }
+
                         set_flash_message('success', 'User created successfully.');
                         redirect(BASE_URL . '/modules/rbac/users.php');
                     } catch (PDOException $e) {
@@ -79,6 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } elseif ($post_action === 'edit' && $user_id > 0) {
                 try {
+                    $old_user_row = $db->query("SELECT name, username, email, team_id, role_id, is_superadmin, is_active FROM users WHERE id = " . (int)$user_id)->fetch(PDO::FETCH_ASSOC);
+
                     if (!empty($password)) {
                         if (strlen($password) < 6) {
                             set_flash_message('error', 'Password must be at least 6 characters.');
@@ -105,6 +118,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $stmt->execute($params);
 
+                    if (function_exists('log_activity')) {
+                        log_activity('UPDATE', 'rbac', "Updated user details for '{$name}' (@{$username})", [
+                            'item_type' => 'User',
+                            'item_id' => $user_id,
+                            'item_title' => $name,
+                            'old_values' => $old_user_row,
+                            'new_values' => ['name' => $name, 'username' => $username, 'email' => $email, 'team_id' => $team_id, 'role_id' => $role_id, 'is_superadmin' => $is_superadmin, 'is_active' => $is_active]
+                        ]);
+                    }
+
                     // Update active session if editing currently logged-in user
                     if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $user_id) {
                         $_SESSION['user_name']     = $name;
@@ -125,8 +148,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($del_id === 1) {
             set_flash_message('error', 'Primary Superadmin cannot be deleted.');
         } elseif ($del_id > 0) {
+            $del_user = $db->query("SELECT name, username FROM users WHERE id = " . (int)$del_id)->fetch(PDO::FETCH_ASSOC);
             $stmt = $db->prepare("DELETE FROM users WHERE id = :id");
             $stmt->execute(['id' => $del_id]);
+
+            if (function_exists('log_activity')) {
+                log_activity('DELETE', 'rbac', "Deleted user account '" . ($del_user['name'] ?? "ID #{$del_id}") . "'", [
+                    'item_type' => 'User',
+                    'item_id' => $del_id,
+                    'item_title' => $del_user['name'] ?? "ID #{$del_id}"
+                ]);
+            }
+
             set_flash_message('success', 'User deleted successfully.');
         }
         redirect(BASE_URL . '/modules/rbac/users.php');
@@ -164,6 +197,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'plain' => $new_password,
             'id'    => $target_user_id
         ]);
+
+        if (function_exists('log_activity')) {
+            log_activity('PASSWORD_CHANGE', 'rbac', "Superadmin reset password for user '{$target_user['name']}' (@{$target_user['username']})", [
+                'item_type' => 'User',
+                'item_id' => $target_user_id,
+                'item_title' => $target_user['name']
+            ]);
+        }
 
         set_flash_message('success', "Password for user '{$target_user['name']}' (@{$target_user['username']}) has been successfully reset!");
         redirect(BASE_URL . '/modules/rbac/users.php');

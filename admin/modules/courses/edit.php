@@ -91,6 +91,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ");
                 $stmt->execute([$full_name, $short_name, $slug, $level, $description, $course_id]);
 
+                if (function_exists('log_activity')) {
+                    log_activity('UPDATE', 'courses', "Updated Course '{$full_name}' ({$short_name})", [
+                        'item_type' => 'Course',
+                        'item_id' => $course_id,
+                        'item_title' => $full_name,
+                        'old_values' => $course,
+                        'new_values' => ['full_name' => $full_name, 'short_name' => $short_name, 'slug' => $slug, 'level' => $level, 'description' => $description]
+                    ]);
+                }
+
                 set_flash_message("Course '{$full_name}' updated successfully!", 'success');
                 redirect(BASE_URL . '/modules/courses/index.php');
             } catch (PDOException $e) {

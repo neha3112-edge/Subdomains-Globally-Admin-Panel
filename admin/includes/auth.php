@@ -66,10 +66,27 @@ function attempt_login($identifier, $password) {
     $_SESSION['user_team_name']= $user['team_name'] ?? 'General';
     $_SESSION['is_superadmin'] = (bool)$user['is_superadmin'];
 
+    // Log Activity
+    if (function_exists('log_activity')) {
+        log_activity('LOGIN', 'auth', "User {$user['name']} logged in successfully.", [
+            'item_type' => 'User',
+            'item_id' => $user['id'],
+            'item_title' => $user['name']
+        ]);
+    }
+
     return ['success' => true];
 }
 
 function logout_user() {
+    if (function_exists('log_activity') && !empty($_SESSION['user_id'])) {
+        log_activity('LOGOUT', 'auth', "User " . ($_SESSION['user_name'] ?? 'Admin') . " logged out.", [
+            'item_type' => 'User',
+            'item_id' => $_SESSION['user_id'],
+            'item_title' => $_SESSION['user_name'] ?? 'Admin'
+        ]);
+    }
+
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
