@@ -2,6 +2,8 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('universities');
+require_action_permission('update', 'universities');
+
 
 $page_title = 'Edit University';
 $page_subtitle = 'Update university profile and settings';
@@ -58,6 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($post_action === 'save_university_news') {
         $news_id = !empty($_POST['news_id']) ? (int) $_POST['news_id'] : null;
+        if ($news_id && !user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update announcements.', 'error');
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        } elseif (!$news_id && !user_can('create')) {
+            set_flash_message('Access Denied: You do not have permission to create announcements.', 'error');
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        }
         $news_text = trim($_POST['news_text'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $published_date = trim($_POST['published_date'] ?? '');
@@ -96,6 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
         }
     } elseif ($post_action === 'delete_university_news') {
+        if (!user_can('delete')) {
+            set_flash_message('Access Denied: You do not have permission to delete announcements.', 'error');
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        }
         $news_id = (int) ($_POST['news_id'] ?? 0);
         if ($news_id) {
             $stmt = $db->prepare("DELETE FROM news_items WHERE id = ? AND university_id = ?");
@@ -105,6 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
         }
     } elseif ($post_action === 'toggle_university_news') {
+        if (!user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update announcements.', 'error');
+            redirect(BASE_URL . '/modules/universities/edit.php?id=' . $id . '#uni-news-section');
+        }
         $news_id = (int) ($_POST['news_id'] ?? 0);
         if ($news_id) {
             $stmt = $db->prepare("UPDATE news_items SET is_active = IF(is_active=1, 0, 1) WHERE id = ? AND university_id = ?");

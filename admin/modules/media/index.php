@@ -3,6 +3,9 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('media');
 
+$can_upload = user_can('create') || user_can('write');
+$can_delete = user_can('delete');
+
 $db = get_db_connection();
 
 // Self-healing check: Ensure Media Library is registered in sidebar_items
@@ -607,10 +610,17 @@ require_once ADMIN_PATH . '/includes/header.php';
             </div>
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
+            <?php if ($can_upload): ?>
             <button type="button" class="btn-primary" id="trigger-upload-toggle-btn" style="width:auto; height:38px; padding:0 20px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px; background:var(--primary-gradient, linear-gradient(135deg, #4f46e5, #7c3aed)); color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:0 4px 14px rgba(79, 70, 229, 0.4);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Upload New Files</span>
             </button>
+            <?php else: ?>
+            <button type="button" class="btn-primary btn-disabled-locked" title="Access Denied: You do not have permission to upload media" disabled style="width:auto; height:38px; padding:0 20px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>Upload Locked</span>
+            </button>
+            <?php endif; ?>
             <button type="button" class="media-refresh-btn" id="refresh-library-btn" title="Refresh library" style="height:38px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:var(--bg-input, #151f32); border:1px solid var(--border-color, #1e2b45); border-radius:10px; color:var(--text-main, #ffffff); font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.25); white-space:nowrap;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 <span>Refresh</span>
@@ -619,7 +629,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     </div>
 
     <!-- Direct Drag & Drop Upload Zone (Card) -->
-    <div class="media-upload-card" id="media-upload-box">
+    <div class="media-upload-card" id="media-upload-box" <?php echo !$can_upload ? 'style="display:none;"' : ''; ?>>
         <div class="media-page-dropzone" id="direct-media-dropzone">
             <div class="dropzone-icon-wrap">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -766,10 +776,17 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                         <span>Open / Download</span>
                     </a>
+                    <?php if ($can_delete): ?>
                     <button type="button" class="modal-btn-delete" id="modal-delete-btn" style="flex:1; height:42px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color:#ffffff !important; border:1px solid #ef4444; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 4px 14px rgba(239, 68, 68, 0.4); outline:none;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         <span>Delete Permanently</span>
                     </button>
+                    <?php else: ?>
+                    <button type="button" class="modal-btn-delete btn-disabled-locked" title="Access Denied: You do not have permission to delete media files" disabled style="flex:1; height:42px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; gap:8px; opacity:0.6; cursor:not-allowed;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <span>Delete Locked</span>
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -784,8 +801,10 @@ require_once ADMIN_PATH . '/includes/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const userCanUpload = <?php echo $can_upload ? 'true' : 'false'; ?>;
+    const userCanDelete = <?php echo $can_delete ? 'true' : 'false'; ?>;
     let currentPage = 1;
-    const itemsPerPage = 50;
+    let itemsPerPage = 50;
     let currentType = 'all';
     let currentSearch = '';
     let selectedFile = null;
@@ -958,9 +977,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button type="button" class="media-overlay-btn copy" title="Copy Path">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </button>
+                        ${userCanDelete ? `
                         <button type="button" class="media-overlay-btn delete" title="Delete File">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
+                        </button>` : `
+                        <button type="button" class="media-overlay-btn delete disabled" title="Access Denied: You do not have delete permission" style="opacity:0.4; cursor:not-allowed;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </button>`}
                     </div>
                 </div>
                 <div class="media-card-meta">
@@ -981,6 +1004,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (e.target.closest('.media-overlay-btn.delete')) {
                     e.stopPropagation();
+                    if (!userCanDelete) {
+                        alert('Access Denied: You do not have permission to delete media files.');
+                        return;
+                    }
                     deleteFile(item);
                     return;
                 }

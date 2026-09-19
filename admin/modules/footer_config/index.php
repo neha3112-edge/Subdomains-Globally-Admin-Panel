@@ -3,6 +3,8 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('footer_config');
 
+$can_edit = user_can('update') || user_can('write');
+
 $page_title    = 'Footer & AI Tools';
 $page_subtitle = 'Configure the universal subdomain footer, CTA bar, AI tool widgets, and copyright';
 $active_page_key = 'footer_config';
@@ -12,6 +14,11 @@ $db = get_db_connection();
 // Handle Save
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
+
+    if (!$can_edit) {
+        set_flash_message('Access Denied: You do not have permission to modify footer configuration.', 'error');
+        redirect(BASE_URL . '/modules/footer_config/index.php?tab=' . ($_POST['active_tab'] ?? 'cta'));
+    }
 
     // AI Tools: build JSON from structured POST fields (preserving sort_order)
     $ai_cards = [];
@@ -402,10 +409,17 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <?php endforeach; ?>
                 </div>
 
+                <?php if ($can_edit): ?>
                 <button type="button" class="fc-add-btn" onclick="addToolCard()">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Add AI Tool Card
                 </button>
+                <?php else: ?>
+                <button type="button" class="fc-add-btn" title="Access Denied: You do not have permission to add tools" disabled style="opacity:0.5; cursor:not-allowed;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    Add AI Tool Card (Locked)
+                </button>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -511,23 +525,41 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <label style="font-size:10px; color:var(--text-dim);">New Tab</label>
                         <input type="checkbox" name="link_newtab[<?php echo $i; ?>]" value="1" <?php echo !empty($lnk['new_tab']) ? 'checked' : ''; ?> style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);">
                     </div>
+                    <?php if ($can_edit): ?>
                     <button type="button" class="fc-remove-btn" onclick="this.closest('.fc-link-row').remove()" style="padding:5px 8px;">✕</button>
+                    <?php else: ?>
+                    <button type="button" class="fc-remove-btn" disabled style="opacity:0.4; cursor:not-allowed; padding:5px 8px;">✕</button>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
             </div>
 
+            <?php if ($can_edit): ?>
             <button type="button" class="fc-add-btn" onclick="addFooterLink()" style="margin-top:8px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Add Footer Link
             </button>
+            <?php else: ?>
+            <button type="button" class="fc-add-btn" title="Access Denied: You do not have permission to add links" disabled style="opacity:0.5; cursor:not-allowed; margin-top:8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Add Footer Link (Locked)
+            </button>
+            <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
 
     <div style="margin-top:20px;">
+        <?php if ($can_edit): ?>
         <button type="submit" class="btn-primary" style="width:auto; padding:12px 28px;">
             Save <?php echo $tabs_list[$tab] ?? 'Configuration'; ?>
         </button>
+        <?php else: ?>
+        <button type="button" class="btn-primary btn-disabled-locked" title="Access Denied: You do not have permission to modify footer configuration" disabled style="width:auto; padding:12px 28px; display:inline-flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Save <?php echo $tabs_list[$tab] ?? 'Configuration'; ?> (Locked)
+        </button>
+        <?php endif; ?>
     </div>
 </form>
 

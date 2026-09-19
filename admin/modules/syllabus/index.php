@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
+require_permission('syllabus');
 
 $page_title = 'Syllabus Subjects Master';
 $page_subtitle = 'Manage global master list of syllabus subjects. Selectable across semesters in Course Mappings.';
@@ -16,6 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Single Save / Update
     if ($action === 'save') {
         $subject_id = (int)($_POST['subject_id'] ?? 0);
+        if ($subject_id > 0 && !user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update subjects.', 'error');
+            redirect(BASE_URL . '/modules/syllabus/index.php');
+        } elseif (!$subject_id && !user_can('create')) {
+            set_flash_message('Access Denied: You do not have permission to create subjects.', 'error');
+            redirect(BASE_URL . '/modules/syllabus/index.php');
+        }
         $subject_name = trim($_POST['subject_name'] ?? '');
         $sort_order = (int)($_POST['sort_order'] ?? 0);
         $is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -53,6 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. Bulk Add Subjects
     if ($action === 'bulk_save') {
+        if (!user_can('create')) {
+            set_flash_message('Access Denied: You do not have permission to create subjects.', 'error');
+            redirect(BASE_URL . '/modules/syllabus/index.php');
+        }
         $raw_text = trim($_POST['bulk_subjects'] ?? '');
         if (!empty($raw_text)) {
             $lines = preg_split('/\r\n|\r|\n/', $raw_text);
@@ -86,6 +98,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. Delete Subject
     if ($action === 'delete') {
+        if (!user_can('delete')) {
+            set_flash_message('Access Denied: You do not have permission to delete subjects.', 'error');
+            redirect(BASE_URL . '/modules/syllabus/index.php');
+        }
         $subject_id = (int)($_POST['subject_id'] ?? 0);
         if ($subject_id > 0) {
             $ok = move_to_trash('course_syllabus_subjects_master', $subject_id);
@@ -100,6 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 4. Toggle Status
     if ($action === 'toggle_status') {
+        if (!user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update subjects.', 'error');
+            redirect(BASE_URL . '/modules/syllabus/index.php');
+        }
         $subject_id = (int)($_POST['subject_id'] ?? 0);
         if ($subject_id > 0) {
             $stmt = $db->prepare("UPDATE course_syllabus_subjects_master SET is_active = 1 - is_active, updated_at = NOW() WHERE id = ?");
@@ -344,14 +364,25 @@ include dirname(__DIR__, 2) . '/includes/header.php';
         <span style="background: rgba(16, 185, 129, 0.12); color: #6ee7b7; padding: 7px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; border: 1px solid rgba(16, 185, 129, 0.3);">
             <?= $total_count ?> Total Subjects
         </span>
-        <button type="button" class="sode-btn sode-btn-emerald" onclick="openBulkModal()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-            ⚡ Bulk Add
-        </button>
-        <button type="button" class="sode-btn sode-btn-primary" onclick="openSubjectModal()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            + Add Subject
-        </button>
+        <?php if (can_create()): ?>
+            <button type="button" class="sode-btn sode-btn-emerald" onclick="openBulkModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                ⚡ Bulk Add
+            </button>
+            <button type="button" class="sode-btn sode-btn-primary" onclick="openSubjectModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                + Add Subject
+            </button>
+        <?php else: ?>
+            <button type="button" class="sode-btn btn-disabled-locked" disabled title="Access Denied: You do not have Create permission">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Bulk Add (Locked)
+            </button>
+            <button type="button" class="sode-btn btn-disabled-locked" disabled title="Access Denied: You do not have Create permission">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Add (Locked)
+            </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -398,7 +429,9 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                             <div style="font-size: 36px; margin-bottom: 10px;">📖</div>
                             <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No subjects found</div>
                             <div style="font-size: 13px; margin-bottom: 16px;">Add master syllabus subjects so they can be selected in Course Mappings.</div>
-                            <button type="button" class="sode-btn sode-btn-primary" onclick="openSubjectModal()">+ Add Subject</button>
+                            <?php if (can_create()): ?>
+                                <button type="button" class="sode-btn sode-btn-primary" onclick="openSubjectModal()">+ Add Subject</button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php else: ?>
@@ -413,38 +446,65 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                                 </div>
                             </td>
                             <td style="text-align: center;">
-                                <form method="POST" action="" style="display: inline;">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="toggle_status">
-                                    <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
-                                    <button type="submit" class="status-badge-btn" title="Click to toggle active status">
-                                        <?php if ($sub['is_active']): ?>
-                                            <span class="status-pill active">
-                                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399;"></span> Active
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="status-pill inactive">
-                                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #f87171;"></span> Inactive
-                                            </span>
-                                        <?php endif; ?>
-                                    </button>
-                                </form>
+                                <?php if (can_update()): ?>
+                                    <form method="POST" action="" style="display: inline;">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="toggle_status">
+                                        <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
+                                        <button type="submit" class="status-badge-btn" title="Click to toggle active status">
+                                            <?php if ($sub['is_active']): ?>
+                                                <span class="status-pill active">
+                                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399;"></span> Active
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="status-pill inactive">
+                                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #f87171;"></span> Inactive
+                                                </span>
+                                            <?php endif; ?>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <?php if ($sub['is_active']): ?>
+                                        <span class="status-pill active">
+                                            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399;"></span> Active
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="status-pill inactive">
+                                            <span style="width: 6px; height: 6px; border-radius: 50%; background: #f87171;"></span> Inactive
+                                        </span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </td>
                             <td style="text-align: center;">
                                 <div style="display: inline-flex; gap: 8px; justify-content: center;">
-                                    <button type="button" class="table-btn-edit" onclick='editSubject(<?= json_encode($sub, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                        Edit
-                                    </button>
-                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this subject from master library?');">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
-                                        <button type="submit" class="table-btn-delete">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    <?php if (can_update()): ?>
+                                        <button type="button" class="table-btn-edit" onclick='editSubject(<?= json_encode($sub, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            Edit
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" class="table-btn-edit btn-disabled-locked" disabled title="Access Denied: You do not have Edit permission">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                            Edit
+                                        </button>
+                                    <?php endif; ?>
+
+                                    <?php if (can_delete()): ?>
+                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this subject from master library?');">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="subject_id" value="<?= $sub['id'] ?>">
+                                            <button type="submit" class="table-btn-delete">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <button type="button" class="table-btn-delete btn-disabled-locked" disabled title="Access Denied: You do not have Delete permission">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                             Delete
                                         </button>
-                                    </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

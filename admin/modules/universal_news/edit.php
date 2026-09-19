@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('universal_news');
+require_action_permission('update', 'universal_news');
 
 $id = (int)($_GET['id'] ?? 0);
 if (!$id) {

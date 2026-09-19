@@ -2,6 +2,12 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 
+require_permission('course_universities');
+
+$can_edit = user_can('update') || user_can('create') || user_can('write');
+$can_create = user_can('create') || user_can('write');
+$can_delete = user_can('delete');
+
 $page_title = 'Universities Table';
 $page_subtitle = 'Manage global course-wise top universities table, fees, accreditations, and advantages';
 $active_page_key = 'course_universities';
@@ -89,6 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'save_course_universities') {
+        if (!$can_edit) {
+            set_flash_message('Access Denied: You do not have permission to modify universities tables.', 'error');
+            redirect(BASE_URL . '/modules/course_universities/index.php?course=' . urlencode($_POST['course_slug'] ?? 'mba'));
+        }
+
         $course_slug = strtolower(trim($_POST['course_slug'] ?? ''));
         $heading = trim($_POST['heading'] ?? '');
         $description = trim($_POST['description'] ?? '');
@@ -245,10 +256,17 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 Listed universities offering this course with semester fees, location, accreditations, and unique advantage.
                             </p>
                         </div>
+                        <?php if ($can_create): ?>
                         <button type="button" id="btn-add-uni" class="btn btn-primary" style="padding:6px 14px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             Add University
                         </button>
+                        <?php else: ?>
+                        <button type="button" class="btn btn-primary btn-disabled-locked" title="Access Denied: You do not have permission to add universities" disabled style="padding:6px 14px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Add University
+                        </button>
+                        <?php endif; ?>
                     </div>
 
                     <div class="card-body" style="padding:16px;">
@@ -263,43 +281,49 @@ require_once ADMIN_PATH . '/includes/header.php';
                                                 </span>
                                                 <span class="uni-title-preview"><?php echo htmlspecialchars($uni['name'] ?: 'University #' . ($idx + 1)); ?></span>
                                             </span>
+                                            <?php if ($can_delete): ?>
                                             <button type="button" class="btn-remove-uni" title="Remove University" style="background:transparent; border:none; color:#ef4444; cursor:pointer; padding:4px 8px; border-radius:4px;">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                             </button>
+                                            <?php else: ?>
+                                            <button type="button" class="btn-remove-uni disabled" title="Access Denied: You do not have delete permission" disabled style="background:transparent; border:none; color:#64748b; cursor:not-allowed; opacity:0.5; padding:4px 8px;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                            </button>
+                                            <?php endif; ?>
                                         </div>
 
                                         <div style="display:grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap:12px; margin-bottom:12px;">
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">University Name *</label>
-                                                <input type="text" name="uni_name[]" class="form-control uni-name-input" value="<?php echo htmlspecialchars($uni['name']); ?>" placeholder="e.g. Amity University" required>
+                                                <input type="text" name="uni_name[]" class="form-control uni-name-input" value="<?php echo htmlspecialchars($uni['name']); ?>" placeholder="e.g. Amity University" required <?php echo !$can_edit ? 'readonly' : ''; ?>>
                                             </div>
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">URL Link (Optional)</label>
-                                                <input type="text" name="uni_link[]" class="form-control" value="<?php echo htmlspecialchars($uni['link'] ?? ''); ?>" placeholder="https://distanceeducationschool.com/...">
+                                                <input type="text" name="uni_link[]" class="form-control" value="<?php echo htmlspecialchars($uni['link'] ?? ''); ?>" placeholder="https://distanceeducationschool.com/..." <?php echo !$can_edit ? 'readonly' : ''; ?>>
                                                 <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:5px; cursor:pointer; user-select:none;">
                                                     <input type="hidden" name="uni_newtab_val[]" value="<?php echo (!isset($uni['new_tab']) || !empty($uni['new_tab'])) ? '1' : '0'; ?>">
-                                                    <input type="checkbox" <?php echo (!isset($uni['new_tab']) || !empty($uni['new_tab'])) ? 'checked' : ''; ?> onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:14px; height:14px; cursor:pointer;">
+                                                    <input type="checkbox" <?php echo (!isset($uni['new_tab']) || !empty($uni['new_tab'])) ? 'checked' : ''; ?> onchange="this.previousElementSibling.value = this.checked ? '1' : '0'" style="accent-color:var(--primary, #6366f1); width:14px; height:14px; cursor:pointer;" <?php echo !$can_edit ? 'disabled' : ''; ?>>
                                                     <span>Open link in new tab</span>
                                                 </label>
                                             </div>
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">Fee (Per Semester)</label>
-                                                <input type="text" name="uni_fees[]" class="form-control" value="<?php echo htmlspecialchars($uni['fees']); ?>" placeholder="e.g. ₹56,300">
+                                                <input type="text" name="uni_fees[]" class="form-control" value="<?php echo htmlspecialchars($uni['fees']); ?>" placeholder="e.g. ₹56,300" <?php echo !$can_edit ? 'readonly' : ''; ?>>
                                             </div>
                                         </div>
 
                                         <div style="display:grid; grid-template-columns: 1.2fr 1.2fr 1.6fr; gap:12px;">
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">Location</label>
-                                                <input type="text" name="uni_location[]" class="form-control" value="<?php echo htmlspecialchars($uni['location'] ?? ''); ?>" placeholder="e.g. Noida, Uttar Pradesh">
+                                                <input type="text" name="uni_location[]" class="form-control" value="<?php echo htmlspecialchars($uni['location'] ?? ''); ?>" placeholder="e.g. Noida, Uttar Pradesh" <?php echo !$can_edit ? 'readonly' : ''; ?>>
                                             </div>
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">Approvals & Accreditation</label>
-                                                <input type="text" name="uni_accreditation[]" class="form-control" value="<?php echo htmlspecialchars($uni['accreditation'] ?? ''); ?>" placeholder="e.g. UGC, NAAC A+">
+                                                <input type="text" name="uni_accreditation[]" class="form-control" value="<?php echo htmlspecialchars($uni['accreditation'] ?? ''); ?>" placeholder="e.g. UGC, NAAC A+" <?php echo !$can_edit ? 'readonly' : ''; ?>>
                                             </div>
                                             <div>
                                                 <label style="font-size:11.5px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:4px;">Advantage / Key Highlights</label>
-                                                <input type="text" name="uni_advantage[]" class="form-control" value="<?php echo htmlspecialchars($uni['advantage'] ?? ''); ?>" placeholder="e.g. Global recognition">
+                                                <input type="text" name="uni_advantage[]" class="form-control" value="<?php echo htmlspecialchars($uni['advantage'] ?? ''); ?>" placeholder="e.g. Global recognition" <?php echo !$can_edit ? 'readonly' : ''; ?>>
                                             </div>
                                         </div>
                                     </div>
@@ -308,7 +332,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 <div id="empty-state-notice" style="text-align:center; padding:35px 20px; color:var(--text-dim);">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px; opacity:0.5;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M3 15h18M9 3v18M15 3v18"></path></svg>
                                     <p style="margin:0 0 10px; font-size:14px;">No universities added yet for <?php echo htmlspecialchars($course_display_title); ?>.</p>
+                                    <?php if ($can_create): ?>
                                     <button type="button" class="btn btn-outline" onclick="document.getElementById('btn-add-uni').click();" style="font-size:12.5px;">+ Add First University</button>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -328,9 +354,16 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <p style="font-size:12.5px; color:var(--text-dim); margin:0;">
                             Updates will immediately apply to all university subdomains rendering <code>[course_table course="<?php echo htmlspecialchars($selected_slug); ?>"]</code>.
                         </p>
+                        <?php if ($can_edit): ?>
                         <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:11px; font-size:14px; font-weight:700;">
                             Save Universities Table
                         </button>
+                        <?php else: ?>
+                        <button type="button" class="btn btn-primary btn-disabled-locked" title="Access Denied: You do not have permission to modify universities table" disabled style="width:100%; justify-content:center; padding:11px; font-size:14px; font-weight:700;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Save Universities Table (Locked)
+                        </button>
+                        <?php endif; ?>
                     </div>
                 </div>
 

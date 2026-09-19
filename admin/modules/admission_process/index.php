@@ -20,6 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_step') {
         $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
         $uni_id = !empty($_POST['university_id']) ? (int)$_POST['university_id'] : null;
+        if ($id && !user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update admission steps.', 'error');
+            redirect(BASE_URL . '/modules/admission_process/index.php' . ($uni_id ? '?uni_id=' . $uni_id : ''));
+        } elseif (!$id && !user_can('create')) {
+            set_flash_message('Access Denied: You do not have permission to create admission steps.', 'error');
+            redirect(BASE_URL . '/modules/admission_process/index.php' . ($uni_id ? '?uni_id=' . $uni_id : ''));
+        }
         $step_number = (int)($_POST['step_number'] ?? 1);
         $color_hex = trim($_POST['color_hex'] ?? '#3B7FD1');
         $title = trim($_POST['title'] ?? '');
@@ -48,6 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(BASE_URL . '/modules/admission_process/index.php' . ($uni_id ? '?uni_id=' . $uni_id : ''));
         }
     } elseif ($action === 'delete') {
+        if (!user_can('delete')) {
+            set_flash_message('Access Denied: You do not have permission to delete admission steps.', 'error');
+            redirect(BASE_URL . '/modules/admission_process/index.php' . ($selected_uni_id ? '?uni_id=' . $selected_uni_id : ''));
+        }
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $ok = move_to_trash('admission_process_steps', $id);
@@ -208,9 +219,25 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <textarea name="icon_svg" class="form-textarea" rows="3" placeholder="<svg viewBox=&quot;0 0 24 24&quot; ...>"><?php echo htmlspecialchars($edit_step['icon_svg'] ?? ''); ?></textarea>
                 </div>
 
-                <button type="submit" class="btn-primary">
-                    <?php echo $edit_step ? 'Update Step' : 'Add Step'; ?>
-                </button>
+                <?php if ($edit_step): ?>
+                    <?php if (can_update()): ?>
+                        <button type="submit" class="btn-primary">Update Step</button>
+                    <?php else: ?>
+                        <button type="button" class="btn-secondary btn-disabled-locked" disabled title="Access Denied: You do not have permission to update">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Update Step (Locked)
+                        </button>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <?php if (can_create()): ?>
+                        <button type="submit" class="btn-primary">Add Step</button>
+                    <?php else: ?>
+                        <button type="button" class="btn-secondary btn-disabled-locked" disabled title="Access Denied: You do not have permission to create">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Add Step (Locked)
+                        </button>
+                    <?php endif; ?>
+                <?php endif; ?>
             </form>
         </div>
     </div>
@@ -260,18 +287,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 </td>
                                 <td>
                                     <div class="table-actions">
-                                        <a href="<?php echo BASE_URL; ?>/modules/admission_process/index.php?edit_id=<?php echo $s['id']; ?><?php echo $selected_uni_id ? '&uni_id=' . $selected_uni_id : ''; ?>" class="action-btn" title="Edit">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                        </a>
+                                        <?php echo rbac_render_edit_button(BASE_URL . '/modules/admission_process/index.php?edit_id=' . $s['id'] . ($selected_uni_id ? '&uni_id=' . $selected_uni_id : ''), 'Edit'); ?>
 
-                                        <form method="POST" action="" class="confirm-delete" style="display:inline;">
-                                            <?php echo csrf_field(); ?>
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
-                                            <button type="submit" class="action-btn delete-btn" title="Delete">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                            </button>
-                                        </form>
+                                        <?php echo rbac_render_delete_button($s['id'], 'Delete'); ?>
                                     </div>
                                 </td>
                             </tr>

@@ -3,6 +3,10 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('modes');
 
+$can_create = user_can('create') || user_can('write');
+$can_edit = user_can('update') || user_can('write');
+$can_delete = user_can('delete');
+
 $page_title = 'Education Modes';
 $page_subtitle = 'Manage global list of education & delivery modes. Selectable in Universities and Course Mappings.';
 $active_page_key = 'modes';
@@ -17,6 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Single Save / Update
     if ($action === 'save') {
         $mode_id = (int)($_POST['mode_id'] ?? 0);
+        if ($mode_id > 0 && !$can_edit) {
+            set_flash_message('Access Denied: You do not have permission to edit education modes.', 'error');
+            redirect(BASE_URL . '/modules/settings/modes.php');
+        }
+        if ($mode_id === 0 && !$can_create) {
+            set_flash_message('Access Denied: You do not have permission to add education modes.', 'error');
+            redirect(BASE_URL . '/modules/settings/modes.php');
+        }
+
         $name = trim($_POST['mode_name'] ?? '');
         $sort_order = (int)($_POST['sort_order'] ?? 0);
         $is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -54,6 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. Bulk Add Modes
     if ($action === 'bulk_save') {
+        if (!$can_create) {
+            set_flash_message('Access Denied: You do not have permission to bulk add education modes.', 'error');
+            redirect(BASE_URL . '/modules/settings/modes.php');
+        }
+
         $raw_text = trim($_POST['bulk_modes'] ?? '');
         if (!empty($raw_text)) {
             $lines = preg_split('/\r\n|\r|\n/', $raw_text);
@@ -88,6 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. Delete Mode
     if ($action === 'delete') {
+        if (!$can_delete) {
+            set_flash_message('Access Denied: You do not have permission to delete education modes.', 'error');
+            redirect(BASE_URL . '/modules/settings/modes.php');
+        }
+
         $mode_id = (int)($_POST['mode_id'] ?? 0);
         if ($mode_id > 0) {
             $ok = move_to_trash('education_modes_master', $mode_id);
@@ -102,6 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 4. Toggle Status
     if ($action === 'toggle_status') {
+        if (!$can_edit) {
+            set_flash_message('Access Denied: You do not have permission to update status.', 'error');
+            redirect(BASE_URL . '/modules/settings/modes.php');
+        }
+
         $mode_id = (int)($_POST['mode_id'] ?? 0);
         if ($mode_id > 0) {
             $stmt = $db->prepare("UPDATE education_modes_master SET is_active = 1 - is_active, updated_at = NOW() WHERE id = ?");
@@ -297,12 +325,21 @@ require_once ADMIN_PATH . '/includes/header.php';
         </p>
     </div>
     <div class="master-header-actions">
+        <?php if ($can_create): ?>
         <button type="button" class="btn-secondary-glow" onclick="openBulkModal()">
             <span>⚡</span> Bulk Add Modes
         </button>
         <button type="button" class="btn-primary-glow" onclick="openAddModal()">
             <span>+</span> Add Mode
         </button>
+        <?php else: ?>
+        <button type="button" class="btn-secondary-glow btn-disabled-locked" title="Access Denied: You do not have permission to add modes" disabled style="opacity:0.5; cursor:not-allowed;">
+            <span>🔒</span> Bulk Add Modes
+        </button>
+        <button type="button" class="btn-primary-glow btn-disabled-locked" title="Access Denied: You do not have permission to add modes" disabled style="opacity:0.5; cursor:not-allowed;">
+            <span>🔒</span> Add Mode
+        </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -326,7 +363,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <div style="font-size:32px; margin-bottom:10px;">🎓</div>
                 <p style="font-size:14px; font-weight:600; margin:0 0 6px;">No education modes found</p>
                 <p style="font-size:12px; color:var(--text-dim); margin:0 0 16px;">Add modes to make them selectable across Universities and Course Mappings.</p>
+                <?php if ($can_create): ?>
                 <button type="button" class="btn-primary-glow" onclick="openAddModal()">+ Add First Mode</button>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="table-responsive">
@@ -350,7 +389,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                     <div style="display:flex; align-items:center; gap:8px;">
                                         <span style="color:#a5b4fc; font-size:14px;">🎓</span>
                                         <strong style="color:var(--text-main, #f8fafc); font-size:13.5px;">
-                                            <?php echo htmlspecialchars($m['mode_name']); ?>
+                                             <?php echo htmlspecialchars($m['mode_name']); ?>
                                         </strong>
                                     </div>
                                 </td>
@@ -358,6 +397,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                     <?php echo htmlspecialchars($m['sort_order']); ?>
                                 </td>
                                 <td style="text-align:center;">
+                                    <?php if ($can_edit): ?>
                                     <form method="POST" action="" style="margin:0; display:inline;">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="action" value="toggle_status">
@@ -370,12 +410,27 @@ require_once ADMIN_PATH . '/includes/header.php';
                                             <?php endif; ?>
                                         </button>
                                     </form>
+                                    <?php else: ?>
+                                        <?php if ($m['is_active']): ?>
+                                            <span class="badge badge-success" style="opacity:0.7; cursor:not-allowed;" title="Access Denied: Read-only access">Active</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-danger" style="opacity:0.7; cursor:not-allowed;" title="Access Denied: Read-only access">Inactive</span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="text-align:right;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                                        <?php if ($can_edit): ?>
                                         <button type="button" class="action-btn edit-btn" title="Edit Mode" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($m)); ?>)">
                                             ✏️
                                         </button>
+                                        <?php else: ?>
+                                        <button type="button" class="action-btn disabled" title="Access Denied: You do not have edit permission" disabled style="opacity:0.4; cursor:not-allowed;">
+                                            🔒
+                                        </button>
+                                        <?php endif; ?>
+
+                                        <?php if ($can_delete): ?>
                                         <form method="POST" action="" style="margin:0; display:inline;" onsubmit="return confirm('Delete this mode from master library?');">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="action" value="delete">
@@ -384,6 +439,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                                                 🗑️
                                             </button>
                                         </form>
+                                        <?php else: ?>
+                                        <button type="button" class="action-btn disabled" title="Access Denied: You do not have delete permission" disabled style="opacity:0.4; cursor:not-allowed;">
+                                            🔒
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

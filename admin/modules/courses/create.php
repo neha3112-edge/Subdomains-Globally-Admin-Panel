@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('courses');
+require_action_permission('create', 'courses');
 
 $page_title = 'Add New Course';
 $page_subtitle = 'Create a new academic degree program and configure degree level';

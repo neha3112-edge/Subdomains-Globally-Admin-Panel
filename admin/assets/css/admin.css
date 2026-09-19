@@ -1267,6 +1267,31 @@ body {
     background: var(--danger-bg);
 }
 
+.action-btn.disabled,
+.action-btn:disabled,
+.action-btn[disabled] {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+    transform: none !important;
+}
+
+.btn-disabled-locked {
+    opacity: 0.65 !important;
+    cursor: not-allowed !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px dashed rgba(239, 68, 68, 0.35) !important;
+    color: var(--text-dim) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    text-decoration: none !important;
+    pointer-events: auto !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {

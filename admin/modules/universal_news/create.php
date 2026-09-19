@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('universal_news');
+require_action_permission('create', 'universal_news');
 
 $page_title = 'Add Universal Announcement';
 $page_subtitle = 'Create a global announcement that displays across ALL university subdomains';

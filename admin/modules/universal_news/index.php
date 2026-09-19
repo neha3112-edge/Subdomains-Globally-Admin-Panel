@@ -32,6 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'delete') {
+        if (!user_can('delete')) {
+            set_flash_message('Access Denied: You do not have permission to delete.', 'error');
+            redirect(BASE_URL . '/modules/universal_news/index.php');
+        }
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $ok = move_to_trash('news_items', $id);
@@ -43,6 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(BASE_URL . '/modules/universal_news/index.php');
         }
     } elseif ($action === 'toggle_active') {
+        if (!user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update.', 'error');
+            redirect(BASE_URL . '/modules/universal_news/index.php');
+        }
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $stmt = $db->prepare("UPDATE news_items SET is_active = IF(is_active=1, 0, 1) WHERE id = ? AND is_global = 1");
@@ -78,10 +86,7 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
-        <a href="<?php echo BASE_URL; ?>/modules/universal_news/create.php" class="btn-primary" style="padding:10px 20px; font-size:13.5px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Add Universal Announcement
-        </a>
+        <?php echo rbac_render_add_button(BASE_URL . '/modules/universal_news/create.php', 'Add Universal Announcement', 'btn-primary', 'padding:10px 20px; font-size:13.5px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);'); ?>
     </div>
 </div>
 
@@ -307,18 +312,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </td>
                             <td style="text-align: center;">
                                 <div class="table-actions" style="justify-content: center;">
-                                    <a href="<?php echo BASE_URL; ?>/modules/universal_news/edit.php?id=<?php echo $item['id']; ?>" class="action-btn" title="Edit Announcement">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                    </a>
+                                    <?php echo rbac_render_edit_button(BASE_URL . '/modules/universal_news/edit.php?id=' . $item['id'], 'Edit Announcement'); ?>
 
-                                    <form method="POST" action="" class="confirm-delete" style="display:inline;">
-                                        <?php echo csrf_field(); ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?php echo $item['id']; ?>">
-                                        <button type="submit" class="action-btn delete-btn" title="Delete Announcement">
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </form>
+                                    <?php echo rbac_render_delete_button($item['id'], 'Delete Announcement'); ?>
                                 </div>
                             </td>
                         </tr>

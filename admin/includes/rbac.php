@@ -7,6 +7,14 @@ function is_superadmin() {
     return !empty($_SESSION['is_superadmin']);
 }
 
+/**
+ * Check if the currently logged in user has permission for a specific action
+ * Checks against role_permissions table based on role_id and team_id.
+ *
+ * @param string $action 'read', 'create', 'update', 'delete', 'write', 'all'
+ * @param int|null $team_id Optional team override
+ * @return bool
+ */
 function user_can($action, $team_id = null) {
     if (is_superadmin()) {
         return true;
@@ -20,15 +28,127 @@ function user_can($action, $team_id = null) {
     }
 
     $db = get_db_connection();
-    $stmt = $db->prepare("SELECT * FROM role_permissions WHERE role_id = :role_id AND team_id = :team_id LIMIT 1");
-    $stmt->execute(['role_id' => $role_id, 'team_id' => $team_id]);
-    $perm = $stmt->fetch();
+    $perm = null;
 
-    if (!$perm) return false;
-    if (!empty($perm['can_all'])) return true;
+    if ($team_id > 0) {
+        $stmt = $db->prepare("SELECT * FROM role_permissions WHERE role_id = :role_id AND team_id = :team_id LIMIT 1");
+        $stmt->execute(['role_id' => $role_id, 'team_id' => $team_id]);
+        $perm = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
-    $col = 'can_' . strtolower($action);
+    // If no specific team row found, check any team permission for this role
+    if (!$perm) {
+        $stmt_any = $db->prepare("SELECT * FROM role_permissions WHERE role_id = :role_id ORDER BY can_all DESC, can_write DESC LIMIT 1");
+        $stmt_any->execute(['role_id' => $role_id]);
+        $perm = $stmt_any->fetch(PDO::FETCH_ASSOC);
+    }
+
+    if (!$perm) {
+        // Default: If no matrix entry exists, allow read only, disallow write/create/update/delete
+        return strtolower($action) === 'read';
+    }
+
+    if (!empty($perm['can_all'])) {
+        return true;
+    }
+
+    $act = strtolower(trim($action));
+    if ($act === 'read') {
+        return !empty($perm['can_read']) || !empty($perm['can_all']) || !empty($perm['can_write']);
+    } elseif ($act === 'create' || $act === 'add') {
+        return !empty($perm['can_create']) || !empty($perm['can_write']) || !empty($perm['can_all']);
+    } elseif ($act === 'update' || $act === 'edit') {
+        return !empty($perm['can_update']) || !empty($perm['can_write']) || !empty($perm['can_all']);
+    } elseif ($act === 'delete' || $act === 'purge' || $act === 'trash') {
+        return !empty($perm['can_delete']) || !empty($perm['can_all']);
+    } elseif ($act === 'write') {
+        return !empty($perm['can_write']) || !empty($perm['can_create']) || !empty($perm['can_update']) || !empty($perm['can_all']);
+    }
+
+    $col = 'can_' . $act;
     return !empty($perm[$col]);
+}
+
+function can_read($team_id = null)   { return user_can('read', $team_id); }
+function can_create($team_id = null) { return user_can('create', $team_id); }
+function can_update($team_id = null) { return user_can('update', $team_id); }
+function can_edit($team_id = null)   { return user_can('update', $team_id); }
+function can_delete($team_id = null) { return user_can('delete', $team_id); }
+function can_write($team_id = null)  { return user_can('write', $team_id); }
+
+/**
+ * Render an Add / Create button or a disabled locked button if user cannot create
+ */
+function rbac_render_add_button($url, $label = 'Add New', $custom_class = 'btn-primary btn-sm', $custom_style = '') {
+    $can = can_create();
+    $style_attr = !empty($custom_style) ? ' style="' . htmlspecialchars($custom_style) . '"' : '';
+    if ($can) {
+        return '<a href="' . htmlspecialchars($url) . '" class="' . htmlspecialchars($custom_class) . '"' . $style_attr . '>'
+            . '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> '
+            . htmlspecialchars($label)
+            . '</a>';
+    } else {
+        return '<button type="button" class="btn-secondary btn-sm btn-disabled-locked"' . $style_attr . ' disabled title="Access Denied: You do not have Create permission">'
+            . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> '
+            . htmlspecialchars($label) . ' <span style="font-size:10px; font-weight:700; padding:1px 5px; background:rgba(239,68,68,0.18); color:#f87171; border-radius:4px; margin-left:4px;">Locked</span>'
+            . '</button>';
+    }
+}
+
+/**
+ * Render an Edit table action button or a disabled locked button if user cannot update
+ */
+function rbac_render_edit_button($url, $title = 'Edit', $custom_class = 'action-btn') {
+    $can = can_update();
+    if ($can) {
+        return '<a href="' . htmlspecialchars($url) . '" class="' . htmlspecialchars($custom_class) . '" title="' . htmlspecialchars($title) . '">'
+            . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>'
+            . '</a>';
+    } else {
+        return '<button type="button" class="' . htmlspecialchars($custom_class) . ' disabled" disabled title="Access Denied: You do not have Edit permission">'
+            . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
+            . '</button>';
+    }
+}
+
+/**
+ * Render a Delete table action button or a disabled locked button if user cannot delete
+ */
+function rbac_render_delete_button($id, $title = 'Delete', $action_name = 'delete', $extra_post_fields = []) {
+    $can = can_delete();
+    if ($can) {
+        $csrf = function_exists('csrf_field') ? csrf_field() : '';
+        $html = '<form method="POST" action="" class="confirm-delete" style="display:inline;">'
+            . $csrf
+            . '<input type="hidden" name="action" value="' . htmlspecialchars($action_name) . '">'
+            . '<input type="hidden" name="id" value="' . (int)$id . '">';
+        foreach ($extra_post_fields as $k => $v) {
+            $html .= '<input type="hidden" name="' . htmlspecialchars($k) . '" value="' . htmlspecialchars($v) . '">';
+        }
+        $html .= '<button type="submit" class="action-btn delete-btn" title="' . htmlspecialchars($title) . '">'
+            . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>'
+            . '</button></form>';
+        return $html;
+    } else {
+        return '<button type="button" class="action-btn delete-btn disabled" disabled title="Access Denied: You do not have Delete permission">'
+            . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
+            . '</button>';
+    }
+}
+
+/**
+ * Require a specific action permission (e.g. 'create', 'update', 'delete')
+ * Halts execution with a 403 Access Denied page if user lacks permission.
+ */
+function require_action_permission($action, $module_key = '') {
+    require_login();
+    if (is_superadmin()) {
+        return true;
+    }
+
+    if (!user_can($action)) {
+        render_access_denied_page("Your account role does not have '" . strtoupper($action) . "' permission for this section.", $module_key, $action);
+    }
 }
 
 function require_module_access($module_key) {
@@ -39,7 +159,7 @@ function require_module_access($module_key) {
 
     $role_id = $_SESSION['user_role_id'] ?? 0;
     if (!$role_id) {
-        render_access_denied_page("You do not have permission to view this module.", $module_key);
+        render_access_denied_page("You do not have permission to view this module.", $module_key, 'read');
     }
 
     $db = get_db_connection();
@@ -52,14 +172,19 @@ function require_module_access($module_key) {
     ");
     $stmt->execute(['role_id' => $role_id, 'module_key' => $module_key]);
     if (!$stmt->fetch()) {
-        render_access_denied_page("You do not have permission to access the " . htmlspecialchars($module_key) . " module.", $module_key);
+        render_access_denied_page("You do not have permission to access the " . htmlspecialchars($module_key) . " module.", $module_key, 'read');
+    }
+
+    // Also check read permission
+    if (!user_can('read')) {
+        render_access_denied_page("Your account does not have read access to this section.", $module_key, 'read');
     }
 }
 
 /**
  * Render a beautiful, premium Access Denied (403) page with Dashboard button
  */
-function render_access_denied_page($message = '', $module_key = '') {
+function render_access_denied_page($message = '', $module_key = '', $action = '') {
     if (!headers_sent()) {
         http_response_code(403);
     }
@@ -433,8 +558,14 @@ function render_access_denied_page($message = '', $module_key = '') {
         <h1 class="error-title">Access Denied</h1>
 
         <p class="error-desc">
-            You do not have permission to access the <span class="module-badge"><?php echo htmlspecialchars($module_label); ?></span> module.<br>
-            Your current account role does not have privileges for this section.
+            <?php if (!empty($message)): ?>
+                <?php echo htmlspecialchars($message); ?><br>
+            <?php elseif (!empty($action) && $action !== 'read'): ?>
+                You do not have <strong><?php echo strtoupper(htmlspecialchars($action)); ?></strong> permission for the <span class="module-badge"><?php echo htmlspecialchars($module_label); ?></span> module.<br>
+            <?php else: ?>
+                You do not have permission to access the <span class="module-badge"><?php echo htmlspecialchars($module_label); ?></span> module.<br>
+            <?php endif; ?>
+            Your account role is restricted by the <strong>Team Permissions Matrix</strong>.
         </p>
 
         <?php if (!empty($user)): ?>

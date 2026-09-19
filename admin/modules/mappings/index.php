@@ -12,6 +12,10 @@ $db = get_db_connection();
 // Handle Delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     verify_csrf();
+    if (!user_can('delete')) {
+        set_flash_message('Access Denied: You do not have permission to delete.', 'error');
+        redirect(BASE_URL . '/modules/mappings/index.php');
+    }
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {
         $m_info = $db->query("
@@ -95,10 +99,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     <div>
         <span class="section-heading-sm" style="margin-bottom:0;">All University-Course Mappings (<?php echo $total_mappings; ?>)</span>
     </div>
-    <a href="<?php echo BASE_URL; ?>/modules/mappings/create.php" class="btn-primary btn-sm" style="padding:10px 18px; font-size:13.5px; text-decoration:none;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        Map New Course
-    </a>
+    <?php echo rbac_render_add_button(BASE_URL . '/modules/mappings/create.php', 'Map New Course', 'btn-primary btn-sm', 'padding:10px 18px; font-size:13.5px; text-decoration:none;'); ?>
 </div>
 
 <!-- Full Width Search Bar -->
@@ -168,18 +169,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </td>
                             <td>
                                 <div class="table-actions">
-                                    <a href="<?php echo BASE_URL; ?>/modules/mappings/edit.php?id=<?php echo $m['id']; ?>" class="action-btn" title="Edit Mapping">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                    </a>
+                                    <?php echo rbac_render_edit_button(BASE_URL . '/modules/mappings/edit.php?id=' . $m['id'], 'Edit Mapping'); ?>
 
-                                    <form method="POST" action="" class="confirm-delete" style="display:inline;">
-                                        <?php echo csrf_field(); ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?php echo $m['id']; ?>">
-                                        <button type="submit" class="action-btn delete-btn" title="Delete Mapping">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </form>
+                                    <?php echo rbac_render_delete_button($m['id'], 'Delete Mapping'); ?>
                                 </div>
                             </td>
                         </tr>

@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('mappings');
+require_action_permission('update', 'mappings');
 
 $page_title = 'Edit Course Mapping';
 $page_subtitle = 'Update fees structure and specializations';

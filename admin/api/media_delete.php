@@ -10,6 +10,12 @@ if (!is_logged_in()) {
     exit;
 }
 
+if (!user_can('delete')) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Access Denied: You do not have permission to delete media files.']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);

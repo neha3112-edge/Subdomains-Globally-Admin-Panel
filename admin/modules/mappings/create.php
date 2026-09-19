@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('mappings');
+require_action_permission('create', 'mappings');
 
 $page_title = 'Map Course to University';
 $page_subtitle = 'Set fees structure and specializations';

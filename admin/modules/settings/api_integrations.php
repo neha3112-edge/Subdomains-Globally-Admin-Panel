@@ -3,6 +3,8 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('settings');
 
+$can_edit = user_can('update') || user_can('write');
+
 $page_title = 'Lead & API Settings (Global)';
 $page_subtitle = 'Configure centralized CRM, Brevo, and Gallabox API keys across all university subdomains';
 $active_page_key = 'api_integrations';
@@ -12,6 +14,11 @@ $db = get_db_connection();
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
+
+    if (!$can_edit) {
+        set_flash_message('Access Denied: You do not have permission to modify API credentials.', 'error');
+        redirect(BASE_URL . '/modules/settings/api_integrations.php');
+    }
 
     $settings_to_update = [
         'crm_api_url'          => trim($_POST['crm_api_url'] ?? ''),
@@ -140,10 +147,17 @@ require_once ADMIN_PATH . '/includes/header.php';
 
         <!-- Save Button -->
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:8px;">
+            <?php if ($can_edit): ?>
             <button type="submit" class="btn-primary" style="padding:12px 32px; font-size:15px; font-weight:600;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                 Save Global Credentials
             </button>
+            <?php else: ?>
+            <button type="button" class="btn-primary btn-disabled-locked" title="Access Denied: You do not have permission to modify settings" disabled style="padding:12px 32px; font-size:15px; font-weight:600; display:inline-flex; align-items:center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Save Global Credentials (Locked)
+            </button>
+            <?php endif; ?>
         </div>
 
     </div>

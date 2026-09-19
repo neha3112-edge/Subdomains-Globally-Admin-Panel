@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('courses');
+require_action_permission('update', 'courses');
 
 $db = get_db_connection();
 

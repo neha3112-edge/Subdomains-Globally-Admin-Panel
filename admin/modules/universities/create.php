@@ -2,6 +2,8 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('universities');
+require_action_permission('create', 'universities');
+
 
 $page_title = 'Add University';
 $page_subtitle = 'Create a new university master record';

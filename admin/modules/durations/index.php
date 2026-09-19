@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
+require_permission('durations');
 
 $page_title = 'Durations Master';
 $page_subtitle = 'Manage global master list of durations. Selectable in all course mappings.';
@@ -16,6 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Single Save / Update
     if ($action === 'save') {
         $dur_id = (int)($_POST['dur_id'] ?? 0);
+        if ($dur_id > 0 && !user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update durations.', 'error');
+            redirect(BASE_URL . '/modules/durations/index.php');
+        } elseif (!$dur_id && !user_can('create')) {
+            set_flash_message('Access Denied: You do not have permission to create durations.', 'error');
+            redirect(BASE_URL . '/modules/durations/index.php');
+        }
         $title = trim($_POST['duration_title'] ?? '');
         $sort_order = (int)($_POST['sort_order'] ?? 0);
         $is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -53,6 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. Bulk Add Durations
     if ($action === 'bulk_save') {
+        if (!user_can('create')) {
+            set_flash_message('Access Denied: You do not have permission to create durations.', 'error');
+            redirect(BASE_URL . '/modules/durations/index.php');
+        }
         $raw_text = trim($_POST['bulk_durations'] ?? '');
         if (!empty($raw_text)) {
             $lines = preg_split('/\r\n|\r|\n/', $raw_text);
@@ -87,6 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. Delete Duration
     if ($action === 'delete') {
+        if (!user_can('delete')) {
+            set_flash_message('Access Denied: You do not have permission to delete durations.', 'error');
+            redirect(BASE_URL . '/modules/durations/index.php');
+        }
         $dur_id = (int)($_POST['dur_id'] ?? 0);
         if ($dur_id > 0) {
             $ok = move_to_trash('course_durations_master', $dur_id);
@@ -101,6 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 4. Toggle Status
     if ($action === 'toggle_status') {
+        if (!user_can('update')) {
+            set_flash_message('Access Denied: You do not have permission to update durations.', 'error');
+            redirect(BASE_URL . '/modules/durations/index.php');
+        }
         $dur_id = (int)($_POST['dur_id'] ?? 0);
         if ($dur_id > 0) {
             $stmt = $db->prepare("UPDATE course_durations_master SET is_active = 1 - is_active, updated_at = NOW() WHERE id = ?");
@@ -321,12 +341,23 @@ include dirname(__DIR__, 2) . '/includes/header.php';
         </p>
     </div>
     <div class="master-header-actions">
-        <button type="button" class="btn-secondary-glow" onclick="openBulkModal()">
-            <span>⚡</span> Bulk Add Durations
-        </button>
-        <button type="button" class="btn-primary-glow" onclick="openAddModal()">
-            <span>+</span> Add Duration
-        </button>
+        <?php if (can_create()): ?>
+            <button type="button" class="btn-secondary-glow" onclick="openBulkModal()">
+                <span>⚡</span> Bulk Add Durations
+            </button>
+            <button type="button" class="btn-primary-glow" onclick="openAddModal()">
+                <span>+</span> Add Duration
+            </button>
+        <?php else: ?>
+            <button type="button" class="btn-secondary btn-disabled-locked" disabled title="Access Denied: You do not have Create permission">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Bulk Add (Locked)
+            </button>
+            <button type="button" class="btn-secondary btn-disabled-locked" disabled title="Access Denied: You do not have Create permission">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Add Duration (Locked)
+            </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -350,7 +381,9 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                 <div style="font-size:32px; margin-bottom:10px;">⏱️</div>
                 <p style="font-size:14px; font-weight:600; margin:0 0 6px;">No durations found</p>
                 <p style="font-size:12px; color:var(--text-dim); margin:0 0 16px;">Add durations to make them selectable in Course Mappings.</p>
-                <button type="button" class="btn-primary-glow" onclick="openAddModal()">+ Add First Duration</button>
+                <?php if (can_create()): ?>
+                    <button type="button" class="btn-primary-glow" onclick="openAddModal()">+ Add First Duration</button>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="table-responsive">
@@ -382,32 +415,53 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                                     <?php echo htmlspecialchars($d['sort_order']); ?>
                                 </td>
                                 <td style="text-align:center;">
-                                    <form method="POST" action="" style="margin:0; display:inline;">
-                                        <?php echo csrf_field(); ?>
-                                        <input type="hidden" name="action" value="toggle_status">
-                                        <input type="hidden" name="dur_id" value="<?php echo $d['id']; ?>">
-                                        <button type="submit" style="background:none; border:none; padding:0; cursor:pointer;" title="Click to toggle active state">
-                                            <?php if ($d['is_active']): ?>
-                                                <span class="badge badge-success" style="cursor:pointer;">Active</span>
-                                            <?php else: ?>
-                                                <span class="badge badge-danger" style="cursor:pointer;">Inactive</span>
-                                            <?php endif; ?>
-                                        </button>
-                                    </form>
+                                    <?php if (can_update()): ?>
+                                        <form method="POST" action="" style="margin:0; display:inline;">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="action" value="toggle_status">
+                                            <input type="hidden" name="dur_id" value="<?php echo $d['id']; ?>">
+                                            <button type="submit" style="background:none; border:none; padding:0; cursor:pointer;" title="Click to toggle active state">
+                                                <?php if ($d['is_active']): ?>
+                                                    <span class="badge badge-success" style="cursor:pointer;">Active</span>
+                                                <?php else: ?>
+                                                    <span class="badge badge-danger" style="cursor:pointer;">Inactive</span>
+                                                <?php endif; ?>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <?php if ($d['is_active']): ?>
+                                            <span class="badge badge-success" title="Active">Active</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-danger" title="Inactive">Inactive</span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="text-align:right;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
-                                        <button type="button" class="action-btn edit-btn" title="Edit Duration" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($d)); ?>)">
-                                            ✏️
-                                        </button>
-                                        <form method="POST" action="" style="margin:0; display:inline;" onsubmit="return confirm('Delete this duration from master library?');">
-                                            <?php echo csrf_field(); ?>
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="dur_id" value="<?php echo $d['id']; ?>">
-                                            <button type="submit" class="action-btn delete-btn" title="Delete Duration">
-                                                🗑️
+                                        <?php if (can_update()): ?>
+                                            <button type="button" class="action-btn edit-btn" title="Edit Duration" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($d)); ?>)">
+                                                ✏️
                                             </button>
-                                        </form>
+                                        <?php else: ?>
+                                            <button type="button" class="action-btn disabled" disabled title="Access Denied: You do not have Edit permission">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <?php if (can_delete()): ?>
+                                            <form method="POST" action="" style="margin:0; display:inline;" onsubmit="return confirm('Delete this duration from master library?');">
+                                                <?php echo csrf_field(); ?>
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="dur_id" value="<?php echo $d['id']; ?>">
+                                                <button type="submit" class="action-btn delete-btn" title="Delete Duration">
+                                                    🗑️
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <button type="button" class="action-btn delete-btn disabled" disabled title="Access Denied: You do not have Delete permission">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

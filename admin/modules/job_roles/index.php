@@ -90,6 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'save_course_roles') {
         $course_slug = strtolower(trim($_POST['course_slug'] ?? ''));
+        if (!user_can('update') && !user_can('create') && !user_can('write')) {
+            set_flash_message('Access Denied: You do not have permission to update job roles.', 'error');
+            redirect(BASE_URL . '/modules/job_roles/index.php?course=' . urlencode($course_slug));
+        }
         $heading = trim($_POST['heading'] ?? '');
         $description = trim($_POST['description'] ?? '');
 
@@ -299,9 +303,16 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <span class="card-title">Save Changes</span>
                     </div>
                     <div class="card-body">
-                        <button type="submit" class="btn-primary" style="width:100%; padding:13px 20px; font-weight:700;">
-                            Save <?php echo htmlspecialchars(strtoupper($selected_slug)); ?> Roles & Salary
-                        </button>
+                        <?php if (can_update() || can_create() || can_write()): ?>
+                            <button type="submit" class="btn-primary" style="width:100%; padding:13px 20px; font-weight:700;">
+                                Save <?php echo htmlspecialchars(strtoupper($selected_slug)); ?> Roles & Salary
+                            </button>
+                        <?php else: ?>
+                            <button type="button" class="btn-secondary btn-disabled-locked" disabled style="width:100%; padding:13px 20px; font-weight:700; justify-content:center;" title="Access Denied: You do not have permission to update">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Save Roles & Salary (Locked)
+                            </button>
+                        <?php endif; ?>
                         <p style="font-size:12px; color:var(--text-dim); margin:12px 0 0; text-align:center;">
                             Saved to <code>course_job_roles</code> table. Changes reflect globally.
                         </p>

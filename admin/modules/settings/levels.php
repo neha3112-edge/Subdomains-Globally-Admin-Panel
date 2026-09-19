@@ -5,6 +5,10 @@ if (function_exists('require_permission')) {
     require_permission('levels');
 }
 
+$can_create = user_can('create') || user_can('write');
+$can_edit = user_can('update') || user_can('write');
+$can_delete = user_can('delete');
+
 $page_title = 'Degree Levels';
 $page_subtitle = 'Manage academic degree levels (UG, PG, Diploma, Doctorate). Used dynamically in Courses Master and Mappings.';
 $active_page_key = 'levels';
@@ -19,6 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Single Save / Update
     if ($action === 'save') {
         $level_id = (int)($_POST['level_id'] ?? 0);
+        if ($level_id > 0 && !$can_edit) {
+            set_flash_message('Access Denied: You do not have permission to edit degree levels.', 'error');
+            redirect(BASE_URL . '/modules/settings/levels.php');
+        }
+        if ($level_id === 0 && !$can_create) {
+            set_flash_message('Access Denied: You do not have permission to add degree levels.', 'error');
+            redirect(BASE_URL . '/modules/settings/levels.php');
+        }
+
         $name = trim($_POST['level_name'] ?? '');
         $code = trim($_POST['level_code'] ?? '');
         $sort_order = (int)($_POST['sort_order'] ?? 0);
@@ -74,6 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. Bulk Add Levels
     if ($action === 'bulk_save') {
+        if (!$can_create) {
+            set_flash_message('Access Denied: You do not have permission to bulk add degree levels.', 'error');
+            redirect(BASE_URL . '/modules/settings/levels.php');
+        }
+
         $raw_text = trim($_POST['bulk_levels'] ?? '');
         if (!empty($raw_text)) {
             $lines = preg_split('/\r\n|\r|\n/', $raw_text);
@@ -126,6 +144,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. Delete Level
     if ($action === 'delete') {
+        if (!$can_delete) {
+            set_flash_message('Access Denied: You do not have permission to delete degree levels.', 'error');
+            redirect(BASE_URL . '/modules/settings/levels.php');
+        }
+
         $level_id = (int)($_POST['level_id'] ?? 0);
         if ($level_id > 0) {
             // Check if any courses are using this level
@@ -152,6 +175,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 4. Toggle Status
     if ($action === 'toggle_status') {
+        if (!$can_edit) {
+            set_flash_message('Access Denied: You do not have permission to update status.', 'error');
+            redirect(BASE_URL . '/modules/settings/levels.php');
+        }
+
         $level_id = (int)($_POST['level_id'] ?? 0);
         if ($level_id > 0) {
             $stmt = $db->prepare("UPDATE degree_levels_master SET is_active = 1 - is_active, updated_at = NOW() WHERE id = ?");
@@ -289,10 +317,17 @@ require_once ADMIN_PATH . '/includes/header.php';
         <span style="background:rgba(99, 102, 241, 0.12); color:#a5b4fc; padding:7px 14px; border-radius:20px; font-weight:700; font-size:13px; border:1px solid rgba(99, 102, 241, 0.3);">
             <?php echo $total_count; ?> Total Levels
         </span>
+        <?php if ($can_create): ?>
         <button type="button" class="sode-btn-emerald" onclick="openBulkModal()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             ⚡ Bulk Add
         </button>
+        <?php else: ?>
+        <button type="button" class="sode-btn-emerald btn-disabled-locked" title="Access Denied: You do not have permission to add degree levels" disabled style="opacity:0.5; cursor:not-allowed;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Bulk Add (Locked)
+        </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -329,31 +364,38 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                 <div class="form-group">
                     <label class="form-label">Level Name *</label>
-                    <input type="text" name="level_name" class="form-control" value="<?php echo htmlspecialchars($edit_level['level_name'] ?? ''); ?>" placeholder="e.g. Postgraduate (PG) or Doctorate" required>
+                    <input type="text" name="level_name" class="form-control" value="<?php echo htmlspecialchars($edit_level['level_name'] ?? ''); ?>" placeholder="e.g. Postgraduate (PG) or Doctorate" required <?php echo (($edit_level && !$can_edit) || (!$edit_level && !$can_create)) ? 'readonly' : ''; ?>>
                     <small style="font-size:11.5px; color:var(--text-dim); display:block; margin-top:4px;">Full descriptive title shown to students & admins.</small>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Level Code *</label>
-                    <input type="text" name="level_code" class="form-control" value="<?php echo htmlspecialchars($edit_level['level_code'] ?? ''); ?>" placeholder="e.g. PG, UG, Diploma, Ph.D." required>
+                    <input type="text" name="level_code" class="form-control" value="<?php echo htmlspecialchars($edit_level['level_code'] ?? ''); ?>" placeholder="e.g. PG, UG, Diploma, Ph.D." required <?php echo (($edit_level && !$can_edit) || (!$edit_level && !$can_create)) ? 'readonly' : ''; ?>>
                     <small style="font-size:11.5px; color:var(--text-dim); display:block; margin-top:4px;">Short identifier stored with course records.</small>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Sort Order</label>
-                    <input type="number" name="sort_order" class="form-control" value="<?php echo htmlspecialchars($edit_level['sort_order'] ?? '0'); ?>">
+                    <input type="number" name="sort_order" class="form-control" value="<?php echo htmlspecialchars($edit_level['sort_order'] ?? '0'); ?>" <?php echo (($edit_level && !$can_edit) || (!$edit_level && !$can_create)) ? 'readonly' : ''; ?>>
                 </div>
 
                 <div class="form-check-group" style="margin-bottom:20px;">
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                        <input type="checkbox" name="is_active" value="1" <?php echo (!isset($edit_level) || !empty($edit_level['is_active'])) ? 'checked' : ''; ?>>
+                        <input type="checkbox" name="is_active" value="1" <?php echo (!isset($edit_level) || !empty($edit_level['is_active'])) ? 'checked' : ''; ?> <?php echo (($edit_level && !$can_edit) || (!$edit_level && !$can_create)) ? 'disabled' : ''; ?>>
                         <span style="font-size:13px; font-weight:500;">Active Level (selectable in Courses Master)</span>
                     </label>
                 </div>
 
+                <?php if (($edit_level && $can_edit) || (!$edit_level && $can_create)): ?>
                 <button type="submit" class="btn-primary" style="width:100%;">
                     <?php echo $edit_level ? 'Update Degree Level' : 'Save Degree Level'; ?>
                 </button>
+                <?php else: ?>
+                <button type="button" class="btn-primary btn-disabled-locked" title="Access Denied: You do not have permission" disabled style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <?php echo $edit_level ? 'Update Degree Level (Locked)' : 'Save Degree Level (Locked)'; ?>
+                </button>
+                <?php endif; ?>
             </form>
         </div>
     </div>
@@ -399,6 +441,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                     </a>
                                 </td>
                                 <td>
+                                    <?php if ($can_edit): ?>
                                     <form method="POST" action="" style="display:inline;">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="action" value="toggle_status">
@@ -408,13 +451,26 @@ require_once ADMIN_PATH . '/includes/header.php';
                                             <?php echo !empty($lvl['is_active']) ? 'Active' : 'Inactive'; ?>
                                         </button>
                                     </form>
+                                    <?php else: ?>
+                                        <span class="status-pill <?php echo !empty($lvl['is_active']) ? 'active' : 'inactive'; ?>" style="cursor:not-allowed; opacity:0.7;" title="Access Denied: Read-only access">
+                                            <span style="width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block;"></span>
+                                            <?php echo !empty($lvl['is_active']) ? 'Active' : 'Inactive'; ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="text-align:right;">
                                     <div class="table-actions" style="justify-content:flex-end;">
+                                        <?php if ($can_edit): ?>
                                         <a href="<?php echo BASE_URL; ?>/modules/settings/levels.php?edit_id=<?php echo $lvl['id']; ?>" class="action-btn" title="Edit Level">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </a>
+                                        <?php else: ?>
+                                        <button type="button" class="action-btn disabled" title="Access Denied: You do not have edit permission" disabled style="opacity:0.4; cursor:not-allowed;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        </button>
+                                        <?php endif; ?>
 
+                                        <?php if ($can_delete): ?>
                                         <form method="POST" action="" class="confirm-delete" style="display:inline;">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="action" value="delete">
@@ -423,6 +479,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                             </button>
                                         </form>
+                                        <?php else: ?>
+                                        <button type="button" class="action-btn disabled" title="Access Denied: You do not have delete permission" disabled style="opacity:0.4; cursor:not-allowed;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

@@ -3,6 +3,9 @@ require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('trash');
 
+$can_restore = user_can('update') || user_can('create') || user_can('write');
+$can_delete = user_can('delete');
+
 $page_title = 'Trash / Recycle Bin';
 $page_subtitle = 'Safely restore deleted records, courses, media images, or purge them permanently';
 $active_page_key = 'trash';
@@ -16,6 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'restore') {
+        if (!$can_restore) {
+            set_flash_message('Access Denied: You do not have permission to restore items.', 'error');
+            redirect(BASE_URL . '/modules/trash/index.php');
+        }
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $res = restore_from_trash($id);
@@ -25,6 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'permanent_delete') {
+        if (!$can_delete) {
+            set_flash_message('Access Denied: You do not have permission to delete items.', 'error');
+            redirect(BASE_URL . '/modules/trash/index.php');
+        }
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $res = permanent_delete_from_trash($id);
@@ -34,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'bulk_restore') {
+        if (!$can_restore) {
+            set_flash_message('Access Denied: You do not have permission to restore items.', 'error');
+            redirect(BASE_URL . '/modules/trash/index.php');
+        }
         $ids = $_POST['ids'] ?? [];
         if (is_array($ids) && !empty($ids)) {
             $count = bulk_trash_restore($ids);
@@ -45,6 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'bulk_delete') {
+        if (!$can_delete) {
+            set_flash_message('Access Denied: You do not have permission to delete items.', 'error');
+            redirect(BASE_URL . '/modules/trash/index.php');
+        }
         $ids = $_POST['ids'] ?? [];
         if (is_array($ids) && !empty($ids)) {
             $count = bulk_trash_permanent_delete($ids);
@@ -56,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'empty_trash') {
+        if (!$can_delete) {
+            set_flash_message('Access Denied: You do not have permission to empty trash.', 'error');
+            redirect(BASE_URL . '/modules/trash/index.php');
+        }
         $filter_type = trim($_POST['item_type'] ?? '');
         $purged = empty_all_trash(!empty($filter_type) ? $filter_type : null);
         set_flash_message("Trash emptied successfully! Permanently purged {$purged} item(s).", 'success');
@@ -146,6 +169,7 @@ require_once ADMIN_PATH . '/includes/header.php';
     </div>
     <div class="dash-hero-right">
         <?php if ($total_all_trash > 0): ?>
+            <?php if ($can_delete): ?>
             <form method="POST" onsubmit="return confirm('WARNING: Are you sure you want to permanently delete all items in trash? This cannot be undone!');" style="margin:0;">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="empty_trash">
@@ -155,6 +179,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                     Empty Trash
                 </button>
             </form>
+            <?php else: ?>
+            <button type="button" class="btn-sm btn-disabled-locked" title="Access Denied: You do not have permission to delete items" disabled style="padding:8px 16px; border-radius:var(--radius-md); font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Empty Trash (Locked)
+            </button>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>
@@ -205,14 +235,18 @@ require_once ADMIN_PATH . '/includes/header.php';
         <!-- Right: Bulk Actions Trigger -->
         <div id="bulkActionsToolbar" style="display:none; align-items:center; gap:8px;">
             <span id="selectedCountBadge" class="badge badge-info" style="font-size:12px;">0 selected</span>
+            <?php if ($can_restore): ?>
             <button type="button" onclick="submitBulkAction('bulk_restore')" class="btn-sm" style="background:var(--success); color:#fff; border:none; cursor:pointer; font-weight:600; border-radius:var(--radius-sm); display:inline-flex; align-items:center; gap:4px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                 Restore Selected
             </button>
+            <?php endif; ?>
+            <?php if ($can_delete): ?>
             <button type="button" onclick="submitBulkAction('bulk_delete')" class="btn-sm" style="background:#ef4444; color:#fff; border:none; cursor:pointer; font-weight:600; border-radius:var(--radius-sm); display:inline-flex; align-items:center; gap:4px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 Delete Selected
             </button>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -308,14 +342,26 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 <td style="text-align:right;">
                                     <div style="display:inline-flex; align-items:center; gap:6px;">
                                         <!-- Single Restore Button Form -->
+                                        <?php if ($can_restore): ?>
                                         <button type="button" class="action-btn" title="Restore this item" onclick="submitSingleAction('restore', <?php echo $item['id']; ?>)" style="color:var(--success); border-color:rgba(16,185,129,0.3);">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                                         </button>
+                                        <?php else: ?>
+                                        <button type="button" class="action-btn disabled" title="Access Denied: You do not have permission to restore items" disabled style="color:#64748b; opacity:0.4; cursor:not-allowed;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        </button>
+                                        <?php endif; ?>
 
                                         <!-- Single Permanent Delete Button Form -->
+                                        <?php if ($can_delete): ?>
                                         <button type="button" class="action-btn" title="Delete permanently" onclick="submitSingleAction('permanent_delete', <?php echo $item['id']; ?>)" style="color:#ef4444; border-color:rgba(239,68,68,0.3);">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                         </button>
+                                        <?php else: ?>
+                                        <button type="button" class="action-btn disabled" title="Access Denied: You do not have permission to delete items" disabled style="color:#64748b; opacity:0.4; cursor:not-allowed;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
