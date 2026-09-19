@@ -24,8 +24,9 @@ define('SODE_FOOTER_UNIVERSAL_LOADED', true);
 if (!function_exists('sode_footer_asset_url')) {
     function sode_footer_asset_url($path)
     {
-        if (empty($path)) return '';
-        $path = trim((string)$path);
+        if (empty($path))
+            return '';
+        $path = trim((string) $path);
         if (preg_match('#^https?://#i', $path) && strpos($path, 'localhost') === false) {
             return $path;
         }
@@ -62,7 +63,8 @@ if (!function_exists('sode_get_footer_config')) {
                 }
             }
         }
-        if (empty($uni_slug)) $uni_slug = 'dsu';
+        if (empty($uni_slug))
+            $uni_slug = 'dsu';
         $cache_key = strtolower(trim($uni_slug));
 
         if (isset($cache[$cache_key])) {
@@ -105,31 +107,31 @@ if (!function_exists('sode_get_footer_config')) {
                     $json = json_decode($raw, true);
                     if (!empty($json['success'])) {
                         $cfg = [
-                            'cta_heading'          => $json['cta_heading']          ?? '',
-                            'cta_subtext'          => $json['cta_subtext']          ?? '',
-                            'cta_btn_text'         => $json['cta_btn_text']         ?? '',
-                            'cta_btn_link'         => $json['cta_btn_link']         ?? '#',
-                            'cta_btn_phone'        => $json['cta_btn_phone']        ?? '',
-                            'cta_btn_class'        => $json['cta_btn_class']        ?? '',
-                            'cta_btn_newtab'       => (int)($json['cta_btn_newtab'] ?? 0),
-                            'ai_tools_heading'     => $json['ai_tools_heading']     ?? '',
-                            'ai_tools_subtext'     => $json['ai_tools_subtext']     ?? '',
-                            'ai_tools'             => $json['ai_tools']             ?? [],
-                            'about_logo_url'       => $json['about_logo_url']       ?? '',
-                            'about_title'          => $json['about_title']          ?? '',
-                            'about_subtitle'       => $json['about_subtitle']       ?? '',
-                            'about_sode_text'      => $json['about_sode']           ?? '',
+                            'cta_heading' => $json['cta_heading'] ?? '',
+                            'cta_subtext' => $json['cta_subtext'] ?? '',
+                            'cta_btn_text' => $json['cta_btn_text'] ?? '',
+                            'cta_btn_link' => $json['cta_btn_link'] ?? '#',
+                            'cta_btn_phone' => $json['cta_btn_phone'] ?? '',
+                            'cta_btn_class' => $json['cta_btn_class'] ?? '',
+                            'cta_btn_newtab' => (int) ($json['cta_btn_newtab'] ?? 0),
+                            'ai_tools_heading' => $json['ai_tools_heading'] ?? '',
+                            'ai_tools_subtext' => $json['ai_tools_subtext'] ?? '',
+                            'ai_tools' => $json['ai_tools'] ?? [],
+                            'about_logo_url' => $json['about_logo_url'] ?? '',
+                            'about_title' => $json['about_title'] ?? '',
+                            'about_subtitle' => $json['about_subtitle'] ?? '',
+                            'about_sode_text' => $json['about_sode'] ?? '',
                             'legal_notice_heading' => $json['legal_notice_heading'] ?? '',
-                            'legal_notice_text'    => $json['legal_notice']         ?? '',
-                            'footer_links'         => $json['footer_links']         ?? [],
-                            'contact_phone'        => $json['contact_phone']        ?? '',
-                            'contact_phone_link'   => $json['contact_phone_link']   ?? '',
-                            'contact_email'        => $json['contact_email']        ?? '',
-                            'contact_email_link'   => $json['contact_email_link']   ?? '',
-                            'contact_address'      => $json['contact_address']      ?? '',
+                            'legal_notice_text' => $json['legal_notice'] ?? '',
+                            'footer_links' => $json['footer_links'] ?? [],
+                            'contact_phone' => $json['contact_phone'] ?? '',
+                            'contact_phone_link' => $json['contact_phone_link'] ?? '',
+                            'contact_email' => $json['contact_email'] ?? '',
+                            'contact_email_link' => $json['contact_email_link'] ?? '',
+                            'contact_address' => $json['contact_address'] ?? '',
                             'contact_address_link' => $json['contact_address_link'] ?? '',
-                            'copyright_text'       => $json['copyright']            ?? '',
-                            'official_url'         => $json['official_url']         ?? '',
+                            'copyright_text' => $json['copyright'] ?? '',
+                            'official_url' => $json['official_url'] ?? '',
                         ];
                         break;
                     }
@@ -182,9 +184,11 @@ if (!function_exists('sode_footer_get_official_url')) {
                 }
             }
         }
-        if (empty($uni_slug)) $uni_slug = 'dsu';
+        if (empty($uni_slug))
+            $uni_slug = 'dsu';
         $key = strtolower(trim($uni_slug));
-        if (isset($cached_urls[$key])) return $cached_urls[$key];
+        if (isset($cached_urls[$key]))
+            return $cached_urls[$key];
 
         // 1. Direct DB lookup (matches slug, short_name e.g. DSU, or full_name)
         if (function_exists('get_db_connection')) {
@@ -199,7 +203,8 @@ if (!function_exists('sode_footer_get_official_url')) {
                         return $val;
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         // 2. Known subdomain mappings fallback
@@ -285,11 +290,11 @@ if (!function_exists('sode_footer_get_contact_info')) {
     function sode_footer_get_contact_info($cfg = [])
     {
         $contact = [
-            'phone'        => !empty($cfg['contact_phone']) ? $cfg['contact_phone'] : '+91 70657 777 55',
-            'phone_link'   => !empty($cfg['contact_phone_link']) ? $cfg['contact_phone_link'] : 'tel:+917065777755',
-            'email'        => !empty($cfg['contact_email']) ? $cfg['contact_email'] : 'support@distanceeducationschool.com',
-            'email_link'   => !empty($cfg['contact_email_link']) ? $cfg['contact_email_link'] : 'mailto:support@distanceeducationschool.com',
-            'address'      => !empty($cfg['contact_address']) ? $cfg['contact_address'] : 'Unit No. 1, 3rd Floor Vardhman Trade Centre, Nehru Place, New Delhi - 110019',
+            'phone' => !empty($cfg['contact_phone']) ? $cfg['contact_phone'] : '+91 70657 777 55',
+            'phone_link' => !empty($cfg['contact_phone_link']) ? $cfg['contact_phone_link'] : 'tel:+917065777755',
+            'email' => !empty($cfg['contact_email']) ? $cfg['contact_email'] : 'support@distanceeducationschool.com',
+            'email_link' => !empty($cfg['contact_email_link']) ? $cfg['contact_email_link'] : 'mailto:support@distanceeducationschool.com',
+            'address' => !empty($cfg['contact_address']) ? $cfg['contact_address'] : 'Unit No. 1, 3rd Floor Vardhman Trade Centre, Nehru Place, New Delhi - 110019',
             'address_link' => !empty($cfg['contact_address_link']) ? $cfg['contact_address_link'] : '',
         ];
 
@@ -302,25 +307,30 @@ if (!function_exists('sode_footer_get_contact_info')) {
                         $gk_rows = $gk_stmt->fetchAll(PDO::FETCH_ASSOC);
                         foreach ($gk_rows as $gk) {
                             $code = strtoupper(trim($gk['key_code'], '$ '));
-                            $val  = trim($gk['key_value']);
-                            $url  = trim($gk['link_url'] ?? '');
+                            $val = trim($gk['key_value']);
+                            $url = trim($gk['link_url'] ?? '');
 
                             if (in_array($code, ['PHONE', 'PHONE_NUMBER', 'MOBILE', 'CONTACT_NUMBER'])) {
-                                if (!empty($val)) $contact['phone'] = $val;
+                                if (!empty($val))
+                                    $contact['phone'] = $val;
                                 $contact['phone_link'] = !empty($url) ? $url : ('tel:' . preg_replace('/[^0-9+]/', '', $val));
                             }
                             if (in_array($code, ['EMAIL', 'EMAIL_ADDRESS', 'SUPPORT_EMAIL', 'CONTACT_EMAIL'])) {
-                                if (!empty($val)) $contact['email'] = $val;
+                                if (!empty($val))
+                                    $contact['email'] = $val;
                                 $contact['email_link'] = !empty($url) ? $url : ('mailto:' . $val);
                             }
                             if (in_array($code, ['ADDRESS', 'OFFICE_ADDRESS', 'LOCATION', 'CONTACT_ADDRESS'])) {
-                                if (!empty($val)) $contact['address'] = $val;
-                                if (!empty($url)) $contact['address_link'] = $url;
+                                if (!empty($val))
+                                    $contact['address'] = $val;
+                                if (!empty($url))
+                                    $contact['address_link'] = $url;
                             }
                         }
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         return $contact;
@@ -411,8 +421,8 @@ if (!function_exists('sode_footer_render')) {
                         <?php endif; ?>
                     </div>
                     <?php
-                    $btn_link = !empty($cfg['cta_btn_phone']) 
-                        ? 'tel:' . preg_replace('/\s+/', '', $cfg['cta_btn_phone']) 
+                    $btn_link = !empty($cfg['cta_btn_phone'])
+                        ? 'tel:' . preg_replace('/\s+/', '', $cfg['cta_btn_phone'])
                         : ((!empty($cfg['cta_btn_link']) && $cfg['cta_btn_link'] !== '#') ? $cfg['cta_btn_link'] : 'javascript:void(0);');
                     $cta_cls = 'sf-cta-btn' . (!empty($cfg['cta_btn_class']) ? ' ' . htmlspecialchars(trim($cfg['cta_btn_class'])) : '');
                     $cta_target = (!empty($cfg['cta_btn_newtab']) && $btn_link !== 'javascript:void(0);') ? ' target="_blank" rel="noopener"' : '';
@@ -523,13 +533,12 @@ if (!function_exists('sode_footer_render')) {
             <?php if (!empty($cfg['about_sode_text'])): ?>
                 <div class="sf-about-section">
                     <div class="sf-about-inner">
-                        <?php 
+                        <?php
                         $about_logo = sode_footer_asset_url($cfg['about_logo_url'] ?? '');
-                        if (!empty($about_logo)): 
-                        ?>
+                        if (!empty($about_logo)):
+                            ?>
                             <div class="sf-about-logo-wrap">
-                                <img src="<?php echo htmlspecialchars($about_logo); ?>" alt="SODE Logo"
-                                    class="sf-about-logo">
+                                <img src="<?php echo htmlspecialchars($about_logo); ?>" alt="SODE Logo" class="sf-about-logo">
                             </div>
                         <?php else: ?>
                             <div class="sf-about-logo-wrap">
@@ -583,21 +592,25 @@ if (!function_exists('sode_footer_render')) {
 
                 <?php if (!empty($contacts['phone']) || !empty($contacts['email']) || !empty($contacts['address'])): ?>
                     <div class="sf-footer-contacts">
-                        <?php 
+                        <?php
                         $has_prev = false;
-                        if (!empty($contacts['phone'])): 
+                        if (!empty($contacts['phone'])):
                             $has_prev = true;
-                        ?>
-                            <a href="<?php echo htmlspecialchars($contacts['phone_link']); ?>" class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['phone']); ?></a>
+                            ?>
+                            <a href="<?php echo htmlspecialchars($contacts['phone_link']); ?>"
+                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['phone']); ?></a>
                         <?php endif; ?>
                         <?php if (!empty($contacts['email'])): ?>
-                            <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif; $has_prev = true; ?>
-                            <a href="<?php echo htmlspecialchars($contacts['email_link']); ?>" class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['email']); ?></a>
+                            <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif;
+                            $has_prev = true; ?>
+                            <a href="<?php echo htmlspecialchars($contacts['email_link']); ?>"
+                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['email']); ?></a>
                         <?php endif; ?>
                         <?php if (!empty($contacts['address'])): ?>
                             <?php if ($has_prev): ?><span class="sf-link-sep">|</span><?php endif; ?>
                             <?php if (!empty($contacts['address_link'])): ?>
-                                <a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener" class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a>
+                                <a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
+                                    class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a>
                             <?php else: ?>
                                 <span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span>
                             <?php endif; ?>
@@ -871,11 +884,11 @@ if (!function_exists('sode_footer_render')) {
 
             #<?php echo $uid; ?> .sf-about-logo-wrap {
                 flex-shrink: 0;
-  width: 150px;
-  padding: 20px;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.12);
+                width: 150px;
+                padding: 20px;
+                border-radius: 20px;
+                background: #fff;
+                box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.12);
             }
 
             #<?php echo $uid; ?> .sf-about-logo {
@@ -981,7 +994,6 @@ if (!function_exists('sode_footer_render')) {
 
             #<?php echo $uid; ?> .sf-footer-contact-link {
                 color: #fff;
-                text-decoration: underline;
                 font-size: 12px;
                 transition: color .2s;
                 cursor: pointer;
@@ -989,7 +1001,6 @@ if (!function_exists('sode_footer_render')) {
 
             #<?php echo $uid; ?> .sf-footer-contact-link:hover {
                 color: #F5C518;
-                text-decoration: underline !important;
             }
 
             #<?php echo $uid; ?> .sf-footer-contact-text {
