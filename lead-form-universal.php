@@ -140,7 +140,7 @@ if (!function_exists('sode_get_university_form_config')) {
         if (function_exists('wp_remote_get')) {
             $api_url = add_query_arg(array('uni' => $slug, 't' => time()), SODE_FORM_CONFIG_API_URL);
             $resp = wp_remote_get($api_url, array(
-                'timeout' => 8, 
+                'timeout' => 8,
                 'headers' => array(
                     'Cache-Control' => 'no-cache, no-store, must-revalidate',
                     'Pragma' => 'no-cache'
@@ -781,7 +781,8 @@ function custom_lead_form_shortcode($atts = [])
             style="display:flex; align-items:flex-start; gap:4px; margin:10px 0; font-size:10px; line-height:1.4; cursor:pointer;">
             <input type="checkbox" name="consent" required>
             <div class="checkbox_content">
-                I consent to share my details with UGC-DEB approved universities and receive updates via email/mobile.
+                I consent to share my details with SODE™ to receive counseling and updates for UGC-DEB approved
+                universities.
                 <a class="disclaimer-main-popup" style="color:blue; cursor:pointer;"> Disclaimer</a>
             </div>
         </label>
