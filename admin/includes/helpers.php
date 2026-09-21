@@ -157,7 +157,19 @@ if (!function_exists('sode_ensure_mapping_mode_unique_index')) {
                 $db->exec("ALTER TABLE university_course_mappings ADD COLUMN mode VARCHAR(50) DEFAULT 'Online' AFTER course_id");
             }
 
-            // 2. Check and fix indexes
+            // 2. Ensure standalone index for foreign key so InnoDB doesn't block dropping old unique key
+            $uni_idx = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'idx_ucm_uni'")->fetch();
+            if (!$uni_idx) {
+                @$db->exec("ALTER TABLE university_course_mappings ADD INDEX idx_ucm_uni (university_id)");
+            }
+
+            // 3. Add composite unique key including mode
+            $has_composite = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course_mode'")->fetch();
+            if (!$has_composite) {
+                @$db->exec("ALTER TABLE university_course_mappings ADD UNIQUE KEY uniq_uni_course_mode (university_id, course_id, mode)");
+            }
+
+            // 4. Safely drop old unique key if it doesn't include mode
             $indexes = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course'")->fetchAll();
             if ($indexes) {
                 $has_mode = false;
@@ -168,18 +180,12 @@ if (!function_exists('sode_ensure_mapping_mode_unique_index')) {
                     }
                 }
                 if (!$has_mode) {
-                    $db->exec("ALTER TABLE university_course_mappings DROP INDEX uniq_uni_course");
-                    $db->exec("ALTER TABLE university_course_mappings ADD UNIQUE KEY uniq_uni_course_mode (university_id, course_id, mode)");
-                }
-            } else {
-                $has_composite = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course_mode'")->fetch();
-                if (!$has_composite) {
-                    $db->exec("ALTER TABLE university_course_mappings ADD UNIQUE KEY uniq_uni_course_mode (university_id, course_id, mode)");
+                    @$db->exec("ALTER TABLE university_course_mappings DROP INDEX uniq_uni_course");
                 }
             }
             $migrated = true;
         } catch (Exception $e) {
-            // Log silently or ignore if permissions restricted
+            // Log silently
         }
     }
 }
