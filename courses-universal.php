@@ -1425,6 +1425,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             'format' => 'short',    // 'short' (e.g. BBA), 'full', 'both'
             'course_col' => 'COURSE',
             'eligibility_col' => 'ELIGIBILITY',
+            'limit' => 10,
             'class' => '',
         ], $atts);
 
@@ -1454,6 +1455,11 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             return '';
         }
 
+        $limit = isset($atts['limit']) ? (int)$atts['limit'] : 10;
+        $total_count = count($filtered);
+        $has_more = ($limit > 0 && $total_count > $limit);
+        $more_count = $total_count - $limit;
+
         $table_id = 'sode_elig_tbl_' . substr(md5($uni_slug ?? 'dsu'), 0, 8);
 
         ob_start();
@@ -1468,7 +1474,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($filtered as $item):
+                    <?php foreach ($filtered as $idx => $item):
                         $c_mode = !empty($item['mode']) ? (strtolower(trim($item['mode'])) === 'distance' ? 'Distance' : 'Online') : 'Online';
                         $base_name = ($item['short_name'] === 'B.Com') ? 'BCom' : $item['short_name'];
                         if ($atts['format'] === 'full') {
@@ -1484,8 +1490,9 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                         }
 
                         $elig_text = !empty($item['eligibility']) ? $item['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
+                        $is_extra = ($limit > 0 && $idx >= $limit);
                         ?>
-                        <tr>
+                        <tr class="<?php echo $is_extra ? 'sode-elig-row-extra' : ''; ?>">
                             <td class="sode-elig-cell-course">
                                 <strong><?php echo esc_html($c_name); ?></strong>
                             </td>
@@ -1496,7 +1503,47 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <?php if ($has_more): ?>
+                <div class="sode-elig-view-more-wrap">
+                    <button type="button" class="sode-elig-view-more-btn" data-more-count="<?php echo esc_attr($more_count); ?>" onclick="sodeToggleEligRows('<?php echo esc_attr($table_id); ?>')">
+                        <span class="sode-btn-text">View More Courses (<?php echo $more_count; ?> More) &darr;</span>
+                    </button>
+                </div>
+            <?php endif; ?>
         </div>
+
+        <script>
+            if (typeof window.sodeToggleEligRows === 'undefined') {
+                window.sodeToggleEligRows = function(tableId) {
+                    var wrapper = document.getElementById(tableId);
+                    if (!wrapper) return;
+                    var btn = wrapper.querySelector('.sode-elig-view-more-btn');
+                    var btnText = btn ? btn.querySelector('.sode-btn-text') : null;
+                    var extraRows = wrapper.querySelectorAll('.sode-elig-row-extra');
+                    var isExpanded = wrapper.classList.contains('is-expanded');
+                    
+                    if (isExpanded) {
+                        extraRows.forEach(function(row) {
+                            row.style.display = 'none';
+                        });
+                        wrapper.classList.remove('is-expanded');
+                        if (btnText && btn) {
+                            var moreCount = btn.getAttribute('data-more-count') || '';
+                            btnText.innerHTML = 'View More Courses (' + moreCount + ' More) &darr;';
+                        }
+                    } else {
+                        extraRows.forEach(function(row) {
+                            row.style.display = 'table-row';
+                        });
+                        wrapper.classList.add('is-expanded');
+                        if (btnText) {
+                            btnText.innerHTML = 'View Less Courses &uarr;';
+                        }
+                    }
+                };
+            }
+        </script>
 
         <style>
             #<?php echo esc_attr($table_id); ?>.sode-eligibility-table-wrapper {
@@ -1557,6 +1604,10 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                 background-color: #f8fafc;
             }
 
+            #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr.sode-elig-row-extra {
+                display: none;
+            }
+
             #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
                 padding: 14px 20px;
                 font-size: 15.5px;
@@ -1580,6 +1631,38 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                 vertical-align: middle;
             }
 
+            #<?php echo esc_attr($table_id); ?> .sode-elig-view-more-wrap {
+                text-align: center;
+                padding: 16px 12px 12px 12px;
+                background: #ffffff;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-elig-view-more-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                background: #f0f9ff;
+                color: #0284c7;
+                font-size: 14.5px;
+                font-weight: 700;
+                padding: 10px 28px;
+                border: 1.5px solid #bae6fd;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: all 0.2s ease-in-out;
+                box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+                font-family: inherit;
+            }
+
+            #<?php echo esc_attr($table_id); ?> .sode-elig-view-more-btn:hover {
+                background: #0284c7;
+                color: #ffffff;
+                border-color: #0284c7;
+                box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+                transform: translateY(-1px);
+            }
+
             @media (max-width: 768px) {
                 #<?php echo esc_attr($table_id); ?> .sode-eligibility-table th {
                     padding: 12px 14px;
@@ -1601,6 +1684,12 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                     padding: 12px 14px;
                     font-size: 13px;
                     line-height: 1.5;
+                }
+
+                #<?php echo esc_attr($table_id); ?> .sode-elig-view-more-btn {
+                    width: 100%;
+                    padding: 10px 16px;
+                    font-size: 13.5px;
                 }
             }
         </style>
