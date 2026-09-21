@@ -96,10 +96,7 @@ function get_asset_url($path) {
         }
     }
     
-    $base = defined('BASE_URL') ? BASE_URL : 'https://admin.distanceeducationschool.com/admin';
-    if (strpos($base, 'admin.distanceeducationschool.com') !== false && strpos($base, '/admin') === false) {
-        $base = rtrim($base, '/') . '/admin';
-    }
+    $base = defined('BASE_URL') ? BASE_URL : 'https://admin.distanceeducationschool.com';
     return rtrim($base, '/') . '/' . ltrim($clean, '/');
 }
 
