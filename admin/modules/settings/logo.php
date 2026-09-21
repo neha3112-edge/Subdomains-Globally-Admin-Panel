@@ -114,8 +114,9 @@ try {
     }
 } catch (Exception $e) {}
 
-$default_site_preview = $site_logo_url ?: 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
-$default_admin_preview = $admin_logo_url ?: $default_site_preview;
+$default_site_preview = !empty($site_logo_url) ? (function_exists('get_asset_url') ? get_asset_url($site_logo_url) : $site_logo_url) : 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
+$default_dark_preview = !empty($site_logo_dark_url) ? (function_exists('get_asset_url') ? get_asset_url($site_logo_dark_url) : $site_logo_dark_url) : $default_site_preview;
+$default_admin_preview = !empty($admin_logo_url) ? (function_exists('get_asset_url') ? get_asset_url($admin_logo_url) : $admin_logo_url) : $default_site_preview;
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -383,10 +384,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentMode = 'light';
 
+    function resolveAssetUrl(url) {
+        if (!url) return '';
+        url = url.trim();
+        if (/^(https?:|\/\/|data:)/i.test(url)) {
+            return url;
+        }
+        const appBase = window.BASE_URL || (window.location.origin + window.location.pathname.replace(/\/modules\/.*|\/dashboard\.php|\/login\.php|\/index\.php/, ''));
+        const cleanBase = appBase.replace(/\/+$/, '');
+        const cleanUrl = url.replace(/^\/+/, '');
+        return cleanBase + '/' + cleanUrl;
+    }
+
     function refreshPreviews() {
-        const siteUrl = (siteLogoInput ? siteLogoInput.value.trim() : '');
-        const darkUrl = (siteDarkLogoInput ? siteDarkLogoInput.value.trim() : '');
-        const adminUrl = (adminLogoInput ? adminLogoInput.value.trim() : '');
+        const rawSite = siteLogoInput ? siteLogoInput.value : '';
+        const rawDark = siteDarkLogoInput ? siteDarkLogoInput.value : '';
+        const rawAdmin = adminLogoInput ? adminLogoInput.value : '';
+
+        const siteUrl = resolveAssetUrl(rawSite);
+        const darkUrl = resolveAssetUrl(rawDark);
+        const adminUrl = resolveAssetUrl(rawAdmin);
         const fallback = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
 
         // Site Preview
@@ -414,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btnDark.classList.remove('active');
             headerBox.style.background = '#ffffff';
             headerBox.style.borderColor = '#cbd5e1';
-            navLinks.style.color = '#334155';
+            if (navLinks) navLinks.style.color = '#334155';
             refreshPreviews();
         });
 
@@ -424,10 +441,13 @@ document.addEventListener('DOMContentLoaded', function() {
             btnLight.classList.remove('active');
             headerBox.style.background = '#0f172a';
             headerBox.style.borderColor = '#334155';
-            navLinks.style.color = '#e2e8f0';
+            if (navLinks) navLinks.style.color = '#e2e8f0';
             refreshPreviews();
         });
     }
+
+    // Initial trigger
+    refreshPreviews();
 });
 </script>
 

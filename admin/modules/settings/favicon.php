@@ -121,7 +121,7 @@ if (empty($current_favicon)) {
 }
 
 // Default fallback recommendation
-$default_preview = $current_favicon ?: 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
+$default_preview = !empty($current_favicon) ? (function_exists('get_asset_url') ? get_asset_url($current_favicon) : $current_favicon) : 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -324,9 +324,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const res48 = document.getElementById('res-48-icon');
     const res192 = document.getElementById('res-192-icon');
 
+    function resolveAssetUrl(url) {
+        if (!url) return '';
+        url = url.trim();
+        if (/^(https?:|\/\/|data:)/i.test(url)) {
+            return url;
+        }
+        const appBase = window.BASE_URL || (window.location.origin + window.location.pathname.replace(/\/modules\/.*|\/dashboard\.php|\/login\.php|\/index\.php/, ''));
+        const cleanBase = appBase.replace(/\/+$/, '');
+        const cleanUrl = url.replace(/^\/+/, '');
+        return cleanBase + '/' + cleanUrl;
+    }
+
     function updatePreviews(url) {
         const fallback = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
-        const finalUrl = url.trim() || fallback;
+        const finalUrl = resolveAssetUrl(url) || fallback;
 
         [tabIcon, res16, res32, res48, res192].forEach(img => {
             if (img) {
@@ -342,6 +354,11 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function() {
             updatePreviews(this.value);
         });
+    }
+
+    // Initial load trigger
+    if (input && input.value) {
+        updatePreviews(input.value);
     }
 
     window.clearFavicon = function() {

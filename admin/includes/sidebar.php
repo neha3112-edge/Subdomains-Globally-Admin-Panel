@@ -18,19 +18,21 @@ $sidebar_logo = $branding['admin_logo_url'] ?? $branding['site_logo_url'] ?? '';
 ?>
 <aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-header">
-        <?php if (!empty($sidebar_logo)): ?>
-            <a href="<?php echo BASE_URL; ?>/dashboard.php" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; max-width:100%; overflow:hidden;">
-                <img src="<?php echo htmlspecialchars(function_exists('get_asset_url') ? get_asset_url($sidebar_logo) : $sidebar_logo); ?>" alt="<?php echo htmlspecialchars(APP_NAME); ?>" style="max-height:36px; max-width:140px; object-fit:contain;">
-            </a>
-        <?php else: ?>
-            <div class="brand-logo-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                </svg>
-            </div>
+        <a href="<?php echo BASE_URL; ?>/dashboard.php" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; width:100%;">
+            <?php if (!empty($sidebar_logo)): ?>
+                <div class="brand-logo-icon" style="background:rgba(255,255,255,0.06); padding:2px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1);">
+                    <img src="<?php echo htmlspecialchars(function_exists('get_asset_url') ? get_asset_url($sidebar_logo) : $sidebar_logo); ?>" alt="<?php echo htmlspecialchars(APP_NAME); ?>" style="width:28px; height:28px; object-fit:contain; border-radius:6px;">
+                </div>
+            <?php else: ?>
+                <div class="brand-logo-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                    </svg>
+                </div>
+            <?php endif; ?>
             <span class="brand-title"><?php echo htmlspecialchars(APP_NAME); ?></span>
-        <?php endif; ?>
+        </a>
     </div>
 
     <nav class="sidebar-nav">
