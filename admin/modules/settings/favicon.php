@@ -120,6 +120,16 @@ if (empty($current_favicon)) {
     } catch (Exception $e) {}
 }
 
+// Fallback to site_logo_url if empty
+if (empty($current_favicon)) {
+    try {
+        $row_l = $db->query("SELECT setting_value FROM global_settings WHERE setting_key = 'site_logo_url' LIMIT 1")->fetch();
+        if ($row_l && !empty($row_l['setting_value'])) {
+            $current_favicon = $row_l['setting_value'];
+        }
+    } catch (Exception $e) {}
+}
+
 // Default fallback recommendation
 $default_preview = !empty($current_favicon) ? (function_exists('get_asset_url') ? get_asset_url($current_favicon) : $current_favicon) : 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
 

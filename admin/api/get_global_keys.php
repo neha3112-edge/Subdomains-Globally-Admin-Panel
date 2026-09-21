@@ -81,13 +81,6 @@ if (!empty($map['$FAVICON_URL$'])) {
     } catch (Exception $e) {}
 }
 
-if (!empty($favicon_url)) {
-    $map['$FAVICON_URL$']  = $favicon_url;
-    $map['{FAVICON_URL}']  = $favicon_url;
-    $map['$SITE_FAVICON$'] = $favicon_url;
-    $map['{SITE_FAVICON}'] = $favicon_url;
-}
-
 // ── 1.2 Global Site Logo Resolution ───────────────────────────────────
 $site_logo_url = '';
 if (!empty($map['$SITE_LOGO$'])) {
@@ -105,7 +98,22 @@ if (!empty($map['$SITE_LOGO$'])) {
     } catch (Exception $e) {}
 }
 
+// Fallback: If favicon is not explicitly set, use site_logo_url if available
+if (empty($favicon_url) && !empty($site_logo_url)) {
+    $favicon_url = $site_logo_url;
+}
+
+// Normalize all asset URLs to absolute URLs so subdomains can load them seamlessly
+if (!empty($favicon_url)) {
+    $favicon_url = function_exists('get_asset_url') ? get_asset_url($favicon_url) : $favicon_url;
+    $map['$FAVICON_URL$']  = $favicon_url;
+    $map['{FAVICON_URL}']  = $favicon_url;
+    $map['$SITE_FAVICON$'] = $favicon_url;
+    $map['{SITE_FAVICON}'] = $favicon_url;
+}
+
 if (!empty($site_logo_url)) {
+    $site_logo_url = function_exists('get_asset_url') ? get_asset_url($site_logo_url) : $site_logo_url;
     $map['$SITE_LOGO$'] = $site_logo_url;
     $map['{SITE_LOGO}'] = $site_logo_url;
     $map['$LOGO_URL$']  = $site_logo_url;

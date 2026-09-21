@@ -162,7 +162,18 @@ if (!function_exists('sode_client_get_central_favicon_url')) {
     function sode_client_get_central_favicon_url()
     {
         $keys = sode_client_get_global_keys();
-        return $keys['$FAVICON_URL$'] ?? $keys['{FAVICON_URL}'] ?? $keys['$SITE_FAVICON$'] ?? $keys['{SITE_FAVICON}'] ?? '';
+        $fav = $keys['$FAVICON_URL$'] ?? $keys['{FAVICON_URL}'] ?? $keys['$SITE_FAVICON$'] ?? $keys['{SITE_FAVICON}'] ?? $keys['$SITE_LOGO$'] ?? $keys['$LOGO_URL$'] ?? '';
+
+        if (empty($fav)) {
+            $fav = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
+        }
+
+        // Prepend Central Admin URL if relative path
+        if (!empty($fav) && !preg_match('#^https?://#i', $fav)) {
+            $fav = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/' . ltrim($fav, '/');
+        }
+
+        return $fav;
     }
 }
 
@@ -259,12 +270,14 @@ add_action('wp_head', function () {
         }
     }
     $api_base = esc_js(rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php');
+    $admin_root_js = esc_js(rtrim(SODE_CENTRAL_ADMIN_URL, '/'));
     $uni_js = esc_js($uni);
     ?>
     <script id="sode-global-keys-engine">
         (function () {
             'use strict';
             var uniSlug = '<?php echo $uni_js; ?>';
+            var adminRoot = '<?php echo $admin_root_js; ?>';
             var apiUrl = '<?php echo $api_base; ?>?t=' + Date.now() + (uniSlug ? '&uni=' + encodeURIComponent(uniSlug) : '');
             // Fetch fresh global keys — no browser cache
             fetch(apiUrl, {
@@ -275,7 +288,12 @@ add_action('wp_head', function () {
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     var keys = data.keys || {};
-                    var centralFavicon = data.favicon_url || keys['$FAVICON_URL$'] || keys['{FAVICON_URL}'] || keys['$SITE_FAVICON$'] || keys['{SITE_FAVICON}'] || '';
+                    var centralFavicon = data.favicon_url || keys['$FAVICON_URL$'] || keys['{FAVICON_URL}'] || keys['$SITE_FAVICON$'] || keys['{SITE_FAVICON}'] || data.site_logo_url || keys['$SITE_LOGO$'] || keys['$LOGO_URL$'] || '';
+
+                    // Normalize favicon URL
+                    if (centralFavicon && !centralFavicon.match(/^https?:\/\//i)) {
+                        centralFavicon = adminRoot + '/' + centralFavicon.replace(/^\/+/, '');
+                    }
 
                     // 1. Force Central Favicon Overwrite in Browser DOM
                     if (centralFavicon) {
