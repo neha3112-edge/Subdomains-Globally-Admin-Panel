@@ -389,13 +389,19 @@ if (!function_exists('sode_courses_tabs_render')) {
                             <div class="sode-slider-viewport">
                                 <div class="sode-slider-track">
                                     <?php foreach ($online_courses as $c):
-                                        $btn_link = !empty($c['link']) && $c['link'] !== '#' ? $c['link'] : '#';
+                                        $c_mode = !empty($c['mode']) ? (strtolower(trim($c['mode'])) === 'distance' ? 'Distance' : 'Online') : 'Online';
+                                        $display_short_name = trim($c['short_name'] ?? '');
+                                        if (stripos($display_short_name, $c_mode) !== 0) {
+                                            $display_short_name = $c_mode . ' ' . $display_short_name;
+                                        }
+                                        $raw_link = trim((string) ($c['link'] ?? ''));
+                                        $has_custom_link = (!empty($raw_link) && $raw_link !== '#' && $raw_link !== '#custom_lead_form' && $raw_link !== 'javascript:void(0);');
                                         ?>
                                         <div class="sode-course-card-slide">
                                             <div class="sode-course-card">
                                                 <div class="sode-course-card-inner">
                                                     <div class="sode-course-head">
-                                                        <h3 class="sode-course-short-name"><?php echo esc_html($c['short_name']); ?>
+                                                        <h3 class="sode-course-short-name"><?php echo esc_html($display_short_name); ?>
                                                         </h3>
                                                         <h4 class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></h4>
                                                     </div>
@@ -420,22 +426,23 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                                                         <div class="sode-course-action">
                                                             <?php if (!empty($atts['btn_action']) && $atts['btn_action'] === 'counseling'): ?>
-                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn"
-                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn applynow"
+                                                                    data-course="<?php echo esc_attr($display_short_name); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
                                                             <?php elseif (!empty($atts['btn_action']) && $atts['btn_action'] === 'brochure'): ?>
-                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn"
-                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn applynow"
+                                                                    data-course="<?php echo esc_attr($display_short_name); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
-                                                            <?php elseif ($btn_link !== '#'): ?>
-                                                                <a href="<?php echo esc_url($btn_link); ?>" class="sode-course-btn">
+                                                            <?php elseif ($has_custom_link): ?>
+                                                                <a href="<?php echo esc_url($raw_link); ?>" class="sode-course-btn">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php else: ?>
-                                                                <a href="#custom_lead_form" class="sode-course-btn"
-                                                                    onclick="if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
+                                                                <a href="#custom_lead_form" class="sode-course-btn applynow"
+                                                                    data-course="<?php echo esc_attr($display_short_name); ?>"
+                                                                    onclick="if(typeof openApplyModal==='function'){openApplyModal('<?php echo esc_js($display_short_name); ?>');return false;}if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php endif; ?>
@@ -485,13 +492,19 @@ if (!function_exists('sode_courses_tabs_render')) {
                             <div class="sode-slider-viewport">
                                 <div class="sode-slider-track">
                                     <?php foreach ($distance_courses as $c):
-                                        $btn_link = !empty($c['link']) && $c['link'] !== '#' ? $c['link'] : '#';
+                                        $c_mode = !empty($c['mode']) ? (strtolower(trim($c['mode'])) === 'distance' ? 'Distance' : 'Online') : 'Distance';
+                                        $display_short_name = trim($c['short_name'] ?? '');
+                                        if (stripos($display_short_name, $c_mode) !== 0) {
+                                            $display_short_name = $c_mode . ' ' . $display_short_name;
+                                        }
+                                        $raw_link = trim((string) ($c['link'] ?? ''));
+                                        $has_custom_link = (!empty($raw_link) && $raw_link !== '#' && $raw_link !== '#custom_lead_form' && $raw_link !== 'javascript:void(0);');
                                         ?>
                                         <div class="sode-course-card-slide">
                                             <div class="sode-course-card">
                                                 <div class="sode-course-card-inner">
                                                     <div class="sode-course-head">
-                                                        <h3 class="sode-course-short-name"><?php echo esc_html($c['short_name']); ?>
+                                                        <h3 class="sode-course-short-name"><?php echo esc_html($display_short_name); ?>
                                                         </h3>
                                                         <h4 class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></h4>
                                                     </div>
@@ -516,22 +529,23 @@ if (!function_exists('sode_courses_tabs_render')) {
 
                                                         <div class="sode-course-action">
                                                             <?php if (!empty($atts['btn_action']) && $atts['btn_action'] === 'counseling'): ?>
-                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn"
-                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-counseling-modal-btn applynow"
+                                                                    data-course="<?php echo esc_attr($display_short_name); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
                                                             <?php elseif (!empty($atts['btn_action']) && $atts['btn_action'] === 'brochure'): ?>
-                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn"
-                                                                    data-course="<?php echo esc_attr($c['short_name']); ?>">
+                                                                <button type="button" class="sode-course-btn open-brochure-modal-btn applynow"
+                                                                    data-course="<?php echo esc_attr($display_short_name); ?>">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </button>
-                                                            <?php elseif ($btn_link !== '#'): ?>
-                                                                <a href="<?php echo esc_url($btn_link); ?>" class="sode-course-btn">
+                                                            <?php elseif ($has_custom_link): ?>
+                                                                <a href="<?php echo esc_url($raw_link); ?>" class="sode-course-btn">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php else: ?>
-                                                                <a href="#custom_lead_form" class="sode-course-btn"
-                                                                    onclick="if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
+                                                                <a href="#custom_lead_form" class="sode-course-btn applynow"
+                                                                    data-course="<?php echo esc_attr($display_short_name); ?>"
+                                                                    onclick="if(typeof openApplyModal==='function'){openApplyModal('<?php echo esc_js($display_short_name); ?>');return false;}if(document.querySelector('.sode-hero-form, #custom_lead_form')){document.querySelector('.sode-hero-form, #custom_lead_form').scrollIntoView({behavior:'smooth'});}">
                                                                     <?php echo esc_html($atts['btn_text']); ?>
                                                                 </a>
                                                             <?php endif; ?>
