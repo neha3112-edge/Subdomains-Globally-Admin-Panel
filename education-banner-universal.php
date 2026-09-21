@@ -602,8 +602,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                           DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
-                           ===================================================== */
+           DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
+           ===================================================== */
         #<?php echo $uid; ?> .edu-banner-approvals-bar {
             width: 100%;
             background: #ffc800;
@@ -616,6 +616,7 @@ function edu_banner_shortcode($atts)
             max-width: 95%;
             margin: 0 auto;
             text-align: center;
+            position: relative;
         }
 
         #<?php echo $uid; ?> .edu-approvals-title {
@@ -627,12 +628,14 @@ function edu_banner_shortcode($atts)
             line-height: 1.3;
         }
 
+        /* Desktop Static Centered Flex Grid (1 to 4 items) */
         #<?php echo $uid; ?> .edu-approvals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
+            display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: stretch;
+            gap: 16px;
+            margin: 0 auto;
         }
 
         #<?php echo $uid; ?> .edu-approval-card {
@@ -645,6 +648,15 @@ function edu_banner_shortcode($atts)
             text-align: left;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        /* Fixed / clean width for static desktop cards so 1 or 2 items never stretch full screen */
+        #<?php echo $uid; ?> .edu-banner-desktop .edu-approvals-grid .edu-approval-card {
+            flex: 0 1 280px;
+            width: 280px;
+            min-width: 260px;
+            max-width: 320px;
         }
 
         #<?php echo $uid; ?> .edu-approval-card:hover {
@@ -687,6 +699,96 @@ function edu_banner_shortcode($atts)
             color: #333333;
             line-height: 1.4;
             font-weight: 500;
+        }
+
+        /* Desktop Slider (> 4 items) */
+        #<?php echo $uid; ?> .edu-acc-slider-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 1220px;
+            margin: 0 auto;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-slider-viewport {
+            overflow: hidden;
+            width: 100%;
+            padding: 4px 0 8px;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-slider-track {
+            display: flex;
+            gap: 16px;
+            transition: transform 0.4s ease;
+            will-change: transform;
+            align-items: stretch;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-slide {
+            flex: 0 0 calc((100% - 48px) / 4);
+            min-width: calc((100% - 48px) / 4);
+            max-width: calc((100% - 48px) / 4);
+            box-sizing: border-box;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #1a2e5a;
+            color: #1a2e5a;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-arrow:hover {
+            background: #1a2e5a;
+            color: #ffc800;
+            border-color: #1a2e5a;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        #<?php echo $uid; ?> .edu-acc-prev {
+            left: -22px;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-next {
+            right: -22px;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-slider-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 18px;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(26, 46, 90, 0.3);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            border: none;
+            padding: 0;
+        }
+
+        #<?php echo $uid; ?> .edu-acc-dot.active {
+            background: #1a2e5a;
+            transform: scale(1.3);
         }
 
         /* =====================================================
@@ -1018,29 +1120,65 @@ function edu_banner_shortcode($atts)
             <!-- =====================================================
                  DESKTOP DYNAMIC ACCREDITATIONS GOLDEN BAR
                  ===================================================== -->
-            <?php if (!empty($uni_data['accreditations']) && is_array($uni_data['accreditations'])): ?>
+            <?php 
+            $accreditations_list = !empty($uni_data['accreditations']) && is_array($uni_data['accreditations']) ? array_values($uni_data['accreditations']) : [];
+            $acc_count = count($accreditations_list);
+            $use_acc_slider = ($acc_count > 4);
+            ?>
+            <?php if ($acc_count > 0): ?>
                 <div id="accrediation" class="edu-banner-approvals-bar">
                     <div class="edu-banner-approvals-container">
                         <h3 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
                             Accreditations</h3>
-                        <div class="edu-approvals-grid">
-                            <?php foreach ($uni_data['accreditations'] as $acc): ?>
-                                <div class="edu-approval-card">
-                                    <?php $acc_img = sode_normalize_asset_url(!empty($acc['image_url']) ? $acc['image_url'] : (!empty($acc['badge_image_url']) ? $acc['badge_image_url'] : '')); ?>
-                                    <?php if (!empty($acc_img)): ?>
-                                        <div class="edu-approval-logo-wrap">
-                                            <img src="<?php echo esc_url($acc_img); ?>" alt="<?php echo esc_attr($acc['title']); ?>" />
-                                        </div>
-                                    <?php endif; ?>
-                                    <div class="edu-approval-info">
-                                        <div class="edu-approval-name"><?php echo esc_html($acc['title']); ?></div>
-                                        <?php if (!empty($acc['description'])): ?>
-                                            <div class="edu-approval-desc"><?php echo esc_html($acc['description']); ?></div>
-                                        <?php endif; ?>
+
+                        <?php if ($use_acc_slider): ?>
+                            <!-- Desktop Slider (for > 4 accreditations) -->
+                            <div class="edu-acc-slider-wrap" data-slider-id="<?php echo $uid; ?>_acc">
+                                <button type="button" class="edu-acc-arrow edu-acc-prev" data-target="<?php echo $uid; ?>_acc" aria-label="Previous Accreditations">&#8249;</button>
+                                <div class="edu-acc-slider-viewport" id="<?php echo $uid; ?>_acc">
+                                    <div class="edu-acc-slider-track">
+                                        <?php foreach ($accreditations_list as $acc): ?>
+                                            <div class="edu-approval-card edu-acc-slide">
+                                                <?php $acc_img = sode_normalize_asset_url(!empty($acc['image_url']) ? $acc['image_url'] : (!empty($acc['badge_image_url']) ? $acc['badge_image_url'] : '')); ?>
+                                                <?php if (!empty($acc_img)): ?>
+                                                    <div class="edu-approval-logo-wrap">
+                                                        <img src="<?php echo esc_url($acc_img); ?>" alt="<?php echo esc_attr($acc['title']); ?>" />
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="edu-approval-info">
+                                                    <div class="edu-approval-name"><?php echo esc_html($acc['title']); ?></div>
+                                                    <?php if (!empty($acc['description'])): ?>
+                                                        <div class="edu-approval-desc"><?php echo esc_html($acc['description']); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
+                                <button type="button" class="edu-acc-arrow edu-acc-next" data-target="<?php echo $uid; ?>_acc" aria-label="Next Accreditations">&#8250;</button>
+                                <div class="edu-acc-slider-dots" id="<?php echo $uid; ?>_acc_dots"></div>
+                            </div>
+                        <?php else: ?>
+                            <!-- Desktop Static Centered Flex Grid (1 to 4 accreditations) -->
+                            <div class="edu-approvals-grid">
+                                <?php foreach ($accreditations_list as $acc): ?>
+                                    <div class="edu-approval-card">
+                                        <?php $acc_img = sode_normalize_asset_url(!empty($acc['image_url']) ? $acc['image_url'] : (!empty($acc['badge_image_url']) ? $acc['badge_image_url'] : '')); ?>
+                                        <?php if (!empty($acc_img)): ?>
+                                            <div class="edu-approval-logo-wrap">
+                                                <img src="<?php echo esc_url($acc_img); ?>" alt="<?php echo esc_attr($acc['title']); ?>" />
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="edu-approval-info">
+                                            <div class="edu-approval-name"><?php echo esc_html($acc['title']); ?></div>
+                                            <?php if (!empty($acc['description'])): ?>
+                                                <div class="edu-approval-desc"><?php echo esc_html($acc['description']); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -1206,6 +1344,112 @@ function edu_banner_shortcode($atts)
             });
         })();
     </script>
+
+    <?php if (!empty($use_acc_slider)): ?>
+        <!-- Accreditations Desktop Slider Script -->
+        <script>
+            (function () {
+                var sid = '<?php echo $uid; ?>_acc';
+                var viewport = document.getElementById(sid);
+                if (!viewport) return;
+                var track = viewport.querySelector('.edu-acc-slider-track');
+                if (!track) return;
+                var slides = Array.from(track.querySelectorAll('.edu-acc-slide'));
+                var dotsWrap = document.getElementById(sid + '_dots');
+                var prevBtn = document.querySelector('[data-target="' + sid + '"].edu-acc-prev');
+                var nextBtn = document.querySelector('[data-target="' + sid + '"].edu-acc-next');
+
+                var current = 0;
+                var total = slides.length;
+                var autoTimer = null;
+
+                function getSlidesToShow() {
+                    var vw = viewport.offsetWidth;
+                    if (vw < 650) return 1;
+                    if (vw < 950) return 2;
+                    if (vw < 1150) return 3;
+                    return 4;
+                }
+
+                function getOffset() {
+                    var slide = slides[current];
+                    var firstSlide = slides[0];
+                    if (!slide || !firstSlide) return 0;
+                    return Math.max(0, slide.offsetLeft - firstSlide.offsetLeft);
+                }
+
+                function goTo(idx) {
+                    var vis = getSlidesToShow();
+                    var max = Math.max(0, total - vis);
+                    if (idx > max) {
+                        current = 0;
+                    } else if (idx < 0) {
+                        current = max;
+                    } else {
+                        current = idx;
+                    }
+                    track.style.transform = 'translateX(-' + getOffset() + 'px)';
+                    updateDots();
+                }
+
+                function updateDots() {
+                    if (!dotsWrap) return;
+                    Array.from(dotsWrap.children).forEach(function (d, i) {
+                        d.classList.toggle('active', i === current);
+                    });
+                }
+
+                // Build dots
+                if (dotsWrap) {
+                    var vis = getSlidesToShow();
+                    var numDots = Math.max(1, total - vis + 1);
+                    for (var d = 0; d < numDots; d++) {
+                        (function (di) {
+                            var dot = document.createElement('button');
+                            dot.type = 'button';
+                            dot.className = 'edu-acc-dot' + (di === 0 ? ' active' : '');
+                            dot.setAttribute('aria-label', 'Slide ' + (di + 1));
+                            dot.addEventListener('click', function () { goTo(di); resetAuto(); });
+                            dotsWrap.appendChild(dot);
+                        })(d);
+                    }
+                }
+
+                if (prevBtn) prevBtn.addEventListener('click', function () { goTo(current - 1); resetAuto(); });
+                if (nextBtn) nextBtn.addEventListener('click', function () { goTo(current + 1); resetAuto(); });
+
+                function startAuto() {
+                    stopAuto();
+                    autoTimer = setInterval(function () {
+                        var vis = getSlidesToShow();
+                        var max = Math.max(0, total - vis);
+                        if (current >= max) {
+                            goTo(0);
+                        } else {
+                            goTo(current + 1);
+                        }
+                    }, 4000);
+                }
+
+                function stopAuto() {
+                    if (autoTimer) clearInterval(autoTimer);
+                }
+
+                function resetAuto() {
+                    stopAuto();
+                    startAuto();
+                }
+
+                viewport.addEventListener('mouseenter', stopAuto);
+                viewport.addEventListener('mouseleave', startAuto);
+                startAuto();
+
+                window.addEventListener('resize', function () {
+                    goTo(current);
+                });
+            })();
+        </script>
+    <?php endif; ?>
 
     <?php
     return ob_get_clean();
