@@ -89,7 +89,7 @@ foreach ($raw_news as $row) {
         }
     }
 
-    $pub_date = !empty($row['published_date']) ? $row['published_date'] : date('F j, Y', strtotime($row['created_at']));
+    $pub_date = !empty($row['published_date']) ? $row['published_date'] : date('jS M Y', strtotime($row['created_at']));
 
     $link = $row['news_link'];
     if (!empty($link)) {

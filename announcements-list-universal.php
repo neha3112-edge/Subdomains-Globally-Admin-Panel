@@ -137,7 +137,7 @@ if (!function_exists('sode_announcements_list_render')) {
                         $news_items[] = [
                             'title' => $r['news_text'],
                             'description' => $r['description'] ?? '',
-                            'published_date' => !empty($r['published_date']) ? $r['published_date'] : date('F j, Y', strtotime($r['created_at'])),
+                            'published_date' => !empty($r['published_date']) ? $r['published_date'] : date('jS M Y', strtotime($r['created_at'])),
                             'link' => $r['news_link'] ?? '#',
                             'has_badge' => !empty($r['has_badge']),
                             'badge_text' => !empty($r['badge_text']) ? $r['badge_text'] : 'New'
@@ -202,25 +202,25 @@ if (!function_exists('sode_announcements_list_render')) {
                 [
                     'title' => 'Admission Deadline Extended to 15th October ' . date('Y') . ' for the latest academic session.',
                     'description' => '{UNIVERSITY_NAME} Online has extended the admission deadline for the ' . date('Y') . '-' . substr((string) ((int) date('Y') + 1), -2) . ' academic session. Students can submit the application form before 15th October ' . date('Y') . '.',
-                    'published_date' => date('F j, Y'),
+                    'published_date' => date('jS M Y'),
                     'link' => '#',
                 ],
                 [
                     'title' => 'New Specialization Launched in Online MBA — Business Analytics',
                     'description' => '{UNIVERSITY_NAME} offers a new online MBA specialization for flexible learners. Online MBA now offers Business Analytics as one of the specializations that deals with business data and its organization.',
-                    'published_date' => date('F j, Y'),
+                    'published_date' => date('jS M Y'),
                     'link' => '#',
                 ],
                 [
                     'title' => '{UNIVERSITY_SHORT_NAME} Online Convocation ' . date('Y') . ' — Details Announced',
                     'description' => 'Learners seeking their online degree in the Convocation for the academic year of ' . date('Y') . ' can apply with a form. Mention accurate details and more to get your degree.',
-                    'published_date' => date('F j, Y'),
+                    'published_date' => date('jS M Y'),
                     'link' => '#',
                 ],
                 [
                     'title' => 'Semester Exam Schedule Released for ' . date('Y'),
                     'description' => '{UNIVERSITY_SHORT_NAME} has published several examination-related circulars and timetables for ' . date('F Y') . '. Recent updates include Summer Term Examinations, supplementary examinations, and other program-specific schedules.',
-                    'published_date' => date('F j, Y'),
+                    'published_date' => date('jS M Y'),
                     'link' => '#',
                 ],
             ];

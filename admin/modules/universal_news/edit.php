@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description'] ?? '');
     $published_date = trim($_POST['published_date'] ?? '');
     if (empty($published_date)) {
-        $published_date = date('F j, Y');
+        $published_date = date('jS M Y');
     }
     $news_link = trim($_POST['news_link'] ?? '');
     $has_badge = isset($_POST['has_badge']) ? 1 : 0;
@@ -113,13 +113,13 @@ require_once ADMIN_PATH . '/includes/header.php';
             <div class="form-group" style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <label class="form-label" style="margin-bottom: 0; font-weight: 700;">Published Date *</label>
-                    <button type="button" class="btn-xs tag-pill-btn" onclick="document.getElementById('field_published_date').value = '<?php echo date('F j, Y'); ?>'">
-                        📅 Set Today's Date (<?php echo date('F j, Y'); ?>)
+                    <button type="button" class="btn-xs tag-pill-btn" onclick="document.getElementById('field_published_date').value = '<?php echo date('jS M Y'); ?>'">
+                        📅 Set Today's Date (<?php echo date('jS M Y'); ?>)
                     </button>
                 </div>
-                <input type="text" name="published_date" id="field_published_date" class="form-control" value="<?php echo htmlspecialchars($news_item['published_date'] ?? date('F j, Y', strtotime($news_item['created_at']))); ?>" placeholder="e.g. September 12, 2026" required style="font-size: 14px;">
+                <input type="text" name="published_date" id="field_published_date" class="form-control" value="<?php echo htmlspecialchars($news_item['published_date'] ?? date('jS M Y', strtotime($news_item['created_at']))); ?>" placeholder="e.g. 21st Sep 2026" required style="font-size: 14px;">
                 <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">
-                    Format example: <code>September 12, 2026</code>. This date displays before the title in the Inner Page announcement card (e.g. <em>September 12, 2026 — Title</em>).
+                    Format example: <code>21st Sep 2026</code>. This date displays before the title in the Inner Page announcement card (e.g. <em>21st Sep 2026 — Title</em>).
                 </div>
             </div>
 

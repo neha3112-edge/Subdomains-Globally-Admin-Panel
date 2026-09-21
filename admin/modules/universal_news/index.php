@@ -157,12 +157,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                     [
                         'news_text' => 'Admission Deadline Extended to 15th October 2026 for the latest academic session.',
                         'description' => 'Dayananda Sagar University Online has extended the admission deadline for the 2026-27 academic session. Students can submit the application form before 15th October 2026.',
-                        'published_date' => 'September 12, 2026'
+                        'published_date' => '12th Sep 2026'
                     ],
                     [
                         'news_text' => 'New Specialization Launched in Online MBA — Business Analytics',
                         'description' => 'Dayananda Sagar University offers a new online MBA specialization for flexible learners. Online MBA now offers Business Analytics as one of the specializations.',
-                        'published_date' => 'September 12, 2026'
+                        'published_date' => '12th Sep 2026'
                     ]
                 ];
                 $p_count = count($sample_preview);
@@ -171,7 +171,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     $p_idx++;
                     $s_title = str_replace(['{UNIVERSITY_NAME}', '{UNIVERSITY_SHORT_NAME}', '$YEAR$'], ['Dayananda Sagar University Online', 'DSU', '2026'], $si['news_text']);
                     $s_desc = str_replace(['{UNIVERSITY_NAME}', '{UNIVERSITY_SHORT_NAME}', '$YEAR$'], ['Dayananda Sagar University', 'DSU', '2026'], $si['description'] ?? '');
-                    $s_date = !empty($si['published_date']) ? $si['published_date'] : date('F j, Y');
+                    $s_date = !empty($si['published_date']) ? $si['published_date'] : date('jS M Y');
                 ?>
                     <div style="padding: 16px 0; <?php echo ($p_idx < $p_count) ? 'border-bottom: 1px solid #dbeafe;' : ''; ?>">
                         <div style="font-size: 15px; font-weight: 700; color: #0a192f; line-height: 1.45; margin-bottom: 7px;">
@@ -183,7 +183,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             </div>
                         <?php endif; ?>
                         <button type="button" style="background: #2563eb; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 6px 16px; border-radius: 5px; border: none; cursor: default; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
-                            Read More
+                            Read More &rarr;
                         </button>
                     </div>
                 <?php endforeach; ?>
@@ -262,7 +262,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <tr>
                             <td>
                                 <span style="font-size: 13px; color: var(--text-color); font-weight: 600;">
-                                    <?php echo htmlspecialchars($item['published_date'] ?: date('M j, Y', strtotime($item['created_at']))); ?>
+                                    <?php echo htmlspecialchars($item['published_date'] ?: date('jS M Y', strtotime($item['created_at']))); ?>
                                 </span>
                             </td>
                             <td>
