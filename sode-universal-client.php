@@ -102,6 +102,16 @@ if (!function_exists('sode_client_replace_keys')) {
         if (empty($keys))
             return $text;
 
+        // Protect <script> and <style> blocks if present in HTML to prevent corrupting JS code
+        $placeholders = [];
+        if (strpos($text, '<script') !== false || strpos($text, '<style') !== false) {
+            $text = preg_replace_callback('/<(script|style)\b[^>]*>.*?<\/\\1>/is', function ($matches) use (&$placeholders) {
+                $token = '###SODE_PROTECTED_TAG_' . count($placeholders) . '###';
+                $placeholders[$token] = $matches[0];
+                return $token;
+            }, $text);
+        }
+
         foreach ($keys as $code => $val) {
             $val = (string) $val;
             $raw = trim($code, '$');
@@ -125,6 +135,12 @@ if (!function_exists('sode_client_replace_keys')) {
                 }
             }
         }
+
+        // Restore protected script/style tags
+        if (!empty($placeholders)) {
+            $text = strtr($text, $placeholders);
+        }
+
         return $text;
     }
 }
@@ -210,9 +226,7 @@ if (!function_exists('sode_client_render_central_favicon_tags')) {
             echo "\n<!-- SODE Central Admin Global Favicon -->\n";
             echo '<link rel="shortcut icon" href="' . $clean_fav . '" />' . "\n";
             echo '<link rel="icon" href="' . $clean_fav . '" sizes="32x32" />' . "\n";
-            echo '<link rel="icon" href="' . $clean_fav . '" sizes="192x192" />' . "\n";
             echo '<link rel="apple-touch-icon" href="' . $clean_fav . '" />' . "\n";
-            echo '<meta name="msapplication-TileImage" content="' . $clean_fav . '" />' . "\n";
             echo "<!-- End SODE Favicon -->\n";
         }
     }
@@ -235,11 +249,11 @@ add_action('template_redirect', function () {
         $fav = sode_client_get_central_favicon_url();
         if (!empty($fav)) {
             $clean_fav = esc_url($fav);
-            // Replace any existing <link rel="*icon*"> tags
-            $pattern = '/<link\s+[^>]*rel=["\'](?:shortcut\s+)?icon["\'][^>]*>/i';
-            if (preg_match($pattern, $html)) {
-                $html = preg_replace($pattern, '<link rel="shortcut icon" href="' . $clean_fav . '" /><link rel="icon" href="' . $clean_fav . '" />', $html);
-            }
+            // Strip any theme/plugin favicon tags to prevent duplicates
+            $html = preg_replace('/<link\s+[^>]*rel=["\'](?:shortcut\s+icon|icon|apple-touch-icon)["\'][^>]*>\s*/i', '', $html);
+            // Inject clean central favicon right after <head>
+            $favicon_tags = "\n<link rel=\"shortcut icon\" href=\"{$clean_fav}\" />\n<link rel=\"icon\" href=\"{$clean_fav}\" sizes=\"32x32\" />\n<link rel=\"apple-touch-icon\" href=\"{$clean_fav}\" />\n";
+            $html = preg_replace('/(<head\b[^>]*>)/i', '$1' . $favicon_tags, $html, 1);
         }
 
         // 2. Replace Dynamic Text Keys
