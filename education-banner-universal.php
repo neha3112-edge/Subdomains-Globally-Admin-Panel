@@ -374,8 +374,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                           DESKTOP  (≥ 769px)
-                           ===================================================== */
+                               DESKTOP  (≥ 769px)
+                               ===================================================== */
         @media (min-width: 769px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -602,8 +602,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-           DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
-           ===================================================== */
+               DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
+               ===================================================== */
         #<?php echo $uid; ?> .edu-banner-approvals-bar {
             width: 100%;
             background: #ffc800;
@@ -655,7 +655,7 @@ function edu_banner_shortcode($atts)
         #<?php echo $uid; ?> .edu-banner-desktop .edu-approvals-grid .edu-approval-card {
             flex: 0 1 280px;
             width: 280px;
-            min-width: 260px;
+            min-width: 300px;
             max-width: 320px;
         }
 
@@ -792,8 +792,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                           MOBILE  (≤ 768px)
-                           ===================================================== */
+                               MOBILE  (≤ 768px)
+                               ===================================================== */
         @media (max-width: 768px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -973,8 +973,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                           PODCAST & BROCHURE POPUPS (shared)
-                           ===================================================== */
+                               PODCAST & BROCHURE POPUPS (shared)
+                               ===================================================== */
         .edu-podcast-overlay,
         .edu-brochure-overlay {
             display: none;
@@ -1120,7 +1120,7 @@ function edu_banner_shortcode($atts)
             <!-- =====================================================
                  DESKTOP DYNAMIC ACCREDITATIONS GOLDEN BAR
                  ===================================================== -->
-            <?php 
+            <?php
             $accreditations_list = !empty($uni_data['accreditations']) && is_array($uni_data['accreditations']) ? array_values($uni_data['accreditations']) : [];
             $acc_count = count($accreditations_list);
             $use_acc_slider = ($acc_count > 4);
@@ -1134,7 +1134,8 @@ function edu_banner_shortcode($atts)
                         <?php if ($use_acc_slider): ?>
                             <!-- Desktop Slider (for > 4 accreditations) -->
                             <div class="edu-acc-slider-wrap" data-slider-id="<?php echo $uid; ?>_acc">
-                                <button type="button" class="edu-acc-arrow edu-acc-prev" data-target="<?php echo $uid; ?>_acc" aria-label="Previous Accreditations">&#8249;</button>
+                                <button type="button" class="edu-acc-arrow edu-acc-prev" data-target="<?php echo $uid; ?>_acc"
+                                    aria-label="Previous Accreditations">&#8249;</button>
                                 <div class="edu-acc-slider-viewport" id="<?php echo $uid; ?>_acc">
                                     <div class="edu-acc-slider-track">
                                         <?php foreach ($accreditations_list as $acc): ?>
@@ -1142,7 +1143,8 @@ function edu_banner_shortcode($atts)
                                                 <?php $acc_img = sode_normalize_asset_url(!empty($acc['image_url']) ? $acc['image_url'] : (!empty($acc['badge_image_url']) ? $acc['badge_image_url'] : '')); ?>
                                                 <?php if (!empty($acc_img)): ?>
                                                     <div class="edu-approval-logo-wrap">
-                                                        <img src="<?php echo esc_url($acc_img); ?>" alt="<?php echo esc_attr($acc['title']); ?>" />
+                                                        <img src="<?php echo esc_url($acc_img); ?>"
+                                                            alt="<?php echo esc_attr($acc['title']); ?>" />
                                                     </div>
                                                 <?php endif; ?>
                                                 <div class="edu-approval-info">
@@ -1155,7 +1157,8 @@ function edu_banner_shortcode($atts)
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
-                                <button type="button" class="edu-acc-arrow edu-acc-next" data-target="<?php echo $uid; ?>_acc" aria-label="Next Accreditations">&#8250;</button>
+                                <button type="button" class="edu-acc-arrow edu-acc-next" data-target="<?php echo $uid; ?>_acc"
+                                    aria-label="Next Accreditations">&#8250;</button>
                                 <div class="edu-acc-slider-dots" id="<?php echo $uid; ?>_acc_dots"></div>
                             </div>
                         <?php else: ?>
