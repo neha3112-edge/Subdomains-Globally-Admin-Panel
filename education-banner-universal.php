@@ -374,8 +374,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                               DESKTOP  (≥ 769px)
-                               ===================================================== */
+                                   DESKTOP  (≥ 769px)
+                                   ===================================================== */
         @media (min-width: 769px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -602,8 +602,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-               DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
-               ===================================================== */
+                   DYNAMIC ACCREDITATIONS GOLDEN BAR (Desktop & Mobile)
+                   ===================================================== */
         #<?php echo $uid; ?> .edu-banner-approvals-bar {
             width: 100%;
             background: #ffc800;
@@ -792,8 +792,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                               MOBILE  (≤ 768px)
-                               ===================================================== */
+                                   MOBILE  (≤ 768px)
+                                   ===================================================== */
         @media (max-width: 768px) {
 
             #<?php echo $uid; ?> .edu-banner-desktop {
@@ -942,6 +942,7 @@ function edu_banner_shortcode($atts)
             #<?php echo $uid; ?> .edu-approval-card {
                 border-radius: 14px;
                 padding: 14px 16px;
+                width: 100%;
             }
 
             #<?php echo $uid; ?> .edu-approval-logo-wrap {
@@ -973,8 +974,8 @@ function edu_banner_shortcode($atts)
         }
 
         /* =====================================================
-                               PODCAST & BROCHURE POPUPS (shared)
-                               ===================================================== */
+                                   PODCAST & BROCHURE POPUPS (shared)
+                                   ===================================================== */
         .edu-podcast-overlay,
         .edu-brochure-overlay {
             display: none;
