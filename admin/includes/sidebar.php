@@ -13,16 +13,24 @@ foreach ($sidebar_items as $item) {
 }
 
 $current_page_key = $active_page_key ?? 'dashboard';
+$branding = function_exists('get_site_branding') ? get_site_branding() : [];
+$sidebar_logo = $branding['admin_logo_url'] ?? $branding['site_logo_url'] ?? '';
 ?>
 <aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-header">
-        <div class="brand-logo-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-            </svg>
-        </div>
-        <span class="brand-title"><?php echo htmlspecialchars(APP_NAME); ?></span>
+        <?php if (!empty($sidebar_logo)): ?>
+            <a href="<?php echo BASE_URL; ?>/dashboard.php" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; max-width:100%; overflow:hidden;">
+                <img src="<?php echo htmlspecialchars(function_exists('get_asset_url') ? get_asset_url($sidebar_logo) : $sidebar_logo); ?>" alt="<?php echo htmlspecialchars(APP_NAME); ?>" style="max-height:36px; max-width:140px; object-fit:contain;">
+            </a>
+        <?php else: ?>
+            <div class="brand-logo-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>
+            </div>
+            <span class="brand-title"><?php echo htmlspecialchars(APP_NAME); ?></span>
+        <?php endif; ?>
     </div>
 
     <nav class="sidebar-nav">

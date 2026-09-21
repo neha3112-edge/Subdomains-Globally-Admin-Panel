@@ -64,9 +64,54 @@ foreach ($global_rows as $k) {
     }
 }
 
+// ── 1.1 Global Favicon Resolution ─────────────────────────────────────
+$favicon_url = '';
+if (!empty($map['$FAVICON_URL$'])) {
+    $favicon_url = $map['$FAVICON_URL$'];
+} elseif (!empty($map['FAVICON_URL'])) {
+    $favicon_url = $map['FAVICON_URL'];
+} elseif (!empty($map['$SITE_FAVICON$'])) {
+    $favicon_url = $map['$SITE_FAVICON$'];
+} else {
+    try {
+        $fav_stmt = $db->query("SELECT setting_value FROM global_settings WHERE setting_key = 'site_favicon_url' LIMIT 1")->fetch();
+        if ($fav_stmt && !empty($fav_stmt['setting_value'])) {
+            $favicon_url = trim((string)$fav_stmt['setting_value']);
+        }
+    } catch (Exception $e) {}
+}
 
+if (!empty($favicon_url)) {
+    $map['$FAVICON_URL$']  = $favicon_url;
+    $map['{FAVICON_URL}']  = $favicon_url;
+    $map['$SITE_FAVICON$'] = $favicon_url;
+    $map['{SITE_FAVICON}'] = $favicon_url;
+}
 
-// ── 2. University-Specific Keys (returned when ?uni=slug passed) ───────
+// ── 1.2 Global Site Logo Resolution ───────────────────────────────────
+$site_logo_url = '';
+if (!empty($map['$SITE_LOGO$'])) {
+    $site_logo_url = $map['$SITE_LOGO$'];
+} elseif (!empty($map['$LOGO_URL$'])) {
+    $site_logo_url = $map['$LOGO_URL$'];
+} elseif (!empty($map['SITE_LOGO'])) {
+    $site_logo_url = $map['SITE_LOGO'];
+} else {
+    try {
+        $logo_stmt = $db->query("SELECT setting_value FROM global_settings WHERE setting_key = 'site_logo_url' LIMIT 1")->fetch();
+        if ($logo_stmt && !empty($logo_stmt['setting_value'])) {
+            $site_logo_url = trim((string)$logo_stmt['setting_value']);
+        }
+    } catch (Exception $e) {}
+}
+
+if (!empty($site_logo_url)) {
+    $map['$SITE_LOGO$'] = $site_logo_url;
+    $map['{SITE_LOGO}'] = $site_logo_url;
+    $map['$LOGO_URL$']  = $site_logo_url;
+    $map['{LOGO_URL}']  = $site_logo_url;
+}
+
 $uni_slug  = trim($_GET['uni'] ?? '');
 $uni       = null;
 $all_slugs = [];
@@ -279,11 +324,13 @@ if (!empty($uni_slug)) {
 }
 
 echo json_encode([
-    'success'   => true,
-    'uni'       => $uni_slug ?: null,
-    'uni_found' => !empty($uni),     // debug: was university found in DB?
-    'all_slugs' => $all_slugs,       // debug: all slugs available in DB
-    'keys'      => $map,
-    'data'      => $map,
-    'count'     => count($map),
+    'success'       => true,
+    'site_logo_url' => $site_logo_url ?: null,
+    'favicon_url'   => $favicon_url ?: null,
+    'uni'           => $uni_slug ?: null,
+    'uni_found'     => !empty($uni),     // debug: was university found in DB?
+    'all_slugs'     => $all_slugs,       // debug: all slugs available in DB
+    'keys'          => $map,
+    'data'          => $map,
+    'count'         => count($map),
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

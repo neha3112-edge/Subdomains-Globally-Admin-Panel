@@ -435,9 +435,37 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 
 -- Register Activity History in Sidebar Items
 INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
-SELECT 'Activity History', 'modules/activity_logs/index.php', 98, 'activity_logs', 'activity_logs', 'SYSTEM', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polyline points=\"12 6 12 12 16 14\"></polyline></svg>', 0, 1
+SELECT 'Activity History', 'modules/activity_logs/index.php', 98, 'activity_logs', 'activity_logs', 'SYSTEM', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>', 0, 1
 WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/activity_logs/index.php');
 
+-- Register Site & Brand Logo in Sidebar Items
+INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
+SELECT 'Site & Brand Logo', 'modules/settings/logo.php', 17, 'logo_settings', 'settings', 'SETTINGS', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>', 0, 1
+WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/settings/logo.php' OR `active_page_key` = 'logo_settings');
+
+-- Register Site Favicon in Sidebar Items
+INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
+SELECT 'Site Favicon', 'modules/settings/favicon.php', 18, 'favicon', 'settings', 'SETTINGS', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle></svg>', 0, 1
+WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/settings/favicon.php' OR `active_page_key` = 'favicon');
+
+-- Default Global Logo & Favicon Seeds
+INSERT INTO `global_keys` (`key_code`, `key_value`, `description`, `is_active`)
+VALUES 
+('$FAVICON_URL$', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'Global Favicon URL for all subdomains', 1),
+('$SITE_LOGO$', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'Global Primary Website Logo URL', 1),
+('$LOGO_URL$', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'Global Primary Logo URL (Alternative)', 1)
+ON DUPLICATE KEY UPDATE `key_code`=VALUES(`key_code`);
+
+INSERT INTO `global_settings` (`setting_key`, `setting_value`, `setting_group`, `description`)
+VALUES 
+('site_favicon_url', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'branding', 'Global Favicon URL for all university subdomains'),
+('site_logo_url', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'branding', 'Global Primary Website Logo URL'),
+('site_logo_dark_url', '', 'branding', 'Global Dark/Inverted Website Logo URL'),
+('admin_logo_url', '', 'branding', 'Admin Panel Custom Brand Logo URL'),
+('site_logo_alt', 'SODE - School of Online & Distance Education', 'branding', 'Default Alt text for Site Logo')
+ON DUPLICATE KEY UPDATE `setting_key`=VALUES(`setting_key`);
+
 SET FOREIGN_KEY_CHECKS = 1;
+
 
 

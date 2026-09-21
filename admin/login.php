@@ -158,14 +158,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
     </div>
 
+    <?php 
+    $branding = function_exists('get_site_branding') ? get_site_branding() : [];
+    $login_logo = $branding['admin_logo_url'] ?? $branding['site_logo_url'] ?? '';
+    ?>
     <div class="login-card">
         <div class="login-header">
-            <div class="login-brand-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                </svg>
-            </div>
+            <?php if (!empty($login_logo)): ?>
+                <div style="text-align:center; margin-bottom:18px;">
+                    <img src="<?php echo htmlspecialchars(function_exists('get_asset_url') ? get_asset_url($login_logo) : $login_logo); ?>" alt="<?php echo htmlspecialchars(APP_NAME); ?>" style="max-height:54px; max-width:220px; object-fit:contain;">
+                </div>
+            <?php else: ?>
+                <div class="login-brand-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                    </svg>
+                </div>
+            <?php endif; ?>
             <h1 class="login-title"><?php echo htmlspecialchars(APP_NAME); ?></h1>
             <p class="login-sub">Sign in to manage universal subdomains & records</p>
         </div>

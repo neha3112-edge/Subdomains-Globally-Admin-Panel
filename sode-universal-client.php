@@ -153,26 +153,98 @@ add_filter('acf/format_value', 'sode_client_replace_keys', 20);
 add_filter('do_shortcode_tag', 'sode_client_replace_keys', 20);
 
 // ====================================================
+// 🌟 GLOBAL FAVICON OVERRIDE ENGINE
+// Centralized Favicon from Admin Panel overrides any
+// WordPress theme, customizer, or plugin favicon.
+// ====================================================
+
+if (!function_exists('sode_client_get_central_favicon_url')) {
+    function sode_client_get_central_favicon_url()
+    {
+        $keys = sode_client_get_global_keys();
+        return $keys['$FAVICON_URL$'] ?? $keys['{FAVICON_URL}'] ?? $keys['$SITE_FAVICON$'] ?? $keys['{SITE_FAVICON}'] ?? '';
+    }
+}
+
+// 1. Override WordPress core site icon URL
+add_filter('get_site_icon_url', function ($url, $size = 512, $blog_id = 0) {
+    $fav = sode_client_get_central_favicon_url();
+    return !empty($fav) ? $fav : $url;
+}, 999999, 3);
+
+// 2. Override WordPress site_icon_meta_tags (outputs icon tags in wp_head)
+add_filter('site_icon_meta_tags', function ($meta_tags) {
+    $fav = sode_client_get_central_favicon_url();
+    if (!empty($fav)) {
+        $clean_fav = esc_url($fav);
+        return [
+            sprintf('<link rel="shortcut icon" href="%s" />', $clean_fav),
+            sprintf('<link rel="icon" type="image/x-icon" href="%s" />', $clean_fav),
+            sprintf('<link rel="icon" href="%s" sizes="32x32" />', $clean_fav),
+            sprintf('<link rel="icon" href="%s" sizes="192x192" />', $clean_fav),
+            sprintf('<link rel="apple-touch-icon" href="%s" />', $clean_fav),
+            sprintf('<meta name="msapplication-TileImage" content="%s" />', $clean_fav),
+        ];
+    }
+    return $meta_tags;
+}, 999999);
+
+// 3. Render Central Favicon in <head> at top priority
+if (!function_exists('sode_client_render_central_favicon_tags')) {
+    function sode_client_render_central_favicon_tags()
+    {
+        $fav = sode_client_get_central_favicon_url();
+        if (!empty($fav)) {
+            $clean_fav = esc_url($fav);
+            echo "\n<!-- SODE Central Admin Global Favicon -->\n";
+            echo '<link rel="shortcut icon" href="' . $clean_fav . '" />' . "\n";
+            echo '<link rel="icon" href="' . $clean_fav . '" sizes="32x32" />' . "\n";
+            echo '<link rel="icon" href="' . $clean_fav . '" sizes="192x192" />' . "\n";
+            echo '<link rel="apple-touch-icon" href="' . $clean_fav . '" />' . "\n";
+            echo '<meta name="msapplication-TileImage" content="' . $clean_fav . '" />' . "\n";
+            echo "<!-- End SODE Favicon -->\n";
+        }
+    }
+}
+add_action('wp_head', 'sode_client_render_central_favicon_tags', 1);
+add_action('login_head', 'sode_client_render_central_favicon_tags', 1);
+add_action('admin_head', 'sode_client_render_central_favicon_tags', 1);
+
+// ====================================================
 // 🔥 FULL PAGE OUTPUT BUFFER (PHP-level)
 // Runs when WP Rocket/Redis cache MISS (first visit).
-// For cache HITs, the JS engine below handles replacement.
+// Strips existing theme favicons and enforces central keys.
 // ====================================================
 add_action('template_redirect', function () {
     ob_start(function ($html) {
         if (empty($html) || !is_string($html))
             return $html;
-        if (strpos($html, '$') === false && strpos($html, '{') === false)
-            return $html;
-        return sode_client_replace_keys($html);
+
+        // 1. Enforce Favicon Replacement in HTML output
+        $fav = sode_client_get_central_favicon_url();
+        if (!empty($fav)) {
+            $clean_fav = esc_url($fav);
+            // Replace any existing <link rel="*icon*"> tags
+            $pattern = '/<link\s+[^>]*rel=["\'](?:shortcut\s+)?icon["\'][^>]*>/i';
+            if (preg_match($pattern, $html)) {
+                $html = preg_replace($pattern, '<link rel="shortcut icon" href="' . $clean_fav . '" /><link rel="icon" href="' . $clean_fav . '" />', $html);
+            }
+        }
+
+        // 2. Replace Dynamic Text Keys
+        if (strpos($html, '$') !== false || strpos($html, '{') !== false) {
+            $html = sode_client_replace_keys($html);
+        }
+
+        return $html;
     });
 }, 0);
 
 // ====================================================
-// ⚡ JS GLOBAL KEYS ENGINE (Client-Side)
+// ⚡ JS GLOBAL KEYS & FAVICON ENGINE (Client-Side)
 // Injected into <head> — runs in browser AFTER page loads.
 // Bypasses WP Rocket HTML cache, Redis, ALL server caches.
-// Fetches fresh keys from Admin API every page load.
-// Works even on WP Rocket cached pages!
+// Automatically wipes old cached favicon and injects Central Favicon.
 // ====================================================
 add_action('wp_head', function () {
     // Detect university slug for university-specific keys
@@ -203,6 +275,33 @@ add_action('wp_head', function () {
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     var keys = data.keys || {};
+                    var centralFavicon = data.favicon_url || keys['$FAVICON_URL$'] || keys['{FAVICON_URL}'] || keys['$SITE_FAVICON$'] || keys['{SITE_FAVICON}'] || '';
+
+                    // 1. Force Central Favicon Overwrite in Browser DOM
+                    if (centralFavicon) {
+                        try {
+                            var existingIcons = document.querySelectorAll("link[rel*='icon'], link[rel='apple-touch-icon']");
+                            existingIcons.forEach(function(el) {
+                                if (el.parentNode) el.parentNode.removeChild(el);
+                            });
+
+                            var linkIcon = document.createElement('link');
+                            linkIcon.rel = 'icon';
+                            linkIcon.href = centralFavicon;
+                            document.head.appendChild(linkIcon);
+
+                            var linkShortcut = document.createElement('link');
+                            linkShortcut.rel = 'shortcut icon';
+                            linkShortcut.href = centralFavicon;
+                            document.head.appendChild(linkShortcut);
+
+                            var linkApple = document.createElement('link');
+                            linkApple.rel = 'apple-touch-icon';
+                            linkApple.href = centralFavicon;
+                            document.head.appendChild(linkApple);
+                        } catch (e) {}
+                    }
+
                     if (!Object.keys(keys).length) return;
 
                     // Build a flat map of ALL pattern variants → value
