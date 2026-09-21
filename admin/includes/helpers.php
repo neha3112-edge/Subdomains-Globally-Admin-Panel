@@ -143,6 +143,48 @@ function get_relative_asset_path($path) {
 }
 
 /**
+ * Ensures university_course_mappings has composite UNIQUE key (university_id, course_id, mode)
+ * allowing the same course to be mapped in multiple modes (e.g., Online, Distance)
+ */
+if (!function_exists('sode_ensure_mapping_mode_unique_index')) {
+    function sode_ensure_mapping_mode_unique_index(PDO $db) {
+        static $migrated = false;
+        if ($migrated) return;
+        try {
+            // 1. Ensure 'mode' column exists in university_course_mappings
+            $mode_col = $db->query("SHOW COLUMNS FROM university_course_mappings LIKE 'mode'")->fetch();
+            if (!$mode_col) {
+                $db->exec("ALTER TABLE university_course_mappings ADD COLUMN mode VARCHAR(50) DEFAULT 'Online' AFTER course_id");
+            }
+
+            // 2. Check and fix indexes
+            $indexes = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course'")->fetchAll();
+            if ($indexes) {
+                $has_mode = false;
+                foreach ($indexes as $idx) {
+                    if (($idx['Column_name'] ?? '') === 'mode') {
+                        $has_mode = true;
+                        break;
+                    }
+                }
+                if (!$has_mode) {
+                    $db->exec("ALTER TABLE university_course_mappings DROP INDEX uniq_uni_course");
+                    $db->exec("ALTER TABLE university_course_mappings ADD UNIQUE KEY uniq_uni_course_mode (university_id, course_id, mode)");
+                }
+            } else {
+                $has_composite = $db->query("SHOW INDEX FROM university_course_mappings WHERE Key_name = 'uniq_uni_course_mode'")->fetch();
+                if (!$has_composite) {
+                    $db->exec("ALTER TABLE university_course_mappings ADD UNIQUE KEY uniq_uni_course_mode (university_id, course_id, mode)");
+                }
+            }
+            $migrated = true;
+        } catch (Exception $e) {
+            // Log silently or ignore if permissions restricted
+        }
+    }
+}
+
+/**
  * Pings each active university subdomain to clear WP Rocket + Redis + Elementor cache.
  * TRUE fire-and-forget — admin save page does NOT wait for responses.
  */

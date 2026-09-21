@@ -5,9 +5,8 @@ require_permission('mappings');
 
 $page_title = 'Course Mappings';
 $page_subtitle = 'Map universities to courses and configure fees structures';
-$active_page_key = 'mappings';
-
 $db = get_db_connection();
+sode_ensure_mapping_mode_unique_index($db);
 
 // Handle Delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {

@@ -148,6 +148,7 @@ CREATE TABLE IF NOT EXISTS `university_course_mappings` (
   `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `university_id` INT UNSIGNED NOT NULL,
   `course_id` INT UNSIGNED NOT NULL,
+  `mode` VARCHAR(50) DEFAULT 'Online',
   `course_description` TEXT NULL,
   `course_link` TEXT NULL,
   `eligibility_text` TEXT NULL,
@@ -156,8 +157,9 @@ CREATE TABLE IF NOT EXISTS `university_course_mappings` (
   `examination_fee` VARCHAR(100) NULL,
   `per_semester_fee` VARCHAR(100) NULL,
   `total_program_fee` VARCHAR(100) NULL,
+  `syllabus_json` LONGTEXT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY `uniq_uni_course` (`university_id`, `course_id`),
+  UNIQUE KEY `uniq_uni_course_mode` (`university_id`, `course_id`, `mode`),
   CONSTRAINT `fk_ucm_uni` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ucm_course` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -9,6 +9,7 @@ $page_subtitle = 'Update fees structure and specializations';
 $active_page_key = 'mappings';
 
 $db = get_db_connection();
+sode_ensure_mapping_mode_unique_index($db);
 
 $id = (int)($_GET['id'] ?? 0);
 if (!$id) {

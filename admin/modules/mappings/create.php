@@ -9,6 +9,7 @@ $page_subtitle = 'Set fees structure and specializations';
 $active_page_key = 'mappings';
 
 $db = get_db_connection();
+sode_ensure_mapping_mode_unique_index($db);
 
 $universities = $db->query("SELECT id, full_name, short_name FROM universities ORDER BY short_name ASC")->fetchAll();
 $courses = $db->query("SELECT id, full_name, short_name, level FROM courses ORDER BY full_name ASC")->fetchAll();
@@ -127,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(BASE_URL . '/modules/mappings/index.php');
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) {
-                set_flash_message('This course is already mapped to the selected university.', 'error');
+                set_flash_message('This course is already mapped to the selected university under the "' . htmlspecialchars($mode) . '" mode.', 'error');
             } else {
                 set_flash_message('Database Error: ' . $e->getMessage(), 'error');
             }
