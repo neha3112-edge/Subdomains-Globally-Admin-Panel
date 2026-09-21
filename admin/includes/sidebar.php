@@ -12,7 +12,20 @@ foreach ($sidebar_items as $item) {
     $grouped_items[$section][] = $item;
 }
 
-$current_page_key = $active_page_key ?? 'dashboard';
+// Auto-detect current page key if not set
+if (empty($active_page_key)) {
+    $current_script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '');
+    if (preg_match('#/modules/([^/]+)/#', $current_script, $matches)) {
+        $current_page_key = $matches[1];
+    } elseif (strpos($current_script, 'dashboard.php') !== false) {
+        $current_page_key = 'dashboard';
+    } else {
+        $current_page_key = '';
+    }
+} else {
+    $current_page_key = $active_page_key;
+}
+
 $branding = function_exists('get_site_branding') ? get_site_branding() : [];
 $sidebar_logo = $branding['admin_logo_url'] ?? $branding['site_logo_url'] ?? '';
 ?>
@@ -41,8 +54,8 @@ $sidebar_logo = $branding['admin_logo_url'] ?? $branding['site_logo_url'] ?? '';
                 <div class="nav-section-title"><?php echo htmlspecialchars($section_title); ?></div>
                 <ul class="nav-list">
                     <?php foreach ($section_items as $item): 
-                        $is_active = ($current_page_key === $item['active_page_key']);
                         $route = (strpos($item['page_route'], 'http') === 0) ? $item['page_route'] : BASE_URL . '/' . ltrim($item['page_route'], '/');
+                        $is_active = ($current_page_key !== '' && $current_page_key === $item['active_page_key']);
                     ?>
                         <li class="nav-item <?php echo $is_active ? 'active' : ''; ?>">
                             <a href="<?php echo htmlspecialchars($route); ?>">
