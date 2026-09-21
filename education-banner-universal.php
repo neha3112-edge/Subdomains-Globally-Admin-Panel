@@ -655,7 +655,7 @@ function edu_banner_shortcode($atts)
         #<?php echo $uid; ?> .edu-banner-desktop .edu-approvals-grid .edu-approval-card {
             flex: 0 1 280px;
             width: 280px;
-            min-width: 300px;
+            min-width: 260px;
             max-width: 320px;
         }
 
