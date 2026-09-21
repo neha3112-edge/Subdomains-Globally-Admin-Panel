@@ -373,7 +373,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                     $on_count = count($online_courses);
                     $on_is_slider_desktop = ($on_count > 3);
                     $on_is_slider_mobile = ($on_count >= 2);
-                    $pane_class = 'sode-courses-pane ' . ($active_mode === 'online' ? 'active' : '') . ($on_is_slider_desktop ? ' has-slider-desktop' : ' is-static-desktop') . ($on_is_slider_mobile ? ' has-slider-mobile' : ' is-static-mobile');
+                    $pane_class = 'sode-courses-pane ' . ($active_mode === 'online' ? 'active' : '') . ($on_is_slider_desktop ? ' has-slider-desktop' : ' is-static-desktop') . ($on_is_slider_mobile ? ' has-slider-mobile' : ' is-static-mobile') . ' count-' . $on_count;
                     ?>
                     <div class="<?php echo esc_attr($pane_class); ?>" id="<?php echo esc_attr($unique_id); ?>_pane_online"
                         data-pane-mode="online">
@@ -476,7 +476,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                     $dist_count = count($distance_courses);
                     $dist_is_slider_desktop = ($dist_count > 3);
                     $dist_is_slider_mobile = ($dist_count >= 2);
-                    $pane_class = 'sode-courses-pane ' . ($active_mode === 'distance' ? 'active' : '') . ($dist_is_slider_desktop ? ' has-slider-desktop' : ' is-static-desktop') . ($dist_is_slider_mobile ? ' has-slider-mobile' : ' is-static-mobile');
+                    $pane_class = 'sode-courses-pane ' . ($active_mode === 'distance' ? 'active' : '') . ($dist_is_slider_desktop ? ' has-slider-desktop' : ' is-static-desktop') . ($dist_is_slider_mobile ? ' has-slider-mobile' : ' is-static-mobile') . ' count-' . $dist_count;
                     ?>
                     <div class="<?php echo esc_attr($pane_class); ?>" id="<?php echo esc_attr($unique_id); ?>_pane_distance"
                         data-pane-mode="distance">
@@ -857,25 +857,56 @@ if (!function_exists('sode_courses_tabs_render')) {
                     max-width: calc((100% - 48px) / 3);
                 }
 
-                /* Static Grid Mode (<= 3 courses) */
-                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 24px;
+                /* 1 Course - Centered */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-1 .sode-slider-track {
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: stretch !important;
                     transform: none !important;
-                    justify-content: center;
-                    width: 100%;
+                    width: 100% !important;
+                }
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-1 .sode-course-card-slide {
+                    flex: 0 0 380px !important;
+                    max-width: 380px !important;
+                    width: 100% !important;
                 }
 
-                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
-                    flex: 1 1 auto;
-                    max-width: 100%;
+                /* 2 Courses - Centered with Gap */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-2 .sode-slider-track {
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: stretch !important;
+                    gap: 24px !important;
+                    transform: none !important;
+                    width: 100% !important;
+                }
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-2 .sode-course-card-slide {
+                    flex: 0 0 380px !important;
+                    max-width: 380px !important;
+                    width: 100% !important;
+                }
+
+                /* 3 Courses - Standard 3 Columns Grid */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-3 .sode-slider-track,
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop:not(.count-1):not(.count-2) .sode-slider-track {
+                    display: grid !important;
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    gap: 24px !important;
+                    transform: none !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-3 .sode-course-card-slide,
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop:not(.count-1):not(.count-2) .sode-course-card-slide {
+                    flex: 1 1 auto !important;
+                    max-width: 100% !important;
                 }
             }
 
             /* =========================================
-                                                   TABLET (769px - 1024px)
-                                                   ========================================= */
+               TABLET (769px - 1024px)
+               ========================================= */
             @media (min-width: 769px) and (max-width: 1024px) {
                 #<?php echo esc_attr($unique_id); ?> .sode-slider-viewport {
                     padding: 10px 4px 14px 4px;
@@ -894,19 +925,35 @@ if (!function_exists('sode_courses_tabs_render')) {
                     max-width: calc((100% - 20px) / 2);
                 }
 
-                /* Static Grid Mode (<= 2 courses) */
-                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-slider-track {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 20px;
+                /* 1 Course - Centered */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-1 .sode-slider-track {
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: stretch !important;
                     transform: none !important;
-                    justify-content: center;
-                    width: 100%;
+                    width: 100% !important;
+                }
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-1 .sode-course-card-slide {
+                    flex: 0 0 380px !important;
+                    max-width: 380px !important;
+                    width: 100% !important;
                 }
 
-                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop .sode-course-card-slide {
-                    flex: 1 1 auto;
-                    max-width: 100%;
+                /* 2 or 3 Courses - Centered */
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-2 .sode-slider-track,
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop:not(.count-1) .sode-slider-track {
+                    display: flex !important;
+                    justify-content: center !important;
+                    flex-wrap: wrap !important;
+                    gap: 20px !important;
+                    transform: none !important;
+                    width: 100% !important;
+                }
+
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop.count-2 .sode-course-card-slide,
+                #<?php echo esc_attr($unique_id); ?> .sode-courses-pane.is-static-desktop:not(.count-1) .sode-course-card-slide {
+                    flex: 0 0 calc((100% - 20px) / 2) !important;
+                    max-width: 380px !important;
                 }
             }
 
