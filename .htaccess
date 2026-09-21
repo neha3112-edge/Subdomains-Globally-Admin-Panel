@@ -1,0 +1,5 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+# Redirect/rewrite /uploads to /admin/uploads
+RewriteRule ^uploads/(.*)$ admin/uploads/$1 [L,NC]
+</IfModule>

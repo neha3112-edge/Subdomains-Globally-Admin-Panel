@@ -82,22 +82,41 @@ function get_asset_url($path) {
     if (empty($path)) return '';
     $path = trim((string)$path);
     
-    // External URLs not on localhost or admin domain
-    if (preg_match('#^https?://#i', $path) && strpos($path, 'localhost') === false && strpos($path, 'admin.distanceeducationschool.com') === false) {
-        return $path;
-    }
-    
-    // Normalize to relative uploads path
-    $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', 'uploads/', $path);
-    $clean = ltrim($clean, '/');
-    if (strpos($clean, 'uploads/') !== 0 && strpos($clean, 'assets/') !== 0) {
-        if (strpos($clean, '202') === 0) {
-            $clean = 'uploads/' . $clean;
+    // External URLs not on localhost or admin domain (e.g., WordPress CDN, S3, main site)
+    if (preg_match('#^https?://#i', $path)) {
+        if (strpos($path, 'distanceeducationschool.com') !== false && strpos($path, 'admin.distanceeducationschool.com') === false) {
+            return str_replace(' ', '%20', $path);
+        }
+        if (strpos($path, 'localhost') === false && strpos($path, 'admin.distanceeducationschool.com') === false) {
+            return str_replace(' ', '%20', $path);
         }
     }
     
-    $base = defined('BASE_URL') ? BASE_URL : 'https://admin.distanceeducationschool.com';
-    return rtrim($base, '/') . '/' . ltrim($clean, '/');
+    // Strip domain and leading paths to extract clean subpath under uploads/
+    $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', '', $path);
+    $clean = preg_replace('#^(?:admin/)?uploads/#i', '', $clean);
+    $clean = ltrim($clean, '/');
+    
+    // Determine admin base URL
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'admin.distanceeducationschool.com';
+    
+    if (strpos($host, 'localhost') !== false) {
+        $base = defined('BASE_URL') ? BASE_URL : ($protocol . $host . '/subdomain_universal_codes/admin');
+        if (strpos($base, '/admin') === false) {
+            $base = rtrim($base, '/') . '/admin';
+        }
+    } else {
+        $base = 'https://admin.distanceeducationschool.com/admin';
+    }
+    
+    if (strpos($clean, 'assets/') === 0) {
+        $final_url = rtrim($base, '/') . '/' . $clean;
+    } else {
+        $final_url = rtrim($base, '/') . '/uploads/' . $clean;
+    }
+    
+    return str_replace(' ', '%20', $final_url);
 }
 
 /**
@@ -106,17 +125,21 @@ function get_asset_url($path) {
 function get_relative_asset_path($path) {
     if (empty($path)) return '';
     $path = trim((string)$path);
-    if (preg_match('#^https?://#i', $path) && strpos($path, 'localhost') === false && strpos($path, 'admin.distanceeducationschool.com') === false) {
-        return $path; // preserve external CDN URLs
-    }
-    $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', 'uploads/', $path);
-    $clean = ltrim($clean, '/');
-    if (strpos($clean, 'uploads/') !== 0 && strpos($clean, 'assets/') !== 0) {
-        if (strpos($clean, '202') === 0) {
-            $clean = 'uploads/' . $clean;
+    if (preg_match('#^https?://#i', $path)) {
+        if (strpos($path, 'distanceeducationschool.com') !== false && strpos($path, 'admin.distanceeducationschool.com') === false) {
+            return $path; // preserve external CDN URLs
+        }
+        if (strpos($path, 'localhost') === false && strpos($path, 'admin.distanceeducationschool.com') === false) {
+            return $path; // preserve external CDN URLs
         }
     }
-    return $clean;
+    $clean = preg_replace('#^https?://[^/]+(?:/[^/]+)*/(?:admin/)?uploads/#i', '', $path);
+    $clean = preg_replace('#^(?:admin/)?uploads/#i', '', $clean);
+    $clean = ltrim($clean, '/');
+    if (strpos($clean, 'assets/') === 0) {
+        return $clean;
+    }
+    return 'uploads/' . $clean;
 }
 
 /**

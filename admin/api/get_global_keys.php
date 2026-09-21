@@ -98,14 +98,19 @@ if (!empty($map['$SITE_LOGO$'])) {
     } catch (Exception $e) {}
 }
 
-// Fallback: If favicon is not explicitly set, use site_logo_url if available
-if (empty($favicon_url) && !empty($site_logo_url)) {
-    $favicon_url = $site_logo_url;
+// Fallback: If favicon is not explicitly set, use default SODE CDN favicon
+if (empty($favicon_url)) {
+    $favicon_url = !empty($site_logo_url) ? $site_logo_url : 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
 }
 
 // Normalize all asset URLs to absolute URLs so subdomains can load them seamlessly
 if (!empty($favicon_url)) {
     $favicon_url = function_exists('get_asset_url') ? get_asset_url($favicon_url) : $favicon_url;
+    // Auto-correct missing /admin/ segment if present
+    if (strpos($favicon_url, 'admin.distanceeducationschool.com/uploads/') !== false) {
+        $favicon_url = str_replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/', $favicon_url);
+    }
+    $favicon_url = str_replace(' ', '%20', $favicon_url);
     $map['$FAVICON_URL$']  = $favicon_url;
     $map['{FAVICON_URL}']  = $favicon_url;
     $map['$SITE_FAVICON$'] = $favicon_url;
@@ -114,6 +119,10 @@ if (!empty($favicon_url)) {
 
 if (!empty($site_logo_url)) {
     $site_logo_url = function_exists('get_asset_url') ? get_asset_url($site_logo_url) : $site_logo_url;
+    if (strpos($site_logo_url, 'admin.distanceeducationschool.com/uploads/') !== false) {
+        $site_logo_url = str_replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/', $site_logo_url);
+    }
+    $site_logo_url = str_replace(' ', '%20', $site_logo_url);
     $map['$SITE_LOGO$'] = $site_logo_url;
     $map['{SITE_LOGO}'] = $site_logo_url;
     $map['$LOGO_URL$']  = $site_logo_url;

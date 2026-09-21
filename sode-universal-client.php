@@ -184,11 +184,21 @@ if (!function_exists('sode_client_get_central_favicon_url')) {
             $fav = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
         }
 
-        // Prepend Central Admin URL if relative path
-        if (!empty($fav) && !preg_match('#^https?://#i', $fav)) {
-            $fav = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/' . ltrim($fav, '/');
+        // Auto-correct missing /admin/ segment if present
+        if (strpos($fav, 'admin.distanceeducationschool.com/uploads/') !== false) {
+            $fav = str_replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/', $fav);
         }
 
+        // Prepend Central Admin URL if relative path
+        if (!empty($fav) && !preg_match('#^https?://#i', $fav)) {
+            if (strpos($fav, 'admin/') === 0) {
+                $fav = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/' . ltrim($fav, '/');
+            } else {
+                $fav = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/admin/' . ltrim($fav, '/');
+            }
+        }
+
+        $fav = str_replace(' ', '%20', $fav);
         return $fav;
     }
 }
@@ -292,7 +302,33 @@ add_action('wp_head', function () {
             'use strict';
             var uniSlug = '<?php echo $uni_js; ?>';
             var adminRoot = '<?php echo $admin_root_js; ?>';
+            var defaultFallbackFavicon = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
             var apiUrl = '<?php echo $api_base; ?>?t=' + Date.now() + (uniSlug ? '&uni=' + encodeURIComponent(uniSlug) : '');
+            
+            function applyFaviconToDOM(iconUrl) {
+                try {
+                    var existingIcons = document.querySelectorAll("link[rel*='icon'], link[rel='apple-touch-icon']");
+                    existingIcons.forEach(function(el) {
+                        if (el.parentNode) el.parentNode.removeChild(el);
+                    });
+
+                    var linkIcon = document.createElement('link');
+                    linkIcon.rel = 'icon';
+                    linkIcon.href = iconUrl;
+                    document.head.appendChild(linkIcon);
+
+                    var linkShortcut = document.createElement('link');
+                    linkShortcut.rel = 'shortcut icon';
+                    linkShortcut.href = iconUrl;
+                    document.head.appendChild(linkShortcut);
+
+                    var linkApple = document.createElement('link');
+                    linkApple.rel = 'apple-touch-icon';
+                    linkApple.href = iconUrl;
+                    document.head.appendChild(linkApple);
+                } catch (e) {}
+            }
+
             // Fetch fresh global keys — no browser cache
             fetch(apiUrl, {
                 method: 'GET',
@@ -302,36 +338,29 @@ add_action('wp_head', function () {
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     var keys = data.keys || {};
-                    var centralFavicon = data.favicon_url || keys['$FAVICON_URL$'] || keys['{FAVICON_URL}'] || keys['$SITE_FAVICON$'] || keys['{SITE_FAVICON}'] || data.site_logo_url || keys['$SITE_LOGO$'] || keys['$LOGO_URL$'] || '';
+                    var centralFavicon = data.favicon_url || keys['$FAVICON_URL$'] || keys['{FAVICON_URL}'] || keys['$SITE_FAVICON$'] || keys['{SITE_FAVICON}'] || data.site_logo_url || keys['$SITE_LOGO$'] || keys['$LOGO_URL$'] || defaultFallbackFavicon;
 
                     // Normalize favicon URL
-                    if (centralFavicon && !centralFavicon.match(/^https?:\/\//i)) {
-                        centralFavicon = adminRoot + '/' + centralFavicon.replace(/^\/+/, '');
+                    if (centralFavicon) {
+                        if (centralFavicon.indexOf('admin.distanceeducationschool.com/uploads/') !== -1) {
+                            centralFavicon = centralFavicon.replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/');
+                        }
+                        if (!centralFavicon.match(/^https?:\/\//i)) {
+                            centralFavicon = adminRoot + (centralFavicon.indexOf('admin/') === 0 ? '/' : '/admin/') + centralFavicon.replace(/^\/+/, '');
+                        }
+                        centralFavicon = centralFavicon.replace(/ /g, '%20');
                     }
 
-                    // 1. Force Central Favicon Overwrite in Browser DOM
+                    // 1. Force Central Favicon Overwrite in Browser DOM with 404 test fallback
                     if (centralFavicon) {
-                        try {
-                            var existingIcons = document.querySelectorAll("link[rel*='icon'], link[rel='apple-touch-icon']");
-                            existingIcons.forEach(function(el) {
-                                if (el.parentNode) el.parentNode.removeChild(el);
-                            });
-
-                            var linkIcon = document.createElement('link');
-                            linkIcon.rel = 'icon';
-                            linkIcon.href = centralFavicon;
-                            document.head.appendChild(linkIcon);
-
-                            var linkShortcut = document.createElement('link');
-                            linkShortcut.rel = 'shortcut icon';
-                            linkShortcut.href = centralFavicon;
-                            document.head.appendChild(linkShortcut);
-
-                            var linkApple = document.createElement('link');
-                            linkApple.rel = 'apple-touch-icon';
-                            linkApple.href = centralFavicon;
-                            document.head.appendChild(linkApple);
-                        } catch (e) {}
+                        applyFaviconToDOM(centralFavicon);
+                        if (centralFavicon !== defaultFallbackFavicon) {
+                            var testImg = new Image();
+                            testImg.onerror = function() {
+                                applyFaviconToDOM(defaultFallbackFavicon);
+                            };
+                            testImg.src = centralFavicon;
+                        }
                     }
 
                     if (!Object.keys(keys).length) return;
