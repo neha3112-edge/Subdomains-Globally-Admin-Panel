@@ -342,8 +342,24 @@ if (!function_exists('sode_courses_tabs_render')) {
         $has_distance = !empty($distance_courses);
         $show_tabs = ($has_online && $has_distance);
 
-        // Active mode: default Online if available, else Distance
-        $active_mode = $has_online ? 'online' : ($has_distance ? 'distance' : 'online');
+        $on_count = count($online_courses);
+        $dist_count = count($distance_courses);
+
+        // Active mode & Tab priority: The mode with higher course count is active and displayed first!
+        if ($dist_count > $on_count) {
+            $active_mode = 'distance';
+            $first_tab_mode = 'distance';
+            $first_tab_label = 'Distance Mode';
+            $second_tab_mode = 'online';
+            $second_tab_label = 'Online Mode';
+        } else {
+            $active_mode = $has_online ? 'online' : ($has_distance ? 'distance' : 'online');
+            $first_tab_mode = 'online';
+            $first_tab_label = 'Online Mode';
+            $second_tab_mode = 'distance';
+            $second_tab_label = 'Distance Mode';
+        }
+
         $unique_id = 'sode_courses_' . substr(md5($uni_slug ?? 'dsu'), 0, 8);
 
         ob_start();
@@ -354,13 +370,13 @@ if (!function_exists('sode_courses_tabs_render')) {
             <?php if ($show_tabs): ?>
                 <!-- Mode Tabs Navigation (Rendered ONLY when BOTH Online & Distance courses exist) -->
                 <div class="sode-courses-mode-tabs">
-                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === 'online') ? 'active' : ''; ?>"
-                        data-mode="online">
-                        Online Mode
+                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === $first_tab_mode) ? 'active' : ''; ?>"
+                        data-mode="<?php echo esc_attr($first_tab_mode); ?>">
+                        <?php echo esc_html($first_tab_label); ?>
                     </button>
-                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === 'distance') ? 'active' : ''; ?>"
-                        data-mode="distance">
-                        Distance Mode
+                    <button type="button" class="sode-mode-tab-btn <?php echo ($active_mode === $second_tab_mode) ? 'active' : ''; ?>"
+                        data-mode="<?php echo esc_attr($second_tab_mode); ?>">
+                        <?php echo esc_html($second_tab_label); ?>
                     </button>
                 </div>
             <?php endif; ?>
