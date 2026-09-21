@@ -136,7 +136,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <tr>
                             <td style="width:50px;">
                                 <?php if (!empty($uni['logo_url'])): ?>
-                                    <img src="<?php echo htmlspecialchars($uni['logo_url']); ?>" alt="logo" style="height:32px; max-width:60px; object-fit:contain; border-radius:4px; background:#fff; padding:2px;">
+                                    <img src="<?php echo htmlspecialchars(get_asset_url($uni['logo_url'])); ?>" alt="logo" style="height:32px; max-width:60px; object-fit:contain; border-radius:4px; background:#fff; padding:2px;" loading="lazy">
                                 <?php else: ?>
                                     <div style="width:36px; height:36px; border-radius:6px; background:var(--bg-input); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:11px; font-weight:700;">
                                         <?php echo substr($uni['short_name'], 0, 3); ?>

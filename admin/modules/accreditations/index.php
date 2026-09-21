@@ -162,7 +162,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <div class="media-preview-container" id="preview_acc_logo">
                         <?php if (!empty($edit_acc['image_url'])): ?>
                             <div class="media-preview-item">
-                                <img src="<?php echo htmlspecialchars($edit_acc['image_url']); ?>" alt="Preview" style="max-height:80px;">
+                                <img src="<?php echo htmlspecialchars(get_asset_url($edit_acc['image_url'])); ?>" alt="Preview" style="max-height:80px;">
                                 <span class="media-preview-remove" onclick="removeMediaPreview('field_acc_logo', 'preview_acc_logo')">&times;</span>
                             </div>
                         <?php endif; ?>
@@ -231,7 +231,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <tr>
                                 <td style="width:40px;">
                                     <?php if (!empty($a['image_url'])): ?>
-                                        <img src="<?php echo htmlspecialchars($a['image_url']); ?>" alt="logo" style="width:32px; height:32px; object-fit:contain; border-radius:4px; background:#fff; padding:2px;">
+                                        <img src="<?php echo htmlspecialchars(get_asset_url($a['image_url'])); ?>" alt="logo" style="width:32px; height:32px; object-fit:contain; border-radius:4px; background:#fff; padding:2px;" loading="lazy">
                                     <?php else: ?>
                                         <div style="width:32px; height:32px; border-radius:4px; background:var(--bg-input); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:10px; font-weight:700;">
                                             DOC
