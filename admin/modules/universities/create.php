@@ -758,17 +758,29 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <div class="card-header">
                     <span class="card-title">Accreditations & Approvals</span>
                 </div>
-                <div class="card-body" style="max-height:350px; overflow-y:auto;">
+                <div class="card-body">
                     <?php if (empty($all_accreditations)): ?>
                         <p style="font-size:12px; color:var(--text-dim);">No accreditations created yet. Add them in Accreditations module.</p>
                     <?php else: ?>
-                        <div style="display:flex; flex-direction:column; gap:10px;">
+                        <!-- Live Search Bar -->
+                        <div style="margin-bottom: 12px;">
+                            <input type="text" 
+                                   id="search_accreditations" 
+                                   class="form-control" 
+                                   placeholder="🔍 Search accreditations..." 
+                                   style="font-size: 12.5px; padding: 7px 10px; width: 100%; border-radius: 6px;"
+                                   oninput="filterAccreditations(this.value)">
+                        </div>
+                        <div id="accreditations_list" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right: 4px;">
                             <?php foreach ($all_accreditations as $acc): ?>
-                                <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
+                                <label class="acc-checkbox-item" data-title="<?php echo strtolower(htmlspecialchars($acc['title'])); ?>" style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
                                     <input type="checkbox" name="accreditations[]" value="<?php echo $acc['id']; ?>">
                                     <span><?php echo htmlspecialchars($acc['title']); ?></span>
                                 </label>
                             <?php endforeach; ?>
+                            <div id="no_acc_found" style="display:none; font-size:12px; color:var(--text-dim); text-align:center; padding:12px 0;">
+                                No matching accreditations found
+                            </div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -824,6 +836,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function filterAccreditations(query) {
+    const q = (query || '').toLowerCase().trim();
+    const items = document.querySelectorAll('.acc-checkbox-item');
+    let visibleCount = 0;
+    items.forEach(function(item) {
+        const title = item.getAttribute('data-title') || item.innerText.toLowerCase();
+        if (q === '' || title.indexOf(q) !== -1) {
+            item.style.display = 'flex';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    const noFound = document.getElementById('no_acc_found');
+    if (noFound) {
+        noFound.style.display = (visibleCount === 0 && items.length > 0) ? 'block' : 'none';
+    }
+}
 </script>
 
 <?php
