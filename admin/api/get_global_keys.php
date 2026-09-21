@@ -230,6 +230,7 @@ if (!empty($uni_slug)) {
                 c.short_name,
                 c.slug,
                 c.full_name,
+                ucm.mode,
                 ucm.per_semester_fee,
                 ucm.total_program_fee,
                 ucm.tuition_fee,
@@ -239,6 +240,17 @@ if (!empty($uni_slug)) {
             FROM university_course_mappings ucm
             INNER JOIN courses c ON ucm.course_id = c.id
             WHERE ucm.university_id = ?
+            ORDER BY 
+                CASE 
+                    WHEN ucm.mode = 'Online' THEN 1 
+                    ELSE 2 
+                END ASC,
+                CASE 
+                    WHEN c.level = 'PG' THEN 1 
+                    WHEN c.level = 'UG' THEN 2 
+                    ELSE 3 
+                END ASC,
+                ucm.id ASC
         ");
         $course_stmt->execute([$uni['id']]);
         $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -247,6 +259,7 @@ if (!empty($uni_slug)) {
         $all_elig_lines = [];
 
         foreach ($courses as $c) {
+            $c_mode    = (!empty($c['mode']) && strtolower(trim($c['mode'])) === 'distance') ? 'Distance' : 'Online';
             $per_sem   = trim((string)($c['per_semester_fee'] ?? ''));
             $total_fee = trim((string)($c['total_program_fee'] ?? ''));
             $tuition   = trim((string)($c['tuition_fee'] ?? ''));
@@ -259,7 +272,12 @@ if (!empty($uni_slug)) {
                 $elig_text = $is_master ? "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories." : "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.";
             }
 
-            $c_disp_name = ($c['short_name'] === 'B.Com') ? 'BCom' : $c['short_name'];
+            $base_disp_name = ($c['short_name'] === 'B.Com') ? 'BCom' : $c['short_name'];
+            if (stripos($base_disp_name, $c_mode) !== 0) {
+                $c_disp_name = $c_mode . ' ' . $base_disp_name;
+            } else {
+                $c_disp_name = $base_disp_name;
+            }
             $all_elig_lines[] = "• " . $c_disp_name . ": " . $elig_text;
 
             // Default fee (per semester if available, else total)
@@ -269,6 +287,7 @@ if (!empty($uni_slug)) {
             $slug_clean  = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c['slug'] ?? ''));
             $short_clean = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c['short_name'] ?? ''));
             $short_und   = strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', trim($c['short_name'] ?? '', '.')));
+            $mode_slug   = strtoupper($c_mode);
 
             $prefixes = array_unique(array_filter([$slug_clean, $short_clean, $short_und]));
 
@@ -278,6 +297,9 @@ if (!empty($uni_slug)) {
                 $fee_keys['$' . $pfx . '_FEES$']                 = $main_fee;
                 $fee_keys['{' . $pfx . '_FEE}']                  = $main_fee;
                 $fee_keys['{' . $pfx . '_FEES}']                 = $main_fee;
+
+                $fee_keys['$' . $mode_slug . '_' . $pfx . '_FEE$']  = $main_fee;
+                $fee_keys['{' . $mode_slug . '_' . $pfx . '_FEE}']  = $main_fee;
 
                 $fee_keys['$' . $pfx . '_PER_SEMESTER_FEE$']     = $per_sem;
                 $fee_keys['$' . $pfx . '_PER_SEMESTER_FEES$']    = $per_sem;
@@ -325,6 +347,12 @@ if (!empty($uni_slug)) {
                 $fee_keys['{' . $pfx . '_ELIGIBILITY}']          = $elig_text;
                 $fee_keys['$' . $pfx . '_ELIGIBILITY_TEXT$']     = $elig_text;
                 $fee_keys['{' . $pfx . '_ELIGIBILITY_TEXT}']     = $elig_text;
+
+                // Mode-prefixed eligibility keys (e.g. $DISTANCE_MBA_ELIGIBILITY$, $ONLINE_MBA_ELIGIBILITY$)
+                $fee_keys['$' . $mode_slug . '_' . $pfx . '_ELIGIBILITY$']      = $elig_text;
+                $fee_keys['{' . $mode_slug . '_' . $pfx . '_ELIGIBILITY}']      = $elig_text;
+                $fee_keys['$' . $mode_slug . '_' . $pfx . '_ELIGIBILITY_TEXT$'] = $elig_text;
+                $fee_keys['{' . $mode_slug . '_' . $pfx . '_ELIGIBILITY_TEXT}'] = $elig_text;
             }
         }
 

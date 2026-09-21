@@ -1442,7 +1442,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             if ($mode_filter === 'distance' && $m !== 'distance')
                 continue;
 
-            $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
+            $key = ($c['short_name'] ?? '') . '_' . $m;
             if (isset($seen_courses[$key]))
                 continue;
             $seen_courses[$key] = true;
@@ -1469,12 +1469,20 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                 </thead>
                 <tbody>
                     <?php foreach ($filtered as $item):
-                        $c_name = $item['short_name'];
+                        $c_mode = !empty($item['mode']) ? (strtolower(trim($item['mode'])) === 'distance' ? 'Distance' : 'Online') : 'Online';
+                        $base_name = ($item['short_name'] === 'B.Com') ? 'BCom' : $item['short_name'];
                         if ($atts['format'] === 'full') {
-                            $c_name = $item['full_name'];
+                            $base_name = $item['full_name'];
                         } elseif ($atts['format'] === 'both') {
-                            $c_name = $item['short_name'] . ' (' . $item['full_name'] . ')';
+                            $base_name = $base_name . ' (' . $item['full_name'] . ')';
                         }
+
+                        if (stripos($base_name, $c_mode) !== 0) {
+                            $c_name = $c_mode . ' ' . $base_name;
+                        } else {
+                            $c_name = $base_name;
+                        }
+
                         $elig_text = !empty($item['eligibility']) ? $item['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
                         ?>
                         <tr>
@@ -1528,12 +1536,12 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
-                width: 22%;
-                min-width: 120px;
+                width: 25%;
+                min-width: 140px;
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-elig-col-desc {
-                width: 78%;
+                width: 75%;
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-eligibility-table tbody tr {
@@ -1550,7 +1558,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
-                padding: 12px 20px;
+                padding: 14px 20px;
                 font-size: 15.5px;
                 font-weight: 600;
                 color: #000000;
@@ -1564,7 +1572,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             }
 
             #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
-                padding: 12px 20px;
+                padding: 14px 20px;
                 font-size: 14px;
                 line-height: 1.6;
                 color: #1e293b;
@@ -1579,13 +1587,14 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
                 }
 
                 #<?php echo esc_attr($table_id); ?> .sode-elig-col-course {
-                    width: 25%;
-                    min-width: 85px;
+                    width: 30%;
+                    min-width: 110px;
                 }
 
                 #<?php echo esc_attr($table_id); ?> .sode-elig-cell-course {
                     padding: 12px 14px;
                     font-size: 14px;
+                    white-space: normal;
                 }
 
                 #<?php echo esc_attr($table_id); ?> .sode-elig-cell-desc {
@@ -1649,7 +1658,7 @@ if (!function_exists('sode_courses_eligibility_text_render')) {
                 }
             }
 
-            $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
+            $key = ($c['short_name'] ?? '') . '_' . $m;
             if (isset($seen_courses[$key]))
                 continue;
             $seen_courses[$key] = true;
@@ -1680,8 +1689,16 @@ if (!function_exists('sode_courses_eligibility_text_render')) {
         $output_items = [];
 
         foreach ($filtered as $item) {
-            $c_name = ($atts['format'] === 'full') ? $item['full_name'] : $item['short_name'];
-            if ($c_name === 'B.Com') $c_name = 'BCom';
+            $c_mode = !empty($item['mode']) ? (strtolower(trim($item['mode'])) === 'distance' ? 'Distance' : 'Online') : 'Online';
+            $base_name = ($atts['format'] === 'full') ? $item['full_name'] : $item['short_name'];
+            if ($base_name === 'B.Com') $base_name = 'BCom';
+
+            if (stripos($base_name, $c_mode) !== 0) {
+                $c_name = $c_mode . ' ' . $base_name;
+            } else {
+                $c_name = $base_name;
+            }
+
             $elig = !empty($item['eligibility']) ? $item['eligibility'] : '10+2 or equivalent qualification from a recognized board.';
 
             $prefix = '';
@@ -1766,7 +1783,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             if ($mode_filter === 'distance' && $m !== 'distance')
                 continue;
 
-            $key = $c['short_name'] . ($mode_filter === 'all' ? '' : '_' . $m);
+            $key = ($c['short_name'] ?? '') . '_' . $m;
             if (isset($seen_courses[$key]))
                 continue;
             $seen_courses[$key] = true;
@@ -1796,6 +1813,7 @@ if (!function_exists('sode_university_programs_table_render')) {
                     </thead>
                     <tbody>
                         <?php foreach ($filtered as $item):
+                            $c_mode = !empty($item['mode']) ? (strtolower(trim($item['mode'])) === 'distance' ? 'Distance' : 'Online') : 'Online';
                             // Program Name
                             $short_clean = $item['short_name'];
                             if ($short_clean === 'B.Com') {
@@ -1806,6 +1824,10 @@ if (!function_exists('sode_university_programs_table_render')) {
                                 $short_clean = 'BSc';
                             } elseif ($short_clean === 'M.Sc') {
                                 $short_clean = 'MSc';
+                            }
+
+                            if (stripos($short_clean, $c_mode) !== 0) {
+                                $short_clean = $c_mode . ' ' . $short_clean;
                             }
 
                             // Duration (2 Years for PG / Master, 3 Years for UG / Bachelor)
