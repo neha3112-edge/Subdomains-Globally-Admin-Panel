@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
         if (empty($form_key) && !empty($display_label)) {
-            $form_key = preg_replace('/[^A-Za-z0-9_]+/', '', $display_label);
+            $form_key = preg_replace('/[^A-Za-z0-9_.\-]+/', '', $display_label);
         }
 
         if (empty($display_label) || empty($form_key)) {
@@ -477,8 +477,8 @@ require_once ADMIN_PATH . '/includes/header.php';
 
             <div class="form-group" style="margin-bottom:16px;">
                 <label class="form-label" style="font-size:13px; font-weight:600; margin-bottom:6px;">Form & CRM Key <span style="color:#ef4444;">*</span></label>
-                <input type="text" name="form_key" id="modal_form_key" class="form-control" placeholder="e.g. MBA or mba_spec" required style="font-size:13.5px; font-weight:700; color:#38bdf8;" oninput="this.value = this.value.replace(/[^A-Za-z0-9_]/g, '')">
-                <span style="font-size:11.5px; color:var(--text-dim); margin-top:4px; display:block;">Backend identifier pushed to CRM, Gallabox, and Brevo lead integrations.</span>
+                <input type="text" name="form_key" id="modal_form_key" class="form-control" placeholder="e.g. B.Ed, MBA or mba_spec" required style="font-size:13.5px; font-weight:700; color:#38bdf8;" oninput="this.value = this.value.replace(/[^A-Za-z0-9_.\-\s]/g, '')">
+                <span style="font-size:11.5px; color:var(--text-dim); margin-top:4px; display:block;">Backend identifier pushed to CRM, Gallabox, and Brevo lead integrations. (e.g. B.Ed, MBA, etc.)</span>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:18px;">
@@ -572,7 +572,7 @@ function autoGenerateKey(label) {
     var idInput = document.getElementById('modal_course_id');
     if (idInput.value === '0') {
         var keyInput = document.getElementById('modal_form_key');
-        keyInput.value = label.replace(/[^A-Za-z0-9_]/g, '');
+        keyInput.value = label.trim().replace(/[^A-Za-z0-9_.\-]/g, '');
     }
 }
 
