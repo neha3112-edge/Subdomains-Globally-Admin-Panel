@@ -58,13 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $display_label = trim($_POST['display_label'] ?? '');
-        $form_key = strtoupper(trim($_POST['form_key'] ?? ''));
+        $form_key = trim($_POST['form_key'] ?? '');
         $level = trim($_POST['level'] ?? 'PG');
         $sort_order = (int)($_POST['sort_order'] ?? 0);
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
         if (empty($form_key) && !empty($display_label)) {
-            $form_key = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $display_label));
+            $form_key = preg_replace('/[^A-Za-z0-9_]+/', '', $display_label);
         }
 
         if (empty($display_label) || empty($form_key)) {
@@ -152,12 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Support "Label | KEY | LEVEL" or "Label, KEY" or single "Label"
                 $parts = preg_split('/[|,]/', $line);
                 $lbl = trim($parts[0] ?? '');
-                $k = isset($parts[1]) ? strtoupper(trim($parts[1])) : '';
+                $k = isset($parts[1]) ? trim($parts[1]) : '';
                 $lvl = isset($parts[2]) ? trim($parts[2]) : $default_level;
 
                 if (empty($lbl)) continue;
                 if (empty($k)) {
-                    $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+                    $k = preg_replace('/[^A-Za-z0-9_]+/', '', $lbl);
                 }
 
                 try {
@@ -476,8 +476,8 @@ require_once ADMIN_PATH . '/includes/header.php';
             </div>
 
             <div class="form-group" style="margin-bottom:16px;">
-                <label class="form-label" style="font-size:13px; font-weight:600; margin-bottom:6px;">Form & CRM Key (All CAPITAL) <span style="color:#ef4444;">*</span></label>
-                <input type="text" name="form_key" id="modal_form_key" class="form-control" placeholder="e.g. MCOM" required style="font-size:13.5px; font-weight:700; color:#38bdf8; text-transform:uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')">
+                <label class="form-label" style="font-size:13px; font-weight:600; margin-bottom:6px;">Form & CRM Key <span style="color:#ef4444;">*</span></label>
+                <input type="text" name="form_key" id="modal_form_key" class="form-control" placeholder="e.g. MBA or mba_spec" required style="font-size:13.5px; font-weight:700; color:#38bdf8;" oninput="this.value = this.value.replace(/[^A-Za-z0-9_]/g, '')">
                 <span style="font-size:11.5px; color:var(--text-dim); margin-top:4px; display:block;">Backend identifier pushed to CRM, Gallabox, and Brevo lead integrations.</span>
             </div>
 
@@ -572,7 +572,7 @@ function autoGenerateKey(label) {
     var idInput = document.getElementById('modal_course_id');
     if (idInput.value === '0') {
         var keyInput = document.getElementById('modal_form_key');
-        keyInput.value = label.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+        keyInput.value = label.replace(/[^A-Za-z0-9_]/g, '');
     }
 }
 

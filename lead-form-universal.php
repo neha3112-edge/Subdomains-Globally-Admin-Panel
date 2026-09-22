@@ -483,11 +483,11 @@ function custom_lead_form_shortcode($atts = [])
                 continue;
             }
             $lbl = trim($c_row['label'] ?? '');
-            $k = strtoupper(trim($c_row['key'] ?? ''));
+            $k = trim($c_row['key'] ?? '');
             if ($lbl === '')
                 continue;
             if ($k === '')
-                $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
+                $k = preg_replace('/[^A-Za-z0-9_]+/', '', $lbl);
 
             $courses_list[] = [
                 'label' => $lbl,

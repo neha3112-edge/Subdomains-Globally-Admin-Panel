@@ -264,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
                 $is_enabled = isset($selected_ids_map[(int)$mc['id']]) ? 1 : 0;
                 $allowed_courses_arr[] = [
                     'label'     => $mc['display_label'],
-                    'key'       => strtoupper($mc['form_key']),
+                    'key'       => $mc['form_key'],
                     'enabled'   => $is_enabled,
                     'level'     => $mc['level'],
                     'is_custom' => 0
@@ -384,9 +384,9 @@ if (!function_exists('sode_get_university_form_courses')) {
         $result = [];
         foreach ($master_courses as $mc) {
             $lbl = trim($mc['display_label']);
-            $k = strtoupper($mc['form_key']);
+            $k = trim($mc['form_key']);
             $lbl_key = 'lbl:' . mb_strtolower($lbl);
-            $k_key = 'key:' . $k;
+            $k_key = 'key:' . mb_strtolower($k);
 
             if ($is_new_or_empty) {
                 $is_enabled = 1;
