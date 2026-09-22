@@ -14,20 +14,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once dirname(__DIR__) . '/config/config.php';
 
-$db = get_db_connection();
-
 $slug = trim($_GET['slug'] ?? $_GET['uni'] ?? '');
 $id = (int)($_GET['id'] ?? 0);
+
+$cache_key = 'api:university_banner:' . md5($slug . '|' . $id);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+$db = get_db_connection();
 
 if (empty($slug) && $id <= 0) {
     // If no specific university requested, return list of all active universities
     $stmt = $db->query("SELECT id, full_name, short_name, slug, mode, location, logo_url, desktop_banner_bg, mobile_banner_bg FROM universities WHERE is_active = 1 ORDER BY short_name ASC");
     $all = $stmt->fetchAll();
-    echo json_encode([
+    $all_resp = [
         'success' => true,
         'count' => count($all),
         'universities' => $all
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    ];
+    Sode_Redis::set($cache_key, $all_resp, 86400);
+    header('X-Cache: MISS');
+    echo json_encode($all_resp, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
@@ -68,7 +79,7 @@ while ($row = $keys_stmt->fetch()) {
     $global_keys[$row['key_code']] = $row['key_value'];
 }
 
-echo json_encode([
+$response_data = [
     'success' => true,
     'data' => [
         'id' => (int)$uni['id'],
@@ -97,4 +108,8 @@ echo json_encode([
         'accreditations' => $accreditations,
         'global_keys' => $global_keys
     ]
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+Sode_Redis::set($cache_key, $response_data, 86400);
+header('X-Cache: MISS');
+echo json_encode($response_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

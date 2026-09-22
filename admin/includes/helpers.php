@@ -196,6 +196,16 @@ if (!function_exists('sode_ensure_mapping_mode_unique_index')) {
  */
 if (!function_exists('sode_bust_all_subdomain_caches')) {
     function sode_bust_all_subdomain_caches(PDO $db) {
+        // 1. Flush Local Redis in-memory cache
+        if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+            try {
+                Sode_Redis::flushPattern('*');
+            } catch (Exception $e) {
+                error_log('SODE Redis flush failed: ' . $e->getMessage());
+            }
+        }
+
+        // 2. Fire-and-forget remote subdomain flushes
         try {
             $unis = $db->query("SELECT slug FROM universities WHERE is_active = 1")->fetchAll(PDO::FETCH_COLUMN);
             foreach ($unis as $slug) {
@@ -362,6 +372,12 @@ if (!function_exists('get_site_branding')) {
         static $branding = null;
         if ($branding !== null) return $branding;
 
+        $cached = Sode_Redis::get('admin:site_branding');
+        if ($cached !== null && is_array($cached)) {
+            $branding = $cached;
+            return $branding;
+        }
+
         $branding = [
             'site_logo_url'       => '',
             'site_logo_dark_url'  => '',
@@ -392,6 +408,7 @@ if (!function_exists('get_site_branding')) {
             } catch (Exception $e) {}
         }
 
+        Sode_Redis::set('admin:site_branding', $branding, 86400);
         return $branding;
     }
 }

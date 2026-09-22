@@ -85,7 +85,7 @@ if (!function_exists('sode_get_university_courses_data')) {
             }
         }
 
-        // Auto-include DB config if available locally
+        // Auto-include DB config & Redis if available locally
         if (!function_exists('get_db_connection')) {
             $possible_configs = [
                 __DIR__ . '/admin/config/config.php',
@@ -97,6 +97,15 @@ if (!function_exists('sode_get_university_courses_data')) {
                     require_once $cfg;
                     break;
                 }
+            }
+        }
+
+        // ── Check Redis Cache ─────────────────────────────────────────
+        $cache_key = "courses_data:" . strtolower($uni_slug ?: 'default');
+        if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+            $cached = Sode_Redis::get($cache_key);
+            if (!empty($cached) && is_array($cached)) {
+                return $cached;
             }
         }
 
@@ -300,6 +309,10 @@ if (!function_exists('sode_get_university_courses_data')) {
                     'link' => '#'
                 ]
             ];
+        }
+
+        if (!empty($courses_data) && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+            Sode_Redis::set($cache_key, $courses_data, 86400);
         }
 
         return $courses_data;

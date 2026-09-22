@@ -129,7 +129,19 @@ if (!empty($site_logo_url)) {
     $map['{LOGO_URL}']  = $site_logo_url;
 }
 
-$uni_slug  = trim($_GET['uni'] ?? '');
+$uni_slug  = strtolower(trim($_GET['uni'] ?? ''));
+$cache_key = "api:keys:" . ($uni_slug ?: 'global');
+
+// ── 0. Check Redis Cache for Instant 1-2ms Delivery ───────────────────
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    $cached = Sode_Redis::get($cache_key);
+    if ($cached && is_array($cached)) {
+        $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
+        echo json_encode($cached, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+}
+
 $uni       = null;
 $all_slugs = [];
 
@@ -368,7 +380,7 @@ if (!empty($uni_slug)) {
     }
 }
 
-echo json_encode([
+$response = [
     'success'       => true,
     'site_logo_url' => $site_logo_url ?: null,
     'favicon_url'   => $favicon_url ?: null,
@@ -378,4 +390,12 @@ echo json_encode([
     'keys'          => $map,
     'data'          => $map,
     'count'         => count($map),
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+// Cache response in Redis for 24 hours
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    Sode_Redis::set($cache_key, $response, 86400);
+}
+
+echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+

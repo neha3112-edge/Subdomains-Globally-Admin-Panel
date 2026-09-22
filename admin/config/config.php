@@ -24,6 +24,7 @@ define('BASE_URL', $protocol . $host . $admin_root);
 define('ADMIN_PATH', dirname(__DIR__));
 
 require_once ADMIN_PATH . '/config/database.php';
+require_once ADMIN_PATH . '/redis/Sode_Redis.php';
 require_once ADMIN_PATH . '/includes/helpers.php';
 require_once ADMIN_PATH . '/includes/auth.php';
 require_once ADMIN_PATH . '/includes/rbac.php';

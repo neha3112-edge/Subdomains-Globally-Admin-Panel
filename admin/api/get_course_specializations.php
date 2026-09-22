@@ -51,6 +51,14 @@ if (empty($mode_param)) {
 // Normalize mode capitalisation ('Online', 'Distance')
 $mode_clean = (stripos($mode_param, 'dist') !== false) ? 'Distance' : 'Online';
 
+$cache_key = 'api:course_specializations:' . md5($uni_param . '|' . $course_param . '|' . $mode_clean);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 $specializations = [];
 $found_uni = null;
 $found_course = null;
@@ -117,7 +125,7 @@ if ($db) {
     }
 }
 
-echo json_encode([
+$response_data = [
     'success'         => !empty($specializations),
     'university_slug' => $uni_param,
     'university_name' => $found_uni['short_name'] ?? $uni_param,
@@ -125,4 +133,8 @@ echo json_encode([
     'course_name'     => $found_course['short_name'] ?? $course_param,
     'mode'            => $mode_clean,
     'specializations' => $specializations,
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+Sode_Redis::set($cache_key, $response_data, 86400);
+header('X-Cache: MISS');
+echo json_encode($response_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -14,10 +14,19 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once dirname(__DIR__) . '/config/config.php';
 
-$db = get_db_connection();
-
 $course_slug = strtolower(trim($_GET['course'] ?? ''));
 $all_param = isset($_GET['all']) ? (int)$_GET['all'] : 0;
+$uni_slug = strtolower(trim($_GET['uni'] ?? ''));
+
+$cache_key = 'api:course_universities:' . md5($course_slug . '|' . $all_param . '|' . $uni_slug);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+$db = get_db_connection();
 
 try {
     if (!empty($course_slug) && !$all_param) {
@@ -149,7 +158,7 @@ try {
             }
         }
 
-        echo json_encode([
+        $response_data = [
             'success'            => true,
             'course_slug'        => $row['course_slug'],
             'course_name'        => $row['course_name'],
@@ -159,7 +168,10 @@ try {
             'total_universities' => count($unis),
             'universities'       => $unis,
             'current_university' => $current_uni
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        ];
+        Sode_Redis::set($cache_key, $response_data, 86400);
+        header('X-Cache: MISS');
+        echo json_encode($response_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
 
@@ -198,11 +210,14 @@ try {
         ];
     }
 
-    echo json_encode([
+    $response_all = [
         'success' => true,
         'total'   => count($courses_data),
         'data'    => $courses_data
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    ];
+    Sode_Redis::set($cache_key, $response_all, 86400);
+    header('X-Cache: MISS');
+    echo json_encode($response_all, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 } catch (Exception $e) {
     http_response_code(500);

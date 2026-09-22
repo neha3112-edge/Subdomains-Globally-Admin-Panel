@@ -37,6 +37,14 @@ try {
         $uni_input = 'dsu';
     }
 
+    $cache_key = 'api:university_fees_table:' . md5($uni_input);
+    $cached_response = Sode_Redis::get($cache_key);
+    if ($cached_response !== null) {
+        header('X-Cache: HIT (Redis)');
+        echo json_encode($cached_response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
     // Helper: Dynamically find matching university from database records
     if (!function_exists('sode_find_matching_university')) {
         function sode_find_matching_university($unis, $search_term) {
@@ -250,7 +258,7 @@ try {
         ];
     }
 
-    echo json_encode([
+    $response_data = [
         'success'            => true,
         'current_university' => [
             'id'           => (int)$current_uni['id'],
@@ -261,7 +269,11 @@ try {
         ],
         'columns'            => $columns,
         'universities'       => $rows,
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    ];
+
+    Sode_Redis::set($cache_key, $response_data, 86400);
+    header('X-Cache: MISS');
+    echo json_encode($response_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Exception $e) {
     http_response_code(500);

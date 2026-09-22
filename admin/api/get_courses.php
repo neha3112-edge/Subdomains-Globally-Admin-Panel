@@ -30,6 +30,17 @@ try {
 
     $uni_param = trim($_GET['uni'] ?? ($_POST['uni'] ?? ''));
     $uni_id    = (int)($_GET['uni_id'] ?? ($_POST['uni_id'] ?? 0));
+    $cache_key = "api:courses:" . strtolower($uni_param ?: (string)$uni_id);
+
+    // ── Check Redis Cache ─────────────────────────────────────────────
+    if (class_exists('Sode_Redis') && Sode_Redis::isAvailable() && !empty($cache_key)) {
+        $cached = Sode_Redis::get($cache_key);
+        if ($cached && is_array($cached)) {
+            $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
+            echo json_encode($cached);
+            exit;
+        }
+    }
 
     // Resolve university
     $uni = null;
@@ -133,7 +144,7 @@ try {
         ];
     }
 
-    echo json_encode([
+    $response = [
         'success'      => true,
         'university'   => [
             'id'         => (int)$uni['id'],
@@ -147,7 +158,16 @@ try {
         'courses'      => $courses_data,
         'short_names'  => array_column($courses_data, 'short_name'),
         'comma_list'   => implode(', ', array_column($courses_data, 'short_name'))
-    ]);
+    ];
+
+    if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+        Sode_Redis::set($cache_key, $response, 86400);
+        if (!empty($uni['slug']) && $cache_key !== "api:courses:" . strtolower($uni['slug'])) {
+            Sode_Redis::set("api:courses:" . strtolower($uni['slug']), $response, 86400);
+        }
+    }
+
+    echo json_encode($response);
 
 } catch (Exception $e) {
     http_response_code(500);

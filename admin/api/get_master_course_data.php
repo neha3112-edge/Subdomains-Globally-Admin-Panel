@@ -21,6 +21,14 @@ $db = get_db_connection();
 $course_id = (int)($_GET['course_id'] ?? 0);
 $course_slug = strtolower(trim($_GET['course'] ?? ''));
 
+$cache_key = 'api:master_course_data:' . md5($course_id . '|' . $course_slug);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 if (!$course_id && !empty($course_slug)) {
     $c_stmt = $db->prepare("SELECT id FROM courses WHERE LOWER(slug) = LOWER(?) OR LOWER(short_name) = LOWER(?) LIMIT 1");
     $c_stmt->execute([$course_slug, $course_slug]);
@@ -48,11 +56,15 @@ $all_subjects = $sub_stmt->fetchAll(PDO::FETCH_ASSOC);
 // Also format subjects array of names for easy auto-complete
 $subject_names = array_values(array_filter(array_unique(array_column($all_subjects, 'subject_name'))));
 
-echo json_encode([
+$response_data = [
     'success'         => true,
     'course_id'       => $course_id,
     'specializations' => $all_specializations,
     'subjects'        => $all_subjects,
     'subject_names'   => $subject_names,
     'syllabus'        => []
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+Sode_Redis::set($cache_key, $response_data, 86400);
+header('X-Cache: MISS');
+echo json_encode($response_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

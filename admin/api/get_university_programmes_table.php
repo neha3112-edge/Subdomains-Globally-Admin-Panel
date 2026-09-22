@@ -22,6 +22,15 @@ require_once $root_dir . '/university-programmes-table-universal.php';
 
 try {
     $uni_input = trim($_GET['uni'] ?? ($_POST['uni'] ?? ($_GET['university'] ?? ($_POST['university'] ?? ''))));
+    $cache_key = 'api:university_programmes:' . md5($uni_input);
+
+    $cached_response = Sode_Redis::get($cache_key);
+    if ($cached_response !== null) {
+        header('X-Cache: HIT (Redis)');
+        echo json_encode($cached_response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
     $data = get_university_programmes_table_data($uni_input);
 
     if (empty($data) || empty($data['programmes'])) {
@@ -29,7 +38,9 @@ try {
         exit;
     }
 
-    echo json_encode($data);
+    Sode_Redis::set($cache_key, $data, 86400);
+    header('X-Cache: MISS');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);

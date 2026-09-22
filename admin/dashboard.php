@@ -11,49 +11,59 @@ $active_page_key = 'dashboard';
 
 $db = get_db_connection();
 
-// 1. Fetch Stats Counters
-$total_unis = (int)$db->query("SELECT COUNT(*) FROM universities")->fetchColumn();
-$total_courses = (int)$db->query("SELECT COUNT(*) FROM courses")->fetchColumn();
-$total_mappings = (int)$db->query("SELECT COUNT(*) FROM university_course_mappings")->fetchColumn();
+// 1. Fetch Stats & Recent Activity with Redis Cache (TTL: 5 mins, auto-busted on admin edits)
+$dashboard_cache = Sode_Redis::remember('admin:dashboard:metrics:' . ($is_super ? 'super' : 'user'), 300, function() use ($db, $is_super) {
+    $stats = [];
+    $stats['total_unis'] = (int)$db->query("SELECT COUNT(*) FROM universities")->fetchColumn();
+    $stats['total_courses'] = (int)$db->query("SELECT COUNT(*) FROM courses")->fetchColumn();
+    $stats['total_mappings'] = (int)$db->query("SELECT COUNT(*) FROM university_course_mappings")->fetchColumn();
 
-// Global Keys count & recent
-$total_global_keys = 0;
-$recent_global_keys = [];
-try {
-    $total_global_keys = (int)$db->query("SELECT COUNT(*) FROM global_keys WHERE is_active = 1")->fetchColumn();
-    $recent_global_keys = $db->query("
-        SELECT id, key_code, key_value, description, is_active 
-        FROM global_keys 
-        WHERE is_active = 1 
+    $stats['total_global_keys'] = 0;
+    $stats['recent_global_keys'] = [];
+    try {
+        $stats['total_global_keys'] = (int)$db->query("SELECT COUNT(*) FROM global_keys WHERE is_active = 1")->fetchColumn();
+        $stats['recent_global_keys'] = $db->query("
+            SELECT id, key_code, key_value, description, is_active 
+            FROM global_keys 
+            WHERE is_active = 1 
+            ORDER BY id DESC LIMIT 5
+        ")->fetchAll();
+    } catch (Exception $e) {}
+
+    $stats['total_users'] = $is_super ? (int)$db->query("SELECT COUNT(*) FROM users")->fetchColumn() : 0;
+
+    $stats['recent_unis'] = $db->query("
+        SELECT id, full_name, short_name, rating, mode, created_at, logo_url 
+        FROM universities 
         ORDER BY id DESC LIMIT 5
     ")->fetchAll();
-} catch (Exception $e) {}
 
-// Fetch admin users ONLY if Super Admin
-$total_users = $is_super ? (int)$db->query("SELECT COUNT(*) FROM users")->fetchColumn() : 0;
+    $stats['recent_courses'] = $db->query("
+        SELECT id, full_name, short_name, level, created_at 
+        FROM courses 
+        ORDER BY id DESC LIMIT 5
+    ")->fetchAll();
 
-// 2. Fetch Recent Universities
-$recent_unis = $db->query("
-    SELECT id, full_name, short_name, rating, mode, created_at, logo_url 
-    FROM universities 
-    ORDER BY id DESC LIMIT 5
-")->fetchAll();
+    $stats['recent_mappings'] = $db->query("
+        SELECT ucm.id, u.short_name AS uni_name, u.logo_url, c.short_name AS course_name, u.mode, ucm.per_semester_fee, ucm.total_program_fee, ucm.created_at
+        FROM university_course_mappings ucm
+        INNER JOIN universities u ON ucm.university_id = u.id
+        INNER JOIN courses c ON ucm.course_id = c.id
+        ORDER BY ucm.id DESC LIMIT 5
+    ")->fetchAll();
 
-// 3. Fetch Recent Courses
-$recent_courses = $db->query("
-    SELECT id, full_name, short_name, level, created_at 
-    FROM courses 
-    ORDER BY id DESC LIMIT 5
-")->fetchAll();
+    return $stats;
+});
 
-// 4. Fetch Recent Mappings
-$recent_mappings = $db->query("
-    SELECT ucm.id, u.short_name AS uni_name, u.logo_url, c.short_name AS course_name, u.mode, ucm.per_semester_fee, ucm.total_program_fee, ucm.created_at
-    FROM university_course_mappings ucm
-    INNER JOIN universities u ON ucm.university_id = u.id
-    INNER JOIN courses c ON ucm.course_id = c.id
-    ORDER BY ucm.id DESC LIMIT 5
-")->fetchAll();
+$total_unis = $dashboard_cache['total_unis'] ?? 0;
+$total_courses = $dashboard_cache['total_courses'] ?? 0;
+$total_mappings = $dashboard_cache['total_mappings'] ?? 0;
+$total_global_keys = $dashboard_cache['total_global_keys'] ?? 0;
+$recent_global_keys = $dashboard_cache['recent_global_keys'] ?? [];
+$total_users = $dashboard_cache['total_users'] ?? 0;
+$recent_unis = $dashboard_cache['recent_unis'] ?? [];
+$recent_courses = $dashboard_cache['recent_courses'] ?? [];
+$recent_mappings = $dashboard_cache['recent_mappings'] ?? [];
 
 // 5. Complete Catalog of Universal Shortcodes (21 Production Modules)
 $universal_shortcodes = [

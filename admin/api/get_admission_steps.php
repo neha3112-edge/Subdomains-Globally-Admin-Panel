@@ -10,6 +10,15 @@ require_once dirname(__DIR__) . '/config/config.php';
 $db = get_db_connection();
 
 $uni_slug = trim($_GET['uni'] ?? '');
+$cache_key = 'api:admission_steps:' . md5($uni_slug);
+
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 $uni_id = null;
 
 if (!empty($uni_slug)) {
@@ -42,8 +51,12 @@ foreach ($steps as $s) {
     ];
 }
 
-echo json_encode([
+$response_data = [
     'success' => true,
     'total' => count($formatted),
     'steps' => $formatted
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+Sode_Redis::set($cache_key, $response_data, 86400);
+header('X-Cache: MISS');
+echo json_encode($response_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

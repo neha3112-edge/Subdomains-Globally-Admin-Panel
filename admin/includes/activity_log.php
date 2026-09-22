@@ -151,7 +151,7 @@ function log_activity($action_type, $module_key, $description, array $options = 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
-        return $stmt->execute([
+        $ok = $stmt->execute([
             $user_id,
             $user_name,
             $user_email,
@@ -172,6 +172,14 @@ function log_activity($action_type, $module_key, $description, array $options = 
         if ($ok) {
             // Auto-prune to retain strictly the latest 100 activity logs
             sode_prune_activity_logs($db, 100);
+
+            // Auto-bust all Redis & Subdomain Caches whenever data changes in any module
+            $mutating_actions = ['CREATE', 'UPDATE', 'DELETE', 'RESTORE', 'PURGE', 'STATUS_CHANGE', 'SETTINGS_CHANGE', 'UPLOAD', 'IMPORT', 'BATCH_UPDATE'];
+            if (in_array(strtoupper($action_type), $mutating_actions)) {
+                if (function_exists('sode_bust_all_subdomain_caches')) {
+                    sode_bust_all_subdomain_caches();
+                }
+            }
         }
 
         return $ok;

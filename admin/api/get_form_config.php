@@ -7,6 +7,15 @@ header('Expires: 0');
 
 require_once dirname(__DIR__) . '/config/config.php';
 
+$uni_slug = trim($_GET['uni'] ?? '');
+$cache_key = 'api:form_config:' . md5($uni_slug);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 $db = get_db_connection();
 
 // 1. Fetch Global API Integrations Settings from DB
@@ -23,7 +32,7 @@ $uni_slug = trim($_GET['uni'] ?? '');
 
 if (empty($uni_slug)) {
     // If no slug requested, return global settings
-    echo json_encode([
+    $global_resp = [
         'success' => true,
         'crm_api_url' => $global_crm_url,
         'crm_api_key' => $global_crm_key,
@@ -31,7 +40,10 @@ if (empty($uni_slug)) {
         'brevo_api_url' => $global_brevo_url,
         'brevo_api_key' => $global_brevo_key,
         'gallabox_webhook_url' => $global_gallabox_webhook,
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    ];
+    Sode_Redis::set($cache_key, $global_resp, 86400);
+    header('X-Cache: MISS');
+    echo json_encode($global_resp, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
@@ -67,5 +79,7 @@ $response = [
     'allowed_courses_json' => !empty($cfg['allowed_courses_json']) ? $cfg['allowed_courses_json'] : 'MBA, MCA, MCOM, MA, MSC, MLIS, BBA, BCA, BCOM, BA, BSC, BLIS, Other'
 ];
 
+Sode_Redis::set($cache_key, $response, 86400);
+header('X-Cache: MISS');
 echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 

@@ -14,6 +14,14 @@ header('Expires: 0');
 
 require_once dirname(__DIR__) . '/config/config.php';
 
+$cache_key = 'api:alternate_universities:all';
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 try {
     $db = get_db_connection();
 
@@ -114,11 +122,15 @@ try {
         ];
     }
 
-    echo json_encode([
+    $response_data = [
         'status' => 'success',
         'count' => count($result),
         'data' => $result
-    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    ];
+
+    Sode_Redis::set($cache_key, $response_data, 86400);
+    header('X-Cache: MISS');
+    echo json_encode($response_data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
 } catch (Exception $e) {
     http_response_code(500);

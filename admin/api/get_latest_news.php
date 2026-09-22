@@ -10,7 +10,19 @@ require_once dirname(__DIR__) . '/config/config.php';
 
 $db = get_db_connection();
 
-$uni_slug = trim($_GET['uni'] ?? ($_GET['university'] ?? ''));
+$uni_slug = strtolower(trim($_GET['uni'] ?? ($_GET['subdomain'] ?? '')));
+$cache_key = "api:news:" . ($uni_slug ?: 'global');
+
+// ── Check Redis Cache ─────────────────────────────────────────────────
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    $cached = Sode_Redis::get($cache_key);
+    if ($cached && is_array($cached)) {
+        $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
+        echo json_encode($cached, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+}
+
 $uni = null;
 
 if (!empty($uni_slug)) {
@@ -113,11 +125,17 @@ foreach ($raw_news as $row) {
     ];
 }
 
-echo json_encode([
+$response = [
     'success'    => true,
     'uni'        => $uni_slug ?: null,
     'uni_found'  => !empty($uni),
     'university' => $uni ? $uni['full_name'] : null,
     'news'       => $items,
     'count'      => count($items)
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    Sode_Redis::set($cache_key, $response, 86400);
+}
+
+echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

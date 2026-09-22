@@ -86,8 +86,22 @@ if (!empty($params['university']) && empty($params['uni'])) {
     $params['uni'] = $params['university'];
 }
 
+$is_get = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET';
+$cache_key = 'ssr:component:' . md5($component . '|' . json_encode($params));
+
+if ($is_get) {
+    $cached_html = Sode_Redis::get($cache_key);
+    if ($cached_html !== null) {
+        header('Content-Type: text/html; charset=utf-8');
+        header('X-Cache: HIT (Redis)');
+        echo $cached_html;
+        exit;
+    }
+}
+
 // 3. Dispatch Component Render
 header('Content-Type: text/html; charset=utf-8');
+ob_start();
 
 switch ($component) {
     case 'banner':
@@ -353,4 +367,14 @@ switch ($component) {
         ]);
         break;
 }
+
+$rendered_output = ob_get_clean();
+
+// Cache HTML output in Redis for GET requests (exclude pure lead forms if dynamic nonces needed)
+if ($is_get && !empty($rendered_output)) {
+    Sode_Redis::set($cache_key, $rendered_output, 86400);
+    header('X-Cache: MISS');
+}
+
+echo $rendered_output;
 exit;

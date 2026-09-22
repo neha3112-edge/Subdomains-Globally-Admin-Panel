@@ -30,6 +30,14 @@ if (empty($uni_param)) {
     $uni_param = 'dsu';
 }
 
+$cache_key = 'api:footer_config:' . md5($uni_param);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 // Fetch official_url for this university
 $official_url = '';
 if ($db && $uni_param) {
@@ -99,7 +107,7 @@ if ($db) {
     } catch (Exception $e) {}
 }
 
-echo json_encode([
+$response_data = [
     'success'              => true,
     'university_slug'      => $uni_param,
     'official_url'         => $official_url,
@@ -127,6 +135,10 @@ echo json_encode([
     'contact_address'      => $contact_address,
     'contact_address_link' => $contact_address_link,
     'copyright'            => $row['copyright_text'] ?? '© ' . date('Y') . ' SODE™ Counselling Services LLP',
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+];
+
+Sode_Redis::set($cache_key, $response_data, 86400);
+header('X-Cache: MISS');
+echo json_encode($response_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 
