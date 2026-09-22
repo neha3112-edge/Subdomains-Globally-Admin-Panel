@@ -195,25 +195,39 @@ if (!function_exists('sode_ensure_mapping_mode_unique_index')) {
  * TRUE fire-and-forget — admin save page does NOT wait for responses.
  */
 if (!function_exists('sode_bust_all_subdomain_caches')) {
-    function sode_bust_all_subdomain_caches(PDO $db) {
+    function sode_bust_all_subdomain_caches(?PDO $db = null) {
         // 1. Flush Local Redis in-memory cache
         if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
             try {
                 Sode_Redis::flushPattern('*');
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 error_log('SODE Redis flush failed: ' . $e->getMessage());
             }
         }
 
-        // 2. Fire-and-forget remote subdomain flushes
-        try {
-            $unis = $db->query("SELECT slug FROM universities WHERE is_active = 1")->fetchAll(PDO::FETCH_COLUMN);
-            foreach ($unis as $slug) {
-                $url = 'https://' . $slug . '.distanceeducationschool.com/?sode_flush=sode_flush_2026';
-                sode_fire_and_forget($url);
+        // 2. Resolve $db if not passed
+        if (!$db) {
+            global $db;
+            if (!$db && function_exists('getDBConnection')) {
+                try {
+                    $db = getDBConnection();
+                } catch (Throwable $e) {
+                    // Ignore DB connection error
+                }
             }
-        } catch (Exception $e) {
-            error_log('SODE cache bust failed: ' . $e->getMessage());
+        }
+
+        // 3. Fire-and-forget remote subdomain flushes
+        if ($db instanceof PDO) {
+            try {
+                $unis = $db->query("SELECT slug FROM universities WHERE is_active = 1")->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($unis as $slug) {
+                    $url = 'https://' . $slug . '.distanceeducationschool.com/?sode_flush=sode_flush_2026';
+                    sode_fire_and_forget($url);
+                }
+            } catch (Throwable $e) {
+                error_log('SODE cache bust failed: ' . $e->getMessage());
+            }
         }
     }
 }

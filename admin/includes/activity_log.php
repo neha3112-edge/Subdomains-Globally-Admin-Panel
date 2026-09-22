@@ -177,7 +177,7 @@ function log_activity($action_type, $module_key, $description, array $options = 
             $mutating_actions = ['CREATE', 'UPDATE', 'DELETE', 'RESTORE', 'PURGE', 'STATUS_CHANGE', 'SETTINGS_CHANGE', 'UPLOAD', 'IMPORT', 'BATCH_UPDATE'];
             if (in_array(strtoupper($action_type), $mutating_actions)) {
                 if (function_exists('sode_bust_all_subdomain_caches')) {
-                    sode_bust_all_subdomain_caches();
+                    sode_bust_all_subdomain_caches($db);
                 }
             }
         }
