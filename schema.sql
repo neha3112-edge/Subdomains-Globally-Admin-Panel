@@ -450,8 +450,8 @@ WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/se
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `form_courses` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `display_label` VARCHAR(100) NOT NULL,
-  `form_key` VARCHAR(50) NOT NULL UNIQUE,
+  `display_label` VARCHAR(100) NOT NULL UNIQUE,
+  `form_key` VARCHAR(50) NOT NULL,
   `level` VARCHAR(50) DEFAULT 'PG',
   `sort_order` INT DEFAULT 0,
   `is_active` TINYINT(1) DEFAULT 1,
@@ -473,7 +473,7 @@ VALUES
 ('MA', 'MA', 'PG', 4, 1),
 ('MAJMC', 'MAJMC', 'PG', 5, 1),
 ('MBA', 'MBA', 'PG', 6, 1),
-('MBA Dual Spec.', 'MBADUALSPEC', 'PG', 7, 1),
+('MBA Dual Spec.', 'MBA', 'PG', 7, 1),
 ('MCA', 'MCA', 'PG', 8, 1),
 ('MJMC', 'MJMC', 'PG', 9, 1),
 ('B.Com', 'BCOM', 'UG', 10, 1),

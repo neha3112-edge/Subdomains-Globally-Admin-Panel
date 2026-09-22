@@ -123,19 +123,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cfg_crm_secret = '';
 
             // Handle Selected Form Courses from Form Courses Master
-            $selected_keys = $_POST['selected_form_courses'] ?? [];
-            if (!is_array($selected_keys)) $selected_keys = [];
-            $selected_keys_map = array_flip($selected_keys);
+            $selected_ids = $_POST['selected_form_courses'] ?? [];
+            if (!is_array($selected_ids)) $selected_ids = [];
+            $selected_ids_map = array_flip(array_map('intval', $selected_ids));
 
             $master_courses = $db->query("SELECT * FROM form_courses WHERE is_active = 1 ORDER BY sort_order ASC, level ASC, display_label ASC")->fetchAll();
 
             $allowed_courses_arr = [];
             foreach ($master_courses as $mc) {
-                $k = strtoupper($mc['form_key']);
-                $is_enabled = isset($selected_keys_map[$k]) ? 1 : 0;
+                $is_enabled = isset($selected_ids_map[(int)$mc['id']]) ? 1 : 0;
                 $allowed_courses_arr[] = [
                     'label'     => $mc['display_label'],
-                    'key'       => $k,
+                    'key'       => strtoupper($mc['form_key']),
                     'enabled'   => $is_enabled,
                     'level'     => $mc['level'],
                     'is_custom' => 0
@@ -191,25 +190,46 @@ if (!function_exists('sode_get_university_form_courses')) {
             if (is_array($decoded)) {
                 foreach ($decoded as $c) {
                     if (!is_array($c)) continue;
+                    $lbl = trim($c['label'] ?? '');
                     $k = strtoupper(trim($c['key'] ?? ''));
                     $enabled = isset($c['enabled']) ? (int)(bool)$c['enabled'] : 1;
+                    if ($lbl !== '') {
+                        $selected_map['lbl:' . mb_strtolower($lbl)] = $enabled;
+                    }
                     if ($k !== '') {
-                        $selected_map[$k] = $enabled;
+                        if (!isset($selected_map['key:' . $k])) {
+                            $selected_map['key:' . $k] = $enabled;
+                        }
                     }
                 }
             } else {
                 $parts = array_filter(array_map('trim', explode(',', $saved_json)));
                 foreach ($parts as $p) {
                     $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $p));
-                    if ($k !== '') $selected_map[$k] = 1;
+                    if ($k !== '') {
+                        $selected_map['key:' . $k] = 1;
+                        $selected_map['lbl:' . mb_strtolower($p)] = 1;
+                    }
                 }
             }
         }
 
         $result = [];
         foreach ($master_courses as $mc) {
+            $lbl = trim($mc['display_label']);
             $k = strtoupper($mc['form_key']);
-            $is_enabled = $is_new_or_empty ? 1 : (!empty($selected_map[$k]) ? 1 : 0);
+            $lbl_key = 'lbl:' . mb_strtolower($lbl);
+            $k_key = 'key:' . $k;
+
+            if ($is_new_or_empty) {
+                $is_enabled = 1;
+            } elseif (isset($selected_map[$lbl_key])) {
+                $is_enabled = $selected_map[$lbl_key];
+            } elseif (isset($selected_map[$k_key])) {
+                $is_enabled = $selected_map[$k_key];
+            } else {
+                $is_enabled = 0;
+            }
             
             $result[] = [
                 'id'            => $mc['id'],
@@ -611,7 +631,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                             ?>
                                                 <tr class="uni-course-row" data-search="<?php echo htmlspecialchars(strtolower($c['label'] . ' ' . $c['key'])); ?>" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;">
                                                     <td style="padding:9px 14px; text-align:center; vertical-align:middle;">
-                                                        <input type="checkbox" name="selected_form_courses[]" value="<?php echo htmlspecialchars($c['key']); ?>" class="course-row-checkbox" <?php echo !empty($c['enabled']) ? 'checked' : ''; ?> style="width:17px; height:17px; cursor:pointer;">
+                                                        <input type="checkbox" name="selected_form_courses[]" value="<?php echo (int)$c['id']; ?>" class="course-row-checkbox" <?php echo !empty($c['enabled']) ? 'checked' : ''; ?> style="width:17px; height:17px; cursor:pointer;">
                                                     </td>
                                                     <td style="padding:9px 14px; vertical-align:middle;">
                                                         <span style="font-weight:700; color:var(--text-main); font-size:13.5px;">
