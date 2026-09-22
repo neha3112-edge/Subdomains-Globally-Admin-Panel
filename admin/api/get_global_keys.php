@@ -64,24 +64,7 @@ foreach ($global_rows as $k) {
     }
 }
 
-// ── 1.1 Global Favicon Resolution ─────────────────────────────────────
-$favicon_url = '';
-if (!empty($map['$FAVICON_URL$'])) {
-    $favicon_url = $map['$FAVICON_URL$'];
-} elseif (!empty($map['FAVICON_URL'])) {
-    $favicon_url = $map['FAVICON_URL'];
-} elseif (!empty($map['$SITE_FAVICON$'])) {
-    $favicon_url = $map['$SITE_FAVICON$'];
-} else {
-    try {
-        $fav_stmt = $db->query("SELECT setting_value FROM global_settings WHERE setting_key = 'site_favicon_url' LIMIT 1")->fetch();
-        if ($fav_stmt && !empty($fav_stmt['setting_value'])) {
-            $favicon_url = trim((string)$fav_stmt['setting_value']);
-        }
-    } catch (Exception $e) {}
-}
-
-// ── 1.2 Global Site Logo Resolution ───────────────────────────────────
+// ── 1. Global Site Logo Resolution ─────────────────────────────────────
 $site_logo_url = '';
 if (!empty($map['$SITE_LOGO$'])) {
     $site_logo_url = $map['$SITE_LOGO$'];
@@ -96,25 +79,6 @@ if (!empty($map['$SITE_LOGO$'])) {
             $site_logo_url = trim((string)$logo_stmt['setting_value']);
         }
     } catch (Exception $e) {}
-}
-
-// Fallback: If favicon is not explicitly set, use default SODE CDN favicon
-if (empty($favicon_url)) {
-    $favicon_url = !empty($site_logo_url) ? $site_logo_url : 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
-}
-
-// Normalize all asset URLs to absolute URLs so subdomains can load them seamlessly
-if (!empty($favicon_url)) {
-    $favicon_url = function_exists('get_asset_url') ? get_asset_url($favicon_url) : $favicon_url;
-    // Auto-correct missing /admin/ segment if present
-    if (strpos($favicon_url, 'admin.distanceeducationschool.com/uploads/') !== false) {
-        $favicon_url = str_replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/', $favicon_url);
-    }
-    $favicon_url = str_replace(' ', '%20', $favicon_url);
-    $map['$FAVICON_URL$']  = $favicon_url;
-    $map['{FAVICON_URL}']  = $favicon_url;
-    $map['$SITE_FAVICON$'] = $favicon_url;
-    $map['{SITE_FAVICON}'] = $favicon_url;
 }
 
 if (!empty($site_logo_url)) {
@@ -383,7 +347,6 @@ if (!empty($uni_slug)) {
 $response = [
     'success'       => true,
     'site_logo_url' => $site_logo_url ?: null,
-    'favicon_url'   => $favicon_url ?: null,
     'uni'           => $uni_slug ?: null,
     'uni_found'     => !empty($uni),     // debug: was university found in DB?
     'all_slugs'     => $all_slugs,       // debug: all slugs available in DB

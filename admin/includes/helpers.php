@@ -396,18 +396,16 @@ if (!function_exists('get_site_branding')) {
             'site_logo_url'       => '',
             'site_logo_dark_url'  => '',
             'admin_logo_url'      => '',
-            'favicon_url'         => '',
             'site_name'           => defined('APP_NAME') ? APP_NAME : 'SODE Admin'
         ];
 
         try {
             $db = get_db_connection();
-            $rows = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group IN ('branding', 'general') OR setting_key LIKE '%logo%' OR setting_key LIKE '%favicon%'")->fetchAll(PDO::FETCH_KEY_PAIR);
+            $rows = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group IN ('branding', 'general') OR setting_key LIKE '%logo%'")->fetchAll(PDO::FETCH_KEY_PAIR);
             if ($rows) {
                 if (!empty($rows['site_logo_url'])) $branding['site_logo_url'] = $rows['site_logo_url'];
                 if (!empty($rows['site_logo_dark_url'])) $branding['site_logo_dark_url'] = $rows['site_logo_dark_url'];
                 if (!empty($rows['admin_logo_url'])) $branding['admin_logo_url'] = $rows['admin_logo_url'];
-                if (!empty($rows['site_favicon_url'])) $branding['favicon_url'] = $rows['site_favicon_url'];
             }
         } catch (Exception $e) {}
 
