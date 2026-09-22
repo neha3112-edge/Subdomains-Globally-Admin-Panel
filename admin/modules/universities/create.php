@@ -122,31 +122,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cfg_crm_api_key = '';
             $cfg_crm_secret = '';
 
-            // Handle Course Items (Label, Key, Enabled, Custom)
-            $course_items_post = $_POST['course_items'] ?? [];
+            // Handle Selected Form Courses from Form Courses Master
+            $selected_keys = $_POST['selected_form_courses'] ?? [];
+            if (!is_array($selected_keys)) $selected_keys = [];
+            $selected_keys_map = array_flip($selected_keys);
+
+            $master_courses = $db->query("SELECT * FROM form_courses WHERE is_active = 1 ORDER BY sort_order ASC, level ASC, display_label ASC")->fetchAll();
+
             $allowed_courses_arr = [];
-
-            if (!empty($course_items_post) && is_array($course_items_post)) {
-                foreach ($course_items_post as $item) {
-                    $lbl = trim($item['label'] ?? '');
-                    $k = strtoupper(trim($item['key'] ?? ''));
-                    $enabled = !empty($item['enabled']) ? 1 : 0;
-                    $is_custom = !empty($item['is_custom']) ? 1 : 0;
-                    $level = trim($item['level'] ?? '');
-
-                    if ($lbl === '') continue;
-                    if ($k === '') {
-                        $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
-                    }
-
-                    $allowed_courses_arr[] = [
-                        'label'     => $lbl,
-                        'key'       => $k,
-                        'enabled'   => $enabled,
-                        'is_custom' => $is_custom,
-                        'level'     => $level
-                    ];
-                }
+            foreach ($master_courses as $mc) {
+                $k = strtoupper($mc['form_key']);
+                $is_enabled = isset($selected_keys_map[$k]) ? 1 : 0;
+                $allowed_courses_arr[] = [
+                    'label'     => $mc['display_label'],
+                    'key'       => $k,
+                    'enabled'   => $is_enabled,
+                    'level'     => $mc['level'],
+                    'is_custom' => 0
+                ];
             }
 
             $cfg_allowed_courses = json_encode($allowed_courses_arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -174,6 +167,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
 
+            if (function_exists('sode_bust_all_subdomain_caches')) {
+                sode_bust_all_subdomain_caches($db);
+            }
+
             set_flash_message('University added successfully!', 'success');
             redirect(BASE_URL . '/modules/universities/index.php');
         } catch (PDOException $e) {
@@ -182,97 +179,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-if (!function_exists('sode_get_configured_course_items')) {
-    function sode_get_configured_course_items($raw_json, $all_master_courses) {
-        $items = [];
-        $seen = [];
-
-        $decoded = !empty($raw_json) ? json_decode($raw_json, true) : null;
-
-        if (is_array($decoded)) {
-            foreach ($decoded as $c) {
-                if (!is_array($c)) continue;
-                $lbl = trim($c['label'] ?? '');
-                $k = strtoupper(trim($c['key'] ?? ''));
-                if ($lbl === '') continue;
-                if ($k === '') $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
-                $enabled = isset($c['enabled']) ? (int)(bool)$c['enabled'] : 1;
-                $is_custom = !empty($c['is_custom']) ? 1 : 0;
-                $level = trim($c['level'] ?? ($is_custom ? 'Custom' : 'General'));
-
-                $items[] = [
-                    'label'     => $lbl,
-                    'key'       => $k,
-                    'enabled'   => $enabled,
-                    'is_custom' => $is_custom,
-                    'level'     => $level
-                ];
-                $seen[strtoupper($lbl)] = true;
-                $seen[$k] = true;
-            }
-
-            foreach ($all_master_courses as $mc) {
-                $lbl = $mc['short_name'];
-                $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
-                if (!isset($seen[strtoupper($lbl)]) && !isset($seen[$k])) {
-                    $items[] = [
-                        'label'     => $lbl,
-                        'key'       => $k,
-                        'enabled'   => 0,
-                        'is_custom' => 0,
-                        'level'     => $mc['level'] ?? ''
-                    ];
-                    $seen[strtoupper($lbl)] = true;
-                    $seen[$k] = true;
-                }
-            }
-        } else {
-            $enabled_map = [];
-            if (!empty($raw_json)) {
-                $parts = array_map('trim', explode(',', $raw_json));
-                foreach ($parts as $p) {
-                    if ($p !== '') {
-                        $enabled_map[strtoupper($p)] = true;
-                        $enabled_map[strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $p))] = true;
+if (!function_exists('sode_get_university_form_courses')) {
+    function sode_get_university_form_courses(PDO $db, $saved_json = '') {
+        $master_courses = $db->query("SELECT * FROM form_courses WHERE is_active = 1 ORDER BY sort_order ASC, level ASC, display_label ASC")->fetchAll();
+        
+        $selected_map = [];
+        $is_new_or_empty = empty($saved_json);
+        
+        if (!$is_new_or_empty) {
+            $decoded = json_decode($saved_json, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $c) {
+                    if (!is_array($c)) continue;
+                    $k = strtoupper(trim($c['key'] ?? ''));
+                    $enabled = isset($c['enabled']) ? (int)(bool)$c['enabled'] : 1;
+                    if ($k !== '') {
+                        $selected_map[$k] = $enabled;
                     }
                 }
             } else {
-                $enabled_map = null;
+                $parts = array_filter(array_map('trim', explode(',', $saved_json)));
+                foreach ($parts as $p) {
+                    $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $p));
+                    if ($k !== '') $selected_map[$k] = 1;
+                }
             }
+        }
 
-            foreach ($all_master_courses as $mc) {
-                $lbl = $mc['short_name'];
-                $k = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $lbl));
-                $is_en = ($enabled_map === null) ? 1 : (isset($enabled_map[strtoupper($lbl)]) || isset($enabled_map[$k]) ? 1 : 0);
-
-                $items[] = [
-                    'label'     => $lbl,
-                    'key'       => $k,
-                    'enabled'   => $is_en,
-                    'is_custom' => 0,
-                    'level'     => $mc['level'] ?? ''
-                ];
-                $seen[strtoupper($lbl)] = true;
-                $seen[$k] = true;
-            }
-
-            $is_other_en = ($enabled_map === null) ? 1 : (isset($enabled_map['OTHER']) ? 1 : 0);
-            $items[] = [
-                'label'     => 'Other',
-                'key'       => 'OTHER',
-                'enabled'   => $is_other_en,
-                'is_custom' => 0,
-                'level'     => 'General'
+        $result = [];
+        foreach ($master_courses as $mc) {
+            $k = strtoupper($mc['form_key']);
+            $is_enabled = $is_new_or_empty ? 1 : (!empty($selected_map[$k]) ? 1 : 0);
+            
+            $result[] = [
+                'id'            => $mc['id'],
+                'label'         => $mc['display_label'],
+                'key'           => $k,
+                'level'         => $mc['level'],
+                'sort_order'    => $mc['sort_order'],
+                'enabled'       => $is_enabled
             ];
         }
 
-        return $items;
+        return $result;
     }
 }
 
-// Fetch Master Courses for Checkbox Grid
-$all_master_courses = $db->query("SELECT * FROM courses ORDER BY level ASC, short_name ASC")->fetchAll();
-$configured_courses = sode_get_configured_course_items('', $all_master_courses);
+// Fetch Form Courses for selection
+$configured_courses = sode_get_university_form_courses($db, '');
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -612,66 +566,71 @@ require_once ADMIN_PATH . '/includes/header.php';
                         </div>
                     </div>
 
-                    <!-- Allowed Courses with Label, Key & Custom Add -->
+                    <!-- Allowed Courses from Form Courses Master -->
                     <div class="form-group" style="margin-top:16px;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
                             <div>
                                 <label class="form-label" style="margin-bottom:2px; font-size:13.5px; font-weight:700;">Allowed Courses in Form Dropdown</label>
                                 <span style="font-size:12px; color:var(--text-dim); display:block;">
-                                    Configure dropdown options with customized <strong>Display Label</strong> and backend <strong>Key (All CAPITAL)</strong>. Uncheck to hide from form.
+                                    Select which courses appear in this university's lead form dropdown. To add new courses or edit labels, visit <a href="<?php echo BASE_URL; ?>/modules/form_courses/index.php" target="_blank" style="color:#60a5fa; text-decoration:underline; font-weight:600;">Form Courses Master</a>.
                                 </span>
                             </div>
                             <div style="display:flex; gap:8px; align-items:center;">
-                                <button type="button" class="btn-sm" onclick="addCustomCourseRow()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:#fff; border:none; padding:5px 12px; font-size:12px; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; box-shadow: 0 2px 8px rgba(99,102,241,0.3);">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    + Add Custom Course
-                                </button>
+                                <input type="text" id="uniCourseSearch" class="form-control" placeholder="🔍 Search courses..." onkeyup="filterUniCourses(this.value)" style="font-size:12px; padding:5px 10px; width:170px;">
                                 <button type="button" class="btn-sm action-btn" onclick="selectAllCourseRows(true)" style="padding:5px 10px; font-size:11.5px;">Select All</button>
                                 <button type="button" class="btn-sm action-btn" onclick="selectAllCourseRows(false)" style="padding:5px 10px; font-size:11.5px;">Clear All</button>
                             </div>
                         </div>
 
                         <div style="border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background:rgba(255,255,255,0.015); box-shadow:inset 0 1px 3px rgba(0,0,0,0.2);">
-                            <div style="max-height: 480px; overflow-y: auto;">
+                            <div style="max-height: 440px; overflow-y: auto;">
                                 <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
                                     <thead>
                                         <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid var(--border-color); color:var(--text-dim); font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:2; backdrop-filter:blur(4px);">
-                                            <th style="padding:10px 12px; width:60px; text-align:center;">Active</th>
-                                            <th style="padding:10px 12px;">Display Label (Visitor Sees)</th>
-                                            <th style="padding:10px 12px; width:260px;">Form & CRM Key (All CAPITAL)</th>
-                                            <th style="padding:10px 12px; width:90px; text-align:center;">Level</th>
-                                            <th style="padding:10px 12px; width:60px; text-align:center;">Action</th>
+                                            <th style="padding:10px 14px; width:60px; text-align:center;">Select</th>
+                                            <th style="padding:10px 14px;">Display Label (Visitor Sees)</th>
+                                            <th style="padding:10px 14px; width:220px;">Form & CRM Key</th>
+                                            <th style="padding:10px 14px; width:110px; text-align:center;">Level</th>
                                         </tr>
                                     </thead>
                                     <tbody id="allowedCoursesTableBody">
-                                        <?php foreach ($configured_courses as $idx => $c): ?>
-                                            <tr class="course-item-row" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;">
-                                                <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
-                                                    <input type="hidden" name="course_items[<?php echo $idx; ?>][enabled]" value="0">
-                                                    <input type="checkbox" name="course_items[<?php echo $idx; ?>][enabled]" value="1" class="course-row-checkbox" <?php echo !empty($c['enabled']) ? 'checked' : ''; ?> style="width:16px; height:16px; cursor:pointer;">
-                                                </td>
-                                                <td style="padding:8px 12px; vertical-align:middle;">
-                                                    <input type="text" name="course_items[<?php echo $idx; ?>][label]" class="form-control course-label-input" value="<?php echo htmlspecialchars($c['label']); ?>" placeholder="e.g. B.Com" required style="font-size:13px; padding:6px 10px;">
-                                                </td>
-                                                <td style="padding:8px 12px; vertical-align:middle;">
-                                                    <input type="text" name="course_items[<?php echo $idx; ?>][key]" class="form-control course-key-input" value="<?php echo htmlspecialchars($c['key']); ?>" placeholder="e.g. BCOM" required style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:6px 10px; color:#38bdf8;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');">
-                                                </td>
-                                                <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
-                                                    <input type="hidden" name="course_items[<?php echo $idx; ?>][level]" value="<?php echo htmlspecialchars($c['level']); ?>">
-                                                    <input type="hidden" name="course_items[<?php echo $idx; ?>][is_custom]" value="<?php echo !empty($c['is_custom']) ? 1 : 0; ?>">
-                                                    <span class="badge" style="background:<?php echo !empty($c['is_custom']) ? 'rgba(168,85,247,0.18)' : 'rgba(255,255,255,0.06)'; ?>; color:<?php echo !empty($c['is_custom']) ? '#c084fc' : 'var(--text-dim)'; ?>; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600;">
-                                                        <?php echo htmlspecialchars($c['level'] ?: (!empty($c['is_custom']) ? 'Custom' : 'General')); ?>
-                                                    </span>
-                                                </td>
-                                                <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
-                                                    <?php if (!empty($c['is_custom'])): ?>
-                                                        <button type="button" class="btn-icon" onclick="removeCourseRow(this)" title="Delete Custom Course" style="background:none; border:none; color:#ef4444; font-size:18px; cursor:pointer; line-height:1; padding:4px;">&times;</button>
-                                                    <?php else: ?>
-                                                        <span style="color:var(--text-dim); font-size:12px;" title="Standard course">-</span>
-                                                    <?php endif; ?>
+                                        <?php if (empty($configured_courses)): ?>
+                                            <tr>
+                                                <td colspan="4" style="text-align:center; padding:30px 15px; color:var(--text-dim);">
+                                                    No courses found in Form Courses Master. <a href="<?php echo BASE_URL; ?>/modules/form_courses/index.php" target="_blank" style="color:#60a5fa;">Add Form Courses &rarr;</a>
                                                 </td>
                                             </tr>
-                                        <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <?php foreach ($configured_courses as $c): 
+                                                $lvl_color = '#94a3b8';
+                                                $lvl_bg = 'rgba(255,255,255,0.06)';
+                                                $lvl_upper = strtoupper($c['level']);
+                                                if ($lvl_upper === 'PG') { $lvl_color = '#c084fc'; $lvl_bg = 'rgba(168,85,247,0.15)'; }
+                                                elseif ($lvl_upper === 'UG') { $lvl_color = '#60a5fa'; $lvl_bg = 'rgba(59,130,246,0.15)'; }
+                                                elseif ($lvl_upper === 'DIPLOMA') { $lvl_color = '#fbbf24'; $lvl_bg = 'rgba(245,158,11,0.15)'; }
+                                            ?>
+                                                <tr class="uni-course-row" data-search="<?php echo htmlspecialchars(strtolower($c['label'] . ' ' . $c['key'])); ?>" style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.2s;">
+                                                    <td style="padding:9px 14px; text-align:center; vertical-align:middle;">
+                                                        <input type="checkbox" name="selected_form_courses[]" value="<?php echo htmlspecialchars($c['key']); ?>" class="course-row-checkbox" <?php echo !empty($c['enabled']) ? 'checked' : ''; ?> style="width:17px; height:17px; cursor:pointer;">
+                                                    </td>
+                                                    <td style="padding:9px 14px; vertical-align:middle;">
+                                                        <span style="font-weight:700; color:var(--text-main); font-size:13.5px;">
+                                                            <?php echo htmlspecialchars($c['label']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td style="padding:9px 14px; vertical-align:middle;">
+                                                        <code style="color:#38bdf8; font-weight:700; font-size:12.5px; background:rgba(56,189,248,0.1); padding:3px 8px; border-radius:4px; border:1px solid rgba(56,189,248,0.2);">
+                                                            <?php echo htmlspecialchars($c['key']); ?>
+                                                        </code>
+                                                    </td>
+                                                    <td style="padding:9px 14px; text-align:center; vertical-align:middle;">
+                                                        <span class="badge" style="background:<?php echo $lvl_bg; ?>; color:<?php echo $lvl_color; ?>; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600;">
+                                                            <?php echo htmlspecialchars($c['level']); ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -682,54 +641,16 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
 
         <script>
-            let courseRowIndex = <?php echo count($configured_courses); ?>;
-
             function selectAllCourseRows(checked) {
                 document.querySelectorAll('.course-row-checkbox').forEach(cb => cb.checked = checked);
             }
 
-            function removeCourseRow(btn) {
-                const row = btn.closest('tr');
-                if (row) row.remove();
-            }
-
-            function addCustomCourseRow() {
-                const tbody = document.getElementById('allowedCoursesTableBody');
-                const tr = document.createElement('tr');
-                tr.className = 'course-item-row';
-                tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(99,102,241,0.06); transition:background 0.2s;';
-                
-                const idx = courseRowIndex++;
-                tr.innerHTML = `
-                    <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
-                        <input type="hidden" name="course_items[${idx}][enabled]" value="0">
-                        <input type="checkbox" name="course_items[${idx}][enabled]" value="1" class="course-row-checkbox" checked style="width:16px; height:16px; cursor:pointer;">
-                    </td>
-                    <td style="padding:8px 12px; vertical-align:middle;">
-                        <input type="text" name="course_items[${idx}][label]" class="form-control course-label-input" placeholder="e.g. Executive MBA" required style="font-size:13px; padding:6px 10px;" oninput="autoSuggestCourseKey(this, ${idx})">
-                    </td>
-                    <td style="padding:8px 12px; vertical-align:middle;">
-                        <input type="text" id="course_key_${idx}" name="course_items[${idx}][key]" class="form-control course-key-input" placeholder="e.g. EXECUTIVE_MBA" required style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:6px 10px; color:#38bdf8;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''); this.dataset.manualEdited='1';">
-                    </td>
-                    <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
-                        <input type="hidden" name="course_items[${idx}][level]" value="Custom">
-                        <input type="hidden" name="course_items[${idx}][is_custom]" value="1">
-                        <span class="badge" style="background:rgba(168,85,247,0.18); color:#c084fc; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600;">Custom</span>
-                    </td>
-                    <td style="padding:8px 12px; text-align:center; vertical-align:middle;">
-                        <button type="button" class="btn-icon" onclick="removeCourseRow(this)" title="Delete Custom Course" style="background:none; border:none; color:#ef4444; font-size:18px; cursor:pointer; line-height:1; padding:4px;">&times;</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-                const labelInput = tr.querySelector('.course-label-input');
-                if (labelInput) labelInput.focus();
-            }
-
-            function autoSuggestCourseKey(input, idx) {
-                const keyInput = document.getElementById('course_key_' + idx);
-                if (!keyInput || keyInput.dataset.manualEdited === '1') return;
-                const clean = input.value.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-                keyInput.value = clean;
+            function filterUniCourses(query) {
+                query = (query || '').toLowerCase().trim();
+                document.querySelectorAll('.uni-course-row').forEach(row => {
+                    const txt = row.getAttribute('data-search') || '';
+                    row.style.display = (!query || txt.indexOf(query) !== -1) ? '' : 'none';
+                });
             }
         </script>
 

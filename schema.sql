@@ -445,20 +445,49 @@ INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active
 SELECT 'Site & Brand Logo', 'modules/settings/logo.php', 17, 'logo_settings', 'settings', 'SETTINGS', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>', 0, 1
 WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/settings/logo.php' OR `active_page_key` = 'logo_settings');
 
--- Default Global Logo Seeds
-INSERT INTO `global_keys` (`key_code`, `key_value`, `description`, `is_active`)
-VALUES 
-('$SITE_LOGO$', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'Global Primary Website Logo URL', 1),
-('$LOGO_URL$', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'Global Primary Logo URL (Alternative)', 1)
-ON DUPLICATE KEY UPDATE `key_code`=VALUES(`key_code`);
+-- --------------------------------------------------------
+-- Table structure for table `form_courses` (Master List of Form Dropdown Courses)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `form_courses` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `display_label` VARCHAR(100) NOT NULL,
+  `form_key` VARCHAR(50) NOT NULL UNIQUE,
+  `level` VARCHAR(50) DEFAULT 'PG',
+  `sort_order` INT DEFAULT 0,
+  `is_active` TINYINT(1) DEFAULT 1,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `global_settings` (`setting_key`, `setting_value`, `setting_group`, `description`)
+-- Register Form Courses in Sidebar Items
+INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
+SELECT 'Form Courses', 'modules/form_courses/index.php', 4, 'form_courses', 'form_courses', 'MANAGE', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>', 0, 1
+WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/form_courses/index.php' OR `active_page_key` = 'form_courses');
+
+-- Default Form Courses Seeds
+INSERT INTO `form_courses` (`display_label`, `form_key`, `level`, `sort_order`, `is_active`)
 VALUES 
-('site_logo_url', 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png', 'branding', 'Global Primary Website Logo URL'),
-('site_logo_dark_url', '', 'branding', 'Global Dark/Inverted Website Logo URL'),
-('admin_logo_url', '', 'branding', 'Admin Panel Custom Brand Logo URL'),
-('site_logo_alt', 'SODE - School of Online & Distance Education', 'branding', 'Default Alt text for Site Logo')
-ON DUPLICATE KEY UPDATE `setting_key`=VALUES(`setting_key`);
+('M.Com', 'MCOM', 'PG', 1, 1),
+('M.Lib', 'MLIB', 'PG', 2, 1),
+('M.Sc', 'MSC', 'PG', 3, 1),
+('MA', 'MA', 'PG', 4, 1),
+('MAJMC', 'MAJMC', 'PG', 5, 1),
+('MBA', 'MBA', 'PG', 6, 1),
+('MBA Dual Spec.', 'MBADUALSPEC', 'PG', 7, 1),
+('MCA', 'MCA', 'PG', 8, 1),
+('MJMC', 'MJMC', 'PG', 9, 1),
+('B.Com', 'BCOM', 'UG', 10, 1),
+('B.Lib', 'BLIB', 'UG', 11, 1),
+('B.Sc', 'BSC', 'UG', 12, 1),
+('BA', 'BA', 'UG', 13, 1),
+('BAJMC', 'BAJMC', 'UG', 14, 1),
+('BBA', 'BBA', 'UG', 15, 1),
+('BCA', 'BCA', 'UG', 16, 1),
+('BJMC', 'BJMC', 'UG', 17, 1),
+('Diploma in Management', 'DIPLOMAMGMT', 'Diploma', 18, 1),
+('Executive MBA', 'EMBA', 'PG', 19, 1),
+('Other', 'OTHER', 'Other', 99, 1)
+ON DUPLICATE KEY UPDATE `form_key`=VALUES(`form_key`);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
