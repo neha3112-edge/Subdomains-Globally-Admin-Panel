@@ -169,104 +169,16 @@ add_filter('acf/format_value', 'sode_client_replace_keys', 20);
 add_filter('do_shortcode_tag', 'sode_client_replace_keys', 20);
 
 // ====================================================
-// 🌟 GLOBAL FAVICON OVERRIDE ENGINE
-// Centralized Favicon from Admin Panel overrides any
-// WordPress theme, customizer, or plugin favicon.
-// ====================================================
-
-if (!function_exists('sode_client_get_central_favicon_url')) {
-    function sode_client_get_central_favicon_url()
-    {
-        $keys = sode_client_get_global_keys();
-        $fav = $keys['$FAVICON_URL$'] ?? $keys['{FAVICON_URL}'] ?? $keys['$SITE_FAVICON$'] ?? $keys['{SITE_FAVICON}'] ?? $keys['$SITE_LOGO$'] ?? $keys['$LOGO_URL$'] ?? '';
-
-        if (empty($fav)) {
-            $fav = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
-        }
-
-        // Auto-correct missing /admin/ segment if present
-        if (strpos($fav, 'admin.distanceeducationschool.com/uploads/') !== false) {
-            $fav = str_replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/', $fav);
-        }
-
-        // Prepend Central Admin URL if relative path
-        if (!empty($fav) && !preg_match('#^https?://#i', $fav)) {
-            if (strpos($fav, 'admin/') === 0) {
-                $fav = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/' . ltrim($fav, '/');
-            } else {
-                $fav = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/admin/' . ltrim($fav, '/');
-            }
-        }
-
-        $fav = str_replace(' ', '%20', $fav);
-        return $fav;
-    }
-}
-
-// 1. Override WordPress core site icon URL
-add_filter('get_site_icon_url', function ($url, $size = 512, $blog_id = 0) {
-    $fav = sode_client_get_central_favicon_url();
-    return !empty($fav) ? $fav : $url;
-}, 999999, 3);
-
-// 2. Override WordPress site_icon_meta_tags (outputs icon tags in wp_head)
-add_filter('site_icon_meta_tags', function ($meta_tags) {
-    $fav = sode_client_get_central_favicon_url();
-    if (!empty($fav)) {
-        $clean_fav = esc_url($fav);
-        return [
-            sprintf('<link rel="shortcut icon" href="%s" />', $clean_fav),
-            sprintf('<link rel="icon" type="image/x-icon" href="%s" />', $clean_fav),
-            sprintf('<link rel="icon" href="%s" sizes="32x32" />', $clean_fav),
-            sprintf('<link rel="icon" href="%s" sizes="192x192" />', $clean_fav),
-            sprintf('<link rel="apple-touch-icon" href="%s" />', $clean_fav),
-            sprintf('<meta name="msapplication-TileImage" content="%s" />', $clean_fav),
-        ];
-    }
-    return $meta_tags;
-}, 999999);
-
-// 3. Render Central Favicon in <head> at top priority
-if (!function_exists('sode_client_render_central_favicon_tags')) {
-    function sode_client_render_central_favicon_tags()
-    {
-        $fav = sode_client_get_central_favicon_url();
-        if (!empty($fav)) {
-            $clean_fav = esc_url($fav);
-            echo "\n<!-- SODE Central Admin Global Favicon -->\n";
-            echo '<link rel="shortcut icon" href="' . $clean_fav . '" />' . "\n";
-            echo '<link rel="icon" href="' . $clean_fav . '" sizes="32x32" />' . "\n";
-            echo '<link rel="apple-touch-icon" href="' . $clean_fav . '" />' . "\n";
-            echo "<!-- End SODE Favicon -->\n";
-        }
-    }
-}
-add_action('wp_head', 'sode_client_render_central_favicon_tags', 1);
-add_action('login_head', 'sode_client_render_central_favicon_tags', 1);
-add_action('admin_head', 'sode_client_render_central_favicon_tags', 1);
-
-// ====================================================
 // 🔥 FULL PAGE OUTPUT BUFFER (PHP-level)
 // Runs when WP Rocket/Redis cache MISS (first visit).
-// Strips existing theme favicons and enforces central keys.
+// Enforces central dynamic text replacements.
 // ====================================================
 add_action('template_redirect', function () {
     ob_start(function ($html) {
         if (empty($html) || !is_string($html))
             return $html;
 
-        // 1. Enforce Favicon Replacement in HTML output
-        $fav = sode_client_get_central_favicon_url();
-        if (!empty($fav)) {
-            $clean_fav = esc_url($fav);
-            // Strip any theme/plugin favicon tags to prevent duplicates
-            $html = preg_replace('/<link\s+[^>]*rel=["\'](?:shortcut\s+icon|icon|apple-touch-icon)["\'][^>]*>\s*/i', '', $html);
-            // Inject clean central favicon right after <head>
-            $favicon_tags = "\n<link rel=\"shortcut icon\" href=\"{$clean_fav}\" />\n<link rel=\"icon\" href=\"{$clean_fav}\" sizes=\"32x32\" />\n<link rel=\"apple-touch-icon\" href=\"{$clean_fav}\" />\n";
-            $html = preg_replace('/(<head\b[^>]*>)/i', '$1' . $favicon_tags, $html, 1);
-        }
-
-        // 2. Replace Dynamic Text Keys
+        // Replace Dynamic Text Keys
         if (strpos($html, '$') !== false || strpos($html, '{') !== false) {
             $html = sode_client_replace_keys($html);
         }
@@ -302,32 +214,7 @@ add_action('wp_head', function () {
             'use strict';
             var uniSlug = '<?php echo $uni_js; ?>';
             var adminRoot = '<?php echo $admin_root_js; ?>';
-            var defaultFallbackFavicon = 'https://distanceeducationschool.com/wp-content/uploads/2025/01/sode-white-favicon.png';
             var apiUrl = '<?php echo $api_base; ?>?t=' + Date.now() + (uniSlug ? '&uni=' + encodeURIComponent(uniSlug) : '');
-            
-            function applyFaviconToDOM(iconUrl) {
-                try {
-                    var existingIcons = document.querySelectorAll("link[rel*='icon'], link[rel='apple-touch-icon']");
-                    existingIcons.forEach(function(el) {
-                        if (el.parentNode) el.parentNode.removeChild(el);
-                    });
-
-                    var linkIcon = document.createElement('link');
-                    linkIcon.rel = 'icon';
-                    linkIcon.href = iconUrl;
-                    document.head.appendChild(linkIcon);
-
-                    var linkShortcut = document.createElement('link');
-                    linkShortcut.rel = 'shortcut icon';
-                    linkShortcut.href = iconUrl;
-                    document.head.appendChild(linkShortcut);
-
-                    var linkApple = document.createElement('link');
-                    linkApple.rel = 'apple-touch-icon';
-                    linkApple.href = iconUrl;
-                    document.head.appendChild(linkApple);
-                } catch (e) {}
-            }
 
             // Fetch fresh global keys — no browser cache
             fetch(apiUrl, {
@@ -338,31 +225,6 @@ add_action('wp_head', function () {
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     var keys = data.keys || {};
-                    var centralFavicon = data.favicon_url || keys['$FAVICON_URL$'] || keys['{FAVICON_URL}'] || keys['$SITE_FAVICON$'] || keys['{SITE_FAVICON}'] || data.site_logo_url || keys['$SITE_LOGO$'] || keys['$LOGO_URL$'] || defaultFallbackFavicon;
-
-                    // Normalize favicon URL
-                    if (centralFavicon) {
-                        if (centralFavicon.indexOf('admin.distanceeducationschool.com/uploads/') !== -1) {
-                            centralFavicon = centralFavicon.replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/');
-                        }
-                        if (!centralFavicon.match(/^https?:\/\//i)) {
-                            centralFavicon = adminRoot + (centralFavicon.indexOf('admin/') === 0 ? '/' : '/admin/') + centralFavicon.replace(/^\/+/, '');
-                        }
-                        centralFavicon = centralFavicon.replace(/ /g, '%20');
-                    }
-
-                    // 1. Force Central Favicon Overwrite in Browser DOM with 404 test fallback
-                    if (centralFavicon) {
-                        applyFaviconToDOM(centralFavicon);
-                        if (centralFavicon !== defaultFallbackFavicon) {
-                            var testImg = new Image();
-                            testImg.onerror = function() {
-                                applyFaviconToDOM(defaultFallbackFavicon);
-                            };
-                            testImg.src = centralFavicon;
-                        }
-                    }
-
                     if (!Object.keys(keys).length) return;
 
                     // Build a flat map of ALL pattern variants → value
