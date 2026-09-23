@@ -205,11 +205,9 @@ function render_job_roles_table_row_cells($role)
     <?php
 }
 
-/**
- * Main Shortcode & SSR Renderer: [job_roles_table course="mba"]
- */
-function sode_job_roles_table_render($atts)
-{
+if (!function_exists('sode_job_roles_table_render')) {
+    function sode_job_roles_table_render($atts)
+    {
     $atts = shortcode_atts([
         'course' => 'mba',
     ], $atts);
@@ -489,6 +487,7 @@ function sode_job_roles_table_render($atts)
     }
 
     return ob_get_clean();
+    }
 }
 
 /**

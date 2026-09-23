@@ -1111,6 +1111,61 @@ add_shortcode('ugc_deb_approved_courses_table', $uni_programmes_table_handler);
 add_shortcode('university_ugc_courses_table', $uni_programmes_table_handler);
 
 // ====================================================
+// 2.10.3. UNIVERSITY SAMPLE DEGREE SHORTCODES
+// [sample_degree], [university_sample_degree], [uni_sample_degree], [sample_degree_card], [sample_degree_image], [sample_degree_button], [sample_degree_url]
+// ====================================================
+if (file_exists(__DIR__ . '/sample-degree-universal.php')) {
+    include_once __DIR__ . '/sample-degree-universal.php';
+}
+
+$sample_degree_handler = function ($atts) {
+    $raw_atts = (array) ($atts ?: []);
+    $explicit_uni = !empty($raw_atts['uni']) ? $raw_atts['uni'] : (!empty($raw_atts['university']) ? $raw_atts['university'] : '');
+    if (empty($explicit_uni)) {
+        foreach ($raw_atts as $k => $v) {
+            if (is_numeric($k) && is_string($v) && !empty($v)) {
+                if (strpos($v, '=') !== false) {
+                    list($pk, $pv) = explode('=', $v, 2);
+                    if (in_array(strtolower(trim($pk)), ['uni', 'university'])) {
+                        $explicit_uni = trim($pv, " '\"\t\n\r\0\x0B");
+                        break;
+                    }
+                } else {
+                    $explicit_uni = trim($v, " '\"\t\n\r\0\x0B");
+                    break;
+                }
+            }
+        }
+    }
+    if (!empty($explicit_uni)) {
+        $raw_atts['uni'] = $explicit_uni;
+        $raw_atts['university'] = $explicit_uni;
+    }
+
+    if (function_exists('sode_sample_degree_render')) {
+        return sode_sample_degree_render($raw_atts);
+    }
+    return sode_fetch_remote_component('sample_degree', $raw_atts);
+};
+
+add_shortcode('sample_degree', $sample_degree_handler);
+add_shortcode('university_sample_degree', $sample_degree_handler);
+add_shortcode('uni_sample_degree', $sample_degree_handler);
+add_shortcode('sample_degree_card', $sample_degree_handler);
+
+add_shortcode('sample_degree_image', function ($atts) use ($sample_degree_handler) {
+    return $sample_degree_handler(array_merge((array)$atts, ['layout' => 'image']));
+});
+
+add_shortcode('sample_degree_button', function ($atts) use ($sample_degree_handler) {
+    return $sample_degree_handler(array_merge((array)$atts, ['layout' => 'button']));
+});
+
+add_shortcode('sample_degree_url', function ($atts) use ($sample_degree_handler) {
+    return $sample_degree_handler(array_merge((array)$atts, ['layout' => 'url']));
+});
+
+// ====================================================
 // 3. GLOBAL YEAR SHORTCODE [site_year]
 // ====================================================
 
