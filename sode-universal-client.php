@@ -108,13 +108,14 @@ if (!function_exists('sode_client_replace_keys')) {
             }, $text);
         }
 
+        $pattern_map = [];
         foreach ($keys as $code => $val) {
             $val = (string) $val;
             $raw = trim($code, '$');
             $raw = trim($raw, '{}');
 
-            // All pattern variants — double curly first to avoid partial replace
-            $patterns = [
+            // All pattern variants
+            $variants = [
                 '{{' . $raw . '}}',
                 '{{' . strtoupper($raw) . '}}',
                 '{{' . strtolower($raw) . '}}',
@@ -128,15 +129,26 @@ if (!function_exists('sode_client_replace_keys')) {
 
             // Common URL / Menu bare keywords without braces or dollar signs
             $upper_raw = strtoupper($raw);
-            if (in_array($upper_raw, ['UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI'])) {
-                $patterns[] = $upper_raw;
-                $patterns[] = strtolower($upper_raw);
+            if (in_array($upper_raw, ['UNIVERSITY_SHORT_NAME_LOWER', 'UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME_LOWER', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI_LOWER', 'UNI'])) {
+                $variants[] = $upper_raw;
+                $variants[] = strtolower($upper_raw);
             }
 
-            foreach ($patterns as $p) {
-                if ($p !== '' && strpos($text, $p) !== false) {
-                    $text = str_replace($p, $val, $text);
+            foreach ($variants as $p) {
+                if ($p !== '' && !isset($pattern_map[$p])) {
+                    $pattern_map[$p] = $val;
                 }
+            }
+        }
+
+        // Sort patterns by length DESC so specific/longer patterns like {UNIVERSITY_SHORT_NAME_LOWER} match first
+        uksort($pattern_map, function ($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+
+        foreach ($pattern_map as $p => $v) {
+            if (strpos($text, $p) !== false) {
+                $text = str_replace($p, $v, $text);
             }
         }
 
@@ -277,7 +289,7 @@ add_action('wp_head', function () {
                         });
 
                         var upperRaw = raw.toUpperCase();
-                        if (['UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI'].indexOf(upperRaw) !== -1) {
+                        if (['UNIVERSITY_SHORT_NAME_LOWER', 'UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME_LOWER', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI_LOWER', 'UNI'].indexOf(upperRaw) !== -1) {
                             replacements[upperRaw] = strVal;
                             replacements[upperRaw.toLowerCase()] = strVal;
                         }
@@ -285,6 +297,9 @@ add_action('wp_head', function () {
 
                     var patterns = Object.keys(replacements);
                     if (!patterns.length) return;
+
+                    // Sort patterns by length DESC so specific/longer patterns match first
+                    patterns.sort(function (a, b) { return b.length - a.length; });
 
                     // Walk all text nodes in the DOM and replace
                     function walk(node) {
