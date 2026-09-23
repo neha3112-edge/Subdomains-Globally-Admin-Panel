@@ -314,9 +314,26 @@ if (!empty($uni_slug)) {
 
         $fee_keys = [];
         $all_elig_lines = [];
+        $course_short_names = [];
+        $course_full_names  = [];
+        $course_mode_names  = [];
 
         foreach ($courses as $c) {
             $c_mode    = (!empty($c['mode']) && strtolower(trim($c['mode'])) === 'distance') ? 'Distance' : 'Online';
+            $c_short   = ($c['short_name'] === 'B.Com') ? 'BCom' : trim($c['short_name']);
+            $c_full    = trim($c['full_name']);
+
+            if (!empty($c_short) && !in_array($c_short, $course_short_names)) {
+                $course_short_names[] = $c_short;
+            }
+            if (!empty($c_full) && !in_array($c_full, $course_full_names)) {
+                $course_full_names[] = $c_full;
+            }
+            $c_mode_label = (stripos($c_short, $c_mode) !== 0) ? $c_mode . ' ' . $c_short : $c_short;
+            if (!in_array($c_mode_label, $course_mode_names)) {
+                $course_mode_names[] = $c_mode_label;
+            }
+
             $per_sem   = trim((string)($c['per_semester_fee'] ?? ''));
             $total_fee = trim((string)($c['total_program_fee'] ?? ''));
             $tuition   = trim((string)($c['tuition_fee'] ?? ''));
@@ -419,6 +436,50 @@ if (!empty($uni_slug)) {
         $fee_keys['{ALL_COURSES_ELIGIBILITY}']      = $all_elig_str;
         $fee_keys['$UNIVERSITY_ELIGIBILITY_TEXT$']  = $all_elig_str;
         $fee_keys['{UNIVERSITY_ELIGIBILITY_TEXT}']  = $all_elig_str;
+
+        // Dynamic Course List Text Keys & Shortcode Intercepts
+        $courses_list_short = implode(', ', $course_short_names);
+        $courses_list_full  = implode(', ', $course_full_names);
+        $courses_list_mode  = implode(', ', $course_mode_names);
+
+        $course_list_aliases = [
+            '{UNIVERSITY_COURSES_LIST}' => $courses_list_short,
+            '{university_courses_list}' => $courses_list_short,
+            '$UNIVERSITY_COURSES_LIST$' => $courses_list_short,
+            '$university_courses_list$' => $courses_list_short,
+            'UNIVERSITY_COURSES_LIST'   => $courses_list_short,
+            '{UNI_COURSES_LIST}'        => $courses_list_short,
+            '{uni_courses_list}'        => $courses_list_short,
+            '$UNI_COURSES_LIST$'        => $courses_list_short,
+            '$uni_courses_list$'        => $courses_list_short,
+            'UNI_COURSES_LIST'          => $courses_list_short,
+            '{COURSES_LIST}'            => $courses_list_short,
+            '{courses_list}'            => $courses_list_short,
+            '$COURSES_LIST$'            => $courses_list_short,
+            '$courses_list$'            => $courses_list_short,
+            'COURSES_LIST'              => $courses_list_short,
+            '{COURSES}'                 => $courses_list_short,
+            '{courses}'                 => $courses_list_short,
+            '$COURSES$'                 => $courses_list_short,
+            '$courses$'                 => $courses_list_short,
+            'COURSES'                   => $courses_list_short,
+            '{COURSES_LIST_FULL}'       => $courses_list_full,
+            '{courses_list_full}'       => $courses_list_full,
+            '$COURSES_LIST_FULL$'       => $courses_list_full,
+            '$courses_list_full$'       => $courses_list_full,
+            '{COURSES_LIST_MODE}'       => $courses_list_mode,
+            '{COURSES_LIST_ONLINE}'     => $courses_list_mode,
+            // Direct Shortcode-syntax key replacement fallbacks (e.g. for Yoast Meta Descriptions & Titles)
+            '[university_courses_list]' => $courses_list_short,
+            '[uni_courses_list]'        => $courses_list_short,
+            '[courses_list]'            => $courses_list_short,
+            '[sode_courses_list]'       => $courses_list_short,
+            '[uni_courses_text]'        => $courses_list_short,
+        ];
+
+        foreach ($course_list_aliases as $ck => $cv) {
+            $fee_keys[$ck] = $cv;
+        }
 
         // Merge — university keys and course fees override global keys
         $map = array_merge($map, $uni_keys, $fee_keys);

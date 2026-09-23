@@ -121,10 +121,10 @@ if (!function_exists('sode_client_replace_keys')) {
 
         foreach ($keys as $code => $val) {
             $val = (string) $val;
-            $raw = trim($code, '$');
-            $raw = trim($raw, '{}');
+            $code_clean = trim($code);
+            $raw = trim($code_clean, '$[]{}');
 
-            // Standard delimited variants (e.g. {KEY}, {{KEY}}, $KEY$)
+            // Standard delimited variants (e.g. {KEY}, {{KEY}}, $KEY$, [KEY])
             $variants = [
                 '{{' . $raw . '}}',
                 '{{' . strtoupper($raw) . '}}',
@@ -134,10 +134,13 @@ if (!function_exists('sode_client_replace_keys')) {
                 '{' . $raw . '}',
                 '{' . strtoupper($raw) . '}',
                 '{' . strtolower($raw) . '}',
+                '[' . $raw . ']',
+                '[' . strtoupper($raw) . ']',
+                '[' . strtolower($raw) . ']',
             ];
 
-            // If $code already has delimiters ({...} or $...$), include it
-            if (strpos($code, '{') !== false || strpos($code, '$') !== false) {
+            // If $code already has delimiters ({...}, $...$, [...]), include it
+            if (strpos($code, '{') !== false || strpos($code, '$') !== false || strpos($code, '[') !== false) {
                 $variants[] = $code;
             }
 
@@ -188,10 +191,69 @@ add_filter('the_excerpt', 'sode_client_replace_keys', 20);
 add_filter('elementor/frontend/the_content', 'sode_client_replace_keys', 20);
 add_filter('elementor/widget/render_content', 'sode_client_replace_keys', 20);
 
-// Yoast SEO title & meta description
-add_filter('wpseo_title', 'sode_client_replace_keys', 20);
-add_filter('wpseo_metadesc', 'sode_client_replace_keys', 20);
-add_filter('wpseo_opengraph_title', 'sode_client_replace_keys', 20);
+// ====================================================
+// 🔍 SEO TITLES & META DESCRIPTIONS PROCESSOR
+// Automatically resolves shortcodes (e.g. [university_courses_list])
+// and replaces dynamic global keys ($YEAR$, {UNIVERSITY_NAME}, etc.)
+// ====================================================
+if (!function_exists('sode_client_filter_seo_text')) {
+    function sode_client_filter_seo_text($text)
+    {
+        if (empty($text) || !is_string($text)) {
+            return $text;
+        }
+
+        // 1. Replace Global Keys first
+        $text = sode_client_replace_keys($text);
+
+        // 2. Execute shortcodes if shortcodes exist in text (e.g. [university_courses_list], [site_year])
+        if (strpos($text, '[') !== false && strpos($text, ']') !== false) {
+            if (function_exists('do_shortcode')) {
+                $text = do_shortcode($text);
+            }
+        }
+
+        // 3. Strip any residual HTML tags from meta title/description
+        if (function_exists('wp_strip_all_tags')) {
+            $text = wp_strip_all_tags($text, true);
+        } else {
+            $text = strip_tags($text);
+        }
+
+        // 4. One final key replacement pass
+        $text = sode_client_replace_keys($text);
+
+        return trim($text);
+    }
+}
+
+// Yoast SEO title, meta description & social meta
+add_filter('wpseo_title', 'sode_client_filter_seo_text', 20);
+add_filter('wpseo_metadesc', 'sode_client_filter_seo_text', 20);
+add_filter('wpseo_opengraph_title', 'sode_client_filter_seo_text', 20);
+add_filter('wpseo_opengraph_desc', 'sode_client_filter_seo_text', 20);
+add_filter('wpseo_twitter_title', 'sode_client_filter_seo_text', 20);
+add_filter('wpseo_twitter_description', 'sode_client_filter_seo_text', 20);
+
+// Rank Math SEO & All in One SEO
+add_filter('rank_math/frontend/title', 'sode_client_filter_seo_text', 20);
+add_filter('rank_math/frontend/description', 'sode_client_filter_seo_text', 20);
+add_filter('rank_math/paper/description', 'sode_client_filter_seo_text', 20);
+add_filter('rank_math/opengraph/facebook/description', 'sode_client_filter_seo_text', 20);
+add_filter('rank_math/opengraph/twitter/description', 'sode_client_filter_seo_text', 20);
+
+// WordPress Core Title & Document Title
+add_filter('pre_get_document_title', 'sode_client_filter_seo_text', 20);
+add_filter('document_title_parts', function ($parts) {
+    if (!empty($parts) && is_array($parts)) {
+        foreach ($parts as &$p) {
+            if (is_string($p)) {
+                $p = sode_client_filter_seo_text($p);
+            }
+        }
+    }
+    return $parts;
+}, 20);
 
 // ACF & shortcode output
 add_filter('acf/format_value', 'sode_client_replace_keys', 20);
@@ -310,7 +372,7 @@ add_action('wp_head', function () {
                             if (p) replacements[p] = strVal;
                         });
 
-                        if (code.indexOf('{') !== -1 || code.indexOf('$') !== -1) {
+                        if (code.indexOf('{') !== -1 || code.indexOf('$') !== -1 || code.indexOf('[') !== -1) {
                             replacements[code] = strVal;
                         }
 
