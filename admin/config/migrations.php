@@ -519,9 +519,9 @@ function sode_run_auto_migrations(PDO $pdo) {
                     $default_footer_links = json_encode([
                         ['label' => 'About Us',       'url' => '/about-us/',       'class' => ''],
                         ['label' => 'Contact Us',     'url' => '/contact-us/',     'class' => ''],
-                        ['label' => 'Disclaimer',     'url' => '#disclaimer-popup','class' => 'disclaimer-main-popup'],
-                        ['label' => 'Privacy Policy', 'url' => '#privacy-popup',   'class' => 'privacy-main-popup'],
-                        ['label' => 'Terms & Conditions','url' => '#terms-popup',  'class' => 'term-main-popup'],
+                        ['label' => 'Disclaimer',     'url' => '#disclaimer',      'class' => 'disclaimer-main-popup'],
+                        ['label' => 'Privacy Policy', 'url' => '#privacy-policy',  'class' => 'privacy-main-popup'],
+                        ['label' => 'Terms & Conditions','url' => '#terms',        'class' => 'term-main-popup'],
                     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                     $default_about = 'SODE™ is India\'s top educational platform, transforming the way learners engage with higher education. We make higher education easier without compromising on the quality. We help students and working professionals find the right online and distance degree programs. We simplify every step with expert guidance and personalised support.';

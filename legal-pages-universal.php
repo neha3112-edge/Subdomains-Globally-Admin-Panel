@@ -207,9 +207,14 @@ if (!function_exists('sode_legal_popups_render')) {
 <script>
 (function(){
     var hashPopupMap = {
-        'disclaimer-popup': 'mainDisclaimerPopup',
-        'privacy-popup':    'mainPrivacyPopup',
-        'terms-popup':      'mainTermsPopup'
+        'disclaimer':        'mainDisclaimerPopup',
+        'disclaimer-popup':  'mainDisclaimerPopup',
+        'terms':             'mainTermsPopup',
+        'terms-popup':       'mainTermsPopup',
+        'terms-conditions':  'mainTermsPopup',
+        'privacy-policy':    'mainPrivacyPopup',
+        'privacy-popup':     'mainPrivacyPopup',
+        'privacy':           'mainPrivacyPopup'
     };
     function openMainPopup(id)  { var el=document.getElementById(id); if(el){el.classList.add('active');document.body.style.overflow='hidden';} }
     function closeMainPopup(id) { var el=document.getElementById(id); if(el){el.classList.remove('active'); if(!document.querySelectorAll('.main-popup-overlay.active').length) document.body.style.overflow='';} }
@@ -223,16 +228,39 @@ if (!function_exists('sode_legal_popups_render')) {
         if (e.target.closest('.privacy-main-popup'))    { e.preventDefault(); e.stopPropagation(); openMainPopup('mainPrivacyPopup');    return; }
         if (e.target.closest('.term-main-popup'))       { e.preventDefault(); e.stopPropagation(); openMainPopup('mainTermsPopup');      return; }
 
-        var hashLink = e.target.closest('a[href*="#disclaimer-popup"],a[href*="#privacy-popup"],a[href*="#terms-popup"]');
+        var hashLink = e.target.closest('a[href*="#"]');
         if (hashLink) {
-            e.preventDefault(); e.stopPropagation();
-            var hash = hashLink.getAttribute('href').split('#')[1];
-            if (hashPopupMap[hash]) openMainPopup(hashPopupMap[hash]);
-            return;
+            var href = hashLink.getAttribute('href') || '';
+            var hashPart = href.split('#')[1];
+            if (hashPart) {
+                var cleanHash = hashPart.split('?')[0].split('&')[0].trim().toLowerCase();
+                if (hashPopupMap[cleanHash]) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openMainPopup(hashPopupMap[cleanHash]);
+                    return;
+                }
+            }
         }
         var closeBtn = e.target.closest('.des-popup-close-btn');
         if (closeBtn) { e.preventDefault(); e.stopPropagation(); closeMainPopup(closeBtn.getAttribute('data-popup-close')); return; }
     }, true);
+
+    // Support direct URL hash or hash changes (e.g. #disclaimer, #terms, #privacy-policy)
+    function checkUrlHash() {
+        if (window.location.hash) {
+            var h = window.location.hash.substring(1).split('?')[0].split('&')[0].trim().toLowerCase();
+            if (hashPopupMap[h]) {
+                setTimeout(function() { openMainPopup(hashPopupMap[h]); }, 250);
+            }
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkUrlHash);
+    } else {
+        checkUrlHash();
+    }
+    window.addEventListener('hashchange', checkUrlHash);
 
     document.querySelectorAll('.main-popup-overlay').forEach(function(o) {
         o.addEventListener('click', function(e) { if(e.target===this){e.preventDefault();closeMainPopup(this.id);} }, true);

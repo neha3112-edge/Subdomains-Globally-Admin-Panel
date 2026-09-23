@@ -265,9 +265,9 @@ if (!function_exists('sode_footer_fallback_config')) {
             'footer_links' => [
                 ['label' => 'About Us', 'url' => '/about-us/', 'class' => ''],
                 ['label' => 'Contact Us', 'url' => '/contact-us/', 'class' => ''],
-                ['label' => 'Disclaimer', 'url' => '#disclaimer-popup', 'class' => 'disclaimer-main-popup'],
-                ['label' => 'Privacy Policy', 'url' => '#privacy-popup', 'class' => 'privacy-main-popup'],
-                ['label' => 'Terms & Conditions', 'url' => '#terms-popup', 'class' => 'term-main-popup'],
+                ['label' => 'Disclaimer', 'url' => '#disclaimer', 'class' => 'disclaimer-main-popup'],
+                ['label' => 'Privacy Policy', 'url' => '#privacy-policy', 'class' => 'privacy-main-popup'],
+                ['label' => 'Terms & Conditions', 'url' => '#terms', 'class' => 'term-main-popup'],
             ],
             'contact_phone' => '+91 70657 777 55',
             'contact_phone_link' => 'tel:+917065777755',
