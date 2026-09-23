@@ -93,7 +93,7 @@ if (!function_exists('sode_get_footer_config')) {
             $api_base = defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com';
             $ctx = stream_context_create([
                 'http' => [
-                    'timeout' => 5, 
+                    'timeout' => 5,
                     'ignore_errors' => true,
                     'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
                 ]
@@ -587,8 +587,11 @@ if (!function_exists('sode_footer_render')) {
 
                 <?php if (!empty($contacts['address'])): ?>
                     <div class="sf-footer-contacts">
-                        <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Address:</strong> <?php if (!empty($contacts['address_link'])): ?><a href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
-                                class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a><?php else: ?><span class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span><?php endif; ?></span>
+                        <span class="sf-footer-contact-item"><strong class="sf-footer-contact-label">Address:</strong>
+                            <?php if (!empty($contacts['address_link'])): ?><a
+                                    href="<?php echo htmlspecialchars($contacts['address_link']); ?>" target="_blank" rel="noopener"
+                                    class="sf-footer-contact-link"><?php echo htmlspecialchars($contacts['address']); ?></a><?php else: ?><span
+                                    class="sf-footer-contact-text"><?php echo htmlspecialchars($contacts['address']); ?></span><?php endif; ?></span>
                     </div>
                 <?php endif; ?>
 
@@ -923,7 +926,7 @@ if (!function_exists('sode_footer_render')) {
                 font-size: 11px;
                 color: #fff;
                 line-height: 1.6;
-                max-width: 1000px;
+                max-width: 1035px;
                 margin: 0 auto 18px;
             }
 
@@ -1011,6 +1014,7 @@ if (!function_exists('sode_footer_render')) {
 
             /* ===== RESPONSIVE ===== */
             @media (max-width: 768px) {
+
                 .sode-footer-wrap .sf-link-sep,
                 #<?php echo $uid; ?> .sf-link-sep {
                     display: none !important;
