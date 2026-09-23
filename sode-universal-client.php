@@ -124,29 +124,18 @@ if (!function_exists('sode_client_replace_keys')) {
             $code_clean = trim($code);
             $raw = trim($code_clean, '$[]{}');
 
-            // Standard delimited variants (e.g. {KEY}, {{KEY}}, $KEY$, [KEY])
+            // Exact case variants for this specific key
             $variants = [
+                $code,
                 '{{' . $raw . '}}',
-                '{{' . strtoupper($raw) . '}}',
-                '{{' . strtolower($raw) . '}}',
-                '$' . strtoupper($raw) . '$',
-                '$' . strtolower($raw) . '$',
+                '$' . $raw . '$',
                 '{' . $raw . '}',
-                '{' . strtoupper($raw) . '}',
-                '{' . strtolower($raw) . '}',
                 '[' . $raw . ']',
-                '[' . strtoupper($raw) . ']',
-                '[' . strtolower($raw) . ']',
             ];
-
-            // If $code already has delimiters ({...}, $...$, [...]), include it
-            if (strpos($code, '{') !== false || strpos($code, '$') !== false || strpos($code, '[') !== false) {
-                $variants[] = $code;
-            }
 
             // ONLY specific full multi-word uppercase identifiers are allowed without delimiters
             $upper_raw = strtoupper($raw);
-            if (in_array($upper_raw, $safe_bare_keywords, true)) {
+            if (in_array($upper_raw, $safe_bare_keywords, true) && $upper_raw === $raw) {
                 $variants[] = $upper_raw;
             }
 
@@ -357,28 +346,21 @@ add_action('wp_head', function () {
                     ];
 
                     Object.entries(keys).forEach(function ([code, val]) {
-                        var raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '');
+                        var raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '').replace(/^\[|\]$/g, '');
                         var strVal = String(val);
                         [
-                            '$' + raw.toUpperCase() + '$',
-                            '$' + raw.toLowerCase() + '$',
+                            code,
+                            '$' + raw + '$',
                             '{{' + raw + '}}',
-                            '{{' + raw.toUpperCase() + '}}',
-                            '{{' + raw.toLowerCase() + '}}',
                             '{' + raw + '}',
-                            '{' + raw.toUpperCase() + '}',
-                            '{' + raw.toLowerCase() + '}',
+                            '[' + raw + ']'
                         ].forEach(function (p) {
-                            if (p) replacements[p] = strVal;
+                            if (p && !replacements[p]) replacements[p] = strVal;
                         });
 
-                        if (code.indexOf('{') !== -1 || code.indexOf('$') !== -1 || code.indexOf('[') !== -1) {
-                            replacements[code] = strVal;
-                        }
-
                         var upperRaw = raw.toUpperCase();
-                        if (safeBareKeywords.indexOf(upperRaw) !== -1) {
-                            replacements[upperRaw] = strVal;
+                        if (safeBareKeywords.indexOf(upperRaw) !== -1 && upperRaw === raw) {
+                            if (!replacements[upperRaw]) replacements[upperRaw] = strVal;
                         }
                     });
 
