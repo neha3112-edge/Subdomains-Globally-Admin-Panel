@@ -72,6 +72,9 @@ if (file_exists($root_dir . '/university-fees-table-universal.php')) {
 if (file_exists($root_dir . '/university-programmes-table-universal.php')) {
     require_once $root_dir . '/university-programmes-table-universal.php';
 }
+if (file_exists($root_dir . '/sample-degree-universal.php')) {
+    require_once $root_dir . '/sample-degree-universal.php';
+}
 
 
 
@@ -269,6 +272,16 @@ switch ($component) {
     case 'ugc_deb_approved_courses_table':
     case 'university_ugc_courses_table':
         echo function_exists('sode_render_university_programmes_table') ? sode_render_university_programmes_table($params) : '';
+        break;
+
+    case 'sample_degree':
+    case 'university_sample_degree':
+    case 'uni_sample_degree':
+    case 'sample_degree_card':
+    case 'sample_degree_image':
+    case 'sample_degree_button':
+    case 'sample_degree_url':
+        echo function_exists('sode_sample_degree_render') ? sode_sample_degree_render($params) : '';
         break;
 
 

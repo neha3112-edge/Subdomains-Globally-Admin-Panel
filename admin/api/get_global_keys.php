@@ -144,6 +144,16 @@ if (!empty($uni_slug)) {
         $uni_short_lower = strtolower($uni_short_raw);
         $uni_slug_val    = strtolower($uni['slug'] ?? $uni_short_lower);
 
+        $raw_degree_img  = trim((string)($uni['sample_degree_img'] ?? ''));
+        $sample_degree_url = '';
+        if (!empty($raw_degree_img)) {
+            $sample_degree_url = function_exists('get_asset_url') ? get_asset_url($raw_degree_img) : $raw_degree_img;
+            if (strpos($sample_degree_url, 'admin.distanceeducationschool.com/uploads/') !== false) {
+                $sample_degree_url = str_replace('admin.distanceeducationschool.com/uploads/', 'admin.distanceeducationschool.com/admin/uploads/', $sample_degree_url);
+            }
+            $sample_degree_url = str_replace(' ', '%20', $sample_degree_url);
+        }
+
         $uni_keys = [
             // University Name
             '{UNIVERSITY_NAME}'             => $uni['full_name']  ?? '',
@@ -222,6 +232,23 @@ if (!empty($uni_slug)) {
             '{UNIVERSITY_URL}'           => $uni['official_url']  ?? '',
             '{UNIVERSITY_LOGO}'          => $uni['logo_url']      ?? '',
             '$LOGO_URL$'                 => $uni['logo_url']      ?? '',
+
+            // Sample Degree Image
+            '{SAMPLE_DEGREE_URL}'        => $sample_degree_url,
+            '{sample_degree_url}'        => $sample_degree_url,
+            '$SAMPLE_DEGREE_URL$'        => $sample_degree_url,
+            '$sample_degree_url$'        => $sample_degree_url,
+            '{SAMPLE_DEGREE_IMG}'        => $sample_degree_url,
+            '{sample_degree_img}'        => $sample_degree_url,
+            '$SAMPLE_DEGREE_IMG$'        => $sample_degree_url,
+            '$sample_degree_img$'        => $sample_degree_url,
+            '{SAMPLE_DEGREE}'            => $sample_degree_url,
+            '{sample_degree}'            => $sample_degree_url,
+            '$SAMPLE_DEGREE$'            => $sample_degree_url,
+            '$sample_degree$'            => $sample_degree_url,
+            'SAMPLE_DEGREE_URL'          => $sample_degree_url,
+            'SAMPLE_DEGREE_IMG'          => $sample_degree_url,
+            'SAMPLE_DEGREE'              => $sample_degree_url,
 
             // Dates
             '{ADMISSION_LAST_DATE}'      => $uni['admission_last_date']  ?? '',

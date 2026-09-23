@@ -695,4 +695,12 @@ if ( ! function_exists( 'sode_legal_popups_render' ) ) {
     function sode_legal_popups_render() { return ''; }
 }
 
+if ( ! function_exists( 'sode_sample_degree_render' ) ) {
+    /**
+     * @param array $atts
+     * @return string
+     */
+    function sode_sample_degree_render( $atts = array() ) { return ''; }
+}
+
 } // end namespace
