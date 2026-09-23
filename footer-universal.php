@@ -926,7 +926,7 @@ if (!function_exists('sode_footer_render')) {
                 font-size: 11px;
                 color: #fff;
                 line-height: 1.6;
-                max-width: 1035px;
+                max-width: 1040px;
                 margin: 0 auto 18px;
             }
 
