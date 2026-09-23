@@ -94,10 +94,6 @@ if (!function_exists('sode_client_replace_keys')) {
         if (!is_string($text) || empty($text))
             return $text;
 
-        // Quick bail — if none of the dollar signs or braces present
-        if (strpos($text, '$') === false && strpos($text, '{') === false)
-            return $text;
-
         $keys = sode_client_get_global_keys();
         if (empty($keys))
             return $text;
@@ -115,6 +111,7 @@ if (!function_exists('sode_client_replace_keys')) {
         foreach ($keys as $code => $val) {
             $val = (string) $val;
             $raw = trim($code, '$');
+            $raw = trim($raw, '{}');
 
             // All pattern variants — double curly first to avoid partial replace
             $patterns = [
@@ -129,8 +126,15 @@ if (!function_exists('sode_client_replace_keys')) {
                 '{' . strtolower($raw) . '}',
             ];
 
+            // Common URL / Menu bare keywords without braces or dollar signs
+            $upper_raw = strtoupper($raw);
+            if (in_array($upper_raw, ['UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI'])) {
+                $patterns[] = $upper_raw;
+                $patterns[] = strtolower($upper_raw);
+            }
+
             foreach ($patterns as $p) {
-                if (strpos($text, $p) !== false) {
+                if ($p !== '' && strpos($text, $p) !== false) {
                     $text = str_replace($p, $val, $text);
                 }
             }
@@ -168,6 +172,36 @@ add_filter('wpseo_opengraph_title', 'sode_client_replace_keys', 20);
 add_filter('acf/format_value', 'sode_client_replace_keys', 20);
 add_filter('do_shortcode_tag', 'sode_client_replace_keys', 20);
 
+// WordPress Navigation Menus (Header / Footer / Mobile Menu items & URLs)
+add_filter('wp_nav_menu_items', 'sode_client_replace_keys', 20);
+add_filter('wp_nav_menu', 'sode_client_replace_keys', 20);
+add_filter('nav_menu_item_title', 'sode_client_replace_keys', 20);
+
+add_filter('wp_get_nav_menu_items', function ($items) {
+    if (!empty($items) && is_array($items)) {
+        foreach ($items as &$item) {
+            if (isset($item->url) && is_string($item->url)) {
+                $item->url = sode_client_replace_keys($item->url);
+            }
+            if (isset($item->title) && is_string($item->title)) {
+                $item->title = sode_client_replace_keys($item->title);
+            }
+        }
+    }
+    return $items;
+}, 20);
+
+add_filter('nav_menu_link_attributes', function ($atts, $item, $args, $depth = 0) {
+    if (!empty($atts) && is_array($atts)) {
+        foreach ($atts as $k => $v) {
+            if (is_string($v)) {
+                $atts[$k] = sode_client_replace_keys($v);
+            }
+        }
+    }
+    return $atts;
+}, 20, 4);
+
 // ====================================================
 // 🔥 FULL PAGE OUTPUT BUFFER (PHP-level)
 // Runs when WP Rocket/Redis cache MISS (first visit).
@@ -179,11 +213,7 @@ add_action('template_redirect', function () {
             return $html;
 
         // Replace Dynamic Text Keys
-        if (strpos($html, '$') !== false || strpos($html, '{') !== false) {
-            $html = sode_client_replace_keys($html);
-        }
-
-        return $html;
+        return sode_client_replace_keys($html);
     });
 }, 0);
 
@@ -230,7 +260,8 @@ add_action('wp_head', function () {
                     // Build a flat map of ALL pattern variants → value
                     var replacements = {};
                     Object.entries(keys).forEach(function ([code, val]) {
-                        var raw = code.replace(/^\$|\$$/g, '');
+                        var raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '');
+                        var strVal = String(val);
                         [
                             code,
                             '$' + raw.toUpperCase() + '$',
@@ -241,7 +272,15 @@ add_action('wp_head', function () {
                             '{' + raw + '}',
                             '{' + raw.toUpperCase() + '}',
                             '{' + raw.toLowerCase() + '}',
-                        ].forEach(function (p) { replacements[p] = String(val); });
+                        ].forEach(function (p) {
+                            if (p) replacements[p] = strVal;
+                        });
+
+                        var upperRaw = raw.toUpperCase();
+                        if (['UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI'].indexOf(upperRaw) !== -1) {
+                            replacements[upperRaw] = strVal;
+                            replacements[upperRaw.toLowerCase()] = strVal;
+                        }
                     });
 
                     var patterns = Object.keys(replacements);

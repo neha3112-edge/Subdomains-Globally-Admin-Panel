@@ -139,20 +139,66 @@ if (!empty($uni_slug)) {
         $acc_titles = $acc_stmt->fetchAll(PDO::FETCH_COLUMN);
         $approvals_str = !empty($acc_titles) ? implode(', ', $acc_titles) : '';
 
+        $uni_short_raw   = $uni['short_name'] ?? '';
+        $uni_short_lower = strtolower($uni_short_raw);
+        $uni_slug_val    = strtolower($uni['slug'] ?? $uni_short_lower);
+
         $uni_keys = [
             // University Name
             '{UNIVERSITY_NAME}'          => $uni['full_name']  ?? '',
             '{university_name}'          => $uni['full_name']  ?? '',
             '$UNIVERSITY_NAME$'          => $uni['full_name']  ?? '',
+            '$university_name$'          => $uni['full_name']  ?? '',
+            'UNIVERSITY_NAME'            => $uni['full_name']  ?? '',
 
-            // Short Name
-            '{UNIVERSITY_SHORT_NAME}'    => $uni['short_name'] ?? '',
-            '{university_short_name}'    => $uni['short_name'] ?? '',
-            '$UNIVERSITY_SHORT_NAME$'    => $uni['short_name'] ?? '',
+            // Short Name (Lowercased by default for URLs / parameters / references)
+            '{UNIVERSITY_SHORT_NAME}'    => $uni_short_lower,
+            '{university_short_name}'    => $uni_short_lower,
+            '$UNIVERSITY_SHORT_NAME$'    => $uni_short_lower,
+            '$university_short_name$'    => $uni_short_lower,
+            'UNIVERSITY_SHORT_NAME'      => $uni_short_lower,
+            'university_short_name'      => $uni_short_lower,
+            '{UNI_SHORT_NAME}'           => $uni_short_lower,
+            '{uni_short_name}'           => $uni_short_lower,
+            '$UNI_SHORT_NAME$'           => $uni_short_lower,
+            '$uni_short_name$'           => $uni_short_lower,
+            'UNI_SHORT_NAME'             => $uni_short_lower,
+            'uni_short_name'             => $uni_short_lower,
+            '{UNI_SHORT}'                => $uni_short_lower,
+            '{uni_short}'                => $uni_short_lower,
+            '$UNI_SHORT$'                => $uni_short_lower,
+            '$uni_short$'                => $uni_short_lower,
+            'UNI_SHORT'                  => $uni_short_lower,
+            'uni_short'                  => $uni_short_lower,
+            '{UNI}'                      => $uni_short_lower,
+            '{uni}'                      => $uni_short_lower,
+            '$UNI$'                      => $uni_short_lower,
+            '$uni$'                      => $uni_short_lower,
+            'UNI'                        => $uni_short_lower,
 
-            // Slug
-            '{UNIVERSITY_SLUG}'          => $uni['slug']       ?? '',
-            '$UNIVERSITY_SLUG$'          => $uni['slug']       ?? '',
+            // Explicit Upper Case Short Name
+            '{UNIVERSITY_SHORT_NAME_UPPER}' => strtoupper($uni_short_raw),
+            '$UNIVERSITY_SHORT_NAME_UPPER$' => strtoupper($uni_short_raw),
+            '{UNI_UPPER}'                   => strtoupper($uni_short_raw),
+            '$UNI_UPPER$'                   => strtoupper($uni_short_raw),
+
+            // Slug (Lowercase)
+            '{UNIVERSITY_SLUG}'          => $uni_slug_val,
+            '{university_slug}'          => $uni_slug_val,
+            '$UNIVERSITY_SLUG$'          => $uni_slug_val,
+            '$university_slug$'          => $uni_slug_val,
+            'UNIVERSITY_SLUG'            => $uni_slug_val,
+            'university_slug'            => $uni_slug_val,
+            '{SLUG}'                     => $uni_slug_val,
+            '{slug}'                     => $uni_slug_val,
+            '$SLUG$'                     => $uni_slug_val,
+            '$slug$'                     => $uni_slug_val,
+            '{UNI_SLUG}'                 => $uni_slug_val,
+            '{uni_slug}'                 => $uni_slug_val,
+            '$UNI_SLUG$'                 => $uni_slug_val,
+            '$uni_slug$'                 => $uni_slug_val,
+            'UNI_SLUG'                   => $uni_slug_val,
+            'uni_slug'                   => $uni_slug_val,
 
             // Mode (Online / Distance / ODL)
             '{MODE}'                     => $uni['mode']       ?? '',
