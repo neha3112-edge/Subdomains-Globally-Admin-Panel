@@ -109,17 +109,26 @@ if (!function_exists('sode_client_replace_keys')) {
         }
 
         $pattern_map = [];
+        $safe_bare_keywords = [
+            'UNIVERSITY_SHORT_NAME_LOWER',
+            'UNIVERSITY_SHORT_NAME',
+            'UNIVERSITY_SLUG',
+            'UNI_SHORT_NAME_LOWER',
+            'UNI_SHORT_NAME',
+            'UNIVERSITY_NAME',
+            'UNI_SLUG'
+        ];
+
         foreach ($keys as $code => $val) {
             $val = (string) $val;
             $raw = trim($code, '$');
             $raw = trim($raw, '{}');
 
-            // All pattern variants
+            // Standard delimited variants (e.g. {KEY}, {{KEY}}, $KEY$)
             $variants = [
                 '{{' . $raw . '}}',
                 '{{' . strtoupper($raw) . '}}',
                 '{{' . strtolower($raw) . '}}',
-                $code,
                 '$' . strtoupper($raw) . '$',
                 '$' . strtolower($raw) . '$',
                 '{' . $raw . '}',
@@ -127,11 +136,15 @@ if (!function_exists('sode_client_replace_keys')) {
                 '{' . strtolower($raw) . '}',
             ];
 
-            // Common URL / Menu bare keywords without braces or dollar signs
+            // If $code already has delimiters ({...} or $...$), include it
+            if (strpos($code, '{') !== false || strpos($code, '$') !== false) {
+                $variants[] = $code;
+            }
+
+            // ONLY specific full multi-word uppercase identifiers are allowed without delimiters
             $upper_raw = strtoupper($raw);
-            if (in_array($upper_raw, ['UNIVERSITY_SHORT_NAME_LOWER', 'UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME_LOWER', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI_LOWER', 'UNI'])) {
+            if (in_array($upper_raw, $safe_bare_keywords, true)) {
                 $variants[] = $upper_raw;
-                $variants[] = strtolower($upper_raw);
             }
 
             foreach ($variants as $p) {
@@ -271,11 +284,20 @@ add_action('wp_head', function () {
 
                     // Build a flat map of ALL pattern variants → value
                     var replacements = {};
+                    var safeBareKeywords = [
+                        'UNIVERSITY_SHORT_NAME_LOWER',
+                        'UNIVERSITY_SHORT_NAME',
+                        'UNIVERSITY_SLUG',
+                        'UNI_SHORT_NAME_LOWER',
+                        'UNI_SHORT_NAME',
+                        'UNIVERSITY_NAME',
+                        'UNI_SLUG'
+                    ];
+
                     Object.entries(keys).forEach(function ([code, val]) {
                         var raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '');
                         var strVal = String(val);
                         [
-                            code,
                             '$' + raw.toUpperCase() + '$',
                             '$' + raw.toLowerCase() + '$',
                             '{{' + raw + '}}',
@@ -288,10 +310,13 @@ add_action('wp_head', function () {
                             if (p) replacements[p] = strVal;
                         });
 
+                        if (code.indexOf('{') !== -1 || code.indexOf('$') !== -1) {
+                            replacements[code] = strVal;
+                        }
+
                         var upperRaw = raw.toUpperCase();
-                        if (['UNIVERSITY_SHORT_NAME_LOWER', 'UNIVERSITY_SHORT_NAME', 'UNIVERSITY_SLUG', 'UNI_SHORT_NAME_LOWER', 'UNI_SHORT_NAME', 'UNIVERSITY_NAME', 'UNI_SLUG', 'UNI_SHORT', 'UNI_LOWER', 'UNI'].indexOf(upperRaw) !== -1) {
+                        if (safeBareKeywords.indexOf(upperRaw) !== -1) {
                             replacements[upperRaw] = strVal;
-                            replacements[upperRaw.toLowerCase()] = strVal;
                         }
                     });
 
