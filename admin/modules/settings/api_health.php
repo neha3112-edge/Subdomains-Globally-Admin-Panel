@@ -121,24 +121,43 @@ require_once ADMIN_PATH . '/includes/header.php';
     transform: translateY(0);
 }
 
+/* Premium Enhanced Search Box */
 .search-box {
     position: relative;
-    min-width: 300px;
+    width: 380px;
+    max-width: 100%;
+}
+.search-box-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+.search-box-inner:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+}
+.search-box-inner.focused {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), 0 4px 16px rgba(0,0,0,0.12);
 }
 .search-box input {
     width: 100%;
-    padding: 9px 12px 9px 38px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-sidebar);
+    padding: 10px 42px 10px 38px;
+    border: none;
+    background: transparent;
     color: var(--text-main);
-    font-size: 13px;
+    font-size: 13.5px;
+    font-weight: 500;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
 }
-.search-box input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+.search-box input::placeholder {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 400;
 }
 .search-box .search-icon-svg {
     position: absolute;
@@ -149,6 +168,48 @@ require_once ADMIN_PATH . '/includes/header.php';
     pointer-events: none;
     display: flex;
     align-items: center;
+    transition: color 0.2s;
+}
+.search-box-inner.focused .search-icon-svg {
+    color: var(--primary);
+}
+.search-clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: var(--text-dim);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.15s;
+}
+.search-clear-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+.search-kbd-badge {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-dim);
+    pointer-events: none;
+    font-family: inherit;
+    letter-spacing: 0.03em;
 }
 
 /* Category Filter Tabs */
@@ -544,15 +605,17 @@ require_once ADMIN_PATH . '/includes/header.php';
         </div>
         <div class="toolbar-right">
             <div class="search-box">
-                <span class="search-icon-svg">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </span>
-                <input type="text" id="api-search-input" placeholder="Filter endpoints, routes, methods..." oninput="filterApiList()">
+                <div class="search-box-inner" id="search-box-inner">
+                    <span class="search-icon-svg">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </span>
+                    <input type="text" id="api-search-input" placeholder="Search endpoints, routes, methods..." oninput="handleSearchInput(this)" onfocus="onSearchFocus()" onblur="onSearchBlur()">
+                    <button type="button" class="search-clear-btn" id="search-clear-btn" onclick="clearSearchInput()" title="Clear search">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <kbd class="search-kbd-badge" id="search-kbd">Ctrl K</kbd>
+                </div>
             </div>
-            <a href="<?= BASE_URL ?>/modules/settings/integrations.php" class="btn btn-outline-secondary" style="font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                <span>Configure Keys</span>
-            </a>
         </div>
     </div>
 
@@ -696,6 +759,53 @@ function updateSummary(summary, checkedAt) {
         document.getElementById('last-checked-label').textContent = 'Last checked: ' + d.toLocaleTimeString();
     }
 }
+
+function handleSearchInput(input) {
+    const clearBtn = document.getElementById('search-clear-btn');
+    const kbd = document.getElementById('search-kbd');
+    if (input.value.trim().length > 0) {
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+        if (kbd) kbd.style.display = 'none';
+    } else {
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (kbd) kbd.style.display = 'inline-block';
+    }
+    renderApiRows();
+}
+
+function clearSearchInput() {
+    const input = document.getElementById('api-search-input');
+    if (input) {
+        input.value = '';
+        handleSearchInput(input);
+        input.focus();
+    }
+}
+
+function onSearchFocus() {
+    const box = document.getElementById('search-box-inner');
+    if (box) box.classList.add('focused');
+}
+
+function onSearchBlur() {
+    const box = document.getElementById('search-box-inner');
+    if (box) box.classList.remove('focused');
+}
+
+// Global keyboard shortcut Ctrl+K to search, Esc to clear
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const input = document.getElementById('api-search-input');
+        if (input) input.focus();
+    } else if (e.key === 'Escape') {
+        const input = document.getElementById('api-search-input');
+        if (input && document.activeElement === input) {
+            clearSearchInput();
+            input.blur();
+        }
+    }
+});
 
 function filterApiList() {
     renderApiRows();
