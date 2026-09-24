@@ -643,7 +643,7 @@ require_once ADMIN_PATH . '/includes/header.php';
         </button>
     </div>
 
-    <!-- Full Width API List Table Card -->
+    <!-- Full Width API List Table Card with Integrated Pagination -->
     <div class="api-list-card">
         <div class="table-responsive">
             <table class="api-table" id="api-table">
@@ -670,6 +670,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                 </tbody>
             </table>
         </div>
+
+        <!-- Integrated Pagination Footer Bar -->
+        <div id="pagination-container"></div>
     </div>
 
 </div>
@@ -684,6 +687,8 @@ require_once ADMIN_PATH . '/includes/header.php';
 let allApiData = [];
 let currentCategory = 'all';
 let autoRefreshTimer = null;
+let currentPage = 1;
+let perPage = 10;
 
 // Clean Inline SVG Helpers for reliable rendering
 const SVGS = {
@@ -699,6 +704,7 @@ const SVGS = {
 
 function setCategoryFilter(category, btnElement) {
     currentCategory = category;
+    currentPage = 1;
     document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
     if (btnElement) btnElement.classList.add('active');
     renderApiRows();
@@ -770,6 +776,7 @@ function handleSearchInput(input) {
         if (clearBtn) clearBtn.style.display = 'none';
         if (kbd) kbd.style.display = 'inline-block';
     }
+    currentPage = 1;
     renderApiRows();
 }
 
@@ -808,15 +815,33 @@ document.addEventListener('keydown', (e) => {
 });
 
 function filterApiList() {
+    currentPage = 1;
+    renderApiRows();
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderApiRows();
+    const tableEl = document.getElementById('api-table');
+    if (tableEl) {
+        tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function changePerPage(val) {
+    perPage = parseInt(val);
+    currentPage = 1;
     renderApiRows();
 }
 
 function renderApiRows() {
     const tbody = document.getElementById('api-list-body');
+    const pagContainer = document.getElementById('pagination-container');
     const searchVal = (document.getElementById('api-search-input').value || '').toLowerCase().trim();
 
     if (!allApiData || allApiData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:35px; color:var(--text-dim);">No endpoints found.</td></tr>`;
+        if (pagContainer) pagContainer.innerHTML = '';
         return;
     }
 
@@ -836,13 +861,32 @@ function renderApiRows() {
         return true;
     });
 
-    if (filtered.length === 0) {
+    const totalFiltered = filtered.length;
+
+    if (totalFiltered === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-dim);"><div style="margin-bottom:6px;">No matching endpoints found for current filter.</div></td></tr>`;
+        if (pagContainer) pagContainer.innerHTML = '';
         return;
     }
 
+    // Pagination calculations
+    let currentItems = filtered;
+    let totalPages = 1;
+    let startIdx = 0;
+    let endIdx = totalFiltered;
+
+    if (perPage > 0) {
+        totalPages = Math.max(1, Math.ceil(totalFiltered / perPage));
+        currentPage = Math.max(1, Math.min(currentPage, totalPages));
+        startIdx = (currentPage - 1) * perPage;
+        endIdx = Math.min(startIdx + perPage, totalFiltered);
+        currentItems = filtered.slice(startIdx, endIdx);
+    } else {
+        currentPage = 1;
+    }
+
     let html = '';
-    filtered.forEach((api, idx) => {
+    currentItems.forEach((api, idx) => {
         const rowId = 'api-row-' + idx;
         const drawerId = 'drawer-' + idx;
 
@@ -960,6 +1004,88 @@ function renderApiRows() {
     });
 
     tbody.innerHTML = html;
+
+    // Render Pagination Bar
+    renderPaginationFooter(totalFiltered, startIdx, endIdx, totalPages);
+}
+
+function renderPaginationFooter(totalFiltered, startIdx, endIdx, totalPages) {
+    const pagContainer = document.getElementById('pagination-container');
+    if (!pagContainer) return;
+
+    if (totalFiltered === 0) {
+        pagContainer.innerHTML = '';
+        return;
+    }
+
+    const showingText = perPage > 0 
+        ? `Showing <strong>${startIdx + 1}</strong> to <strong>${endIdx}</strong> of <strong>${totalFiltered}</strong> endpoints`
+        : `Showing all <strong>${totalFiltered}</strong> endpoints`;
+
+    // Calculate Page Numbers to show
+    let pages = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        if (currentPage <= 4) {
+            pages = [1, 2, 3, 4, 5, '...', totalPages];
+        } else if (currentPage >= totalPages - 3) {
+            pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        } else {
+            pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+        }
+    }
+
+    let pageButtonsHtml = '';
+    
+    // Prev Button
+    if (currentPage > 1) {
+        pageButtonsHtml += `<button type="button" class="sode-page-link sode-page-nav" onclick="goToPage(${currentPage - 1})" title="Previous Page">&lt;</button>`;
+    } else {
+        pageButtonsHtml += `<span class="sode-page-link sode-page-nav disabled">&lt;</span>`;
+    }
+
+    // Page Numbers
+    pages.forEach(p => {
+        if (p === '...') {
+            pageButtonsHtml += `<span class="sode-page-ellipsis">&hellip;</span>`;
+        } else if (p === currentPage) {
+            pageButtonsHtml += `<span class="sode-page-link active">${p}</span>`;
+        } else {
+            pageButtonsHtml += `<button type="button" class="sode-page-link" onclick="goToPage(${p})">${p}</button>`;
+        }
+    });
+
+    // Next Button
+    if (currentPage < totalPages) {
+        pageButtonsHtml += `<button type="button" class="sode-page-link sode-page-nav" onclick="goToPage(${currentPage + 1})" title="Next Page">&gt;</button>`;
+    } else {
+        pageButtonsHtml += `<span class="sode-page-link sode-page-nav disabled">&gt;</span>`;
+    }
+
+    // Per Page Options
+    const perPageOptions = [10, 15, 25, 50];
+    let optionsHtml = '';
+    perPageOptions.forEach(cnt => {
+        optionsHtml += `<option value="${cnt}" ${perPage === cnt ? 'selected' : ''}>${cnt} / page</option>`;
+    });
+    optionsHtml += `<option value="-1" ${perPage === -1 ? 'selected' : ''}>All</option>`;
+
+    pagContainer.innerHTML = `
+        <div class="sode-pagination-bar">
+            <div class="sode-pagination-left">
+                <span class="sode-pagination-total">${showingText}</span>
+            </div>
+            <div class="sode-pagination-right">
+                ${pageButtonsHtml}
+                <div class="sode-per-page-wrap">
+                    <select class="sode-per-page-select" onchange="changePerPage(this.value)" title="Endpoints per page">
+                        ${optionsHtml}
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function toggleDrawer(drawerId, rowId) {
