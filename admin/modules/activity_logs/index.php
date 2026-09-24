@@ -26,8 +26,8 @@ $page            = max(1, (int)($_GET['p'] ?? 1));
 $per_page        = 25;
 $offset          = ($page - 1) * $per_page;
 
-// Build WHERE query
-$where = [];
+// Build WHERE query - Exclude LOGIN and LOGOUT as they have their own dedicated User Logins section
+$where = ["action_type NOT IN ('LOGIN', 'LOGOUT')"];
 $params = [];
 
 if ($user_id_filter > 0) {
@@ -36,7 +36,7 @@ if ($user_id_filter > 0) {
 }
 if (!empty($action_filter) && $action_filter !== 'all') {
     if ($action_filter === 'AUTH') {
-        $where[] = "action_type IN ('LOGIN', 'LOGOUT', 'PASSWORD_CHANGE')";
+        $where[] = "action_type = 'PASSWORD_CHANGE'";
     } else {
         $where[] = "action_type = :action_type";
         $params[':action_type'] = strtoupper($action_filter);
@@ -88,15 +88,15 @@ $data_stmt->execute();
 $logs = $data_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Metrics Overview
-$total_all_logs = (int)$db->query("SELECT COUNT(*) FROM activity_logs")->fetchColumn();
-$today_logs = (int)$db->query("SELECT COUNT(*) FROM activity_logs WHERE created_at >= CURDATE()")->fetchColumn();
+$total_all_logs = (int)$db->query("SELECT COUNT(*) FROM activity_logs WHERE action_type NOT IN ('LOGIN', 'LOGOUT')")->fetchColumn();
+$today_logs = (int)$db->query("SELECT COUNT(*) FROM activity_logs WHERE action_type NOT IN ('LOGIN', 'LOGOUT') AND created_at >= CURDATE()")->fetchColumn();
 $today_creates = (int)$db->query("SELECT COUNT(*) FROM activity_logs WHERE action_type IN ('CREATE', 'RESTORE') AND created_at >= CURDATE()")->fetchColumn();
 $today_updates = (int)$db->query("SELECT COUNT(*) FROM activity_logs WHERE action_type = 'UPDATE' AND created_at >= CURDATE()")->fetchColumn();
 $today_deletes = (int)$db->query("SELECT COUNT(*) FROM activity_logs WHERE action_type IN ('DELETE', 'PURGE') AND created_at >= CURDATE()")->fetchColumn();
 
 // Fetch distinct users & modules for filters
 $all_users = $db->query("SELECT id, name, email, username FROM users ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
-$all_modules = $db->query("SELECT DISTINCT module_key FROM activity_logs ORDER BY module_key ASC")->fetchAll(PDO::FETCH_COLUMN);
+$all_modules = $db->query("SELECT DISTINCT module_key FROM activity_logs WHERE action_type NOT IN ('LOGIN', 'LOGOUT') ORDER BY module_key ASC")->fetchAll(PDO::FETCH_COLUMN);
 
 // Helper for action badge colors in Dark Theme
 function get_action_badge_style($action) {
@@ -109,9 +109,6 @@ function get_action_badge_style($action) {
         case 'DELETE':
         case 'PURGE':
             return ['bg' => 'rgba(239, 68, 68, 0.15)', 'color' => '#f87171', 'border' => 'rgba(239, 68, 68, 0.35)'];
-        case 'LOGIN':
-        case 'LOGOUT':
-            return ['bg' => 'rgba(168, 85, 247, 0.15)', 'color' => '#c084fc', 'border' => 'rgba(168, 85, 247, 0.35)'];
         case 'STATUS_CHANGE':
             return ['bg' => 'rgba(245, 158, 11, 0.15)', 'color' => '#fbbf24', 'border' => 'rgba(245, 158, 11, 0.35)'];
         case 'PASSWORD_CHANGE':
@@ -236,8 +233,8 @@ require_once ADMIN_PATH . '/includes/header.php';
     <a href="?<?php echo http_build_query(array_merge($_GET, ['action_type' => 'RESTORE', 'p' => 1])); ?>" class="sc-filter-btn <?php echo $action_filter === 'RESTORE' ? 'active' : ''; ?>">
         ♻️ Restores
     </a>
-    <a href="?<?php echo http_build_query(array_merge($_GET, ['action_type' => 'AUTH', 'p' => 1])); ?>" class="sc-filter-btn <?php echo $action_filter === 'AUTH' ? 'active' : ''; ?>">
-        🔐 Auth & Logins
+    <a href="?<?php echo http_build_query(array_merge($_GET, ['action_type' => 'PASSWORD_CHANGE', 'p' => 1])); ?>" class="sc-filter-btn <?php echo $action_filter === 'PASSWORD_CHANGE' ? 'active' : ''; ?>">
+        🔑 Passwords & Security
     </a>
 </div>
 
@@ -283,8 +280,6 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <option value="DELETE" <?php echo $action_filter === 'DELETE' ? 'selected' : ''; ?>>DELETE (Trash)</option>
                     <option value="RESTORE" <?php echo $action_filter === 'RESTORE' ? 'selected' : ''; ?>>RESTORE (Recovered)</option>
                     <option value="PURGE" <?php echo $action_filter === 'PURGE' ? 'selected' : ''; ?>>PURGE (Permanent)</option>
-                    <option value="LOGIN" <?php echo $action_filter === 'LOGIN' ? 'selected' : ''; ?>>LOGIN (Auth)</option>
-                    <option value="LOGOUT" <?php echo $action_filter === 'LOGOUT' ? 'selected' : ''; ?>>LOGOUT</option>
                     <option value="STATUS_CHANGE" <?php echo $action_filter === 'STATUS_CHANGE' ? 'selected' : ''; ?>>STATUS_CHANGE</option>
                     <option value="PASSWORD_CHANGE" <?php echo $action_filter === 'PASSWORD_CHANGE' ? 'selected' : ''; ?>>PASSWORD_CHANGE</option>
                 </select>

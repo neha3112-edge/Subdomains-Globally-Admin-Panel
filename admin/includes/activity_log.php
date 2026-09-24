@@ -106,6 +106,11 @@ function get_client_ip_address() {
  * @return bool
  */
 function log_activity($action_type, $module_key, $description, array $options = []) {
+    // Login and Logout events are managed exclusively in the dedicated User Logins (login_logs) system
+    if (in_array(strtoupper($action_type), ['LOGIN', 'LOGOUT'])) {
+        return true;
+    }
+
     try {
         $db = get_db_connection();
         sode_ensure_activity_log_system($db);

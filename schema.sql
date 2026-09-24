@@ -489,6 +489,35 @@ VALUES
 ('Other', 'OTHER', 'Other', 99, 1)
 ON DUPLICATE KEY UPDATE `form_key`=VALUES(`form_key`);
 
+-- --------------------------------------------------------
+-- Table structure for table `login_logs` (Dedicated User Login Audit Log)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `login_logs` (
+  `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT UNSIGNED NULL DEFAULT NULL,
+  `attempted_identifier` VARCHAR(191) NOT NULL,
+  `user_name` VARCHAR(150) NULL DEFAULT NULL,
+  `user_email` VARCHAR(191) NULL DEFAULT NULL,
+  `role_name` VARCHAR(100) NULL DEFAULT NULL,
+  `team_name` VARCHAR(100) NULL DEFAULT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
+  `failure_reason` VARCHAR(255) NULL DEFAULT NULL,
+  `ip_address` VARCHAR(45) NULL DEFAULT NULL,
+  `user_agent` VARCHAR(255) NULL DEFAULT NULL,
+  `browser` VARCHAR(50) NULL DEFAULT NULL,
+  `platform` VARCHAR(50) NULL DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_login_user_id` (`user_id`),
+  INDEX `idx_login_status` (`status`),
+  INDEX `idx_login_identifier` (`attempted_identifier`),
+  INDEX `idx_login_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Register User Logins in Sidebar Items
+INSERT INTO `sidebar_items` (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
+SELECT 'User Logins', 'modules/login_logs/index.php', 97, 'login_logs', 'login_logs', 'SYSTEM', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>', 0, 1
+WHERE NOT EXISTS (SELECT 1 FROM `sidebar_items` WHERE `page_route` = 'modules/login_logs/index.php' OR `active_page_key` = 'login_logs');
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 

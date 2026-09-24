@@ -44,14 +44,23 @@ function attempt_login($identifier, $password) {
     $user = $stmt->fetch();
 
     if (!$user) {
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($identifier, 'FAILED', 'User Not Found (Unknown username/email)');
+        }
         return ['success' => false, 'message' => 'Invalid email/username or password.'];
     }
 
     if (!$user['is_active']) {
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($identifier, 'FAILED', 'Account Deactivated', $user);
+        }
         return ['success' => false, 'message' => 'Your account is deactivated. Please contact Superadmin.'];
     }
 
     if (!password_verify($password, $user['password_hash'])) {
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($identifier, 'FAILED', 'Invalid Password', $user);
+        }
         return ['success' => false, 'message' => 'Invalid email/username or password.'];
     }
 
@@ -66,25 +75,28 @@ function attempt_login($identifier, $password) {
     $_SESSION['user_team_name']= $user['team_name'] ?? 'General';
     $_SESSION['is_superadmin'] = (bool)$user['is_superadmin'];
 
-    // Log Activity
-    if (function_exists('log_activity')) {
-        log_activity('LOGIN', 'auth', "User {$user['name']} logged in successfully.", [
-            'item_type' => 'User',
-            'item_id' => $user['id'],
-            'item_title' => $user['name']
-        ]);
+    // Log Successful Login to Dedicated Login Logs
+    if (function_exists('log_login_attempt')) {
+        log_login_attempt($identifier, 'SUCCESS', 'Login Successful', $user);
     }
 
     return ['success' => true];
 }
 
 function logout_user() {
-    if (function_exists('log_activity') && !empty($_SESSION['user_id'])) {
-        log_activity('LOGOUT', 'auth', "User " . ($_SESSION['user_name'] ?? 'Admin') . " logged out.", [
-            'item_type' => 'User',
-            'item_id' => $_SESSION['user_id'],
-            'item_title' => $_SESSION['user_name'] ?? 'Admin'
-        ]);
+    if (function_exists('log_login_attempt') && !empty($_SESSION['user_id'])) {
+        log_login_attempt(
+            $_SESSION['user_email'] ?? ($_SESSION['user_username'] ?? 'User'),
+            'SUCCESS',
+            'User Logged Out',
+            [
+                'id'        => $_SESSION['user_id'] ?? null,
+                'name'      => $_SESSION['user_name'] ?? null,
+                'email'     => $_SESSION['user_email'] ?? null,
+                'role_name' => $_SESSION['user_role_name'] ?? null,
+                'team_name' => $_SESSION['user_team_name'] ?? null
+            ]
+        );
     }
 
     $_SESSION = [];
