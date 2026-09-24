@@ -25,6 +25,29 @@ $brevo_api_url        = $rows['brevo_api_url']          ?? 'https://api.brevo.co
 $brevo_api_key        = $rows['brevo_api_key']          ?? '';
 $gallabox_webhook_url = $rows['gallabox_webhook_url']   ?? '';
 
+// Safe URL calculations for Admin vs Root Public APIs
+$parsed_base   = parse_url(BASE_URL);
+$scheme        = $parsed_base['scheme'] ?? 'http';
+$host          = $parsed_base['host'] ?? 'localhost';
+$port          = !empty($parsed_base['port']) ? ':' . $parsed_base['port'] : '';
+$path          = $parsed_base['path'] ?? '';
+$admin_base_url= rtrim(BASE_URL, '/');
+$root_path     = rtrim(preg_replace('/\/admin(\/.*)?$/i', '', $path), '/');
+$root_base_url = $scheme . '://' . $host . $port . $root_path;
+
+function get_api_test_query($filename) {
+    if (strpos($filename, 'course') !== false && (strpos($filename, 'uni') !== false || strpos($filename, 'fees') !== false)) {
+        return '?uni=test&course=test';
+    } elseif (strpos($filename, 'uni') !== false || strpos($filename, 'banner') !== false || strpos($filename, 'table') !== false) {
+        return '?uni=test';
+    } elseif (strpos($filename, 'course') !== false) {
+        return '?course=test';
+    } elseif ($filename === 'render_component.php') {
+        return '?component=header';
+    }
+    return '';
+}
+
 $endpoints_to_check = [];
 
 // 1. Third-Party Integration: SODE CRM API
@@ -91,7 +114,7 @@ if (is_dir($admin_api_dir)) {
             $clean_name .= ' API';
         }
 
-        // Friendly description
+        // Extract docstring if present
         $desc = "Admin REST Feed: " . $filename;
         $file_content = file_get_contents($file_path, false, null, 0, 400);
         if (preg_match('/\/\*\*\s*\n\s*\*\s*([^\n\*]+)/', $file_content, $m)) {
@@ -99,10 +122,7 @@ if (is_dir($admin_api_dir)) {
         }
 
         $method = (strpos($filename, 'upload') !== false || strpos($filename, 'delete') !== false) ? 'POST' : 'GET';
-        $test_query = '';
-        if ($filename === 'get_course_data.php') $test_query = '?uni=test&course=test';
-        elseif ($filename === 'get_university_banner.php') $test_query = '?uni=test';
-        elseif ($filename === 'get_course_fees.php') $test_query = '?uni=test&course=test';
+        $test_query = get_api_test_query($filename);
 
         $endpoints_to_check[] = [
             'id'          => 'admin_' . str_replace('.php', '', $filename),
@@ -111,7 +131,7 @@ if (is_dir($admin_api_dir)) {
             'type'        => 'internal_admin',
             'category'    => 'Admin REST (/admin/api)',
             'file_name'   => 'admin/api/' . $filename,
-            'url'         => BASE_URL . '/api/' . $filename . $test_query,
+            'url'         => $admin_base_url . '/api/' . $filename . $test_query,
             'method'      => $method,
             'headers'     => [],
             'body'        => null,
@@ -125,7 +145,6 @@ $root_api_dir = dirname(__DIR__, 2) . '/api';
 if (is_dir($root_api_dir)) {
     $root_files = glob($root_api_dir . '/*.php');
     sort($root_files);
-    $root_base_url = rtrim(preg_replace('/\/admin.*$/i', '', BASE_URL), '/');
 
     foreach ($root_files as $file_path) {
         $filename = basename($file_path);
@@ -133,9 +152,7 @@ if (is_dir($root_api_dir)) {
         $clean_name = ucwords(str_replace('_', ' ', $slug)) . ' (Public)';
 
         $desc = "Universal Subdomain Feed: /api/" . $filename;
-        $test_query = '';
-        if ($filename === 'get_course_data.php') $test_query = '?uni=test&course=test';
-        elseif ($filename === 'get_university_banner.php') $test_query = '?uni=test';
+        $test_query = get_api_test_query($filename);
 
         $endpoints_to_check[] = [
             'id'          => 'root_' . str_replace('.php', '', $filename),
@@ -305,4 +322,3 @@ echo json_encode([
     ],
     'apis'       => $results,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
