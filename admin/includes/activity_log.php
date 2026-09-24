@@ -48,7 +48,6 @@ function log_activity($action_type, $module_key, $description, array $options = 
 
     try {
         $db = get_db_connection();
-        sode_ensure_activity_log_system($db);
 
         $current_user = function_exists('get_logged_in_user') ? get_logged_in_user() : null;
 
@@ -159,7 +158,6 @@ function sode_prune_activity_logs(PDO $db, int $keep_limit = 100): int {
 function get_recent_activities($limit = 10, array $filters = []) {
     try {
         $db = get_db_connection();
-        sode_ensure_activity_log_system($db);
 
         $where = [];
         $params = [];

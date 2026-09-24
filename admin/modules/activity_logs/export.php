@@ -4,7 +4,6 @@ require_login();
 require_permission('activity_logs');
 
 $db = get_db_connection();
-sode_ensure_activity_log_system($db);
 
 // Fetch filter parameters
 $user_id_filter  = !empty($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
