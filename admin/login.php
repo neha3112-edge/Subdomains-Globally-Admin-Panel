@@ -384,12 +384,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 updateLocationUI('success', 'Location Access Granted', `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)} (±${acc}m accuracy)`, false);
 
-                // Optional: fast reverse geocode for human readable city/state/country
+                // Fast reverse geocode for human readable city/state/country in English
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 2500);
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12`, {
-                        signal: controller.signal
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1&accept-language=en`, {
+                        signal: controller.signal,
+                        headers: {
+                            'Accept-Language': 'en-US,en;q=0.9'
+                        }
                     });
                     clearTimeout(timeoutId);
                     if (res.ok) {
@@ -397,11 +400,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if (data && data.display_name) {
                             const addrParts = [];
                             if (data.address) {
-                                if (data.address.city || data.address.town || data.address.village || data.address.suburb) {
-                                    addrParts.push(data.address.city || data.address.town || data.address.village || data.address.suburb);
-                                }
-                                if (data.address.state) addrParts.push(data.address.state);
-                                if (data.address.country) addrParts.push(data.address.country);
+                                const city = data.address.city || data.address.town || data.address.village || data.address.suburb || data.address.city_district;
+                                const state = data.address.state;
+                                const country = data.address.country;
+                                if (city) addrParts.push(city);
+                                if (state) addrParts.push(state);
+                                if (country) addrParts.push(country);
                             }
                             const cleanAddr = addrParts.length > 0 ? addrParts.join(', ') : data.display_name.split(',').slice(0, 3).join(', ');
                             document.getElementById('loc_address').value = cleanAddr;
