@@ -30,7 +30,7 @@ function require_login() {
     }
 }
 
-function attempt_login($identifier, $password) {
+function attempt_login($identifier, $password, $location_data = []) {
     $db = get_db_connection();
     $stmt = $db->prepare("
         SELECT u.*, r.name AS role_name, t.name AS team_name 
@@ -45,21 +45,21 @@ function attempt_login($identifier, $password) {
 
     if (!$user) {
         if (function_exists('log_login_attempt')) {
-            log_login_attempt($identifier, 'FAILED', 'User Not Found (Unknown username/email)');
+            log_login_attempt($identifier, 'FAILED', 'User Not Found (Unknown username/email)', null, null, $location_data);
         }
         return ['success' => false, 'message' => 'Invalid email/username or password.'];
     }
 
     if (!$user['is_active']) {
         if (function_exists('log_login_attempt')) {
-            log_login_attempt($identifier, 'FAILED', 'Account Deactivated', $user);
+            log_login_attempt($identifier, 'FAILED', 'Account Deactivated', $user, null, $location_data);
         }
         return ['success' => false, 'message' => 'Your account is deactivated. Please contact Superadmin.'];
     }
 
     if (!password_verify($password, $user['password_hash'])) {
         if (function_exists('log_login_attempt')) {
-            log_login_attempt($identifier, 'FAILED', 'Invalid Password', $user);
+            log_login_attempt($identifier, 'FAILED', 'Invalid Password', $user, null, $location_data);
         }
         return ['success' => false, 'message' => 'Invalid email/username or password.'];
     }
@@ -75,9 +75,20 @@ function attempt_login($identifier, $password) {
     $_SESSION['user_team_name']= $user['team_name'] ?? 'General';
     $_SESSION['is_superadmin'] = (bool)$user['is_superadmin'];
 
+    // Store location in session
+    $lat = $location_data['latitude'] ?? $_POST['latitude'] ?? null;
+    $lng = $location_data['longitude'] ?? $_POST['longitude'] ?? null;
+    $addr = $location_data['location_address'] ?? $_POST['location_address'] ?? null;
+    $acc = $location_data['location_accuracy'] ?? $_POST['location_accuracy'] ?? null;
+
+    if ($lat) $_SESSION['user_latitude'] = $lat;
+    if ($lng) $_SESSION['user_longitude'] = $lng;
+    if ($addr) $_SESSION['user_location_address'] = $addr;
+    if ($acc) $_SESSION['user_location_accuracy'] = $acc;
+
     // Log Successful Login to Dedicated Login Logs
     if (function_exists('log_login_attempt')) {
-        log_login_attempt($identifier, 'SUCCESS', 'Login Successful', $user);
+        log_login_attempt($identifier, 'SUCCESS', 'Login Successful', $user, null, $location_data);
     }
 
     return ['success' => true];

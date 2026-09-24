@@ -9,7 +9,7 @@ require_once __DIR__ . '/env.php';
 if (!defined('DB_HOST'))
     define('DB_HOST', sode_env('DB_HOST', 'localhost'));
 if (!defined('DB_PORT'))
-    define('DB_PORT', (int)sode_env('DB_PORT', 3306));
+    define('DB_PORT', (int) sode_env('DB_PORT', 3306));
 if (!defined('DB_NAME'))
     define('DB_NAME', sode_env('DB_NAME', 'admin_glob_db'));
 if (!defined('DB_USER'))
@@ -35,7 +35,7 @@ function get_db_connection()
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-        
+
         return $pdo;
     } catch (PDOException $e) {
         // Show exact error message to debug localhost

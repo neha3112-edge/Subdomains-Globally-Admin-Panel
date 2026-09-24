@@ -28,6 +28,10 @@ function sode_ensure_login_log_system($db = null) {
               `user_agent` VARCHAR(255) NULL DEFAULT NULL,
               `browser` VARCHAR(100) NULL DEFAULT NULL,
               `platform` VARCHAR(100) NULL DEFAULT NULL,
+              `latitude` VARCHAR(50) NULL DEFAULT NULL,
+              `longitude` VARCHAR(50) NULL DEFAULT NULL,
+              `location_address` VARCHAR(255) NULL DEFAULT NULL,
+              `location_accuracy` VARCHAR(50) NULL DEFAULT NULL,
               `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
               INDEX `idx_user_id` (`user_id`),
               INDEX `idx_status` (`status`),
@@ -35,6 +39,21 @@ function sode_ensure_login_log_system($db = null) {
               INDEX `idx_ip_address` (`ip_address`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
+
+        // Ensure columns exist in already created tables
+        $existing_cols = $db->query("SHOW COLUMNS FROM `login_logs`")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('latitude', $existing_cols)) {
+            $db->exec("ALTER TABLE `login_logs` ADD COLUMN `latitude` VARCHAR(50) NULL DEFAULT NULL AFTER `platform`");
+        }
+        if (!in_array('longitude', $existing_cols)) {
+            $db->exec("ALTER TABLE `login_logs` ADD COLUMN `longitude` VARCHAR(50) NULL DEFAULT NULL AFTER `latitude`");
+        }
+        if (!in_array('location_address', $existing_cols)) {
+            $db->exec("ALTER TABLE `login_logs` ADD COLUMN `location_address` VARCHAR(255) NULL DEFAULT NULL AFTER `longitude`");
+        }
+        if (!in_array('location_accuracy', $existing_cols)) {
+            $db->exec("ALTER TABLE `login_logs` ADD COLUMN `location_accuracy` VARCHAR(50) NULL DEFAULT NULL AFTER `location_address`");
+        }
     } catch (Exception $e) {
         error_log("Failed to ensure login_logs table: " . $e->getMessage());
     }
@@ -131,7 +150,7 @@ if (!function_exists('sode_detect_browser_platform')) {
  * @param PDO|null    $db         Database connection
  * @return bool
  */
-function log_login_attempt($identifier, $status = 'FAILED', $reason = null, $user = null, $db = null) {
+function log_login_attempt($identifier, $status = 'FAILED', $reason = null, $user = null, $db = null, $location_data = null) {
     if (!$db) {
         $db = get_db_connection();
     }
@@ -175,11 +194,22 @@ function log_login_attempt($identifier, $status = 'FAILED', $reason = null, $use
         $ua = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255);
         $device = sode_detect_browser_platform($ua);
 
+        // Location data extraction (from parameter, POST, or session)
+        $latitude = !empty($location_data['latitude']) ? $location_data['latitude'] : (!empty($_POST['latitude']) ? trim((string)$_POST['latitude']) : (!empty($_SESSION['user_latitude']) ? $_SESSION['user_latitude'] : null));
+        $longitude = !empty($location_data['longitude']) ? $location_data['longitude'] : (!empty($_POST['longitude']) ? trim((string)$_POST['longitude']) : (!empty($_SESSION['user_longitude']) ? $_SESSION['user_longitude'] : null));
+        $location_address = !empty($location_data['location_address']) ? $location_data['location_address'] : (!empty($_POST['location_address']) ? trim((string)$_POST['location_address']) : (!empty($_SESSION['user_location_address']) ? $_SESSION['user_location_address'] : null));
+        $location_accuracy = !empty($location_data['location_accuracy']) ? $location_data['location_accuracy'] : (!empty($_POST['location_accuracy']) ? trim((string)$_POST['location_accuracy']) : (!empty($_SESSION['user_location_accuracy']) ? $_SESSION['user_location_accuracy'] : null));
+
+        if ($latitude) $latitude = substr((string)$latitude, 0, 50);
+        if ($longitude) $longitude = substr((string)$longitude, 0, 50);
+        if ($location_address) $location_address = substr((string)$location_address, 0, 255);
+        if ($location_accuracy) $location_accuracy = substr((string)$location_accuracy, 0, 50);
+
         $stmt = $db->prepare("
             INSERT INTO login_logs 
-            (user_id, identifier, user_name, user_email, role_name, team_name, status, reason, ip_address, user_agent, browser, platform, created_at)
+            (user_id, identifier, user_name, user_email, role_name, team_name, status, reason, ip_address, user_agent, browser, platform, latitude, longitude, location_address, location_accuracy, created_at)
             VALUES 
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
 
         $stmt->execute([
@@ -194,7 +224,11 @@ function log_login_attempt($identifier, $status = 'FAILED', $reason = null, $use
             substr($ip, 0, 45),
             $ua,
             $device['browser'],
-            $device['platform']
+            $device['platform'],
+            $latitude,
+            $longitude,
+            $location_address,
+            $location_accuracy
         ]);
 
         // Auto-prune to keep latest 500 logs

@@ -43,6 +43,10 @@ function set_flash_message($arg1, $arg2 = 'success') {
     ];
 }
 
+function set_flash($arg1, $arg2 = 'success') {
+    set_flash_message($arg1, $arg2);
+}
+
 function display_flash_message() {
     if (isset($_SESSION['flash_message'])) {
         $flash = $_SESSION['flash_message'];

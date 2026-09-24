@@ -495,22 +495,26 @@ ON DUPLICATE KEY UPDATE `form_key`=VALUES(`form_key`);
 CREATE TABLE IF NOT EXISTS `login_logs` (
   `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT UNSIGNED NULL DEFAULT NULL,
-  `attempted_identifier` VARCHAR(191) NOT NULL,
+  `identifier` VARCHAR(191) NOT NULL,
   `user_name` VARCHAR(150) NULL DEFAULT NULL,
   `user_email` VARCHAR(191) NULL DEFAULT NULL,
   `role_name` VARCHAR(100) NULL DEFAULT NULL,
   `team_name` VARCHAR(100) NULL DEFAULT NULL,
-  `status` VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
-  `failure_reason` VARCHAR(255) NULL DEFAULT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'FAILED',
+  `reason` VARCHAR(255) NULL DEFAULT NULL,
   `ip_address` VARCHAR(45) NULL DEFAULT NULL,
   `user_agent` VARCHAR(255) NULL DEFAULT NULL,
-  `browser` VARCHAR(50) NULL DEFAULT NULL,
-  `platform` VARCHAR(50) NULL DEFAULT NULL,
+  `browser` VARCHAR(100) NULL DEFAULT NULL,
+  `platform` VARCHAR(100) NULL DEFAULT NULL,
+  `latitude` VARCHAR(50) NULL DEFAULT NULL,
+  `longitude` VARCHAR(50) NULL DEFAULT NULL,
+  `location_address` VARCHAR(255) NULL DEFAULT NULL,
+  `location_accuracy` VARCHAR(50) NULL DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX `idx_login_user_id` (`user_id`),
-  INDEX `idx_login_status` (`status`),
-  INDEX `idx_login_identifier` (`attempted_identifier`),
-  INDEX `idx_login_created_at` (`created_at`)
+  INDEX `idx_user_id` (`user_id`),
+  INDEX `idx_status` (`status`),
+  INDEX `idx_created_at` (`created_at`),
+  INDEX `idx_ip_address` (`ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Register User Logins in Sidebar Items

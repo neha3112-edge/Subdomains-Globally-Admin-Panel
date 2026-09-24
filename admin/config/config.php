@@ -18,7 +18,8 @@ $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 
 // Find root admin path
 $admin_root = rtrim(preg_replace('/\/modules.*|\/api.*/', '', $script_dir), '/');
-if (empty($admin_root)) $admin_root = '';
+if (empty($admin_root))
+    $admin_root = '';
 
 define('BASE_URL', $protocol . $host . $admin_root);
 define('ADMIN_PATH', dirname(__DIR__));

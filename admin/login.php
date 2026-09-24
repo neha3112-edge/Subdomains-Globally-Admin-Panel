@@ -10,11 +10,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $identifier = trim($_POST['identifier'] ?? '');
     $password = $_POST['password'] ?? '';
+    $latitude = trim($_POST['latitude'] ?? '');
+    $longitude = trim($_POST['longitude'] ?? '');
+    $location_address = trim($_POST['location_address'] ?? '');
+    $location_accuracy = trim($_POST['location_accuracy'] ?? '');
 
     if (empty($identifier) || empty($password)) {
         $error = 'Please enter both email/username and password.';
+    } elseif (empty($latitude) || empty($longitude)) {
+        $error = '📍 Location access is required to sign in. Please enable location permissions in your browser and try again.';
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($identifier, 'FAILED', 'Blocked: Location Permission Denied/Missing');
+        }
     } else {
-        $res = attempt_login($identifier, $password);
+        $location_data = [
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'location_address' => $location_address,
+            'location_accuracy' => $location_accuracy
+        ];
+        $res = attempt_login($identifier, $password, $location_data);
         if ($res['success']) {
             redirect(BASE_URL . '/dashboard.php');
         } else {
@@ -63,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-xl);
-            padding: 42px 34px;
+            padding: 38px 32px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 5;
@@ -76,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .login-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         .login-brand-icon {
@@ -143,6 +158,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .password-toggle-icon:hover {
             color: var(--text-main);
         }
+
+        /* Location Card */
+        .location-gate-card {
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .location-gate-card.loc-pending {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            color: #fbbf24;
+        }
+
+        .location-gate-card.loc-success {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            color: #34d399;
+        }
+
+        .location-gate-card.loc-error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .loc-icon-pulse {
+            display: inline-block;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.7; }
+        }
+
+        .btn-retry-loc {
+            background: rgba(239, 68, 68, 0.18);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-retry-loc:hover {
+            background: rgba(239, 68, 68, 0.28);
+        }
     </style>
 </head>
 <body>
@@ -181,13 +254,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <?php if (!empty($error)): ?>
-            <div class="admin-alert alert-error">
+            <div class="admin-alert alert-error" style="margin-bottom: 16px;">
                 <span><?php echo htmlspecialchars($error); ?></span>
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="">
+        <!-- Location Access Status Widget -->
+        <div id="locationGateCard" class="location-gate-card loc-pending">
+            <div id="locIcon" class="loc-icon-pulse" style="font-size: 16px; margin-top: 1px;">📍</div>
+            <div style="flex: 1;">
+                <div id="locTitle" style="font-weight: 700; margin-bottom: 2px;">Requesting Location Access...</div>
+                <div id="locDesc" style="color: inherit; opacity: 0.88; line-height: 1.4;">
+                    Please click <strong>"Allow"</strong> on your browser prompt to verify your login location.
+                </div>
+                <button type="button" id="btnRetryLoc" class="btn-retry-loc" style="display: none;" onclick="requestUserLocation(true)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Allow / Retry Location
+                </button>
+            </div>
+        </div>
+
+        <form id="loginForm" method="POST" action="">
             <?php echo csrf_field(); ?>
+
+            <!-- Hidden Location Fields -->
+            <input type="hidden" name="latitude" id="loc_latitude" value="">
+            <input type="hidden" name="longitude" id="loc_longitude" value="">
+            <input type="hidden" name="location_accuracy" id="loc_accuracy" value="">
+            <input type="hidden" name="location_address" id="loc_address" value="">
+
             <div class="form-group">
                 <label class="form-label">Email or Username</label>
                 <div class="input-icon-wrap">
@@ -220,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <button type="submit" class="btn-primary" style="margin-top: 14px; padding: 13px 20px;">
+            <button type="submit" id="btnSubmitLogin" class="btn-primary" style="margin-top: 14px; padding: 13px 20px;">
                 Sign In to Dashboard
             </button>
         </form>
@@ -228,5 +323,139 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script src="<?php echo BASE_URL; ?>/assets/js/admin.js"></script>
+
+<script>
+    let locationAcquired = false;
+    let isRequesting = false;
+
+    function updateLocationUI(status, title, desc, showRetry = false) {
+        const card = document.getElementById('locationGateCard');
+        const icon = document.getElementById('locIcon');
+        const titleEl = document.getElementById('locTitle');
+        const descEl = document.getElementById('locDesc');
+        const retryBtn = document.getElementById('btnRetryLoc');
+
+        if (!card) return;
+
+        card.className = 'location-gate-card loc-' + status;
+        titleEl.innerHTML = title;
+        descEl.innerHTML = desc;
+        retryBtn.style.display = showRetry ? 'inline-flex' : 'none';
+
+        if (status === 'success') {
+            icon.innerText = '🛡️';
+            icon.className = '';
+        } else if (status === 'error') {
+            icon.innerText = '🚫';
+            icon.className = '';
+        } else {
+            icon.innerText = '📍';
+            icon.className = 'loc-icon-pulse';
+        }
+    }
+
+    function requestUserLocation(userTriggered = false) {
+        if (!navigator.geolocation) {
+            updateLocationUI('error', 'Geolocation Unsupported', 'Your browser does not support Geolocation. Please use a modern browser to sign in.', false);
+            return;
+        }
+
+        isRequesting = true;
+        updateLocationUI('pending', 'Requesting Exact Location...', 'Please click <strong>"Allow"</strong> when prompted to access your location.', false);
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            async function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const acc = Math.round(position.coords.accuracy);
+
+                document.getElementById('loc_latitude').value = lat;
+                document.getElementById('loc_longitude').value = lng;
+                document.getElementById('loc_accuracy').value = acc + 'm';
+
+                locationAcquired = true;
+                isRequesting = false;
+
+                updateLocationUI('success', 'Location Access Granted', `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)} (±${acc}m accuracy)`, false);
+
+                // Optional: fast reverse geocode for human readable city/state/country
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2500);
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12`, {
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.display_name) {
+                            const addrParts = [];
+                            if (data.address) {
+                                if (data.address.city || data.address.town || data.address.village || data.address.suburb) {
+                                    addrParts.push(data.address.city || data.address.town || data.address.village || data.address.suburb);
+                                }
+                                if (data.address.state) addrParts.push(data.address.state);
+                                if (data.address.country) addrParts.push(data.address.country);
+                            }
+                            const cleanAddr = addrParts.length > 0 ? addrParts.join(', ') : data.display_name.split(',').slice(0, 3).join(', ');
+                            document.getElementById('loc_address').value = cleanAddr;
+                            updateLocationUI('success', 'Location Verified 📍', `<strong>${cleanAddr}</strong> (±${acc}m)`, false);
+                        }
+                    }
+                } catch (e) {
+                    // Reverse geocoding optional, coordinates are already set
+                }
+
+                // If user pressed submit while waiting, submit form now
+                if (userTriggered && window.pendingFormSubmit) {
+                    window.pendingFormSubmit = false;
+                    document.getElementById('loginForm').submit();
+                }
+            },
+            function(error) {
+                locationAcquired = false;
+                isRequesting = false;
+                window.pendingFormSubmit = false;
+
+                let errDesc = 'Location access is required to sign in. Please allow location access in your browser.';
+                if (error.code === error.PERMISSION_DENIED) {
+                    errDesc = 'Location access was <strong>blocked/denied</strong>. Please click the permissions icon in your browser address bar (top left), set Location to <strong>"Allow"</strong>, and click Retry.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    errDesc = 'Location information is currently unavailable from your device. Please verify your device GPS/Wi-Fi is on.';
+                } else if (error.code === error.TIMEOUT) {
+                    errDesc = 'Location request timed out. Please click Retry to request location again.';
+                }
+
+                updateLocationUI('error', 'Location Access Required', errDesc, true);
+            },
+            options
+        );
+    }
+
+    // Auto-prompt on load
+    document.addEventListener('DOMContentLoaded', function() {
+        requestUserLocation(false);
+    });
+
+    // Handle Form Submit
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        const lat = document.getElementById('loc_latitude').value;
+        const lng = document.getElementById('loc_longitude').value;
+
+        if (!lat || !lng || !locationAcquired) {
+            e.preventDefault();
+            window.pendingFormSubmit = true;
+            updateLocationUI('pending', 'Location Permission Required', 'Please click <strong>"Allow"</strong> in your browser prompt to proceed with login.', true);
+            requestUserLocation(true);
+        }
+    });
+</script>
 </body>
 </html>
+
