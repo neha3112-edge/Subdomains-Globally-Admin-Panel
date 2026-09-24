@@ -36,38 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     redirect(BASE_URL . '/modules/login_logs/index.php');
 }
 
-// Handle Export CSV
-if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-    $export_stmt = $db->query("
-        SELECT id, identifier, user_name, user_email, status, reason, ip_address, browser, platform, created_at 
-        FROM login_logs 
-        ORDER BY id DESC 
-        LIMIT 5000
-    ");
-    $rows = $export_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="user_login_logs_' . date('Y-m-d_His') . '.csv"');
-    $output = fopen('php://output', 'w');
-    fputcsv($output, ['Log ID', 'Attempted Identifier', 'User Name', 'User Email', 'Status', 'Result / Reason', 'IP Address', 'Browser', 'Platform / OS', 'Date & Time']);
-    foreach ($rows as $r) {
-        fputcsv($output, [
-            $r['id'],
-            $r['identifier'],
-            $r['user_name'] ?? 'N/A',
-            $r['user_email'] ?? 'N/A',
-            $r['status'],
-            $r['reason'] ?? '',
-            $r['ip_address'],
-            $r['browser'],
-            $r['platform'],
-            $r['created_at']
-        ]);
-    }
-    fclose($output);
-    exit;
-}
-
 // Fetch filter parameters
 $status_filter = trim($_GET['status'] ?? '');
 $user_id_filter = !empty($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
@@ -205,10 +173,6 @@ require_once ADMIN_PATH . '/includes/header.php';
     </div>
     
     <div style="display:flex; gap:10px; align-items:center;">
-        <a href="?export=csv" class="btn-primary btn-sm" style="padding:9px 18px; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:8px; border-radius:var(--radius-md); box-shadow:0 4px 14px rgba(79,70,229,0.35);">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Export CSV
-        </a>
         <?php if ($is_super): ?>
             <button type="button" onclick="openClearModal()" class="btn-sm" style="padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; border-radius:var(--radius-md); background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.28);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
