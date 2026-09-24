@@ -7,6 +7,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Timezone Setup (Indian Standard Time - IST)
+date_default_timezone_set('Asia/Kolkata');
+
 define('APP_NAME', 'SODE Admin');
 define('APP_SUBTITLE', 'Universal Subdomains Management Portal');
 define('APP_VERSION', '2.0.0');
