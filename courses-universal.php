@@ -1376,6 +1376,7 @@ if (!function_exists('sode_courses_list_render')) {
         $mode_filter = strtolower($atts['mode']);
         $level_filter = strtolower($atts['level']);
         $filtered = [];
+        $seen = [];
 
         foreach ($courses as $c) {
             $course_mode = strtolower($c['mode'] ?? 'online');
@@ -1393,8 +1394,14 @@ if (!function_exists('sode_courses_list_render')) {
                     continue;
             }
 
-            $label = ($atts['format'] === 'full') ? $c['full_name'] : $c['short_name'];
-            $label = esc_html($label);
+            $raw_name = ($atts['format'] === 'full') ? $c['full_name'] : $c['short_name'];
+            $dedup_key = strtolower(trim(str_replace(['.', ' ', '-'], '', (string)$raw_name)));
+            if (isset($seen[$dedup_key])) {
+                continue;
+            }
+            $seen[$dedup_key] = true;
+
+            $label = esc_html($raw_name);
 
             if ($atts['bold'] === 'true' || $atts['bold'] === '1') {
                 $label = '<strong>' . $label . '</strong>';

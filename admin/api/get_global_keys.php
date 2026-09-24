@@ -326,17 +326,24 @@ if (!empty($uni_slug)) {
         $course_short_names = [];
         $course_full_names  = [];
         $course_mode_names  = [];
+        $seen_short_keys    = [];
+        $seen_full_keys     = [];
 
         foreach ($courses as $c) {
             $c_mode    = (!empty($c['mode']) && strtolower(trim($c['mode'])) === 'distance') ? 'Distance' : 'Online';
             $c_short   = ($c['short_name'] === 'B.Com') ? 'BCom' : trim($c['short_name']);
             $c_full    = trim($c['full_name']);
 
-            if (!empty($c_short) && !in_array($c_short, $course_short_names)) {
+            $c_clean_short = strtolower(str_replace(['.', ' ', '-'], '', $c_short));
+            $c_clean_full  = strtolower(str_replace(['.', ' ', '-'], '', $c_full));
+
+            if (!empty($c_short) && !in_array($c_short, $course_short_names) && !in_array($c_clean_short, $seen_short_keys)) {
                 $course_short_names[] = $c_short;
+                $seen_short_keys[] = $c_clean_short;
             }
-            if (!empty($c_full) && !in_array($c_full, $course_full_names)) {
+            if (!empty($c_full) && !in_array($c_full, $course_full_names) && !in_array($c_clean_full, $seen_full_keys)) {
                 $course_full_names[] = $c_full;
+                $seen_full_keys[] = $c_clean_full;
             }
             $c_mode_label = (stripos($c_short, $c_mode) !== 0) ? $c_mode . ' ' . $c_short : $c_short;
             if (!in_array($c_mode_label, $course_mode_names)) {

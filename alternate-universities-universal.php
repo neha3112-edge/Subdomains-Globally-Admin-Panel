@@ -165,7 +165,7 @@ if (!function_exists('sode_get_alternate_universities_list')) {
                             $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
 
                             // Format course list placeholder in description
-                            $c_names = array_column($courses, 'short_name');
+                            $c_names = array_values(array_unique(array_column($courses, 'short_name')));
                             $c_text_list = '';
                             if (!empty($c_names)) {
                                 if (count($c_names) === 1) {
