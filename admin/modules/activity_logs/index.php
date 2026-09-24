@@ -8,7 +8,6 @@ $page_subtitle = 'Live tracking of all admin panel user activities, content edit
 $active_page_key = 'activity_logs';
 
 $db = get_db_connection();
-sode_ensure_activity_log_system($db);
 if (function_exists('sode_prune_activity_logs')) {
     sode_prune_activity_logs($db, 100);
 }

@@ -8,62 +8,11 @@
  * Ensure the admin_trash table and uploads/trash directory exist
  */
 function sode_ensure_trash_system($db = null) {
-    if (!$db) {
-        $db = get_db_connection();
-    }
-
-    try {
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS `admin_trash` (
-              `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-              `item_type` VARCHAR(50) NOT NULL,
-              `item_title` VARCHAR(255) NOT NULL,
-              `source_table` VARCHAR(64) NOT NULL,
-              `original_id` INT UNSIGNED NOT NULL,
-              `data_payload` LONGTEXT NOT NULL,
-              `file_path` VARCHAR(500) NULL DEFAULT NULL,
-              `trash_file_path` VARCHAR(500) NULL DEFAULT NULL,
-              `deleted_by_user_id` INT UNSIGNED NULL DEFAULT NULL,
-              `deleted_by_user_name` VARCHAR(100) NULL DEFAULT NULL,
-              `deleted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-              INDEX `idx_item_type` (`item_type`),
-              INDEX `idx_deleted_at` (`deleted_at`),
-              INDEX `idx_source` (`source_table`, `original_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        ");
-    } catch (Exception $e) {
-        error_log("Failed to ensure admin_trash table: " . $e->getMessage());
-    }
-
     // Ensure uploads/trash directory exists
     $trash_dir = ADMIN_PATH . '/uploads/trash';
     if (!is_dir($trash_dir)) {
         @mkdir($trash_dir, 0755, true);
     }
-
-    // Auto-register Trash in sidebar_items if missing
-    try {
-        $chk = $db->query("SELECT id FROM sidebar_items WHERE page_route = 'modules/trash/index.php'")->fetch();
-        if (!$chk) {
-            $db->exec("
-                INSERT INTO `sidebar_items` 
-                (`display_name`, `page_route`, `sort_order`, `active_page_key`, `rbac_module_key`, `menu_section`, `icon_svg`, `is_superadmin_only`, `is_active`)
-                VALUES 
-                ('Trash', 'modules/trash/index.php', 99, 'trash', 'trash', 'SYSTEM', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"></line><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"></line></svg>', 0, 1)
-            ");
-            $trash_sidebar_id = (int)$db->lastInsertId();
-            if ($trash_sidebar_id) {
-                // Grant access to all existing roles by default
-                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-                if (!empty($roles)) {
-                    $rsa_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-                    foreach ($roles as $r_id) {
-                        $rsa_stmt->execute([$r_id, $trash_sidebar_id]);
-                    }
-                }
-            }
-        }
-    } catch (Exception $e) {}
 }
 
 /**

@@ -8,7 +8,6 @@ $page_subtitle = 'Complete audit log of all successful logins, failed attempts, 
 $active_page_key = 'login_logs';
 
 $db = get_db_connection();
-sode_ensure_login_log_system($db);
 if (function_exists('sode_prune_login_logs')) {
     sode_prune_login_logs($db, 500);
 }

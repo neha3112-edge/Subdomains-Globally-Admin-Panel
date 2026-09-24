@@ -9,38 +9,6 @@ $active_page_key = 'form_courses';
 
 $db = get_db_connection();
 
-// Ensure form_courses table exists & ensure display_label is UNIQUE while form_key can be shared
-try {
-    $db->exec("
-    CREATE TABLE IF NOT EXISTS `form_courses` (
-      `id` INT AUTO_INCREMENT PRIMARY KEY,
-      `display_label` VARCHAR(100) NOT NULL UNIQUE,
-      `form_key` VARCHAR(50) NOT NULL,
-      `level` VARCHAR(50) DEFAULT 'PG',
-      `sort_order` INT DEFAULT 0,
-      `is_active` TINYINT(1) DEFAULT 1,
-      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    ");
-
-    $indexes = $db->query("SHOW INDEX FROM form_courses")->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($indexes as $idx) {
-        if ($idx['Column_name'] === 'form_key' && $idx['Non_unique'] == 0 && $idx['Key_name'] !== 'PRIMARY') {
-            $db->exec("ALTER TABLE form_courses DROP INDEX `{$idx['Key_name']}`");
-        }
-    }
-    $has_label_unique = false;
-    foreach ($indexes as $idx) {
-        if ($idx['Column_name'] === 'display_label' && $idx['Non_unique'] == 0) {
-            $has_label_unique = true;
-        }
-    }
-    if (!$has_label_unique) {
-        $db->exec("ALTER TABLE form_courses ADD UNIQUE KEY uniq_display_label (display_label)");
-    }
-} catch (Exception $e) {}
-
 // Handle POST Actions (Save / Bulk Save / Edit / Delete / Toggle Status)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();

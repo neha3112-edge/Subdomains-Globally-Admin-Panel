@@ -11,34 +11,6 @@ $active_page_key = 'logo_settings';
 
 $db = get_db_connection();
 
-// Ensure global_settings table exists
-try {
-    $db->exec("
-        CREATE TABLE IF NOT EXISTS global_settings (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            setting_key VARCHAR(100) NOT NULL UNIQUE,
-            setting_value LONGTEXT NULL,
-            setting_group VARCHAR(50) DEFAULT 'general',
-            description VARCHAR(255) NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ");
-} catch (Exception $e) {}
-
-// Self-healing check: Ensure Site Logo is registered in sidebar_items
-try {
-    $sb_chk = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'logo_settings' OR page_route LIKE '%settings/logo.php%'")->fetch();
-    if (!$sb_chk) {
-        $icon_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-        $stmt_sb = $db->prepare("
-            INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)
-        ");
-        $stmt_sb->execute(['Site & Brand Logo', 'modules/settings/logo.php', 17, 'logo_settings', 'settings', 'SETTINGS', $icon_svg]);
-    }
-} catch (Exception $e) {}
-
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
