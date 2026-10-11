@@ -4,7 +4,23 @@
  */
 
 function is_logged_in() {
-    return !empty($_SESSION['user_id']) && !empty($_SESSION['user_email']);
+    if (empty($_SESSION['user_id']) || empty($_SESSION['user_email'])) {
+        return false;
+    }
+
+    // Auto-initialize login_time if missing for existing session
+    if (!isset($_SESSION['login_time'])) {
+        $_SESSION['login_time'] = time();
+        $_SESSION['session_expires_at'] = time() + 7200;
+    }
+
+    // Strict 2-Hour (7200 seconds) auto-logout from login timestamp
+    if ((time() - (int)$_SESSION['login_time']) >= 7200) {
+        logout_user('Session Expired (2 Hours Auto-Logout)');
+        return false;
+    }
+
+    return true;
 }
 
 function get_logged_in_user() {
@@ -75,6 +91,10 @@ function attempt_login($identifier, $password, $location_data = []) {
     $_SESSION['user_team_name']= $user['team_name'] ?? 'General';
     $_SESSION['is_superadmin'] = (bool)$user['is_superadmin'];
 
+    // Fixed 2-Hour Auto-Logout Setup (120 minutes = 7200 seconds)
+    $_SESSION['login_time'] = time();
+    $_SESSION['session_expires_at'] = time() + 7200;
+
     // Store location in session
     $lat = $location_data['latitude'] ?? $_POST['latitude'] ?? null;
     $lng = $location_data['longitude'] ?? $_POST['longitude'] ?? null;
@@ -94,12 +114,12 @@ function attempt_login($identifier, $password, $location_data = []) {
     return ['success' => true];
 }
 
-function logout_user() {
+function logout_user($reason = 'User Logged Out') {
     if (function_exists('log_login_attempt') && !empty($_SESSION['user_id'])) {
         log_login_attempt(
             $_SESSION['user_email'] ?? ($_SESSION['user_username'] ?? 'User'),
             'SUCCESS',
-            'User Logged Out',
+            $reason,
             [
                 'id'        => $_SESSION['user_id'] ?? null,
                 'name'      => $_SESSION['user_name'] ?? null,
@@ -119,5 +139,10 @@ function logout_user() {
         );
     }
     session_destroy();
-    redirect(BASE_URL . '/login.php');
+
+    $redirect_url = BASE_URL . '/login.php';
+    if ($reason !== 'User Logged Out') {
+        $redirect_url .= '?session_expired=1';
+    }
+    redirect($redirect_url);
 }

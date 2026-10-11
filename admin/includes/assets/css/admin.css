@@ -346,6 +346,70 @@ body {
     color: var(--text-muted);
 }
 
+.header-session-timer-badge {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.2px;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.header-session-timer-badge svg {
+    color: #38bdf8;
+    flex-shrink: 0;
+    transition: color 0.2s ease;
+}
+
+.header-session-timer-badge strong {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    color: #38bdf8;
+}
+
+.header-session-timer-badge.warning {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.08);
+    color: #f59e0b;
+}
+
+.header-session-timer-badge.warning svg,
+.header-session-timer-badge.warning strong {
+    color: #f59e0b;
+}
+
+.header-session-timer-badge.danger {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    animation: sessionTimerPulse 1.6s ease-in-out infinite;
+}
+
+.header-session-timer-badge.danger svg,
+.header-session-timer-badge.danger strong {
+    color: #ef4444;
+}
+
+@keyframes sessionTimerPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(0.985); }
+}
+
+@media (max-width: 768px) {
+    .header-session-timer-badge span span.timer-label {
+        display: none;
+    }
+}
+
 .theme-toggle-btn {
     width: 38px;
     height: 38px;

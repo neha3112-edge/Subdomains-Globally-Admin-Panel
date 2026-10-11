@@ -167,6 +167,37 @@ if (!empty($search)) {
 }
 $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Calculate mapped course mappings count for subjects on current page
+if (!empty($subjects)) {
+    $sub_names = array_column($subjects, 'subject_name');
+    $subject_counts = array_fill_keys($sub_names, 0);
+
+    $mappings_stmt = $db->query("SELECT id, syllabus_json FROM university_course_mappings WHERE syllabus_json IS NOT NULL AND syllabus_json != ''");
+    while ($m_row = $mappings_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data = json_decode($m_row['syllabus_json'], true);
+        if (!is_array($data)) continue;
+        $found = [];
+        foreach ($data as $sem) {
+            if (!empty($sem['subjects']) && is_array($sem['subjects'])) {
+                foreach ($sem['subjects'] as $sub_item) {
+                    $sname = trim($sub_item['name'] ?? '');
+                    if (isset($subject_counts[$sname])) {
+                        $found[$sname] = true;
+                    }
+                }
+            }
+        }
+        foreach ($found as $sname => $dummy) {
+            $subject_counts[$sname]++;
+        }
+    }
+
+    foreach ($subjects as &$s) {
+        $s['mapped_count'] = $subject_counts[$s['subject_name']] ?? 0;
+    }
+    unset($s);
+}
+
 include dirname(__DIR__, 2) . '/includes/header.php';
 ?>
 
@@ -418,6 +449,7 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                 <tr>
                     <th style="width: 60px; text-align: center;">#</th>
                     <th>Subject Name</th>
+                    <th style="width: 160px; text-align: center;">Course Mappings</th>
                     <th style="width: 130px; text-align: center;">Status</th>
                     <th style="width: 170px; text-align: center;">Actions</th>
                 </tr>
@@ -425,7 +457,7 @@ include dirname(__DIR__, 2) . '/includes/header.php';
             <tbody>
                 <?php if (empty($subjects)): ?>
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 48px 20px; color: var(--text-dim);">
+                        <td colspan="5" style="text-align: center; padding: 48px 20px; color: var(--text-dim);">
                             <div style="font-size: 36px; margin-bottom: 10px;">📖</div>
                             <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No subjects found</div>
                             <div style="font-size: 13px; margin-bottom: 16px;">Add master syllabus subjects so they can be selected in Course Mappings.</div>
@@ -444,6 +476,23 @@ include dirname(__DIR__, 2) . '/includes/header.php';
                                 <div style="font-weight: 600; font-size: 14px; color: var(--text-main);">
                                     <?= htmlspecialchars($sub['subject_name']) ?>
                                 </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <?php $mapped_cnt = (int)($sub['mapped_count'] ?? 0); ?>
+                                <?php if ($mapped_cnt > 0): ?>
+                                    <button type="button" 
+                                            onclick="openMappedSubModal(<?= (int)$sub['id'] ?>, '<?= htmlspecialchars(addslashes($sub['subject_name'])) ?>')" 
+                                            class="badge sode-sub-badge" 
+                                            style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.35); font-weight: 700; font-size: 11.5px; padding: 4px 11px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.2s;" 
+                                            title="Click to view all mapped courses for <?= htmlspecialchars($sub['subject_name']) ?>">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                        <?= $mapped_cnt ?> <?= $mapped_cnt === 1 ? 'Mapping' : 'Mappings' ?> &rarr;
+                                    </button>
+                                <?php else: ?>
+                                    <span class="badge" style="background: rgba(148, 163, 184, 0.08); color: var(--text-dim, #64748b); border: 1px solid rgba(148, 163, 184, 0.15); font-weight: 600; font-size: 11px; padding: 4px 9px; border-radius: 20px;">
+                                        0 Mappings
+                                    </span>
+                                <?php endif; ?>
                             </td>
                             <td style="text-align: center;">
                                 <?php if (can_update()): ?>
@@ -616,9 +665,636 @@ function closeBulkModal() {
 window.onclick = function(event) {
     var subModal = document.getElementById('subjectModal');
     var bModal = document.getElementById('bulkModal');
+    var mapModal = document.getElementById('mappedSubModal');
     if (event.target === subModal) closeSubjectModal();
     if (event.target === bModal) closeBulkModal();
+    if (event.target === mapModal) closeMappedSubModal();
 }
+</script>
+
+<!-- Mapped Course Mappings Modal for Syllabus Subject -->
+<div id="mappedSubModal" class="uni-courses-modal-backdrop" style="display: none;" onclick="handleSubBackdropClick(event)">
+    <div class="uni-courses-modal-dialog" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="uni-courses-modal-header">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: center; color: #818cf8; flex-shrink: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <div style="min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+                        <h3 id="modalSubTitle" style="margin: 0; font-size: 17px; font-weight: 700; color: #fff; line-height: 1.3;">Syllabus Subject Mappings</h3>
+                        <span id="modalSubCountBadge" class="badge badge-warning" style="font-size: 11px;">0 Mappings</span>
+                    </div>
+                    <div id="modalSubMeta" style="font-size: 12px; color: var(--text-dim, #94a3b8); margin-top: 3px;">
+                        Loading mapped courses...
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <a href="<?= BASE_URL ?>/modules/mappings/create.php" target="_blank" class="uni-modal-add-btn" title="Create new course mapping">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>New Mapping</span>
+                </a>
+                <button type="button" onclick="closeMappedSubModal()" class="uni-modal-close-btn" title="Close (Esc)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="uni-courses-toolbar">
+            <div class="uni-courses-search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="modalSubSearchInput" placeholder="Filter by university, course name, mode, semester..." oninput="handleSubSearchInput()">
+                <button type="button" id="modalSubClearSearchBtn" onclick="clearSubSearch()" style="display: none; background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 0 4px; font-size: 16px; line-height: 1;">&times;</button>
+            </div>
+            <div class="uni-courses-filter-pills" id="modalSubFilterPills">
+                <button type="button" class="filter-pill active" data-filter="ALL" onclick="setSubFilter('ALL', this)">All (<span id="countSubAll">0</span>)</button>
+                <button type="button" class="filter-pill" data-filter="Online" onclick="setSubFilter('Online', this)">Online (<span id="countSubOnline">0</span>)</button>
+                <button type="button" class="filter-pill" data-filter="Distance" onclick="setSubFilter('Distance', this)">Distance (<span id="countSubDistance">0</span>)</button>
+                <button type="button" class="filter-pill" data-filter="Active" onclick="setSubFilter('Active', this)">Active (<span id="countSubActive">0</span>)</button>
+            </div>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="uni-courses-modal-body">
+            <!-- Loading State -->
+            <div id="modalSubLoadingState" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 14px;">
+                <div class="uni-modal-spinner"></div>
+                <div style="color: var(--text-dim, #94a3b8); font-size: 13px;">Fetching mapped courses...</div>
+            </div>
+
+            <!-- Error State -->
+            <div id="modalSubErrorState" style="display: none; text-align: center; padding: 50px 20px;">
+                <div style="color: #ef4444; font-size: 14px; margin-bottom: 12px;" id="modalSubErrorMessage">Failed to load mapped courses.</div>
+                <button type="button" onclick="retryLoadMappedSubs()" class="btn-primary btn-sm">Retry</button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="modalSubEmptyState" style="display: none; text-align: center; padding: 60px 20px;">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(99, 102, 241, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #818cf8; margin-bottom: 14px;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <h4 style="margin: 0 0 6px 0; color: #fff; font-size: 16px;">No Course Mappings Found</h4>
+                <p style="margin: 0 0 18px 0; color: var(--text-dim, #94a3b8); font-size: 13px; max-width: 380px; margin-inline: auto;">
+                    This syllabus subject is not currently used in any course mapping syllabus.
+                </p>
+                <a href="<?= BASE_URL ?>/modules/mappings/create.php" target="_blank" class="uni-modal-add-btn" style="display: inline-flex; margin-inline: auto;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Create Course Mapping</span>
+                </a>
+            </div>
+
+            <!-- Mappings Table -->
+            <div id="modalSubTableWrap" style="display: none;">
+                <div style="overflow-x: auto;">
+                    <table class="admin-table modal-courses-table" style="width: 100%; margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="width: 44px; text-align: center;">#</th>
+                                <th>University</th>
+                                <th>Course Program</th>
+                                <th style="width: 100px; text-align: center;">Mode</th>
+                                <th style="width: 170px;">Semester(s)</th>
+                                <th style="width: 100px; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalSubTbody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="modalSubNoMatches" style="display: none; text-align: center; padding: 40px 20px; color: var(--text-dim, #94a3b8); font-size: 13px;">
+                    No mapped courses found matching your search / filter.
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="uni-courses-modal-footer">
+            <div style="font-size: 12px; color: var(--text-dim, #94a3b8);">
+                Showing <strong id="modalSubShownCount" style="color: #fff;">0</strong> of <strong id="modalSubTotalCount" style="color: #fff;">0</strong> mapped courses
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="uni-modal-footer-close-btn" onclick="closeMappedSubModal()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span>Close</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Syllabus Mappings Modal Styling */
+.uni-courses-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(4, 7, 15, 0.78);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: uniModalBgFade 0.2s ease-out;
+}
+@keyframes uniModalBgFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.uni-courses-modal-dialog {
+    background: #0d1424;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    max-width: 980px;
+    width: 100%;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(99, 102, 241, 0.15);
+    overflow: hidden;
+    animation: uniModalZoom 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes uniModalZoom {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.uni-courses-modal-header {
+    padding: 16px 24px;
+    background: #141d33;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.uni-modal-add-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(129, 140, 248, 0.4) !important;
+    box-shadow: 0 3px 12px rgba(79, 70, 229, 0.35) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+}
+.uni-modal-add-btn:hover {
+    transform: translateY(-1.5px) !important;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.5) !important;
+    color: #ffffff !important;
+    filter: brightness(1.08) !important;
+}
+
+.uni-modal-close-btn {
+    width: 34px !important;
+    height: 34px !important;
+    background: #19243d !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #94a3b8 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 0 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+.uni-modal-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    transform: rotate(90deg) scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.uni-modal-edit-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 7px !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    background: rgba(99, 102, 241, 0.14) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(99, 102, 241, 0.32) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+.uni-modal-edit-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    border-color: #818cf8 !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45) !important;
+    transform: translateY(-1.5px) !important;
+}
+
+.uni-modal-footer-close-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    height: 36px !important;
+    padding: 0 18px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    background: #19243d !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+.uni-modal-footer-close-btn:hover {
+    background: rgba(239, 68, 68, 0.16) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25) !important;
+    transform: translateY(-1px) !important;
+}
+
+.uni-courses-toolbar {
+    padding: 12px 24px;
+    background: #10182b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.uni-courses-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #17223b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 12px;
+    flex: 1;
+    min-width: 240px;
+    max-width: 420px;
+    color: #94a3b8;
+}
+.uni-courses-search-wrap input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 13px;
+    width: 100%;
+}
+.uni-courses-search-wrap input::placeholder {
+    color: #64748b;
+}
+
+.uni-courses-filter-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.filter-pill {
+    background: #17223b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.filter-pill:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.18);
+}
+.filter-pill.active {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+}
+
+.uni-courses-modal-body {
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    max-height: calc(88vh - 190px);
+}
+
+.modal-courses-table th {
+    background: #141d33 !important;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    font-size: 11.5px;
+    padding: 10px 14px;
+    color: #94a3b8;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.modal-courses-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.modal-courses-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.uni-courses-modal-footer {
+    padding: 12px 24px;
+    background: #141d33;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.uni-modal-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: uniSpin 0.75s linear infinite;
+}
+@keyframes uniSpin {
+    to { transform: rotate(360deg); }
+}
+
+.sode-sub-badge:hover {
+    background: rgba(99, 102, 241, 0.28) !important;
+    border-color: #818cf8 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+</style>
+
+<script>
+(function() {
+    const ADMIN_BASE_URL = '<?= BASE_URL ?>';
+    let currentSubId = 0;
+    let currentSubName = '';
+    let allSubMappings = [];
+    let currentSubFilter = 'ALL';
+    let currentSubSearch = '';
+
+    window.openMappedSubModal = function(subId, subNameHint) {
+        currentSubId = subId;
+        currentSubName = subNameHint;
+        currentSubFilter = 'ALL';
+        currentSubSearch = '';
+        allSubMappings = [];
+
+        const modal = document.getElementById('mappedSubModal');
+        const modalTitle = document.getElementById('modalSubTitle');
+        const modalSubMeta = document.getElementById('modalSubMeta');
+        const countBadge = document.getElementById('modalSubCountBadge');
+        const searchInput = document.getElementById('modalSubSearchInput');
+        const clearBtn = document.getElementById('modalSubClearSearchBtn');
+
+        modalTitle.textContent = (subNameHint ? subNameHint : 'Syllabus Subject Mappings');
+        modalSubMeta.textContent = 'Loading mapped courses...';
+        countBadge.textContent = '...';
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+
+        // Reset filter pills
+        document.querySelectorAll('#modalSubFilterPills .filter-pill').forEach(btn => {
+            if (btn.getAttribute('data-filter') === 'ALL') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        showSubState('loading');
+        fetchMappedSubs(subId, subNameHint);
+    };
+
+    window.closeMappedSubModal = function() {
+        const modal = document.getElementById('mappedSubModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    };
+
+    window.handleSubBackdropClick = function(event) {
+        if (event.target.id === 'mappedSubModal') {
+            closeMappedSubModal();
+        }
+    };
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('mappedSubModal');
+            if (modal && modal.style.display !== 'none') {
+                closeMappedSubModal();
+            }
+        }
+    });
+
+    window.retryLoadMappedSubs = function() {
+        if (currentSubId > 0 || currentSubName) {
+            showSubState('loading');
+            fetchMappedSubs(currentSubId, currentSubName);
+        }
+    };
+
+    function showSubState(state) {
+        document.getElementById('modalSubLoadingState').style.display = state === 'loading' ? 'flex' : 'none';
+        document.getElementById('modalSubErrorState').style.display = state === 'error' ? 'block' : 'none';
+        document.getElementById('modalSubEmptyState').style.display = state === 'empty' ? 'block' : 'none';
+        document.getElementById('modalSubTableWrap').style.display = state === 'table' ? 'block' : 'none';
+    }
+
+    function fetchMappedSubs(subId, subName) {
+        const url = ADMIN_BASE_URL + '/api/get_syllabus_mappings.php?subject_id=' + encodeURIComponent(subId) + '&subject_name=' + encodeURIComponent(subName || '');
+
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Error fetching mappings');
+                }
+
+                if (data.subject) {
+                    const sb = data.subject;
+                    document.getElementById('modalSubTitle').textContent = sb.name;
+                    document.getElementById('modalSubMeta').textContent = 
+                        'Master Syllabus Subject • Status: ' + (Number(sb.is_active) === 1 ? 'Active' : 'Inactive');
+                }
+
+                allSubMappings = Array.isArray(data.mappings) ? data.mappings : [];
+                updateSubCounts();
+
+                if (allSubMappings.length === 0) {
+                    showSubState('empty');
+                } else {
+                    showSubState('table');
+                    renderSubTable();
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching syllabus mappings:', err);
+                document.getElementById('modalSubErrorMessage').textContent = 'Failed to load mapped courses: ' + err.message;
+                showSubState('error');
+            });
+    }
+
+    function updateSubCounts() {
+        const total = allSubMappings.length;
+        const onlineCount = allSubMappings.filter(m => (m.mode || '').toLowerCase() === 'online').length;
+        const distanceCount = allSubMappings.filter(m => (m.mode || '').toLowerCase() === 'distance').length;
+        const activeCount = allSubMappings.filter(m => Number(m.uni_active) === 1).length;
+
+        document.getElementById('modalSubCountBadge').textContent = total + (total === 1 ? ' Mapping' : ' Mappings');
+        document.getElementById('countSubAll').textContent = total;
+        document.getElementById('countSubOnline').textContent = onlineCount;
+        document.getElementById('countSubDistance').textContent = distanceCount;
+        document.getElementById('countSubActive').textContent = activeCount;
+        document.getElementById('modalSubTotalCount').textContent = total;
+    }
+
+    window.setSubFilter = function(filter, btn) {
+        currentSubFilter = filter;
+        document.querySelectorAll('#modalSubFilterPills .filter-pill').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        renderSubTable();
+    };
+
+    window.handleSubSearchInput = function() {
+        const val = document.getElementById('modalSubSearchInput').value.trim();
+        currentSubSearch = val.toLowerCase();
+        document.getElementById('modalSubClearSearchBtn').style.display = val ? 'inline' : 'none';
+        renderSubTable();
+    };
+
+    window.clearSubSearch = function() {
+        document.getElementById('modalSubSearchInput').value = '';
+        currentSubSearch = '';
+        document.getElementById('modalSubClearSearchBtn').style.display = 'none';
+        renderSubTable();
+    };
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function renderSubTable() {
+        const tbody = document.getElementById('modalSubTbody');
+        const noMatches = document.getElementById('modalSubNoMatches');
+        const shownCount = document.getElementById('modalSubShownCount');
+
+        let filtered = allSubMappings.filter(item => {
+            if (currentSubFilter === 'Online' && (item.mode || '').toLowerCase() !== 'online') return false;
+            if (currentSubFilter === 'Distance' && (item.mode || '').toLowerCase() !== 'distance') return false;
+            if (currentSubFilter === 'Active' && Number(item.uni_active) !== 1) return false;
+
+            if (currentSubSearch) {
+                const haystack = (
+                    (item.uni_short || '') + ' ' + 
+                    (item.uni_name || '') + ' ' + 
+                    (item.course_short || '') + ' ' + 
+                    (item.course_name || '') + ' ' + 
+                    (item.mode || '') + ' ' +
+                    (item.semesters || '')
+                ).toLowerCase();
+                if (haystack.indexOf(currentSubSearch) === -1) return false;
+            }
+            return true;
+        });
+
+        shownCount.textContent = filtered.length;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '';
+            noMatches.style.display = 'block';
+            return;
+        }
+
+        noMatches.style.display = 'none';
+
+        let html = '';
+        filtered.forEach((m, idx) => {
+            const isOnline = (m.mode || '').toLowerCase() === 'online';
+            const modeBadge = isOnline 
+                ? '<span class="badge badge-info" style="font-size:10.5px; padding:2px 7px;">Online</span>'
+                : '<span class="badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); font-size:10.5px; padding:2px 7px;">Distance</span>';
+
+            const editUrl = ADMIN_BASE_URL + '/modules/mappings/edit.php?id=' + m.mapping_id;
+            const displayName = escapeHtml(m.uni_short || m.uni_name);
+            const inactiveBadge = Number(m.uni_active) !== 1 ? '<span class="badge badge-danger" style="font-size:10px; padding:1px 5px; margin-left:6px;">Inactive</span>' : '';
+
+            const semHtml = m.semesters
+                ? `<span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); font-size:11px; padding:3px 9px;">${escapeHtml(m.semesters)}</span>`
+                : '<span style="color:var(--text-dim, #64748b);">—</span>';
+
+            html += `
+                <tr>
+                    <td style="text-align:center; color:var(--text-dim, #64748b); font-weight:600; font-size:11.5px;">${idx + 1}</td>
+                    <td>
+                        <div style="font-weight:600; color:#fff; display:flex; align-items:center;">
+                            <span style="font-size:13px;">${displayName}</span>
+                            ${inactiveBadge}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600; color:var(--text-primary, #f1f5f9); font-size:13px;">
+                            ${escapeHtml(m.course_name || m.course_short)}
+                        </div>
+                        <div style="font-size:11px; color:var(--text-dim, #64748b); margin-top:2px;">
+                            ${escapeHtml(m.course_level || '')}
+                        </div>
+                    </td>
+                    <td style="text-align:center;">${modeBadge}</td>
+                    <td>${semHtml}</td>
+                    <td style="text-align:right;">
+                        <a href="${editUrl}" target="_blank" class="uni-modal-edit-btn" title="Edit Course Mapping in new tab">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            <span>Edit</span>
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+})();
 </script>
 
 <?php include dirname(__DIR__, 2) . '/includes/footer.php'; ?>

@@ -124,7 +124,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            set_flash_message('Course mapped successfully!', 'success');
+            // 1. Auto-sync newly mapped course to university_form_configs (Allowed Courses Dropdown)
+            if (function_exists('sode_sync_mapping_to_form_config')) {
+                sode_sync_mapping_to_form_config($university_id, $course_id, $db);
+            }
+
+            // 2. Log Activity
+            $u_info = $db->query("SELECT full_name, short_name, slug FROM universities WHERE id = {$university_id}")->fetch();
+            $c_info = $db->query("SELECT full_name, short_name FROM courses WHERE id = {$course_id}")->fetch();
+            $u_title = $u_info['short_name'] ?? ($u_info['full_name'] ?? 'University');
+            $c_title = $c_info['short_name'] ?? ($c_info['full_name'] ?? 'Course');
+
+            if (function_exists('log_activity')) {
+                log_activity('CREATE', 'mappings', "Mapped Course '{$c_title}' to University '{$u_title}' ({$mode})", [
+                    'item_type' => 'Course Mapping',
+                    'item_id' => $mapping_id,
+                    'item_title' => "{$u_title} - {$c_title}",
+                    'new_values' => [
+                        'university_id' => $university_id,
+                        'course_id' => $course_id,
+                        'mode' => $mode,
+                        'per_semester_fee' => $per_semester_fee,
+                        'total_program_fee' => $total_program_fee
+                    ]
+                ]);
+            }
+
+            // 3. Immediately bust Redis & subdomain caches for this university & all subdomains
+            if (function_exists('sode_bust_university_cache')) {
+                sode_bust_university_cache($university_id, $db);
+            } elseif (function_exists('sode_bust_all_subdomain_caches')) {
+                sode_bust_all_subdomain_caches($db);
+            }
+
+            set_flash_message('Course mapped successfully! Subdomain cache updated.', 'success');
             redirect(BASE_URL . '/modules/mappings/index.php');
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) {

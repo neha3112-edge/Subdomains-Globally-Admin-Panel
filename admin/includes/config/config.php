@@ -3,12 +3,23 @@
  * Global Admin Panel Configuration
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 // Timezone Setup (Indian Standard Time - IST)
 date_default_timezone_set('Asia/Kolkata');
+
+// Fixed 2-Hour Session Configuration (7200 seconds)
+// Prevents PHP's default 24-minute inactivity garbage collection from cutting the session short
+ini_set('session.gc_maxlifetime', 7200);
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 7200,
+        'path'     => '/',
+        'domain'   => '',
+        'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
 
 define('APP_NAME', 'SODE Admin');
 define('APP_SUBTITLE', 'Universal Subdomains Management Portal');

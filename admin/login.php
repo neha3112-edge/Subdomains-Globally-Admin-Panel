@@ -253,6 +253,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="login-sub">Sign in to manage universal subdomains & records</p>
         </div>
 
+        <?php if (!empty($_GET['session_expired'])): ?>
+            <div class="admin-alert alert-info" style="margin-bottom: 16px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 8px; padding: 10px 14px; font-size: 13px;">
+                <span>⏱️ Your session reached the 2-hour auto-logout limit. Please sign in again.</span>
+            </div>
+        <?php endif; ?>
+
         <?php if (!empty($error)): ?>
             <div class="admin-alert alert-error" style="margin-bottom: 16px;">
                 <span><?php echo htmlspecialchars($error); ?></span>

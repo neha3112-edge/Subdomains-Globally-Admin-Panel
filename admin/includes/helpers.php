@@ -212,11 +212,15 @@ if (!function_exists('sode_bust_all_subdomain_caches')) {
         // 2. Resolve $db if not passed
         if (!$db) {
             global $db;
-            if (!$db && function_exists('getDBConnection')) {
-                try {
-                    $db = getDBConnection();
-                } catch (Throwable $e) {
-                    // Ignore DB connection error
+            if (!$db) {
+                if (function_exists('get_db_connection')) {
+                    try {
+                        $db = get_db_connection();
+                    } catch (Throwable $e) {}
+                } elseif (function_exists('getDBConnection')) {
+                    try {
+                        $db = getDBConnection();
+                    } catch (Throwable $e) {}
                 }
             }
         }
@@ -232,6 +236,189 @@ if (!function_exists('sode_bust_all_subdomain_caches')) {
             } catch (Throwable $e) {
                 error_log('SODE cache bust failed: ' . $e->getMessage());
             }
+        }
+    }
+}
+
+/**
+ * Targeted cache bust for a single university (plus global Redis flush).
+ * Updates universities.updated_at, purges specific and pattern keys in Redis,
+ * and pings the university's subdomain with ?sode_flush=sode_flush_2026.
+ */
+if (!function_exists('sode_bust_university_cache')) {
+    function sode_bust_university_cache($uni_id_or_slug, ?PDO $db = null) {
+        if (!$db) {
+            global $db;
+            if (!$db) {
+                if (function_exists('get_db_connection')) {
+                    try {
+                        $db = get_db_connection();
+                    } catch (Throwable $e) {}
+                } elseif (function_exists('getDBConnection')) {
+                    try {
+                        $db = getDBConnection();
+                    } catch (Throwable $e) {}
+                }
+            }
+        }
+
+        $slug = '';
+        $uni_id = 0;
+        if ($db instanceof PDO && !empty($uni_id_or_slug)) {
+            try {
+                if (is_numeric($uni_id_or_slug)) {
+                    $uni_id = (int)$uni_id_or_slug;
+                    $stmt = $db->prepare("SELECT id, slug FROM universities WHERE id = ? LIMIT 1");
+                    $stmt->execute([$uni_id]);
+                    $u = $stmt->fetch();
+                    if ($u) {
+                        $slug = $u['slug'];
+                    }
+                } else {
+                    $slug = (string)$uni_id_or_slug;
+                    $stmt = $db->prepare("SELECT id, slug FROM universities WHERE slug = ? OR short_name = ? LIMIT 1");
+                    $stmt->execute([$slug, $slug]);
+                    $u = $stmt->fetch();
+                    if ($u) {
+                        $uni_id = (int)$u['id'];
+                        $slug = $u['slug'];
+                    }
+                }
+
+                // Touch updated_at timestamp on universities record
+                if ($uni_id > 0) {
+                    $db->prepare("UPDATE universities SET updated_at = NOW() WHERE id = ?")->execute([$uni_id]);
+                }
+            } catch (Throwable $e) {
+                error_log("sode_bust_university_cache DB error: " . $e->getMessage());
+            }
+        }
+
+        // 1. Purge Redis cache
+        if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+            try {
+                if (!empty($slug)) {
+                    $clean_s = strtolower($slug);
+                    Sode_Redis::del("courses_data:" . $clean_s);
+                    Sode_Redis::del("api:courses:" . $clean_s);
+                    Sode_Redis::del("api:university_banner:" . $clean_s);
+                    Sode_Redis::del("api:form_config:" . md5($slug));
+                    Sode_Redis::del("api:university_programmes:" . md5($slug));
+                    Sode_Redis::del("api:university_fees_table:" . md5($slug));
+                }
+                if ($uni_id > 0) {
+                    Sode_Redis::del("api:courses:" . (string)$uni_id);
+                }
+                // Flush all Redis pattern to guarantee 100% freshness
+                Sode_Redis::flushPattern('*');
+            } catch (Throwable $e) {
+                error_log("sode_bust_university_cache Redis error: " . $e->getMessage());
+            }
+        }
+
+        // 2. Remote ping for this specific university (fire-and-forget)
+        if (!empty($slug) && function_exists('sode_fire_and_forget')) {
+            $url = 'https://' . $slug . '.distanceeducationschool.com/?sode_flush=sode_flush_2026';
+            sode_fire_and_forget($url);
+        }
+
+        // 3. Also trigger bust for all active subdomains
+        if (function_exists('sode_bust_all_subdomain_caches')) {
+            sode_bust_all_subdomain_caches($db);
+        }
+    }
+}
+
+/**
+ * Automatically syncs a mapped course into the university's allowed_courses_json in university_form_configs
+ * and ensures it exists in form_courses master, so the new course is immediately available in the form dropdown.
+ */
+if (!function_exists('sode_sync_mapping_to_form_config')) {
+    function sode_sync_mapping_to_form_config($university_id, $course_id, ?PDO $db = null) {
+        if (!$db) {
+            if (function_exists('get_db_connection')) {
+                $db = get_db_connection();
+            }
+        }
+        if (!($db instanceof PDO) || empty($university_id) || empty($course_id)) {
+            return;
+        }
+
+        try {
+            // Fetch course details
+            $c_stmt = $db->prepare("SELECT id, full_name, short_name, level FROM courses WHERE id = ? LIMIT 1");
+            $c_stmt->execute([(int)$course_id]);
+            $course = $c_stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$course) return;
+
+            $short_name = trim($course['short_name']);
+            $full_name = trim($course['full_name']);
+            $level = strtoupper(trim($course['level'] ?? 'PG'));
+            $form_key = strtoupper(preg_replace('/[^A-Za-z0-9_]+/', '', $short_name ?: $full_name));
+
+            // 1. Ensure course exists in form_courses master table
+            $fc_check = $db->prepare("SELECT id FROM form_courses WHERE UPPER(form_key) = ? OR UPPER(display_label) = ? LIMIT 1");
+            $fc_check->execute([$form_key, strtoupper($short_name)]);
+            $existing_fc = $fc_check->fetch(PDO::FETCH_ASSOC);
+            if (!$existing_fc) {
+                $ins_fc = $db->prepare("
+                    INSERT INTO form_courses (display_label, form_key, level, sort_order, is_active)
+                    VALUES (?, ?, ?, 50, 1)
+                ");
+                $ins_fc->execute([$short_name, $form_key, $level]);
+            }
+
+            // 2. Check university_form_configs for this university
+            $ufc_stmt = $db->prepare("SELECT id, allowed_courses_json FROM university_form_configs WHERE university_id = ? LIMIT 1");
+            $ufc_stmt->execute([(int)$university_id]);
+            $ufc = $ufc_stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($ufc && !empty($ufc['allowed_courses_json'])) {
+                $allowed_raw = trim($ufc['allowed_courses_json']);
+                $decoded = json_decode($allowed_raw, true);
+
+                if (is_array($decoded)) {
+                    $found = false;
+                    foreach ($decoded as &$item) {
+                        if (!is_array($item)) continue;
+                        $lbl = strtoupper(trim($item['label'] ?? ''));
+                        $k = strtoupper(trim($item['key'] ?? ''));
+                        if ($lbl === strtoupper($short_name) || $lbl === strtoupper($full_name) || $k === $form_key) {
+                            $item['enabled'] = 1; // Auto-enable if it was disabled
+                            $found = true;
+                            break;
+                        }
+                    }
+                    unset($item);
+
+                    if (!$found) {
+                        // Append as enabled
+                        $decoded[] = [
+                            'label'     => $short_name,
+                            'key'       => $form_key,
+                            'enabled'   => 1,
+                            'level'     => $level,
+                            'is_custom' => 0
+                        ];
+                    }
+
+                    $new_json = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    $upd_ufc = $db->prepare("UPDATE university_form_configs SET allowed_courses_json = ? WHERE university_id = ?");
+                    $upd_ufc->execute([$new_json, (int)$university_id]);
+                } else {
+                    // Legacy comma-separated format
+                    $parts = array_filter(array_map('trim', explode(',', $allowed_raw)));
+                    $upper_parts = array_map('strtoupper', $parts);
+                    if (!in_array(strtoupper($short_name), $upper_parts) && !in_array($form_key, $upper_parts)) {
+                        $parts[] = $short_name;
+                        $new_raw = implode(', ', $parts);
+                        $upd_ufc = $db->prepare("UPDATE university_form_configs SET allowed_courses_json = ? WHERE university_id = ?");
+                        $upd_ufc->execute([$new_raw, (int)$university_id]);
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            error_log("sode_sync_mapping_to_form_config error: " . $e->getMessage());
         }
     }
 }

@@ -19,15 +19,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {
         $m_info = $db->query("
-            SELECT u.short_name AS u_name, c.short_name AS c_name 
+            SELECT u.id AS u_id, u.short_name AS u_name, c.short_name AS c_name 
             FROM university_course_mappings m 
             LEFT JOIN universities u ON m.university_id = u.id 
             LEFT JOIN courses c ON m.course_id = c.id 
             WHERE m.id = $id
         ")->fetch();
+        $uni_id = (int)($m_info['u_id'] ?? 0);
         $title = ($m_info['u_name'] ?? 'Uni') . ' - ' . ($m_info['c_name'] ?? 'Course');
         move_to_trash('university_course_mappings', $id, $title);
-        set_flash_message('Course mapping moved to Trash! You can restore it anytime.', 'success');
+        if ($uni_id && function_exists('sode_bust_university_cache')) {
+            sode_bust_university_cache($uni_id, $db);
+        } elseif (function_exists('sode_bust_all_subdomain_caches')) {
+            sode_bust_all_subdomain_caches($db);
+        }
+        set_flash_message('Course mapping moved to Trash! Cache updated.', 'success');
         redirect(BASE_URL . '/modules/mappings/index.php');
     }
 }
