@@ -1,0 +1,141 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
+header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
+require_once dirname(__DIR__) . '/config/config.php';
+
+$db = get_db_connection();
+
+$uni_slug = strtolower(trim($_GET['uni'] ?? ($_GET['subdomain'] ?? '')));
+$cache_key = "api:news:" . ($uni_slug ?: 'global');
+
+// ── Check Redis Cache ─────────────────────────────────────────────────
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    $cached = Sode_Redis::get($cache_key);
+    if ($cached && is_array($cached)) {
+        $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
+        echo json_encode($cached, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+}
+
+$uni = null;
+
+if (!empty($uni_slug)) {
+    // 1. Try slug match
+    $stmt = $db->prepare("SELECT * FROM universities WHERE LOWER(slug) = LOWER(?) AND is_active = 1 LIMIT 1");
+    $stmt->execute([$uni_slug]);
+    $uni = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // 2. Try short_name match
+    if (!$uni) {
+        $stmt = $db->prepare("SELECT * FROM universities WHERE LOWER(short_name) = LOWER(?) AND is_active = 1 LIMIT 1");
+        $stmt->execute([$uni_slug]);
+        $uni = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+}
+
+// Fetch Global Keys for placeholder replacement
+$global_keys = [];
+try {
+    $g_rows = $db->query("SELECT key_code, key_value FROM global_keys WHERE is_active = 1")->fetchAll(PDO::FETCH_KEY_PAIR);
+    if ($g_rows) {
+        $global_keys = $g_rows;
+    }
+} catch (Exception $e) {}
+
+// Fallback year/session
+$y = date('Y');
+$rep_map = [
+    '$YEAR$'                    => $global_keys['$YEAR$'] ?? $y,
+    '$session$'                 => $global_keys['$session$'] ?? ($y . '-' . substr((string)((int)$y + 1), -2)),
+    '$nextyear$'                => $global_keys['$nextyear$'] ?? (string)((int)$y + 1),
+    '{UNIVERSITY_NAME}'         => $uni['full_name'] ?? 'University',
+    '{university_name}'         => $uni['full_name'] ?? 'University',
+    '{UNIVERSITY_SHORT_NAME}'   => $uni['short_name'] ?? 'University',
+    '{university_short_name}'   => $uni['short_name'] ?? 'University',
+    '{MODE}'                    => $uni['mode'] ?? 'Online & Distance',
+    '{mode}'                    => $uni['mode'] ?? 'Online & Distance',
+    '{UNIVERSITY_LOCATION}'     => $uni['location'] ?? '',
+];
+foreach ($global_keys as $k => $v) {
+    $rep_map[$k] = $v;
+}
+
+// Query news items: Global news first, then University-specific news
+$uni_id = $uni ? (int)$uni['id'] : 0;
+if ($uni_id > 0) {
+    $stmt = $db->prepare("
+        SELECT id, is_global, university_id, news_text, description, published_date, news_link, has_badge, badge_text, sort_order, created_at
+        FROM news_items
+        WHERE is_active = 1 AND (is_global = 1 OR university_id = ?)
+        ORDER BY is_global DESC, sort_order ASC, id ASC
+    ");
+    $stmt->execute([$uni_id]);
+} else {
+    $stmt = $db->query("
+        SELECT id, is_global, university_id, news_text, description, published_date, news_link, has_badge, badge_text, sort_order, created_at
+        FROM news_items
+        WHERE is_active = 1 AND is_global = 1
+        ORDER BY is_global DESC, sort_order ASC, id ASC
+    ");
+}
+$raw_news = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$items = [];
+foreach ($raw_news as $row) {
+    $text = $row['news_text'];
+    // Replace all placeholders
+    foreach ($rep_map as $search => $replace) {
+        $text = str_ireplace($search, $replace, $text);
+    }
+
+    $desc = $row['description'] ?? '';
+    if (!empty($desc)) {
+        foreach ($rep_map as $search => $replace) {
+            $desc = str_ireplace($search, $replace, $desc);
+        }
+    }
+
+    $pub_date = !empty($row['published_date']) ? $row['published_date'] : date('jS M Y', strtotime($row['created_at']));
+
+    $link = $row['news_link'];
+    if (!empty($link)) {
+        foreach ($rep_map as $search => $replace) {
+            $link = str_ireplace($search, $replace, $link);
+        }
+    }
+
+    $items[] = [
+        'id'             => (int)$row['id'],
+        'text'           => $text,
+        'title'          => $text,
+        'description'    => $desc,
+        'published_date' => $pub_date,
+        'link'           => $link ?: '',
+        'has_badge'      => (bool)$row['has_badge'],
+        'badge_text'     => $row['badge_text'] ?: 'New',
+        'is_global'      => (bool)$row['is_global'],
+        'university_id'  => $row['university_id'] ? (int)$row['university_id'] : null,
+        'sort_order'     => (int)$row['sort_order'],
+    ];
+}
+
+$response = [
+    'success'    => true,
+    'uni'        => $uni_slug ?: null,
+    'uni_found'  => !empty($uni),
+    'university' => $uni ? $uni['full_name'] : null,
+    'news'       => $items,
+    'count'      => count($items)
+];
+
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    Sode_Redis::set($cache_key, $response, 86400);
+}
+
+echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -1,0 +1,113 @@
+<?php
+/**
+ * Universal Media Library Popup Modal Component
+ */
+?>
+<!-- Media Library Modal -->
+<div id="universal-media-modal" class="media-modal-backdrop" style="display:none;">
+    <div class="media-modal-box">
+        <div class="media-modal-header">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <h3 class="media-modal-title">Media Library</h3>
+                <div class="media-modal-tabs">
+                    <button type="button" class="media-tab-btn active" data-tab="tab-library">Choose Existing</button>
+                    <button type="button" class="media-tab-btn" data-tab="tab-upload">Upload New File</button>
+                </div>
+            </div>
+            <button type="button" class="media-modal-close" id="close-media-modal-btn" title="Close modal">&times;</button>
+        </div>
+
+        <div class="media-modal-body">
+            <!-- Tab 1: Library Grid -->
+            <div id="tab-library" class="media-tab-content active">
+                <div class="media-toolbar">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <select id="media-filter-type" class="form-select" style="width:145px; padding:7px 12px; font-size:12.5px;">
+                            <option value="all">All Media</option>
+                            <option value="image">Images (PNG, JPG, WebP)</option>
+                            <option value="audio">Audio (MP3, WAV)</option>
+                            <option value="pdf">PDF Documents</option>
+                            <option value="video">Videos (MP4)</option>
+                        </select>
+                        <select id="modal-media-date-filter" class="form-select" style="width:140px; padding:7px 12px; font-size:12.5px;">
+                            <option value="all">📅 All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="7days">Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="this_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <optgroup label="Months" id="modal-date-months-group"></optgroup>
+                        </select>
+                        <input type="text" id="media-search-input" class="form-control" placeholder="Search by name..." style="width:200px; padding:7px 12px; font-size:12.5px;">
+                    </div>
+                    <div style="font-size:12px; color:var(--text-dim);" id="media-count-label">Loading files...</div>
+                </div>
+
+                <div class="media-main-layout">
+                    <!-- Left: Grid of media thumbnails & Pagination -->
+                    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+                        <div class="media-grid-wrap" id="media-items-grid" style="flex:1; overflow-y:auto;">
+                            <!-- Loaded dynamically via JS -->
+                        </div>
+                        <div class="media-modal-pagination" id="media-modal-pagination-bar" style="display:none; padding:8px 14px; border-top:1px solid var(--border-color); background:var(--bg-card); align-items:center; justify-content:space-between;">
+                            <span id="media-modal-page-info" style="font-size:12px; color:var(--text-dim);">Page 1 of 1 (50 items/page)</span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn-sm action-btn" id="media-modal-prev-btn" disabled style="padding:4px 12px; font-size:12px; height:28px;">&laquo; Prev</button>
+                                <button type="button" class="btn-sm action-btn" id="media-modal-next-btn" disabled style="padding:4px 12px; font-size:12px; height:28px;">Next &raquo;</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: File Details & Action Panel -->
+                    <div class="media-details-panel" id="media-details-panel" style="display:none;">
+                        <div class="media-preview-box" id="media-detail-preview"></div>
+                        <div class="media-detail-meta">
+                            <div class="media-detail-name" id="media-detail-name"></div>
+                            <div class="media-detail-info" id="media-detail-info"></div>
+                            <div class="media-detail-url">
+                                <input type="text" id="media-detail-url-input" class="form-control" readonly style="font-size:11px; padding:6px 10px;">
+                                <button type="button" class="btn-sm action-btn" id="media-copy-url-btn" title="Copy URL" style="margin-top:6px; width:100%;">
+                                    Copy Direct URL
+                                </button>
+                            </div>
+                        </div>
+                        <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px;">
+                            <button type="button" class="btn-primary" id="media-select-and-insert-btn" style="padding:10px 16px;">
+                                Use Selected File
+                            </button>
+                            <button type="button" class="action-btn delete-btn" id="media-delete-file-btn" style="width:100%; font-size:12px; height:34px;">
+                                Delete Permanently
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Drag & Drop Upload Zone -->
+            <div id="tab-upload" class="media-tab-content">
+                <div class="media-dropzone" id="media-dropzone">
+                    <div class="dropzone-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div class="dropzone-title">Drag & Drop your files here</div>
+                    <div class="dropzone-sub">Supports Images (PNG, JPG, WebP, SVG), Audio (MP3, M4A), PDF, Video (MP4) up to 50MB</div>
+                    <label class="btn-primary" style="width:auto; padding:10px 24px; cursor:pointer; margin-top:16px;">
+                        <span>Browse From Computer</span>
+                        <input type="file" id="media-file-browser-input" multiple style="display:none;" accept="image/*,audio/*,video/*,application/pdf">
+                    </label>
+                    <div id="upload-progress-container" style="display:none; width:100%; max-width:400px; margin-top:20px;">
+                        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;" id="upload-status-text">Uploading...</div>
+                        <div style="width:100%; height:6px; background:var(--bg-input); border-radius:3px; overflow:hidden;">
+                            <div id="upload-progress-bar" style="width:0%; height:100%; background:var(--primary-gradient); transition:width 0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
