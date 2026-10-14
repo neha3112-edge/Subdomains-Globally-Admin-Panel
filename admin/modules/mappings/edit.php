@@ -1245,7 +1245,15 @@ if (courseSelect) {
         var subjectsList = box.querySelector('.subjects-list');
         if (subjects && subjects.length > 0) {
             subjects.forEach(function(sub) {
-                subjectsList.appendChild(createSubjectRow(sub.name || '', sub.link || ''));
+                var sName = '';
+                var sLink = '';
+                if (typeof sub === 'string') {
+                    sName = sub;
+                } else if (sub && typeof sub === 'object') {
+                    sName = sub.name || '';
+                    sLink = (typeof sub.link === 'string') ? sub.link : '';
+                }
+                subjectsList.appendChild(createSubjectRow(sName, sLink));
             });
         } else {
             subjectsList.appendChild(createSubjectRow('', ''));
@@ -1322,7 +1330,8 @@ if (courseSelect) {
     // Initialize from DB
     if (initialData && initialData.length > 0) {
         initialData.forEach(function(sem) {
-            semContainer.appendChild(createSemesterBox(sem.semester_title, sem.subjects));
+            var sTitle = sem.semester_title || sem.semester || '';
+            semContainer.appendChild(createSemesterBox(sTitle, sem.subjects));
         });
     }
 

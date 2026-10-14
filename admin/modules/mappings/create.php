@@ -1147,7 +1147,15 @@ if (courseSelect) {
         var subjectsList = box.querySelector('.subjects-list');
         if (subjects && subjects.length > 0) {
             subjects.forEach(function(sub) {
-                subjectsList.appendChild(createSubjectRow(sub.name || '', sub.link || ''));
+                var sName = '';
+                var sLink = '';
+                if (typeof sub === 'string') {
+                    sName = sub;
+                } else if (sub && typeof sub === 'object') {
+                    sName = sub.name || '';
+                    sLink = (typeof sub.link === 'string') ? sub.link : '';
+                }
+                subjectsList.appendChild(createSubjectRow(sName, sLink));
             });
         } else {
             subjectsList.appendChild(createSubjectRow('', ''));
