@@ -236,16 +236,24 @@ if (!function_exists('sode_course_syllabus_render')) {
                             <tr>
                                 <?php foreach ($semesters as $sem):
                                     $sub = $sem['subjects'][$r] ?? null;
+                                    $sub_name = '';
+                                    $sub_link = '';
+                                    if (is_array($sub)) {
+                                        $sub_name = trim($sub['name'] ?? '');
+                                        $sub_link = trim($sub['link'] ?? '');
+                                    } elseif (is_string($sub)) {
+                                        $sub_name = trim($sub);
+                                    }
                                     ?>
                                     <td>
-                                        <?php if ($sub && !empty($sub['name'])): ?>
-                                            <?php if (!empty($sub['link'])): ?>
-                                                <a href="<?php echo htmlspecialchars($sub['link']); ?>" target="_blank" rel="noopener"
+                                        <?php if (!empty($sub_name)): ?>
+                                            <?php if (!empty($sub_link)): ?>
+                                                <a href="<?php echo htmlspecialchars($sub_link); ?>" target="_blank" rel="noopener"
                                                     class="sode-syllabus-link">
-                                                    <?php echo htmlspecialchars($sub['name']); ?>
+                                                    <?php echo htmlspecialchars($sub_name); ?>
                                                 </a>
                                             <?php else: ?>
-                                                <span class="sode-syllabus-text"><?php echo htmlspecialchars($sub['name']); ?></span>
+                                                <span class="sode-syllabus-text"><?php echo htmlspecialchars($sub_name); ?></span>
                                             <?php endif; ?>
                                         <?php else: ?>
                                             <span class="sode-syllabus-empty">&nbsp;</span>

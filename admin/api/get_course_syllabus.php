@@ -7,7 +7,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Cache-Control, Pragma, Expires');
 header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
@@ -112,6 +112,26 @@ if ($db) {
             if (!empty($mapping['syllabus_json'])) {
                 $dec = json_decode($mapping['syllabus_json'], true);
                 if (is_array($dec)) {
+                    // Normalize subjects so both simple strings and objects with 'name' work seamlessly
+                    foreach ($dec as &$s_item) {
+                        if (!empty($s_item['subjects']) && is_array($s_item['subjects'])) {
+                            foreach ($s_item['subjects'] as &$sub_val) {
+                                if (is_string($sub_val)) {
+                                    $sub_val = [
+                                        'name' => trim($sub_val),
+                                        'link' => ''
+                                    ];
+                                } elseif (is_array($sub_val)) {
+                                    $sub_val = [
+                                        'name' => trim($sub_val['name'] ?? ''),
+                                        'link' => trim($sub_val['link'] ?? '')
+                                    ];
+                                }
+                            }
+                            unset($sub_val);
+                        }
+                    }
+                    unset($s_item);
                     $semesters = $dec;
                 }
             }

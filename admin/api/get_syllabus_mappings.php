@@ -85,7 +85,7 @@ try {
             $sem_title = trim($sem['semester_title'] ?? ('Semester ' . ($sem_idx + 1)));
             if (!empty($sem['subjects']) && is_array($sem['subjects'])) {
                 foreach ($sem['subjects'] as $sub_item) {
-                    $sname = trim($sub_item['name'] ?? '');
+                    $sname = is_array($sub_item) ? trim($sub_item['name'] ?? '') : trim($sub_item);
                     if ($sname === $target_name) {
                         $matched_semesters[] = $sem_title;
                         break;
