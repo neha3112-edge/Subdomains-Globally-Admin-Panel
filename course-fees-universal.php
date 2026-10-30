@@ -255,7 +255,7 @@ if (!function_exists('sode_course_fees_render')) {
         $course = $atts['course'];
         $mode = $atts['mode'];
         $currency = !empty($atts['currency']) ? trim($atts['currency']) : 'INR';
-        $show_per_sem = in_array(strtolower(trim((string) $atts['show_per_semester'])), ['true', '1', 'yes', 'on']);
+        $hide_per_sem = in_array(strtolower(trim((string) ($atts['show_per_semester'] ?? ''))), ['false', '0', 'no', 'off']);
         $custom_class = trim($atts['class'] ?? '');
 
         // Fetch data
@@ -273,7 +273,15 @@ if (!function_exists('sode_course_fees_render')) {
             ];
         }
 
-        // 2. Tuition Fee
+        // 2. Per Semester Fee (shown by default whenever available)
+        if (!empty($fees['per_semester_fee']) && !$hide_per_sem) {
+            $rows[] = [
+                'component' => 'Per Semester Fee',
+                'amount' => sode_format_fee_display($fees['per_semester_fee'], $currency),
+            ];
+        }
+
+        // 3. Tuition Fee
         if (!empty($fees['tuition_fee'])) {
             $rows[] = [
                 'component' => 'Tuition Fee',
@@ -281,19 +289,11 @@ if (!function_exists('sode_course_fees_render')) {
             ];
         }
 
-        // 3. Examination Fee
+        // 4. Examination Fee
         if (!empty($fees['examination_fee'])) {
             $rows[] = [
                 'component' => 'Examination Fee',
                 'amount' => sode_format_fee_display($fees['examination_fee'], $currency),
-            ];
-        }
-
-        // 4. Per Semester Fee (optional if requested or if tuition fee is missing)
-        if (!empty($fees['per_semester_fee']) && ($show_per_sem || empty($fees['tuition_fee']))) {
-            $rows[] = [
-                'component' => 'Per Semester Fee',
-                'amount' => sode_format_fee_display($fees['per_semester_fee'], $currency),
             ];
         }
 
@@ -309,6 +309,7 @@ if (!function_exists('sode_course_fees_render')) {
         if (empty($rows)) {
             $rows = [
                 ['component' => 'One-time Processing Fee', 'amount' => $currency . ' 500'],
+                ['component' => 'Per Semester Fee', 'amount' => $currency . ' 15,250'],
                 ['component' => 'Tuition Fee', 'amount' => $currency . ' 61,000'],
                 ['component' => 'Examination Fee', 'amount' => $currency . ' 3,750'],
                 ['component' => 'Total Program Fee', 'amount' => $currency . ' 1,30,000'],
