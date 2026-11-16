@@ -1165,14 +1165,22 @@ function sode_run_auto_migrations(PDO $pdo) {
             },
 
             '2026_09_14_003_add_plain_password_to_users' => function(PDO $db) {
+                // Deprecated: Plaintext password storage decommissioned for security compliance.
+            },
+
+            '2026_11_02_001_remove_plain_password_and_harden_auth' => function(PDO $db) {
                 try {
                     $col_check = $db->query("SHOW COLUMNS FROM users LIKE 'plain_password'")->fetch();
-                    if (!$col_check) {
-                        $db->exec("ALTER TABLE users ADD COLUMN plain_password VARCHAR(255) NULL AFTER password_hash");
+                    if ($col_check) {
+                        $db->exec("ALTER TABLE users DROP COLUMN plain_password");
                     }
-                    $db->exec("UPDATE users SET plain_password = 'admin123' WHERE id = 1 AND (plain_password IS NULL OR plain_password = '')");
+                    // Optimize login_logs for fast lockout check queries
+                    $idx_check = $db->query("SHOW INDEX FROM login_logs WHERE Key_name = 'idx_login_lockout'")->fetch();
+                    if (!$idx_check) {
+                        $db->exec("CREATE INDEX idx_login_lockout ON login_logs (ip_address, identifier, status, created_at)");
+                    }
                 } catch (Exception $e) {
-                    error_log("Users plain_password migration error: " . $e->getMessage());
+                    error_log("Remove plain_password migration error: " . $e->getMessage());
                 }
             }
         ];

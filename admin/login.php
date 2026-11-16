@@ -15,7 +15,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $location_address = trim($_POST['location_address'] ?? '');
     $location_accuracy = trim($_POST['location_accuracy'] ?? '');
 
-    if (empty($identifier) || empty($password)) {
+    // 1. Rate Limiting Check: Max 3 failed attempts in 15 minutes
+    $lockout = check_login_lockout($identifier, 3, 15);
+    if ($lockout['locked']) {
+        $error = "🚨 Security Lockout: Too many failed login attempts ({$lockout['attempts']}/3). Your IP and account are locked for {$lockout['remaining_mins']} minute(s). Please try again later.";
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($identifier, 'FAILED', "Blocked by Rate Limiting: {$lockout['attempts']} failed attempts ({$lockout['remaining_mins']}m lockout)");
+        }
+    } elseif (empty($identifier) || empty($password)) {
         $error = 'Please enter both email/username and password.';
     } elseif (empty($latitude) || empty($longitude)) {
         $error = '📍 Location access is required to sign in. Please enable location permissions in your browser and try again.';
@@ -23,17 +30,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_login_attempt($identifier, 'FAILED', 'Blocked: Location Permission Denied/Missing');
         }
     } else {
-        $location_data = [
-            'latitude' => $latitude,
-            'longitude' => $longitude,
-            'location_address' => $location_address,
-            'location_accuracy' => $location_accuracy
-        ];
-        $res = attempt_login($identifier, $password, $location_data);
-        if ($res['success']) {
-            redirect(BASE_URL . '/dashboard.php');
+        // 2. Server-side IP Geofencing & Anti-Fake GPS Location Check
+        $geo_check = verify_server_ip_and_location($latitude, $longitude);
+        if (!$geo_check['success']) {
+            $error = $geo_check['message'];
+            if (function_exists('log_login_attempt')) {
+                log_login_attempt($identifier, 'FAILED', 'Blocked by Geofence: ' . ($geo_check['details']['reason'] ?? 'Location Check Failed'), null, null, [
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'location_address' => $location_address,
+                    'location_accuracy' => $location_accuracy
+                ]);
+            }
         } else {
-            $error = $res['message'];
+            $location_data = [
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'location_address' => $location_address,
+                'location_accuracy' => $location_accuracy
+            ];
+            $res = attempt_login($identifier, $password, $location_data);
+            if ($res['success']) {
+                redirect(BASE_URL . '/dashboard.php');
+            } else {
+                // Check attempts count to display warning or lockout
+                $post_lockout = check_login_lockout($identifier, 3, 15);
+                if ($post_lockout['locked']) {
+                    $error = "🚨 Security Lockout: 3 consecutive failed login attempts reached. Your account and IP are now locked for {$post_lockout['remaining_mins']} minutes.";
+                } else {
+                    $remaining = 3 - $post_lockout['attempts'];
+                    if ($remaining > 0) {
+                        $error = $res['message'] . " (Warning: {$remaining} attempt(s) remaining before a 15-minute lockout).";
+                    } else {
+                        $error = $res['message'];
+                    }
+                }
+            }
         }
     }
 }

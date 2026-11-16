@@ -61,13 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $hash = password_hash($password, PASSWORD_BCRYPT);
                     $stmt = $db->prepare("
-                        INSERT INTO users (name, username, email, country_code, phone, password_hash, plain_password, team_id, role_id, is_superadmin, is_active)
-                        VALUES (:name, :username, :email, :country_code, :phone, :hash, :plain_password, :team_id, :role_id, :is_superadmin, :is_active)
+                        INSERT INTO users (name, username, email, country_code, phone, password_hash, team_id, role_id, is_superadmin, is_active)
+                        VALUES (:name, :username, :email, :country_code, :phone, :hash, :team_id, :role_id, :is_superadmin, :is_active)
                     ");
                     try {
                         $stmt->execute([
                             'name' => $name, 'username' => $username, 'email' => $email, 'country_code' => $country_code,
-                            'phone' => $phone, 'hash' => $hash, 'plain_password' => $password, 'team_id' => $team_id,
+                            'phone' => $phone, 'hash' => $hash, 'team_id' => $team_id,
                             'role_id' => $role_id, 'is_superadmin' => $is_superadmin, 'is_active' => $is_active
                         ]);
                         $new_uid = (int)$db->lastInsertId();
@@ -100,11 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $hash = password_hash($password, PASSWORD_BCRYPT);
                         $stmt = $db->prepare("
                             UPDATE users SET name = :name, username = :username, email = :email, country_code = :country_code,
-                            phone = :phone, password_hash = :hash, plain_password = :plain_password, team_id = :team_id, role_id = :role_id,
+                            phone = :phone, password_hash = :hash, team_id = :team_id, role_id = :role_id,
                             is_superadmin = :is_superadmin, is_active = :is_active WHERE id = :id
                         ");
                         $params = ['name' => $name, 'username' => $username, 'email' => $email, 'country_code' => $country_code,
-                            'phone' => $phone, 'hash' => $hash, 'plain_password' => $password, 'team_id' => $team_id, 'role_id' => $role_id,
+                            'phone' => $phone, 'hash' => $hash, 'team_id' => $team_id, 'role_id' => $role_id,
                             'is_superadmin' => $is_superadmin, 'is_active' => $is_active, 'id' => $user_id];
                     } else {
                         $stmt = $db->prepare("
@@ -189,12 +189,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $new_hash = password_hash($new_password, PASSWORD_BCRYPT);
         $update_stmt = $db->prepare("
             UPDATE users 
-            SET password_hash = :hash, plain_password = :plain 
+            SET password_hash = :hash 
             WHERE id = :id
         ");
         $update_stmt->execute([
             'hash'  => $new_hash,
-            'plain' => $new_password,
             'id'    => $target_user_id
         ]);
 
@@ -456,7 +455,6 @@ require_once ADMIN_PATH . '/includes/header.php';
                                             "email"         => $u["email"] ?? "",
                                             "country_code"  => $u["country_code"] ?? "+91",
                                             "phone"         => $u["phone"] ?? "",
-                                            "plain_password"=> $u["plain_password"] ?? "",
                                             "team_name"     => $u["team_name"] ?? "No Team",
                                             "role_name"     => $u["role_name"] ?? "User",
                                             "is_superadmin" => !empty($u["is_superadmin"]),
@@ -472,8 +470,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                             "id"            => (int)$u["id"],
                                             "name"          => $u["name"] ?? "",
                                             "username"      => $u["username"] ?? "",
-                                            "email"         => $u["email"] ?? "",
-                                            "plain_password"=> $u["plain_password"] ?? ""
+                                            "email"         => $u["email"] ?? ""
                                         ]), ENT_QUOTES, "UTF-8"); ?>)'>
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
                                         </button>
@@ -548,29 +545,23 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                 <!-- Password Box -->
                 <div class="detail-box" style="grid-column: span 2; background:rgba(99, 102, 241, 0.05); border:1px solid rgba(99, 102, 241, 0.2); border-radius:10px; padding:14px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--primary, #6366f1); letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            Password
-                        </label>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <span id="copyPassAlert" style="font-size:11px; color:#10b981; font-weight:600; display:none;">Copied to clipboard!</span>
-                            <button type="button" onclick="switchFromViewToResetModal()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; font-size:11px; font-weight:600; padding:3px 9px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
-                                Reset Password
-                            </button>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--primary, #6366f1); letter-spacing:0.5px; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Password Security
+                            </label>
+                            <span style="font-size:12.5px; color:#10b981; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Encrypted & Protected (Bcrypt Hash)
+                            </span>
+                            <small style="font-size:11px; color:var(--text-dim, #64748b); display:block; margin-top:3px;">Raw plain password is hidden for security compliance.</small>
                         </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="password" id="viewUserPassInput" readonly value="" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#f8fafc; font-family:monospace; font-size:15px; height:44px; padding:0 14px; flex:1; outline:none; letter-spacing:1px;" />
-                        <button type="button" id="togglePassBtn" class="action-btn pass-action-btn" title="Show / Hide Password" onclick="toggleViewUserPassword()">
-                            <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        </button>
-                        <button type="button" class="action-btn pass-action-btn" title="Copy Password" onclick="copyViewUserPassword()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <button type="button" onclick="switchFromViewToResetModal()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; font-size:12px; font-weight:600; padding:7px 12px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path></svg>
+                            Reset Password
                         </button>
                     </div>
-                    <small id="passNote" style="font-size:11px; color:var(--text-dim, #64748b); display:block; margin-top:6px;">Current password configured for this user.</small>
                 </div>
 
                 <div class="detail-box">
@@ -635,17 +626,6 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <span id="resetUserHandle" style="font-size:12px; font-weight:600; color:var(--primary); background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25); padding:3px 8px; border-radius:4px;">@username</span>
                 </div>
 
-                <!-- Current Password Preview (if exists) -->
-                <div id="resetCurrentPassBox" style="margin-bottom:16px; display:none;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-dim); letter-spacing:0.5px;">Current Password</label>
-                        <span id="copyResetCurrentPassAlert" style="font-size:11px; color:#10b981; font-weight:600; display:none;">Copied!</span>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="resetCurrentPassInput" readonly style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:#94a3b8; font-family:monospace; font-size:13px; height:36px; padding:0 10px; flex:1; outline:none;" />
-                        <button type="button" class="btn-sm" onclick="copyResetCurrentPass()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-main); font-size:12px; padding:0 12px; border-radius:6px; cursor:pointer;">Copy</button>
-                    </div>
-                </div>
 
                 <!-- New Password Field -->
                 <div class="form-group" style="margin-bottom:8px;">
@@ -800,21 +780,6 @@ function openViewUserModal(user) {
 
     document.getElementById('viewUserTeamBadge').textContent = user.team_name || 'No Team';
 
-    // Password
-    var passInput = document.getElementById('viewUserPassInput');
-    var passNote = document.getElementById('passNote');
-    passInput.type = 'password';
-    passInput.value = user.plain_password || '';
-    if (!user.plain_password) {
-        passInput.placeholder = 'Password encrypted (legacy)';
-        passNote.textContent = 'Password was set prior to plain storage or encrypted.';
-    } else {
-        passInput.placeholder = '';
-        passNote.textContent = 'Current password configured for this user.';
-    }
-    document.getElementById('copyPassAlert').style.display = 'none';
-    updateEyeIcon(false);
-
     // Edit link
     document.getElementById('viewUserEditLink').href = '<?php echo BASE_URL; ?>/modules/rbac/users.php?action=edit&id=' + user.id;
 
@@ -831,36 +796,6 @@ function closeViewUserModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function toggleViewUserPassword() {
-    var passInput = document.getElementById('viewUserPassInput');
-    if (passInput.type === 'password') {
-        passInput.type = 'text';
-        updateEyeIcon(true);
-    } else {
-        passInput.type = 'password';
-        updateEyeIcon(false);
-    }
-}
-
-function updateEyeIcon(showing) {
-    var eyeSvg = document.getElementById('eyeIcon');
-    if (showing) {
-        eyeSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-    } else {
-        eyeSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-    }
-}
-
-function copyViewUserPassword() {
-    var passInput = document.getElementById('viewUserPassInput');
-    if (!passInput.value) return;
-    navigator.clipboard.writeText(passInput.value).then(function() {
-        var alert = document.getElementById('copyPassAlert');
-        alert.style.display = 'inline';
-        setTimeout(function(){ alert.style.display = 'none'; }, 2500);
-    });
-}
-
 // ---------------- RESET PASSWORD MODAL LOGIC ----------------
 var currentUserForReset = null;
 
@@ -872,20 +807,14 @@ function openResetPasswordModal(user) {
     document.getElementById('resetUserHandle').textContent = user.username ? '@' + user.username : 'ID: ' + user.id;
     document.getElementById('resetUserSubtitle').textContent = 'Set a new password for ' + (user.name || 'this user');
     
-    var curPassBox = document.getElementById('resetCurrentPassBox');
-    var curPassInput = document.getElementById('resetCurrentPassInput');
-    if (user.plain_password) {
-        curPassInput.value = user.plain_password;
-        curPassBox.style.display = 'block';
-    } else {
-        curPassInput.value = '';
-        curPassBox.style.display = 'none';
-    }
-
     var newPassInput = document.getElementById('resetNewPassInput');
     newPassInput.value = '';
     
     document.getElementById('resetPasswordModal').style.display = 'flex';
+    setTimeout(function() {
+        newPassInput.focus();
+    }, 100);
+}
     setTimeout(function() {
         newPassInput.focus();
     }, 100);

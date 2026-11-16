@@ -188,7 +188,7 @@ if (!function_exists('sode_get_course_fees_data')) {
                 $raw = '';
                 if (function_exists('wp_remote_get')) {
                     $resp = wp_remote_get($url, [
-                        'timeout' => 8, 
+                        'timeout' => 8,
                         'sslverify' => false,
                         'headers' => [
                             'Cache-Control' => 'no-cache, no-store, must-revalidate',
@@ -203,7 +203,7 @@ if (!function_exists('sode_get_course_fees_data')) {
                         'http' => [
                             'timeout' => 8,
                             'header' => "Cache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\n"
-                        ], 
+                        ],
                         'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]
                     ]);
                     $raw = @file_get_contents($url, false, $ctx);
