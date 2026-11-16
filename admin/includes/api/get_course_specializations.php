@@ -19,8 +19,6 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once dirname(__DIR__) . '/config/config.php';
 
-$db = get_db_connection();
-
 // 1. Resolve University
 $uni_param = trim($_GET['uni'] ?? ($_GET['university'] ?? ($_POST['uni'] ?? ($_POST['university'] ?? ''))));
 if (empty($uni_param) && !empty($_SERVER['HTTP_REFERER'])) {
@@ -51,6 +49,7 @@ if (empty($mode_param)) {
 // Normalize mode capitalisation ('Online', 'Distance')
 $mode_clean = (stripos($mode_param, 'dist') !== false) ? 'Distance' : 'Online';
 
+// 3. Cache-First Check: Return instantly if cached (ZERO DB Connection)
 $cache_key = 'api:course_specializations:' . md5($uni_param . '|' . $course_param . '|' . $mode_clean);
 $cached_response = Sode_Redis::get($cache_key);
 if ($cached_response !== null) {
@@ -58,6 +57,9 @@ if ($cached_response !== null) {
     echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
+
+// 4. Cache Miss: Connect to Database (Lazy Loading)
+$db = get_db_connection();
 
 $specializations = [];
 $found_uni = null;

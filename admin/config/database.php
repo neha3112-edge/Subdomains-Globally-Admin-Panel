@@ -31,19 +31,57 @@ function get_db_connection()
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_TIMEOUT => 3, // Fast 3-second connection timeout
     ];
 
-    try {
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-        $pdo->exec("SET time_zone = '+05:30'");
+    // Smart Wait-Queue & Micro-Retry Configuration
+    // When MySQL returns 1040 (Too many connections), pause and retry before failing
+    $max_retries = 4; // 1 initial attempt + 3 micro-wait queue retries
+    $attempt = 0;
+    $last_exception = null;
 
-        return $pdo;
-    } catch (PDOException $e) {
-        // Show exact error message to debug localhost
-        die("<div style='font-family:sans-serif; padding:20px; background:#fff3f3; color:#d32f2f; border:1px solid #ffcdd2; border-radius:8px; max-width:600px; margin:40px auto;'>"
-            . "<h3 style='margin-top:0;'>⚠️ Database Connection Error:</h3>"
-            . "<p><strong>Details:</strong> " . htmlspecialchars($e->getMessage()) . "</p>"
-            . "<p style='color:#555; font-size:13px;'>Make sure: <br>1. XAMPP me MySQL running hai.<br>2. phpMyAdmin me <code>" . htmlspecialchars(DB_NAME) . "</code> naam ka database create kiya hua hai.</p>"
-            . "</div>");
+    while ($attempt < $max_retries) {
+        $attempt++;
+        try {
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            $pdo->exec("SET time_zone = '+05:30'");
+
+            return $pdo;
+        } catch (PDOException $e) {
+            $last_exception = $e;
+            $err_code = (int) $e->getCode();
+            $err_msg = $e->getMessage();
+
+            // Detect transient capacity / connection overload errors
+            $is_transient = (
+                strpos($err_msg, '1040') !== false ||
+                stripos($err_msg, 'Too many connections') !== false ||
+                strpos($err_msg, '2002') !== false ||
+                strpos($err_msg, '2006') !== false ||
+                strpos($err_msg, '1205') !== false ||
+                $err_code === 1040 ||
+                $err_code === 2002
+            );
+
+            if ($is_transient && $attempt < $max_retries) {
+                // Micro-wait queue: pause to allow active MySQL queries on server to complete
+                // Exponential backoff with random jitter (e.g. 80ms, 170ms, 320ms)
+                $sleep_us = (int) (($attempt * 80000) + mt_rand(10000, 40000));
+                usleep($sleep_us);
+                continue;
+            }
+
+            // Non-transient error (e.g. credentials, unknown DB) - exit loop
+            break;
+        }
     }
+
+    // Log connection failure safely for server debugging
+    if ($last_exception) {
+        error_log("SODE Database Connection Notice (Attempts: {$attempt}/{$max_retries}): " . $last_exception->getMessage());
+    }
+
+    // Never crash public websites / subdomains / APIs with fatal die()
+    // Gracefully return null so caller shortcodes and APIs can serve cached/fallback data
+    return null;
 }

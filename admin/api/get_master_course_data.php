@@ -16,11 +16,10 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once dirname(__DIR__) . '/config/config.php';
 
-$db = get_db_connection();
-
 $course_id = (int)($_GET['course_id'] ?? 0);
 $course_slug = strtolower(trim($_GET['course'] ?? ''));
 
+// 1. Cache-First Check: Return instantly if cached (ZERO DB Connection)
 $cache_key = 'api:master_course_data:' . md5($course_id . '|' . $course_slug);
 $cached_response = Sode_Redis::get($cache_key);
 if ($cached_response !== null) {
@@ -28,6 +27,9 @@ if ($cached_response !== null) {
     echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
+
+// 2. Cache Miss: Connect to Database (Lazy Loading)
+$db = get_db_connection();
 
 if (!$course_id && !empty($course_slug)) {
     $c_stmt = $db->prepare("SELECT id FROM courses WHERE LOWER(slug) = LOWER(?) OR LOWER(short_name) = LOWER(?) LIMIT 1");

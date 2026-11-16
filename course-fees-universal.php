@@ -96,6 +96,12 @@ if (!function_exists('sode_get_course_fees_data')) {
         $course_slug = !empty($course_slug) ? trim(strtolower($course_slug)) : 'mba';
         $mode_clean = (stripos($mode, 'dist') !== false) ? 'Distance' : 'Online';
 
+        static $cache = [];
+        $cache_key = "{$uni_slug}_{$course_slug}_{$mode_clean}";
+        if (isset($cache[$cache_key])) {
+            return $cache[$cache_key];
+        }
+
         $fees = [];
         $uni_name = strtoupper($uni_slug);
         $course_name = strtoupper($course_slug);

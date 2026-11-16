@@ -6,15 +6,37 @@
 // Timezone Setup (Indian Standard Time - IST)
 date_default_timezone_set('Asia/Kolkata');
 
-// Fixed 2-Hour Session Configuration (7200 seconds)
-// Prevents PHP's default 24-minute inactivity garbage collection from cutting the session short
+// Enhanced Session & Cookie Security Configuration (7200 seconds / 2 hours)
 ini_set('session.gc_maxlifetime', 7200);
-if (session_status() === PHP_SESSION_NONE) {
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.use_trans_sid', 0);
+
+$is_secure_conn = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+    || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+ini_set('session.cookie_secure', $is_secure_conn ? 1 : 0);
+
+// Skip session initialization for API endpoints, SSR components, and CLI to prevent session file lock contention
+$is_api_or_cli = (
+    php_sapi_name() === 'cli' ||
+    (!empty($_SERVER['REQUEST_URI']) && (
+        strpos($_SERVER['REQUEST_URI'], '/api/') !== false ||
+        strpos($_SERVER['REQUEST_URI'], 'render_component.php') !== false
+    )) ||
+    (!empty($_SERVER['SCRIPT_NAME']) && (
+        strpos($_SERVER['SCRIPT_NAME'], '/api/') !== false ||
+        strpos($_SERVER['SCRIPT_NAME'], 'render_component.php') !== false
+    ))
+);
+
+if (!$is_api_or_cli && session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 7200,
         'path'     => '/',
         'domain'   => '',
-        'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'secure'   => $is_secure_conn,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);

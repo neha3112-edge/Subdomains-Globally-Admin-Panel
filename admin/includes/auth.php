@@ -62,6 +62,9 @@ function require_login() {
 
 function attempt_login($identifier, $password, $location_data = []) {
     $db = get_db_connection();
+    if (!$db) {
+        return ['success' => false, 'message' => 'Database server is temporarily busy. Please wait a few seconds and try again.'];
+    }
     $stmt = $db->prepare("
         SELECT u.*, r.name AS role_name, t.name AS team_name 
         FROM users u 

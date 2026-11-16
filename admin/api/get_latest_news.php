@@ -8,12 +8,10 @@ header('Expires: 0');
 
 require_once dirname(__DIR__) . '/config/config.php';
 
-$db = get_db_connection();
-
 $uni_slug = strtolower(trim($_GET['uni'] ?? ($_GET['subdomain'] ?? '')));
 $cache_key = "api:news:" . ($uni_slug ?: 'global');
 
-// ── Check Redis Cache ─────────────────────────────────────────────────
+// ── Check Redis Cache (Zero DB Connection on Cache Hit) ───────────────
 if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached = Sode_Redis::get($cache_key);
     if ($cached && is_array($cached)) {
@@ -22,6 +20,9 @@ if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
         exit;
     }
 }
+
+// ── Cache Miss: Connect to Database (Lazy Loading) ─────────────────────
+$db = get_db_connection();
 
 $uni = null;
 

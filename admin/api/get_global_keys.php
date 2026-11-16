@@ -14,7 +14,35 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once dirname(__DIR__) . '/config/config.php';
 
+// ── 0. Check Redis Cache FIRST (Zero DB Connections on Cache Hit) ──────
+$uni_slug  = strtolower(trim($_GET['uni'] ?? ''));
+$cache_key = "api:keys:" . ($uni_slug ?: 'global');
+
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    $cached = Sode_Redis::get($cache_key);
+    if ($cached && is_array($cached)) {
+        $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
+        echo json_encode($cached, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+}
+
+// ── Cache Miss: Connect to Database (Lazy Loading) ─────────────────────
 $db = get_db_connection();
+if (!$db) {
+    // Graceful fallback if database is busy and cache was missing
+    echo json_encode([
+        'success' => true,
+        'keys' => [
+            '$YEAR$' => date('Y'),
+            '$session$' => date('Y') . '-' . substr((string)((int)date('Y') + 1), -2),
+            '$nextyear$' => (string)((int)date('Y') + 1),
+            '$BANNER_TOP_TEXT$' => 'Welcome to SODE™ (School of Online and Distance Education)',
+        ],
+        'cached_by' => 'Fallback (DB Unavailable)'
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
 
 // ── 1. Global Keys (always returned) ──────────────────────────────────
 $cols = $db->query("SHOW COLUMNS FROM global_keys LIKE 'link_url'")->fetch();
@@ -97,19 +125,6 @@ if (!empty($site_logo_url)) {
     $map['{SITE_LOGO}'] = $site_logo_url;
     $map['$LOGO_URL$']  = $site_logo_url;
     $map['{LOGO_URL}']  = $site_logo_url;
-}
-
-$uni_slug  = strtolower(trim($_GET['uni'] ?? ''));
-$cache_key = "api:keys:" . ($uni_slug ?: 'global');
-
-// ── 0. Check Redis Cache for Instant 1-2ms Delivery ───────────────────
-if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
-    $cached = Sode_Redis::get($cache_key);
-    if ($cached && is_array($cached)) {
-        $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
-        echo json_encode($cached, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
-    }
 }
 
 $uni       = null;

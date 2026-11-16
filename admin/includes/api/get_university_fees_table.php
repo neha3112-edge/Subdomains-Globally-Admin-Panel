@@ -19,30 +19,32 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once dirname(__DIR__) . '/config/config.php';
 
+$uni_input = trim($_GET['uni'] ?? ($_POST['uni'] ?? ($_GET['university'] ?? ($_POST['university'] ?? ''))));
+if (empty($uni_input)) {
+    $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+    $parts = explode('.', $host);
+    if (count($parts) >= 3 && !in_array($parts[0], ['www', 'mail', 'admin', 'cpanel', 'webmail'])) {
+        $uni_input = preg_replace('/[^a-z0-9-]+/', '-', $parts[0]);
+    }
+}
+if (empty($uni_input)) {
+    $uni_input = 'dsu';
+}
+
+// 1. Cache-First Check: Return instantly if cached (ZERO DB Connection)
+$cache_key = 'api:university_fees_table:' . md5($uni_input);
+$cached_response = Sode_Redis::get($cache_key);
+if ($cached_response !== null) {
+    header('X-Cache: HIT (Redis)');
+    echo json_encode($cached_response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit;
+}
+
 try {
+    // 2. Cache Miss: Connect to Database (Lazy Loading)
     $db = get_db_connection();
     if (!$db) {
-        throw new Exception('Database connection failed');
-    }
-
-    $uni_input = trim($_GET['uni'] ?? ($_POST['uni'] ?? ($_GET['university'] ?? ($_POST['university'] ?? ''))));
-    if (empty($uni_input)) {
-        $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
-        $parts = explode('.', $host);
-        if (count($parts) >= 3 && !in_array($parts[0], ['www', 'mail', 'admin', 'cpanel', 'webmail'])) {
-            $uni_input = preg_replace('/[^a-z0-9-]+/', '-', $parts[0]);
-        }
-    }
-    if (empty($uni_input)) {
-        $uni_input = 'dsu';
-    }
-
-    $cache_key = 'api:university_fees_table:' . md5($uni_input);
-    $cached_response = Sode_Redis::get($cache_key);
-    if ($cached_response !== null) {
-        header('X-Cache: HIT (Redis)');
-        echo json_encode($cached_response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        exit;
+        throw new Exception('Database server is temporarily busy.');
     }
 
     // Helper: Dynamically find matching university from database records

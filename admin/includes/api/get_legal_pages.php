@@ -7,17 +7,19 @@ header('Expires: 0');
 
 require_once dirname(__DIR__) . '/config/config.php';
 
-$db = get_db_connection();
-
 $type = trim($_GET['type'] ?? '');
 $cache_key = 'api:legal_pages:' . md5($type);
 
+// 1. Cache-First Check: Return instantly if cached (ZERO DB Connection)
 $cached_response = Sode_Redis::get($cache_key);
 if ($cached_response !== null) {
     header('X-Cache: HIT (Redis)');
     echo json_encode($cached_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
+
+// 2. Cache Miss: Connect to Database (Lazy Loading)
+$db = get_db_connection();
 
 $query = "SELECT page_type, heading, content_html FROM legal_pages";
 $params = [];

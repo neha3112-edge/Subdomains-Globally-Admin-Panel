@@ -18,7 +18,20 @@ $is_secure_conn = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 
 ini_set('session.cookie_secure', $is_secure_conn ? 1 : 0);
 
-if (session_status() === PHP_SESSION_NONE) {
+// Skip session initialization for API endpoints, SSR components, and CLI to prevent session file lock contention
+$is_api_or_cli = (
+    php_sapi_name() === 'cli' ||
+    (!empty($_SERVER['REQUEST_URI']) && (
+        strpos($_SERVER['REQUEST_URI'], '/api/') !== false ||
+        strpos($_SERVER['REQUEST_URI'], 'render_component.php') !== false
+    )) ||
+    (!empty($_SERVER['SCRIPT_NAME']) && (
+        strpos($_SERVER['SCRIPT_NAME'], '/api/') !== false ||
+        strpos($_SERVER['SCRIPT_NAME'], 'render_component.php') !== false
+    ))
+);
+
+if (!$is_api_or_cli && session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 7200,
         'path'     => '/',

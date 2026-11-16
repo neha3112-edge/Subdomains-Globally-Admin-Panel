@@ -22,24 +22,24 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once dirname(__DIR__) . '/config/config.php';
 
+$uni_param = trim($_GET['uni'] ?? ($_POST['uni'] ?? ''));
+$uni_id    = (int)($_GET['uni_id'] ?? ($_POST['uni_id'] ?? 0));
+$cache_key = "api:courses:" . strtolower($uni_param ?: (string)$uni_id);
+
+// ── Check Redis Cache (Zero DB Connection on Cache Hit) ───────────
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable() && !empty($cache_key)) {
+    $cached = Sode_Redis::get($cache_key);
+    if ($cached && is_array($cached)) {
+        $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
+        echo json_encode($cached);
+        exit;
+    }
+}
+
 try {
     $db = get_db_connection();
     if (!$db) {
-        throw new Exception("Database connection failed");
-    }
-
-    $uni_param = trim($_GET['uni'] ?? ($_POST['uni'] ?? ''));
-    $uni_id    = (int)($_GET['uni_id'] ?? ($_POST['uni_id'] ?? 0));
-    $cache_key = "api:courses:" . strtolower($uni_param ?: (string)$uni_id);
-
-    // ── Check Redis Cache ─────────────────────────────────────────────
-    if (class_exists('Sode_Redis') && Sode_Redis::isAvailable() && !empty($cache_key)) {
-        $cached = Sode_Redis::get($cache_key);
-        if ($cached && is_array($cached)) {
-            $cached['cached_by'] = 'Sode_Redis (' . Sode_Redis::getDriver() . ')';
-            echo json_encode($cached);
-            exit;
-        }
+        throw new Exception("Database server is temporarily busy.");
     }
 
     // Resolve university

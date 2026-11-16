@@ -89,14 +89,21 @@ if (!empty($params['university']) && empty($params['uni'])) {
     $params['uni'] = $params['university'];
 }
 
-$is_get = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET';
-$cache_key = 'ssr:component:' . md5($component . '|' . json_encode($params));
+// Clean params for consistent caching (strip cache busters like _t=timestamp)
+$cache_params = $params;
+unset($cache_params['_t'], $cache_params['t'], $cache_params['_']);
 
-if ($is_get) {
+// Cache all display components (banner, fees, syllabus, footer, courses, etc.) in Redis
+$non_cacheable_components = ['lead_form', 'popup_modals'];
+$is_cacheable = !in_array($component, $non_cacheable_components, true);
+
+$cache_key = 'ssr:component:' . md5($component . '|' . json_encode($cache_params));
+
+if ($is_cacheable && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached_html = Sode_Redis::get($cache_key);
     if ($cached_html !== null) {
         header('Content-Type: text/html; charset=utf-8');
-        header('X-Cache: HIT (Redis)');
+        header('X-Cache: HIT (Redis-SSR)');
         echo $cached_html;
         exit;
     }
@@ -383,10 +390,10 @@ switch ($component) {
 
 $rendered_output = ob_get_clean();
 
-// Cache HTML output in Redis for GET requests (exclude pure lead forms if dynamic nonces needed)
-if ($is_get && !empty($rendered_output)) {
+// Cache HTML output in Redis for both GET and POST requests (24 hours)
+if ($is_cacheable && !empty($rendered_output) && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     Sode_Redis::set($cache_key, $rendered_output, 86400);
-    header('X-Cache: MISS');
+    header('X-Cache: MISS (Cached)');
 }
 
 echo $rendered_output;
