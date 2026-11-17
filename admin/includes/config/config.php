@@ -18,20 +18,39 @@ $is_secure_conn = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 
 ini_set('session.cookie_secure', $is_secure_conn ? 1 : 0);
 
-// Skip session initialization for API endpoints, SSR components, and CLI to prevent session file lock contention
-$is_api_or_cli = (
-    php_sapi_name() === 'cli' ||
-    (!empty($_SERVER['REQUEST_URI']) && (
-        strpos($_SERVER['REQUEST_URI'], '/api/') !== false ||
-        strpos($_SERVER['REQUEST_URI'], 'render_component.php') !== false
-    )) ||
-    (!empty($_SERVER['SCRIPT_NAME']) && (
-        strpos($_SERVER['SCRIPT_NAME'], '/api/') !== false ||
-        strpos($_SERVER['SCRIPT_NAME'], 'render_component.php') !== false
-    ))
+// Identify public anonymous endpoints (SSR components & public feeds called by subdomains)
+// Subdomain servers call these without session cookies, so we avoid creating empty session files/locks
+$is_public_stateless = (
+    !empty($_SERVER['REQUEST_URI']) && (
+        strpos($_SERVER['REQUEST_URI'], 'render_component.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_global_keys.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_course_fees.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_course_syllabus.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_course_specializations.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_university_fees_table.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_admission_steps.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_alternate_universities.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_courses.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_latest_news.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_footer_config.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_legal_pages.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_master_course_data.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_university_banner.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_university_programmes_table.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_job_roles.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_form_config.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_course_data.php') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/get_course_universities.php') !== false
+    )
 );
 
-if (!$is_api_or_cli && session_status() === PHP_SESSION_NONE) {
+// Skip session only for CLI or anonymous requests to public stateless APIs
+$skip_session = (
+    php_sapi_name() === 'cli' ||
+    (empty($_COOKIE[session_name()]) && $is_public_stateless)
+);
+
+if (!$skip_session && session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 7200,
         'path'     => '/',

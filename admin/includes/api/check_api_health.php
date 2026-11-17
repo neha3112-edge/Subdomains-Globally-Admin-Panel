@@ -6,9 +6,19 @@
  * Executes all checks in parallel using curl_multi for ultra-fast latency benchmarking
  */
 require_once dirname(__DIR__) . '/config/config.php';
-require_login();
 
 header('Content-Type: application/json; charset=utf-8');
+
+if (!function_exists('is_logged_in') || !is_logged_in()) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    exit;
+}
+
+// Release session lock immediately so parallel health checks don't block
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
 
 $db = get_db_connection();
 
@@ -36,16 +46,36 @@ $root_path     = rtrim(preg_replace('/\/admin(\/.*)?$/i', '', $path), '/');
 $root_base_url = $scheme . '://' . $host . $port . $root_path;
 
 function get_api_test_query($filename) {
-    if (strpos($filename, 'course') !== false && (strpos($filename, 'uni') !== false || strpos($filename, 'fees') !== false)) {
-        return '?uni=test&course=test';
-    } elseif (strpos($filename, 'uni') !== false || strpos($filename, 'banner') !== false || strpos($filename, 'table') !== false) {
-        return '?uni=test';
-    } elseif (strpos($filename, 'course') !== false) {
-        return '?course=test';
-    } elseif ($filename === 'render_component.php') {
-        return '?component=header';
+    switch ($filename) {
+        case 'get_university_mapped_courses.php':
+            return '?uni_id=1';
+        case 'get_course_mapped_universities.php':
+            return '?course_id=1';
+        case 'get_specialization_mappings.php':
+            return '?spec_id=1';
+        case 'get_syllabus_mappings.php':
+            return '?subject_id=1';
+        case 'get_duration_mappings.php':
+            return '?dur_id=1';
+        case 'manage_accreditation_universities.php':
+            return '?acc_id=1';
+        case 'media_list.php':
+            return '?type=all&page=1&limit=10';
+        case 'media_upload.php':
+        case 'media_delete.php':
+            return '';
+        case 'render_component.php':
+            return '?component=header';
+        default:
+            if (strpos($filename, 'course') !== false && (strpos($filename, 'uni') !== false || strpos($filename, 'fees') !== false)) {
+                return '?uni=test&course=test';
+            } elseif (strpos($filename, 'uni') !== false || strpos($filename, 'banner') !== false || strpos($filename, 'table') !== false) {
+                return '?uni=test';
+            } elseif (strpos($filename, 'course') !== false) {
+                return '?course=test';
+            }
+            return '';
     }
-    return '';
 }
 
 $endpoints_to_check = [];
@@ -124,6 +154,12 @@ if (is_dir($admin_api_dir)) {
         $method = (strpos($filename, 'upload') !== false || strpos($filename, 'delete') !== false) ? 'POST' : 'GET';
         $test_query = get_api_test_query($filename);
 
+        $health_token = hash_hmac('sha256', date('Y-m-d-H'), (defined('DB_PASS') ? DB_PASS : 'sode') . '_health_token');
+        $admin_headers = [
+            'X-Health-Token: ' . $health_token,
+            'Accept: application/json',
+        ];
+
         $endpoints_to_check[] = [
             'id'          => 'admin_' . str_replace('.php', '', $filename),
             'name'        => $clean_name,
@@ -133,7 +169,7 @@ if (is_dir($admin_api_dir)) {
             'file_name'   => 'admin/api/' . $filename,
             'url'         => $admin_base_url . '/api/' . $filename . $test_query,
             'method'      => $method,
-            'headers'     => [],
+            'headers'     => $admin_headers,
             'body'        => null,
             'configured'  => true,
         ];

@@ -36,16 +36,36 @@ $root_path      = rtrim(preg_replace('/\/admin(\/.*)?$/i', '', $path), '/');
 $root_base_url  = $scheme . '://' . $host . $port . $root_path;
 
 function get_api_query_params($filename) {
-    if (strpos($filename, 'course') !== false && (strpos($filename, 'uni') !== false || strpos($filename, 'fees') !== false)) {
-        return '?uni=test&course=test';
-    } elseif (strpos($filename, 'uni') !== false || strpos($filename, 'banner') !== false || strpos($filename, 'table') !== false) {
-        return '?uni=test';
-    } elseif (strpos($filename, 'course') !== false) {
-        return '?course=test';
-    } elseif ($filename === 'render_component.php') {
-        return '?component=header';
+    switch ($filename) {
+        case 'get_university_mapped_courses.php':
+            return '?uni_id=1';
+        case 'get_course_mapped_universities.php':
+            return '?course_id=1';
+        case 'get_specialization_mappings.php':
+            return '?spec_id=1';
+        case 'get_syllabus_mappings.php':
+            return '?subject_id=1';
+        case 'get_duration_mappings.php':
+            return '?dur_id=1';
+        case 'manage_accreditation_universities.php':
+            return '?acc_id=1';
+        case 'media_list.php':
+            return '?type=all&page=1&limit=10';
+        case 'media_upload.php':
+        case 'media_delete.php':
+            return '';
+        case 'render_component.php':
+            return '?component=header';
+        default:
+            if (strpos($filename, 'course') !== false && (strpos($filename, 'uni') !== false || strpos($filename, 'fees') !== false)) {
+                return '?uni=test&course=test';
+            } elseif (strpos($filename, 'uni') !== false || strpos($filename, 'banner') !== false || strpos($filename, 'table') !== false) {
+                return '?uni=test';
+            } elseif (strpos($filename, 'course') !== false) {
+                return '?course=test';
+            }
+            return '';
     }
-    return '';
 }
 
 // 2. Discover all endpoints
