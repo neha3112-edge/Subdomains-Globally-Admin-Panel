@@ -350,7 +350,7 @@ if (!function_exists('sode_announcements_list_render')) {
 
         <div class="sode-announcements-box" id="<?php echo esc_attr($unique_id); ?>">
             <?php if (!empty($atts['heading'])): ?>
-                <h3 class="sode-announcements-title"><?php echo esc_html($atts['heading']); ?></h3>
+                <h2 class="sode-announcements-title"><?php echo esc_html($atts['heading']); ?></h2>
             <?php endif; ?>
 
             <div class="sode-announcements-list">

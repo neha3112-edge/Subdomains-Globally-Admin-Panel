@@ -623,6 +623,7 @@ function edu_banner_shortcode($atts)
             font-size: 26px;
             font-weight: 800;
             color: #1a2e5a;
+            margin-top: 0;
             margin-bottom: 24px;
             text-align: center;
             line-height: 1.3;
@@ -930,6 +931,7 @@ function edu_banner_shortcode($atts)
 
             #<?php echo $uid; ?> .edu-approvals-title {
                 font-size: 20px;
+                margin-top: 0;
                 margin-bottom: 18px;
                 line-height: 1.3;
             }
@@ -1129,8 +1131,8 @@ function edu_banner_shortcode($atts)
             <?php if ($acc_count > 0): ?>
                 <div id="accrediations" class="edu-banner-approvals-bar">
                     <div class="edu-banner-approvals-container">
-                        <h3 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
-                            Accreditations</h3>
+                        <h2 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
+                            Accreditations</h2>
 
                         <?php if ($use_acc_slider): ?>
                             <!-- Desktop Slider (for > 4 accreditations) -->
@@ -1261,8 +1263,8 @@ function edu_banner_shortcode($atts)
             <?php if (!empty($uni_data['accreditations']) && is_array($uni_data['accreditations'])): ?>
                 <div id="accrediations" class="edu-banner-approvals-bar">
                     <div class="edu-banner-approvals-container">
-                        <h3 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
-                            Accreditations</h3>
+                        <h2 class="edu-approvals-title"><?php echo esc_html($full_uni_name . ' ' . $mode_text); ?> Approvals &
+                            Accreditations</h2>
                         <div class="edu-approvals-grid">
                             <?php foreach ($uni_data['accreditations'] as $acc): ?>
                                 <div class="edu-approval-card">

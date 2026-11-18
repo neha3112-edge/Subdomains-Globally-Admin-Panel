@@ -432,7 +432,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                                                     <div class="sode-course-head">
                                                         <h3 class="sode-course-short-name"><?php echo esc_html($display_short_name); ?>
                                                         </h3>
-                                                        <h4 class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></h4>
+                                                        <p class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></p>
                                                     </div>
 
                                                     <div class="sode-course-body">
@@ -535,7 +535,7 @@ if (!function_exists('sode_courses_tabs_render')) {
                                                     <div class="sode-course-head">
                                                         <h3 class="sode-course-short-name"><?php echo esc_html($display_short_name); ?>
                                                         </h3>
-                                                        <h4 class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></h4>
+                                                        <p class="sode-course-full-name"><?php echo esc_html($c['full_name']); ?></p>
                                                     </div>
 
                                                     <div class="sode-course-body">

@@ -241,7 +241,7 @@ if (!function_exists('sode_news_marquee_render')) {
         <div class="sode-news-card-wrapper" id="<?php echo esc_attr($unique_id); ?>">
             <div class="sode-news-card">
                 <div class="sode-news-header">
-                    <h3 class="sode-news-title"><?php echo esc_html($atts['heading']); ?></h3>
+                    <h2 class="sode-news-title"><?php echo esc_html($atts['heading']); ?></h2>
                     <div class="sode-news-divider"></div>
                 </div>
 

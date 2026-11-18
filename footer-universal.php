@@ -401,7 +401,7 @@ if (!function_exists('sode_footer_render')) {
             <div class="sf-cta-bar">
                 <div class="sf-cta-inner">
                     <div class="sf-cta-text">
-                        <h2 class="sf-cta-heading">
+                        <p class="sf-cta-heading">
                             <?php
                             $heading = htmlspecialchars($cfg['cta_heading']);
                             // Yellow part: up to and including '?' (e.g. "Having Doubts ?"), rest in white (e.g. "Talk to Experts")
@@ -410,7 +410,7 @@ if (!function_exists('sode_footer_render')) {
                             }
                             echo $heading;
                             ?>
-                        </h2>
+                        </p>
                         <?php if (!empty($cfg['cta_subtext'])): ?>
                             <p class="sf-cta-sub"><?php echo htmlspecialchars($cfg['cta_subtext']); ?></p>
                         <?php endif; ?>
@@ -438,7 +438,7 @@ if (!function_exists('sode_footer_render')) {
             <?php if (!empty($tools)): ?>
                 <div class="sf-ai-section">
                     <div class="sf-ai-head">
-                        <h2 class="sf-ai-heading"><?php echo htmlspecialchars($cfg['ai_tools_heading']); ?></h2>
+                        <p class="sf-ai-heading"><?php echo htmlspecialchars($cfg['ai_tools_heading']); ?></p>
                         <?php if (!empty($cfg['ai_tools_subtext'])): ?>
                             <p class="sf-ai-sub"><?php echo htmlspecialchars($cfg['ai_tools_subtext']); ?></p>
                         <?php endif; ?>
@@ -550,7 +550,7 @@ if (!function_exists('sode_footer_render')) {
                             </div>
                         <?php endif; ?>
                         <div class="sf-about-content">
-                            <h3 class="sf-about-title"><?php echo htmlspecialchars($cfg['about_title']); ?></h3>
+                            <p class="sf-about-title"><?php echo htmlspecialchars($cfg['about_title']); ?></p>
                             <?php if (!empty($cfg['about_subtitle'])): ?>
                                 <p class="sf-about-subtitle"><?php echo htmlspecialchars($cfg['about_subtitle']); ?></p>
                             <?php endif; ?>
@@ -682,7 +682,7 @@ if (!function_exists('sode_footer_render')) {
                 font-size: clamp(22px, 2.8vw, 28px);
                 font-weight: 800;
                 color: #10213B;
-                margin-bottom: 5px;
+                margin: 0 0 5px;
             }
 
             #<?php echo $uid; ?> .sf-ai-sub {
