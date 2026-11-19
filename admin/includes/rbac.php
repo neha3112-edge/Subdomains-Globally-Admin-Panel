@@ -696,6 +696,80 @@ function sode_heal_core_sidebar_items(PDO $db) {
             $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
             foreach ($roles as $rid) { $rsa->execute([$rid, $news_chk['id']]); }
         }
+
+        // 3. Ensure Default Dates exists with proper route, icon, and keys
+        $dates_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+        $dates_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%default_dates.php%' OR active_page_key = 'default_dates' LIMIT 1")->fetch();
+        if (!$dates_chk) {
+            $stmt = $db->prepare("
+                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                VALUES ('Default Dates', 'modules/settings/default_dates.php', 18, 'default_dates', 'settings', 'SETTINGS', ?, 0, 1)
+            ");
+            $stmt->execute([$dates_svg]);
+            $dates_id = (int)$db->lastInsertId();
+            if ($dates_id) {
+                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                foreach ($roles as $rid) { $rsa->execute([$rid, $dates_id]); }
+            }
+        } else {
+            $db->prepare("
+                UPDATE sidebar_items 
+                SET display_name = 'Default Dates',
+                    page_route = 'modules/settings/default_dates.php',
+                    sort_order = 18,
+                    active_page_key = 'default_dates',
+                    rbac_module_key = 'settings',
+                    menu_section = 'SETTINGS',
+                    icon_svg = ?,
+                    is_active = 1
+                WHERE id = ?
+            ")->execute([$dates_svg, $dates_chk['id']]);
+
+            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+            foreach ($roles as $rid) { $rsa->execute([$rid, $dates_chk['id']]); }
+        }
+
+        // 4. Ensure Default Eligibility exists with proper route, icon, and keys
+        $elig_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>';
+        $elig_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%default_eligibility.php%' OR active_page_key = 'default_eligibility' LIMIT 1")->fetch();
+        if (!$elig_chk) {
+            $stmt = $db->prepare("
+                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                VALUES ('Default Eligibility', 'modules/settings/default_eligibility.php', 19, 'default_eligibility', 'settings', 'SETTINGS', ?, 0, 1)
+            ");
+            $stmt->execute([$elig_svg]);
+            $elig_id = (int)$db->lastInsertId();
+            if ($elig_id) {
+                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                foreach ($roles as $rid) { $rsa->execute([$rid, $elig_id]); }
+            }
+        } else {
+            $db->prepare("
+                UPDATE sidebar_items 
+                SET display_name = 'Default Eligibility',
+                    page_route = 'modules/settings/default_eligibility.php',
+                    sort_order = 19,
+                    active_page_key = 'default_eligibility',
+                    rbac_module_key = 'settings',
+                    menu_section = 'SETTINGS',
+                    icon_svg = ?,
+                    is_active = 1
+                WHERE id = ?
+            ")->execute([$elig_svg, $elig_chk['id']]);
+
+            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+            foreach ($roles as $rid) { $rsa->execute([$rid, $elig_chk['id']]); }
+        }
+
+        // 5. Ensure courses table has default_eligibility column
+        $col_check = $db->query("SHOW COLUMNS FROM courses LIKE 'default_eligibility'")->fetch();
+        if (!$col_check) {
+            $db->exec("ALTER TABLE courses ADD COLUMN default_eligibility TEXT NULL AFTER description");
+        }
     } catch (Exception $e) {}
 }
 
