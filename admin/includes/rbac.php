@@ -185,8 +185,8 @@ function check_current_route_access() {
     }
 
     // Always allowed utility routes for authenticated users
-    $allowed_utility = ['change_password.php', 'logout.php'];
-    if (in_array(basename($current_route), $allowed_utility, true)) {
+    $allowed_utility = ['dashboard.php', 'change_password.php', 'logout.php', 'index.php'];
+    if (in_array(basename($current_route), $allowed_utility, true) || $current_route === 'dashboard.php') {
         return true;
     }
 
@@ -195,70 +195,85 @@ function check_current_route_access() {
         render_access_denied_page("Your account does not have an assigned role.", '', 'read');
     }
 
-    $db = get_db_connection();
-    sode_heal_core_sidebar_items($db);
+    try {
+        $db = get_db_connection();
+        sode_heal_core_sidebar_items($db);
 
-    // 1. If current route is explicitly marked superadmin-only, block non-superadmins immediately
-    $sa_stmt = $db->prepare("
-        SELECT id, display_name 
-        FROM sidebar_items 
-        WHERE is_superadmin_only = 1 
-          AND (
-              page_route = :route 
-              OR (:route != '' AND page_route LIKE :route_like)
-          )
-        LIMIT 1
-    ");
-    $sa_stmt->execute([
-        'route'      => $current_route,
-        'route_like' => '%' . basename($current_route)
-    ]);
-    if ($sa_item = $sa_stmt->fetch(PDO::FETCH_ASSOC)) {
-        render_access_denied_page("The '" . htmlspecialchars($sa_item['display_name']) . "' section is restricted to Super Administrators only.", $sa_item['display_name'], 'read');
-    }
-
-    // 2. Derive parent module directory if inside a subdirectory (e.g. "modules/universities/edit.php" -> "modules/universities/%")
-    $route_dir = '';
-    if (preg_match('#^(modules/[^/]+)/#', $current_route, $m)) {
-        $route_dir = $m[1] . '/%';
-    }
-
-    // 3. Check if current role has explicit permission for this route in role_sidebar_access
-    $stmt = $db->prepare("
-        SELECT si.id, si.display_name, si.rbac_module_key 
-        FROM sidebar_items si
-        INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
-        WHERE rsa.role_id = :role_id 
-          AND si.is_active = 1
-          AND si.is_superadmin_only = 0
-          AND (
-              si.page_route = :route
-              OR (:route_dir != '' AND si.page_route LIKE :route_dir)
-          )
-        LIMIT 1
-    ");
-    $stmt->execute([
-        'role_id'   => $role_id,
-        'route'     => $current_route,
-        'route_dir' => $route_dir ?: '___NONE___'
-    ]);
-
-    if (!$stmt->fetch()) {
-        $info_stmt = $db->prepare("
-            SELECT display_name 
+        // 1. If current route is explicitly marked superadmin-only, block non-superadmins immediately
+        $base_name = basename($current_route);
+        $sa_stmt = $db->prepare("
+            SELECT id, display_name 
             FROM sidebar_items 
-            WHERE page_route = :route 
-               OR (:route_dir != '' AND page_route LIKE :route_dir)
+            WHERE is_superadmin_only = 1 
+              AND (page_route = :p_route OR page_route LIKE :p_like)
             LIMIT 1
         ");
-        $info_stmt->execute([
-            'route'     => $current_route,
-            'route_dir' => $route_dir ?: '___NONE___'
+        $sa_stmt->execute([
+            'p_route' => $current_route,
+            'p_like'  => '%' . $base_name
         ]);
-        $info = $info_stmt->fetch(PDO::FETCH_ASSOC);
-        $denied_label = $info['display_name'] ?? basename($current_route, '.php');
+        if ($sa_item = $sa_stmt->fetch(PDO::FETCH_ASSOC)) {
+            render_access_denied_page("The '" . htmlspecialchars($sa_item['display_name']) . "' section is restricted to Super Administrators only.", $sa_item['display_name'], 'read');
+        }
 
-        render_access_denied_page("Your role does not have access to the '" . htmlspecialchars($denied_label) . "' section.", $denied_label, 'read');
+        // 2. Derive parent module directory if inside a subdirectory (e.g. "modules/universities/edit.php" -> "modules/universities/%")
+        $route_dir = '';
+        if (preg_match('#^(modules/[^/]+)/#', $current_route, $m)) {
+            $route_dir = $m[1] . '/%';
+        }
+
+        // 3. Check if current role has explicit permission for this route in role_sidebar_access
+        if (!empty($route_dir)) {
+            $stmt = $db->prepare("
+                SELECT si.id, si.display_name, si.rbac_module_key 
+                FROM sidebar_items si
+                INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
+                WHERE rsa.role_id = :role_id 
+                  AND si.is_active = 1
+                  AND si.is_superadmin_only = 0
+                  AND (si.page_route = :p_route OR si.page_route LIKE :p_dir)
+                LIMIT 1
+            ");
+            $stmt->execute([
+                'role_id' => $role_id,
+                'p_route' => $current_route,
+                'p_dir'   => $route_dir
+            ]);
+        } else {
+            $stmt = $db->prepare("
+                SELECT si.id, si.display_name, si.rbac_module_key 
+                FROM sidebar_items si
+                INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
+                WHERE rsa.role_id = :role_id 
+                  AND si.is_active = 1
+                  AND si.is_superadmin_only = 0
+                  AND si.page_route = :p_route
+                LIMIT 1
+            ");
+            $stmt->execute([
+                'role_id' => $role_id,
+                'p_route' => $current_route
+            ]);
+        }
+
+        if (!$stmt->fetch()) {
+            $info_stmt = $db->prepare("
+                SELECT display_name 
+                FROM sidebar_items 
+                WHERE page_route = :p_route OR page_route LIKE :p_like
+                LIMIT 1
+            ");
+            $info_stmt->execute([
+                'p_route' => $current_route,
+                'p_like'  => '%' . $base_name
+            ]);
+            $info = $info_stmt->fetch(PDO::FETCH_ASSOC);
+            $denied_label = $info['display_name'] ?? basename($current_route, '.php');
+
+            render_access_denied_page("Your role does not have access to the '" . htmlspecialchars($denied_label) . "' section.", $denied_label, 'read');
+        }
+    } catch (Throwable $e) {
+        error_log("Route access check error: " . $e->getMessage());
     }
 
     return true;
@@ -279,25 +294,42 @@ function require_module_access($module_key) {
     sode_heal_core_sidebar_items($db);
 
     $current_route = get_current_admin_route();
+    $base_name = !empty($current_route) ? basename($current_route) : '';
 
     // 1. Strict check: If requested module or current route is superadmin-only, block non-superadmins
-    $sa_stmt = $db->prepare("
-        SELECT id, display_name 
-        FROM sidebar_items 
-        WHERE is_superadmin_only = 1 
-          AND (
-              rbac_module_key = :mod_key 
-              OR active_page_key = :mod_key 
-              OR (page_route = :route AND :route != '')
-              OR (:route != '' AND page_route LIKE :route_like)
-          )
-        LIMIT 1
-    ");
-    $sa_stmt->execute([
-        'mod_key'    => $module_key,
-        'route'      => $current_route,
-        'route_like' => '%' . basename($current_route)
-    ]);
+    if (!empty($current_route)) {
+        $sa_stmt = $db->prepare("
+            SELECT id, display_name 
+            FROM sidebar_items 
+            WHERE is_superadmin_only = 1 
+              AND (
+                  rbac_module_key = :mod_key 
+                  OR active_page_key = :act_key 
+                  OR page_route = :p_route 
+                  OR page_route LIKE :p_like
+              )
+            LIMIT 1
+        ");
+        $sa_stmt->execute([
+            'mod_key' => $module_key,
+            'act_key' => $module_key,
+            'p_route' => $current_route,
+            'p_like'  => '%' . $base_name
+        ]);
+    } else {
+        $sa_stmt = $db->prepare("
+            SELECT id, display_name 
+            FROM sidebar_items 
+            WHERE is_superadmin_only = 1 
+              AND (rbac_module_key = :mod_key OR active_page_key = :act_key)
+            LIMIT 1
+        ");
+        $sa_stmt->execute([
+            'mod_key' => $module_key,
+            'act_key' => $module_key
+        ]);
+    }
+
     if ($sa_item = $sa_stmt->fetch(PDO::FETCH_ASSOC)) {
         render_access_denied_page("The '" . htmlspecialchars($sa_item['display_name'] ?? $module_key) . "' section is restricted to Super Administrators only.", $module_key, 'read');
     }
@@ -308,27 +340,67 @@ function require_module_access($module_key) {
         $route_dir = $m[1] . '/%';
     }
 
-    $stmt = $db->prepare("
-        SELECT si.id 
-        FROM sidebar_items si
-        INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
-        WHERE rsa.role_id = :role_id 
-          AND si.is_active = 1
-          AND si.is_superadmin_only = 0
-          AND (
-              si.rbac_module_key = :mod_key 
-              OR si.active_page_key = :mod_key
-              OR (si.page_route = :route AND :route != '')
-              OR (:route_dir != '' AND si.page_route LIKE :route_dir)
-          )
-        LIMIT 1
-    ");
-    $stmt->execute([
-        'role_id'   => $role_id,
-        'mod_key'   => $module_key,
-        'route'     => $current_route,
-        'route_dir' => $route_dir ?: '___NONE___'
-    ]);
+    if (!empty($route_dir)) {
+        $stmt = $db->prepare("
+            SELECT si.id 
+            FROM sidebar_items si
+            INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
+            WHERE rsa.role_id = :role_id 
+              AND si.is_active = 1
+              AND si.is_superadmin_only = 0
+              AND (
+                  si.rbac_module_key = :mod_key 
+                  OR si.active_page_key = :act_key
+                  OR si.page_route = :p_route
+                  OR si.page_route LIKE :p_dir
+              )
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'role_id' => $role_id,
+            'mod_key' => $module_key,
+            'act_key' => $module_key,
+            'p_route' => $current_route,
+            'p_dir'   => $route_dir
+        ]);
+    } elseif (!empty($current_route)) {
+        $stmt = $db->prepare("
+            SELECT si.id 
+            FROM sidebar_items si
+            INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
+            WHERE rsa.role_id = :role_id 
+              AND si.is_active = 1
+              AND si.is_superadmin_only = 0
+              AND (
+                  si.rbac_module_key = :mod_key 
+                  OR si.active_page_key = :act_key
+                  OR si.page_route = :p_route
+              )
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'role_id' => $role_id,
+            'mod_key' => $module_key,
+            'act_key' => $module_key,
+            'p_route' => $current_route
+        ]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT si.id 
+            FROM sidebar_items si
+            INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
+            WHERE rsa.role_id = :role_id 
+              AND si.is_active = 1
+              AND si.is_superadmin_only = 0
+              AND (si.rbac_module_key = :mod_key OR si.active_page_key = :act_key)
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'role_id' => $role_id,
+            'mod_key' => $module_key,
+            'act_key' => $module_key
+        ]);
+    }
 
     if (!$stmt->fetch()) {
         render_access_denied_page("You do not have permission to access the " . htmlspecialchars($module_key) . " module.", $module_key, 'read');
@@ -338,6 +410,8 @@ function require_module_access($module_key) {
     if (!user_can('read')) {
         render_access_denied_page("Your account does not have read access to this section.", $module_key, 'read');
     }
+
+    return true;
 }
 
 /**
@@ -920,7 +994,13 @@ function sode_heal_core_sidebar_items(PDO $db) {
             ]
         ];
 
-        $superadmin_roles = $db->query("SELECT id FROM roles WHERE LOWER(name) LIKE '%superadmin%' OR id = 1")->fetchAll(PDO::FETCH_COLUMN);
+        $superadmin_roles = [];
+        try {
+            $r_stmt = $db->query("SELECT id FROM roles WHERE LOWER(name) LIKE '%superadmin%' OR id = 1");
+            if ($r_stmt) {
+                $superadmin_roles = $r_stmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+        } catch (Throwable $re) {}
 
         foreach ($core_items as $ci) {
             $chk = $db->prepare("SELECT id FROM sidebar_items WHERE page_route = ? OR active_page_key = ? LIMIT 1");
@@ -969,12 +1049,14 @@ function sode_heal_core_sidebar_items(PDO $db) {
 
         // Clean up: Disallow non-superadmins from superadmin-only modules in role_sidebar_access
         if (!empty($superadmin_roles)) {
-            $in_clause = implode(',', array_map('intval', $superadmin_roles));
-            $db->exec("
-                DELETE rsa FROM role_sidebar_access rsa
-                JOIN sidebar_items si ON rsa.sidebar_item_id = si.id
-                WHERE si.is_superadmin_only = 1 AND rsa.role_id NOT IN ($in_clause)
-            ");
+            $in_clause = implode(',', array_filter(array_map('intval', $superadmin_roles)));
+            if (!empty($in_clause)) {
+                $db->exec("
+                    DELETE rsa FROM role_sidebar_access rsa
+                    JOIN sidebar_items si ON rsa.sidebar_item_id = si.id
+                    WHERE si.is_superadmin_only = 1 AND rsa.role_id NOT IN ($in_clause)
+                ");
+            }
         }
 
         // Ensure courses table has default_eligibility column
@@ -982,7 +1064,9 @@ function sode_heal_core_sidebar_items(PDO $db) {
         if (!$col_check) {
             $db->exec("ALTER TABLE courses ADD COLUMN default_eligibility TEXT NULL AFTER description");
         }
-    } catch (Exception $e) {}
+    } catch (Throwable $e) {
+        error_log("sode_heal_core_sidebar_items error: " . $e->getMessage());
+    }
 }
 
 function get_user_sidebar_items() {
