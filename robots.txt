@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin/api/
+Disallow: /api/
+Disallow: /admin/uploads/
+Disallow: /uploads/
+Disallow: /scratch/

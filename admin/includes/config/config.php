@@ -62,6 +62,11 @@ if (!$skip_session && session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Enforce strict noindex, nofollow HTTP header for all Admin Portal responses
+if (!headers_sent()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive, nosnippet', true);
+}
+
 define('APP_NAME', 'SODE Admin');
 define('APP_SUBTITLE', 'Universal Subdomains Management Portal');
 define('APP_VERSION', '2.0.0');

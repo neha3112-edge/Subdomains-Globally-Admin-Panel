@@ -3,3 +3,8 @@ RewriteEngine On
 # Redirect/rewrite /uploads to /admin/uploads
 RewriteRule ^uploads/(.*)$ admin/uploads/$1 [L,NC]
 </IfModule>
+
+<IfModule mod_headers.c>
+    # Enforce strict noindex, nofollow across all search engines for the admin domain
+    Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+</IfModule>
