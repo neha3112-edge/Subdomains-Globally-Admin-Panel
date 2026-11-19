@@ -262,7 +262,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <tr>
                             <td>
                                 <span style="font-size: 13px; color: var(--text-color); font-weight: 600;">
-                                    <?php echo htmlspecialchars($item['published_date'] ?: date('jS M Y', strtotime($item['created_at']))); ?>
+                                    <?php echo htmlspecialchars(sode_format_news_date_for_db($item['published_date'] ?: $item['created_at'])); ?>
                                 </span>
                             </td>
                             <td>

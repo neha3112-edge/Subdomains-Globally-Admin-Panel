@@ -667,6 +667,24 @@ if (!function_exists('sode_format_date_for_input')) {
 }
 
 /**
+ * Format news/announcement date for database storage in standard format "11th Sep 2026"
+ */
+if (!function_exists('sode_format_news_date_for_db')) {
+    function sode_format_news_date_for_db($raw)
+    {
+        $raw = trim($raw ?? '');
+        if (empty($raw)) {
+            return date('jS M Y');
+        }
+        $ts = strtotime($raw);
+        if ($ts !== false && $ts > 0) {
+            return date('jS M Y', $ts); // e.g. "11th Sep 2026"
+        }
+        return $raw;
+    }
+}
+
+/**
  * Get Global Default Dates configured by admin (with standard "15 Nov 2026" formatting)
  */
 if (!function_exists('sode_get_default_dates')) {

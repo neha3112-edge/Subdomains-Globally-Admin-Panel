@@ -53,10 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $news_text = trim($_POST['news_text'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $published_date = trim($_POST['published_date'] ?? '');
-    if (empty($published_date)) {
-        $published_date = date('jS M Y');
-    }
+    $published_date = sode_format_news_date_for_db($_POST['published_date'] ?? '');
     $news_link = trim($_POST['news_link'] ?? '');
     $has_badge = isset($_POST['has_badge']) ? 1 : 0;
     $badge_text = trim($_POST['badge_text'] ?? 'New');
@@ -113,13 +110,13 @@ require_once ADMIN_PATH . '/includes/header.php';
             <div class="form-group" style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <label class="form-label" style="margin-bottom: 0; font-weight: 700;">Published Date *</label>
-                    <button type="button" class="btn-xs tag-pill-btn" onclick="document.getElementById('field_published_date').value = '<?php echo date('jS M Y'); ?>'">
-                        📅 Set Today's Date (<?php echo date('jS M Y'); ?>)
+                    <button type="button" class="btn-xs tag-pill-btn" onclick="document.getElementById('field_published_date').value = '<?php echo date('Y-m-d'); ?>'">
+                        📅 Set Today's Date
                     </button>
                 </div>
-                <input type="text" name="published_date" id="field_published_date" class="form-control" value="<?php echo htmlspecialchars($news_item['published_date'] ?? date('jS M Y', strtotime($news_item['created_at']))); ?>" placeholder="e.g. 21st Sep 2026" required style="font-size: 14px;">
+                <input type="date" name="published_date" id="field_published_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($news_item['published_date'] ?? $news_item['created_at'])); ?>" required style="font-size: 14px;">
                 <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">
-                    Format example: <code>21st Sep 2026</code>. This date displays before the title in the Inner Page announcement card (e.g. <em>21st Sep 2026 — Title</em>).
+                    Saved Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_news_date_for_db($news_item['published_date'] ?? $news_item['created_at'])); ?></strong> (auto-formatted as <strong>11th Sep 2026</strong> on save).
                 </div>
             </div>
 

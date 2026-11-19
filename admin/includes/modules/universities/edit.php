@@ -69,10 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $news_text = trim($_POST['news_text'] ?? '');
         $description = trim($_POST['description'] ?? '');
-        $published_date = trim($_POST['published_date'] ?? '');
-        if (empty($published_date)) {
-            $published_date = date('jS M Y');
-        }
+        $published_date = sode_format_news_date_for_db($_POST['published_date'] ?? '');
         $news_link = trim($_POST['news_link'] ?? '');
         $has_badge = isset($_POST['has_badge']) ? 1 : 0;
         $badge_text = trim($_POST['badge_text'] ?? 'New');
@@ -1098,13 +1095,16 @@ require_once ADMIN_PATH . '/includes/header.php';
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                             <label class="form-label" style="margin-bottom: 0;">Published Date *</label>
-                            <button type="button" class="btn-xs" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer;" onclick="document.getElementById('field_uni_published_date').value = '<?php echo date('jS M Y'); ?>'">
+                            <button type="button" class="btn-xs" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer;" onclick="document.getElementById('field_uni_published_date').value = '<?php echo date('Y-m-d'); ?>'">
                                 📅 Set Today's Date
                             </button>
                         </div>
-                        <input type="text" name="published_date" id="field_uni_published_date" class="form-control" value="<?php echo htmlspecialchars($edit_uni_news['published_date'] ?? date('jS M Y')); ?>" placeholder="e.g. 21st Sep 2026" required>
+                        <input type="date" name="published_date" id="field_uni_published_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($edit_uni_news['published_date'] ?? date('Y-m-d'))); ?>" required>
                         <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">
-                            Displayed before title on inner page announcements (e.g. <code>21st Sep 2026</code>).
+                            <?php if (!empty($edit_uni_news['published_date'])): ?>
+                                Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_news_date_for_db($edit_uni_news['published_date'])); ?></strong> &bull;
+                            <?php endif; ?>
+                            Auto-formatted as <strong>11th Sep 2026</strong> on save. Displayed before title on inner page announcements.
                         </div>
                     </div>
 
@@ -1239,7 +1239,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                     <tr>
                                         <td>
                                             <span style="font-size: 11.5px; font-weight: 500;">
-                                                <?php echo htmlspecialchars($un['published_date'] ?: date('jS M Y', strtotime($un['created_at']))); ?>
+                                                <?php echo htmlspecialchars(sode_format_news_date_for_db($un['published_date'] ?: $un['created_at'])); ?>
                                             </span>
                                         </td>
                                         <td>

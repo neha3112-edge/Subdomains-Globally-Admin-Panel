@@ -615,3 +615,100 @@ if (!function_exists('get_site_branding')) {
         return $branding;
     }
 }
+
+/**
+ * Format date for database storage in standard format "15 Nov 2026"
+ */
+if (!function_exists('sode_format_admin_date_for_db')) {
+    function sode_format_admin_date_for_db($raw)
+    {
+        $raw = trim($raw ?? '');
+        if (empty($raw)) return '';
+        $ts = strtotime($raw);
+        if ($ts !== false && $ts > 0) {
+            return date('d M Y', $ts); // e.g. "15 Nov 2026"
+        }
+        return $raw;
+    }
+}
+
+/**
+ * Format date for HTML5 <input type="date"> (requires YYYY-MM-DD)
+ */
+if (!function_exists('sode_format_date_for_input')) {
+    function sode_format_date_for_input($val)
+    {
+        $val = trim($val ?? '');
+        if (empty($val)) return '';
+        $ts = strtotime($val);
+        if ($ts !== false && $ts > 0) {
+            return date('Y-m-d', $ts);
+        }
+        return '';
+    }
+}
+
+/**
+ * Format news/announcement date for database storage in standard format "11th Sep 2026"
+ */
+if (!function_exists('sode_format_news_date_for_db')) {
+    function sode_format_news_date_for_db($raw)
+    {
+        $raw = trim($raw ?? '');
+        if (empty($raw)) {
+            return date('jS M Y');
+        }
+        $ts = strtotime($raw);
+        if ($ts !== false && $ts > 0) {
+            return date('jS M Y', $ts); // e.g. "11th Sep 2026"
+        }
+        return $raw;
+    }
+}
+
+/**
+ * Get Global Default Dates configured by admin (with standard "15 Nov 2026" formatting)
+ */
+if (!function_exists('sode_get_default_dates')) {
+    function sode_get_default_dates($db = null)
+    {
+        $current_year = date('Y');
+        $defaults = [
+            'admission_last_date'  => '30 Sep ' . $current_year,
+            'exam_date'            => '15 Dec ' . $current_year,
+            'extended_exam_date'   => '15 Jan ' . ((int)$current_year + 1),
+            'admission_start_date' => '01 Jun ' . $current_year,
+            'assignment_date'      => '15 Nov ' . $current_year,
+        ];
+
+        if (!$db && function_exists('get_db_connection')) {
+            try {
+                $db = get_db_connection();
+            } catch (Exception $e) {}
+        }
+
+        if ($db) {
+            try {
+                $stmt = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group = 'dates'");
+                $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                if (!empty($rows['default_admission_last_date'])) {
+                    $defaults['admission_last_date'] = sode_format_admin_date_for_db($rows['default_admission_last_date']);
+                }
+                if (!empty($rows['default_exam_date'])) {
+                    $defaults['exam_date'] = sode_format_admin_date_for_db($rows['default_exam_date']);
+                }
+                if (!empty($rows['default_extended_exam_date'])) {
+                    $defaults['extended_exam_date'] = sode_format_admin_date_for_db($rows['default_extended_exam_date']);
+                }
+                if (!empty($rows['default_admission_start_date'])) {
+                    $defaults['admission_start_date'] = sode_format_admin_date_for_db($rows['default_admission_start_date']);
+                }
+                if (!empty($rows['default_assignment_date'])) {
+                    $defaults['assignment_date'] = sode_format_admin_date_for_db($rows['default_assignment_date']);
+                }
+            } catch (Exception $e) {}
+        }
+
+        return $defaults;
+    }
+}
