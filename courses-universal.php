@@ -50,6 +50,100 @@ if (!function_exists('esc_js')) {
         return addslashes((string) $text);
     }
 }
+
+/**
+ * Get Global Default Eligibility criteria configured by admin
+ */
+if (!function_exists('sode_get_default_eligibility')) {
+    function sode_get_default_eligibility($db = null)
+    {
+        $defaults = [
+            'ug'          => 'Passed Higher Secondary (10+2) or an equivalent examination from a recognized board with minimum 45% marks (40% for reserved categories).',
+            'pg'          => "Bachelor's degree in any discipline from a recognized university with minimum 50% aggregate marks (45% for SC/ST/OBC categories).",
+            'diploma'     => 'Passed 10+2 or equivalent examination from a recognized board.',
+            'certificate' => 'Passed 10th standard or 10+2 from a recognized board.',
+            'fallback'    => '10+2 / Graduation as per university norms',
+        ];
+
+        if (!$db && function_exists('get_db_connection')) {
+            try {
+                $db = get_db_connection();
+            } catch (Exception $e) {}
+        }
+
+        if ($db) {
+            try {
+                $stmt = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group = 'eligibility'");
+                $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                if (!empty($rows['default_eligibility_ug'])) {
+                    $defaults['ug'] = trim($rows['default_eligibility_ug']);
+                }
+                if (!empty($rows['default_eligibility_pg'])) {
+                    $defaults['pg'] = trim($rows['default_eligibility_pg']);
+                }
+                if (!empty($rows['default_eligibility_diploma'])) {
+                    $defaults['diploma'] = trim($rows['default_eligibility_diploma']);
+                }
+                if (!empty($rows['default_eligibility_certificate'])) {
+                    $defaults['certificate'] = trim($rows['default_eligibility_certificate']);
+                }
+                if (!empty($rows['default_eligibility_fallback'])) {
+                    $defaults['fallback'] = trim($rows['default_eligibility_fallback']);
+                }
+            } catch (Exception $e) {}
+        }
+
+        return $defaults;
+    }
+}
+
+/**
+ * Resolve eligibility text for a course mapping using 4-tier hierarchy:
+ * 1. Mapping-specific eligibility (ucm.eligibility_text)
+ * 2. Course-specific master default (c.default_eligibility)
+ * 3. Degree-level default (UG, PG, Diploma, etc.)
+ * 4. General fallback ("10+2 / Graduation as per university norms")
+ */
+if (!function_exists('sode_resolve_course_eligibility')) {
+    function sode_resolve_course_eligibility($mapping_or_course, $defaults = null, $db = null)
+    {
+        $custom = trim($mapping_or_course['eligibility_text'] ?? ($mapping_or_course['eligibility'] ?? ''));
+        if (!empty($custom)) {
+            return $custom;
+        }
+
+        $course_default = trim($mapping_or_course['default_eligibility'] ?? '');
+        if (!empty($course_default)) {
+            return $course_default;
+        }
+
+        if (!$defaults) {
+            $defaults = sode_get_default_eligibility($db);
+        }
+
+        $level = strtoupper(trim($mapping_or_course['level'] ?? ''));
+        $course_name = $mapping_or_course['full_name'] ?? ($mapping_or_course['course_name'] ?? ($mapping_or_course['short_name'] ?? ''));
+        $tab = $mapping_or_course['tab'] ?? '';
+
+        if ($level === 'PG' || $tab === 'Master' || stripos($course_name, 'Master') !== false || stripos($course_name, 'MBA') !== false || stripos($course_name, 'MCA') !== false || stripos($course_name, 'M.Sc') !== false || stripos($course_name, 'M.Com') !== false || stripos($course_name, 'MA') === 0 || stripos($course_name, 'MA ') !== false) {
+            return $defaults['pg'] ?? $defaults['fallback'];
+        }
+
+        if ($level === 'UG' || $tab === 'Bachelor' || stripos($course_name, 'Bachelor') !== false || stripos($course_name, 'BBA') !== false || stripos($course_name, 'BCA') !== false || stripos($course_name, 'B.Com') !== false || stripos($course_name, 'B.Sc') !== false || stripos($course_name, 'BA') === 0 || stripos($course_name, 'BA ') !== false) {
+            return $defaults['ug'] ?? $defaults['fallback'];
+        }
+
+        if (stripos($level, 'DIP') !== false || stripos($course_name, 'Diploma') !== false) {
+            return $defaults['diploma'] ?? $defaults['fallback'];
+        }
+
+        if (stripos($level, 'CERT') !== false || stripos($course_name, 'Certificate') !== false) {
+            return $defaults['certificate'] ?? $defaults['fallback'];
+        }
+
+        return $defaults['fallback'] ?? '10+2 / Graduation as per university norms';
+    }
+}
 if (!function_exists('shortcode_atts')) {
     function shortcode_atts($pairs, $atts, $shortcode = '')
     {
@@ -144,6 +238,7 @@ if (!function_exists('sode_get_university_courses_data')) {
                                 c.short_name AS course_short,
                                 c.slug AS course_slug,
                                 c.level,
+                                c.default_eligibility,
                                 c.description AS default_description,
                                 (SELECT COUNT(*) FROM course_specializations WHERE mapping_id = ucm.id) AS specializations_count
                             FROM university_course_mappings ucm
@@ -171,14 +266,7 @@ if (!function_exists('sode_get_university_courses_data')) {
                             $duration = ($tab_category === 'Master') ? '2 Year' : '3 Year';
 
                             $desc = !empty($m['course_description']) ? trim($m['course_description']) : (!empty($m['default_description']) ? trim($m['default_description']) : '');
-                            $elig = !empty($m['eligibility_text']) ? trim($m['eligibility_text']) : '';
-                            if (empty($elig)) {
-                                if ($tab_category === 'Master' || $level_raw === 'PG') {
-                                    $elig = "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.";
-                                } else {
-                                    $elig = "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.";
-                                }
-                            }
+                            $elig = sode_resolve_course_eligibility($m);
 
                             $link = !empty($m['course_link']) ? trim($m['course_link']) : '#';
 

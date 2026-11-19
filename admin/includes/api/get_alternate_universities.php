@@ -18,7 +18,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit;
 }
 
-require_once dirname(__DIR__, 2) . '/config/config.php';
+require_once dirname(__DIR__) . '/config/config.php';
 
 // Detect current subdomain university parameter
 $uni_slug = $_GET['uni'] ?? ($_POST['uni'] ?? ($_GET['university'] ?? ($_POST['university'] ?? '')));
@@ -87,6 +87,11 @@ if (!function_exists('sode_api_format_alt_uni_row')) {
             $f = trim($crs['per_semester_fee'] ?? '');
             $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
             $crs['per_semester_fee'] = trim($f);
+
+            // Resolve default eligibility if blank
+            if (empty($crs['eligibility_text']) && function_exists('sode_resolve_course_eligibility')) {
+                $crs['eligibility_text'] = sode_resolve_course_eligibility($crs);
+            }
 
             // Determine mode and prefix to course name
             $c_mode = !empty($crs['mode']) ? trim($crs['mode']) : (!empty($u['mode']) ? trim($u['mode']) : 'Online');
@@ -160,7 +165,7 @@ try {
     ");
 
     $course_stmt = $db->prepare("
-        SELECT c.id AS course_id, c.short_name, c.full_name, c.level,
+        SELECT c.id AS course_id, c.short_name, c.full_name, c.level, c.default_eligibility,
                ucm.mode, ucm.eligibility_text, ucm.per_semester_fee
         FROM university_course_mappings ucm
         JOIN courses c ON ucm.course_id = c.id

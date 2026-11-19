@@ -229,6 +229,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <div class="form-group">
                             <label class="form-label">Eligibility Criteria</label>
                             <input type="text" name="eligibility_text" class="form-control" placeholder="e.g. 10+2 / Graduation with min 50% marks">
+                            <small style="color:var(--text-dim); font-size:11.5px; margin-top:4px; display:block;">Leave blank to use global default eligibility.</small>
                         </div>
                     </div>
 
@@ -1147,7 +1148,15 @@ if (courseSelect) {
         var subjectsList = box.querySelector('.subjects-list');
         if (subjects && subjects.length > 0) {
             subjects.forEach(function(sub) {
-                subjectsList.appendChild(createSubjectRow(sub.name || '', sub.link || ''));
+                var sName = '';
+                var sLink = '';
+                if (typeof sub === 'string') {
+                    sName = sub;
+                } else if (sub && typeof sub === 'object') {
+                    sName = sub.name || '';
+                    sLink = (typeof sub.link === 'string') ? sub.link : '';
+                }
+                subjectsList.appendChild(createSubjectRow(sName, sLink));
             });
         } else {
             subjectsList.appendChild(createSubjectRow('', ''));

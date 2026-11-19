@@ -68,6 +68,100 @@ if (!function_exists('sanitize_title')) {
 }
 
 /**
+ * Get Global Default Eligibility criteria configured by admin
+ */
+if (!function_exists('sode_get_default_eligibility')) {
+    function sode_get_default_eligibility($db = null)
+    {
+        $defaults = [
+            'ug'          => 'Passed Higher Secondary (10+2) or an equivalent examination from a recognized board with minimum 45% marks (40% for reserved categories).',
+            'pg'          => "Bachelor's degree in any discipline from a recognized university with minimum 50% aggregate marks (45% for SC/ST/OBC categories).",
+            'diploma'     => 'Passed 10+2 or equivalent examination from a recognized board.',
+            'certificate' => 'Passed 10th standard or 10+2 from a recognized board.',
+            'fallback'    => '10+2 / Graduation as per university norms',
+        ];
+
+        if (!$db && function_exists('get_db_connection')) {
+            try {
+                $db = get_db_connection();
+            } catch (Exception $e) {}
+        }
+
+        if ($db) {
+            try {
+                $stmt = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group = 'eligibility'");
+                $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                if (!empty($rows['default_eligibility_ug'])) {
+                    $defaults['ug'] = trim($rows['default_eligibility_ug']);
+                }
+                if (!empty($rows['default_eligibility_pg'])) {
+                    $defaults['pg'] = trim($rows['default_eligibility_pg']);
+                }
+                if (!empty($rows['default_eligibility_diploma'])) {
+                    $defaults['diploma'] = trim($rows['default_eligibility_diploma']);
+                }
+                if (!empty($rows['default_eligibility_certificate'])) {
+                    $defaults['certificate'] = trim($rows['default_eligibility_certificate']);
+                }
+                if (!empty($rows['default_eligibility_fallback'])) {
+                    $defaults['fallback'] = trim($rows['default_eligibility_fallback']);
+                }
+            } catch (Exception $e) {}
+        }
+
+        return $defaults;
+    }
+}
+
+/**
+ * Resolve eligibility text for a course mapping using 4-tier hierarchy:
+ * 1. Mapping-specific eligibility (ucm.eligibility_text)
+ * 2. Course-specific master default (c.default_eligibility)
+ * 3. Degree-level default (UG, PG, Diploma, etc.)
+ * 4. General fallback ("10+2 / Graduation as per university norms")
+ */
+if (!function_exists('sode_resolve_course_eligibility')) {
+    function sode_resolve_course_eligibility($mapping_or_course, $defaults = null, $db = null)
+    {
+        $custom = trim($mapping_or_course['eligibility_text'] ?? ($mapping_or_course['eligibility'] ?? ''));
+        if (!empty($custom)) {
+            return $custom;
+        }
+
+        $course_default = trim($mapping_or_course['default_eligibility'] ?? '');
+        if (!empty($course_default)) {
+            return $course_default;
+        }
+
+        if (!$defaults) {
+            $defaults = sode_get_default_eligibility($db);
+        }
+
+        $level = strtoupper(trim($mapping_or_course['level'] ?? ''));
+        $course_name = $mapping_or_course['full_name'] ?? ($mapping_or_course['course_name'] ?? ($mapping_or_course['short_name'] ?? ''));
+        $tab = $mapping_or_course['tab'] ?? '';
+
+        if ($level === 'PG' || $tab === 'Master' || stripos($course_name, 'Master') !== false || stripos($course_name, 'MBA') !== false || stripos($course_name, 'MCA') !== false || stripos($course_name, 'M.Sc') !== false || stripos($course_name, 'M.Com') !== false || stripos($course_name, 'MA') === 0 || stripos($course_name, 'MA ') !== false) {
+            return $defaults['pg'] ?? $defaults['fallback'];
+        }
+
+        if ($level === 'UG' || $tab === 'Bachelor' || stripos($course_name, 'Bachelor') !== false || stripos($course_name, 'BBA') !== false || stripos($course_name, 'BCA') !== false || stripos($course_name, 'B.Com') !== false || stripos($course_name, 'B.Sc') !== false || stripos($course_name, 'BA') === 0 || stripos($course_name, 'BA ') !== false) {
+            return $defaults['ug'] ?? $defaults['fallback'];
+        }
+
+        if (stripos($level, 'DIP') !== false || stripos($course_name, 'Diploma') !== false) {
+            return $defaults['diploma'] ?? $defaults['fallback'];
+        }
+
+        if (stripos($level, 'CERT') !== false || stripos($course_name, 'Certificate') !== false) {
+            return $defaults['certificate'] ?? $defaults['fallback'];
+        }
+
+        return $defaults['fallback'] ?? '10+2 / Graduation as per university norms';
+    }
+}
+
+/**
  * Format fees string cleanly with ₹ currency symbol
  */
 if (!function_exists('sode_alt_format_fee')) {
@@ -146,6 +240,11 @@ if (!function_exists('sode_format_single_alt_uni_row')) {
                 $f = trim($crs['per_semester_fee']);
                 $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
                 $crs['per_semester_fee'] = trim($f);
+            }
+
+            // Resolve eligibility if blank
+            if (empty($crs['eligibility_text']) && function_exists('sode_resolve_course_eligibility')) {
+                $crs['eligibility_text'] = sode_resolve_course_eligibility($crs);
             }
 
             // Determine mode and prefix to course name
@@ -273,7 +372,7 @@ if (!function_exists('sode_get_alternate_universities_list')) {
                     ");
 
                     $course_stmt = $db->prepare("
-                        SELECT c.id AS course_id, c.short_name, c.full_name, c.level,
+                        SELECT c.id AS course_id, c.short_name, c.full_name, c.level, c.default_eligibility,
                                ucm.mode, ucm.eligibility_text, ucm.per_semester_fee
                         FROM university_course_mappings ucm
                         JOIN courses c ON ucm.course_id = c.id
@@ -1359,7 +1458,16 @@ if (!function_exists('sode_alternate_universities_render')) {
                                                 <tr>
                                                     <td class="sode-alt-course-name"><?php echo esc_html($display_course_name); ?></td>
                                                     <td class="sode-alt-course-elig">
-                                                        <?php echo esc_html($c['eligibility_text'] ?: '10+2 / Graduation as per university norms'); ?>
+                                                        <?php 
+                                                            $elig_disp = !empty($c['eligibility_text']) ? $c['eligibility_text'] : '';
+                                                            if (empty($elig_disp) && function_exists('sode_resolve_course_eligibility')) {
+                                                                $elig_disp = sode_resolve_course_eligibility($c);
+                                                            }
+                                                            if (empty($elig_disp)) {
+                                                                $elig_disp = '10+2 / Graduation as per university norms';
+                                                            }
+                                                            echo esc_html($elig_disp);
+                                                        ?>
                                                     </td>
                                                     <td class="sode-alt-course-fee">
                                                         <?php echo esc_html(sode_alt_format_fee($c['per_semester_fee'])); ?>

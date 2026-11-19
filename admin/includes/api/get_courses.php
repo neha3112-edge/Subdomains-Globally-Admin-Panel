@@ -83,6 +83,7 @@ try {
             c.short_name AS course_short,
             c.slug AS course_slug,
             c.level,
+            c.default_eligibility,
             c.description AS default_description,
             (SELECT COUNT(*) FROM course_specializations WHERE mapping_id = ucm.id) AS specializations_count
         FROM university_course_mappings ucm
@@ -116,14 +117,9 @@ try {
         $tab_category = ($level_raw === 'PG' || stripos($m['course_name'], 'Master') !== false) ? 'Master' : 'Bachelor';
         $duration = ($tab_category === 'Master') ? '2 Year' : '3 Year';
 
-        $elig = !empty($m['eligibility_text']) ? trim($m['eligibility_text']) : '';
-        if (empty($elig)) {
-            if ($tab_category === 'Master' || $level_raw === 'PG') {
-                $elig = "Bachelor's degree in any discipline from a recognized university. Minimum 50% aggregate marks; 45% for SC/ST/OBC categories.";
-            } else {
-                $elig = "10+2 or equivalent qualification from a recognized board. Minimum 45% aggregate marks; 40% for SC/ST/OBC categories.";
-            }
-        }
+        $elig = function_exists('sode_resolve_course_eligibility') 
+            ? sode_resolve_course_eligibility($m) 
+            : (!empty($m['eligibility_text']) ? trim($m['eligibility_text']) : '10+2 / Graduation as per university norms');
 
         $courses_data[] = [
             'id'             => (int)$m['mapping_id'],

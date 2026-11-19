@@ -51,6 +51,7 @@ $short_name = $course['short_name'];
 $slug = $course['slug'];
 $level = $course['level'];
 $description = $course['description'];
+$default_eligibility = $course['default_eligibility'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -63,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $level = trim($_POST['level'] ?? 'PG');
     $description = trim($_POST['description'] ?? '');
+    $default_eligibility = trim($_POST['default_eligibility'] ?? '');
 
     if (empty($full_name)) {
         $errors[] = 'Full Degree Name is required.';
@@ -87,10 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $db->prepare("
                     UPDATE courses 
-                    SET full_name = ?, short_name = ?, slug = ?, level = ?, description = ? 
+                    SET full_name = ?, short_name = ?, slug = ?, level = ?, description = ?, default_eligibility = ? 
                     WHERE id = ?
                 ");
-                $stmt->execute([$full_name, $short_name, $slug, $level, $description, $course_id]);
+                $stmt->execute([$full_name, $short_name, $slug, $level, $description, $default_eligibility !== '' ? $default_eligibility : null, $course_id]);
 
                 if (function_exists('log_activity')) {
                     log_activity('UPDATE', 'courses', "Updated Course '{$full_name}' ({$short_name})", [
@@ -198,8 +200,14 @@ require_once ADMIN_PATH . '/includes/header.php';
                 <div class="card-body">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Course Description</label>
-                        <textarea name="description" class="form-textarea" rows="6" placeholder="Brief overview of this degree course..."><?php echo htmlspecialchars($description); ?></textarea>
+                        <textarea name="description" class="form-textarea" rows="5" placeholder="Brief overview of this degree course..."><?php echo htmlspecialchars($description); ?></textarea>
                         <span style="font-size:11.5px; color:var(--text-dim); margin-top:4px; display:block;">Program highlights and overview displayed to candidate inquiries</span>
+                    </div>
+
+                    <div class="form-group" style="margin-top:16px; margin-bottom:0;">
+                        <label class="form-label">Master Default Eligibility Criteria</label>
+                        <textarea name="default_eligibility" class="form-textarea" rows="2" placeholder="e.g. A bachelor's degree from a recognized university is required."><?php echo htmlspecialchars($default_eligibility); ?></textarea>
+                        <span style="font-size:11.5px; color:var(--text-dim); margin-top:4px; display:block;">Default criteria used when a university course mapping leaves eligibility empty.</span>
                     </div>
                 </div>
             </div>

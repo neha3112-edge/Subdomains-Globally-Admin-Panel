@@ -56,6 +56,7 @@ $query = "
         c.short_name AS course_short_name,
         c.slug AS course_slug,
         c.level AS course_level,
+        c.default_eligibility AS course_default_eligibility,
         c.description AS course_master_description,
         ucm.course_description AS mapping_course_description,
         ucm.course_link,
@@ -171,7 +172,14 @@ foreach ($rows as $r) {
             'link' => $r['course_link']
         ],
         'fees' => [
-            'eligibility' => $r['eligibility_text'],
+            'eligibility' => function_exists('sode_resolve_course_eligibility') 
+                ? sode_resolve_course_eligibility([
+                    'eligibility_text' => $r['eligibility_text'],
+                    'default_eligibility' => $r['course_default_eligibility'],
+                    'level' => $r['course_level'],
+                    'full_name' => $r['course_full_name']
+                ]) 
+                : ($r['eligibility_text'] ?: '10+2 / Graduation as per university norms'),
             'one_time_processing_fee' => $r['one_time_processing_fee'],
             'tuition_fee' => $r['tuition_fee'],
             'examination_fee' => $r['examination_fee'],

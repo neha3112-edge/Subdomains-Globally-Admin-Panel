@@ -266,6 +266,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <div class="form-group">
                             <label class="form-label">Eligibility Criteria</label>
                             <input type="text" name="eligibility_text" class="form-control" value="<?php echo htmlspecialchars($mapping['eligibility_text'] ?? ''); ?>">
+                            <small style="color:var(--text-dim); font-size:11.5px; margin-top:4px; display:block;">Leave blank to use global default eligibility.</small>
                         </div>
                     </div>
 

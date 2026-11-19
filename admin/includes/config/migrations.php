@@ -1182,6 +1182,102 @@ function sode_run_auto_migrations(PDO $pdo) {
                 } catch (Exception $e) {
                     error_log("Remove plain_password migration error: " . $e->getMessage());
                 }
+            },
+
+            '2026_11_19_001_register_default_dates_sidebar' => function(PDO $db) {
+                try {
+                    $check_item = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'default_dates'")->fetch();
+                    if (!$check_item) {
+                        $db->exec("
+                            INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                            VALUES ('SETTINGS', 'Default Dates', 'modules/settings/default_dates.php', 'default_dates', 'settings', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg>', 18, 1, 0)
+                        ");
+                        $item_id = (int) $db->lastInsertId();
+                        if ($item_id) {
+                            $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                            $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                            foreach ($roles as $r) {
+                                $acc_stmt->execute([$r['id'], $item_id]);
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Default dates migration error: " . $e->getMessage());
+                }
+            },
+
+            '2026_11_19_002_default_eligibility_settings' => function(PDO $db) {
+                try {
+                    // 1. Add default_eligibility column to courses table if missing
+                    $col_check = $db->query("SHOW COLUMNS FROM courses LIKE 'default_eligibility'")->fetch();
+                    if (!$col_check) {
+                        $db->exec("ALTER TABLE courses ADD COLUMN default_eligibility TEXT NULL AFTER description");
+                    }
+
+                    // 2. Global settings for level-wise default eligibility
+                    $ins_setting = $db->prepare("
+                        INSERT INTO global_settings (setting_key, setting_value, setting_group, description)
+                        VALUES (?, ?, 'eligibility', ?)
+                        ON DUPLICATE KEY UPDATE setting_value = IF(setting_value IS NULL OR setting_value = '', VALUES(setting_value), setting_value)
+                    ");
+                    $ins_setting->execute(['default_eligibility_ug', 'Passed Higher Secondary (10+2) or an equivalent examination from a recognized board with minimum 45% marks (40% for reserved categories).', 'Global default eligibility for Undergraduate / Bachelor programs']);
+                    $ins_setting->execute(['default_eligibility_pg', 'Bachelor\'s degree in any discipline from a recognized university with minimum 50% aggregate marks (45% for SC/ST/OBC categories).', 'Global default eligibility for Postgraduate / Master programs']);
+                    $ins_setting->execute(['default_eligibility_diploma', 'Passed 10+2 or equivalent examination from a recognized board.', 'Global default eligibility for Diploma programs']);
+                    $ins_setting->execute(['default_eligibility_certificate', 'Passed 10th standard or 10+2 from a recognized board.', 'Global default eligibility for Certificate programs']);
+                    $ins_setting->execute(['default_eligibility_fallback', '10+2 / Graduation as per university norms', 'Global general fallback eligibility criteria']);
+
+                    // 3. Global keys
+                    $ins_key = $db->prepare("
+                        INSERT INTO global_keys (key_code, key_value, description, is_active)
+                        VALUES (?, ?, ?, 1)
+                        ON DUPLICATE KEY UPDATE key_value = IF(key_value IS NULL OR key_value = '', VALUES(key_value), key_value), is_active = 1
+                    ");
+                    $ins_key->execute(['$DEFAULT_ELIGIBILITY_UG$', 'Passed Higher Secondary (10+2) or an equivalent examination from a recognized board with minimum 45% marks (40% for reserved categories).', 'Default UG Eligibility Criteria']);
+                    $ins_key->execute(['$DEFAULT_ELIGIBILITY_PG$', 'Bachelor\'s degree in any discipline from a recognized university with minimum 50% aggregate marks (45% for SC/ST/OBC categories).', 'Default PG Eligibility Criteria']);
+                    $ins_key->execute(['$DEFAULT_ELIGIBILITY_DIPLOMA$', 'Passed 10+2 or equivalent examination from a recognized board.', 'Default Diploma Eligibility Criteria']);
+                    $ins_key->execute(['$DEFAULT_ELIGIBILITY_FALLBACK$', '10+2 / Graduation as per university norms', 'Default General Fallback Eligibility Criteria']);
+
+                    // 4. Seed popular master courses with default eligibility if empty
+                    $course_defaults = [
+                        'ba'    => 'Passed Higher Secondary (+2) or an equivalent examination from a recognized board.',
+                        'bcom'  => 'Passed Higher Secondary (+2) or an equivalent examination with Commerce at the +2 level.',
+                        'bba'   => 'Passed Higher Secondary (+2) or an equivalent examination.',
+                        'bca'   => 'Passed Higher Secondary (+2) or an equivalent examination with Mathematics or Computer Science at the +2 level.',
+                        'bsc'   => 'Passed Higher Secondary (+2) or equivalent examination with subjects required for the selected BSc program.',
+                        'bed'   => 'In-service teachers must have D.T.Ed., B.P.Ed., or D.El.Ed. along with an undergraduate degree in a specified subject.',
+                        'blis'  => 'Passed any recognized undergraduate degree.',
+                        'ma'    => 'Passed a recognized undergraduate degree. Subject-specific requirements may apply for certain MA programs.',
+                        'mcom'  => 'Passed B.Com., B.Com (CA), B.Com (CS), B.Com (PA), BBA, or another eligible degree with relevant commerce subjects.',
+                        'mba'   => 'A bachelor\'s degree from a recognized university is required.',
+                        'mca'   => 'A bachelor\'s degree and Mathematics at the +2 level are required; certain Mathematics subjects are not accepted.',
+                        'msc'   => 'Passed the relevant undergraduate degree. Eligibility varies according to the chosen MSc specialization.',
+                        'majmc' => 'A bachelor\'s degree from a recognized university is required.',
+                        'mlis'  => 'A bachelor\'s degree and a B.Lib.I.Sc. qualification are required.'
+                    ];
+                    $upd_course = $db->prepare("UPDATE courses SET default_eligibility = ? WHERE (LOWER(slug) = ? OR LOWER(short_name) = ?) AND (default_eligibility IS NULL OR default_eligibility = '')");
+                    foreach ($course_defaults as $slug_key => $el_val) {
+                        $upd_course->execute([$el_val, $slug_key, $slug_key]);
+                    }
+
+                    // 5. Register sidebar menu item
+                    $check_sidebar = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'default_eligibility'")->fetch();
+                    if (!$check_sidebar) {
+                        $db->exec("
+                            INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                            VALUES ('SETTINGS', 'Default Eligibility', 'modules/settings/default_eligibility.php', 'default_eligibility', 'settings', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 10v6M2 10l10-5 10 5-10 5z\"></path><path d=\"M6 12v5c0 2 2 3 6 3s6-1 6-3v-5\"></path></svg>', 19, 1, 0)
+                        ");
+                        $item_id = (int)$db->lastInsertId();
+                        if ($item_id) {
+                            $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                            $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                            foreach ($roles as $r) {
+                                $acc_stmt->execute([$r['id'], $item_id]);
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Default eligibility migration error: " . $e->getMessage());
+                }
             }
         ];
 
