@@ -163,6 +163,8 @@ function require_module_access($module_key) {
     }
 
     $db = get_db_connection();
+    sode_heal_core_sidebar_items($db);
+
     $stmt = $db->prepare("
         SELECT si.id 
         FROM sidebar_items si
@@ -614,8 +616,93 @@ function require_permission($module_key) {
     return require_module_access($module_key);
 }
 
+/**
+ * Automatically ensure core sidebar items (Universal News, Site & Brand Logo, etc.)
+ * have correct routes, icons, keys and role permissions.
+ */
+function sode_heal_core_sidebar_items(PDO $db) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+
+    try {
+        $news_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>';
+        $logo_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+
+        // 1. Correct Site & Brand Logo entry if corrupted with universal_news keys or wrong icon
+        $db->prepare("
+            UPDATE sidebar_items 
+            SET display_name = 'Site & Brand Logo',
+                page_route = 'modules/settings/logo.php',
+                sort_order = 17,
+                active_page_key = 'logo_settings',
+                rbac_module_key = 'settings',
+                menu_section = 'SETTINGS',
+                icon_svg = ?,
+                is_active = 1
+            WHERE page_route LIKE '%settings/logo.php%'
+        ")->execute([$logo_svg]);
+
+        // If no Site & Brand Logo row exists, insert it
+        $logo_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%settings/logo.php%' OR active_page_key = 'logo_settings' LIMIT 1")->fetch();
+        if (!$logo_chk) {
+            $stmt = $db->prepare("
+                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                VALUES ('Site & Brand Logo', 'modules/settings/logo.php', 17, 'logo_settings', 'settings', 'SETTINGS', ?, 0, 1)
+            ");
+            $stmt->execute([$logo_svg]);
+            $logo_id = (int)$db->lastInsertId();
+            if ($logo_id) {
+                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                foreach ($roles as $rid) { $rsa->execute([$rid, $logo_id]); }
+            }
+        } else {
+            // Ensure all roles have access
+            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+            foreach ($roles as $rid) { $rsa->execute([$rid, $logo_chk['id']]); }
+        }
+
+        // 2. Ensure Universal News exists with proper route, icon, and keys
+        $news_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%universal_news%' OR (active_page_key = 'universal_news' AND page_route NOT LIKE '%settings/logo.php%') LIMIT 1")->fetch();
+        if (!$news_chk) {
+            $stmt = $db->prepare("
+                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                VALUES ('Universal News', 'modules/universal_news/index.php', 13, 'universal_news', 'universal_news', 'SETTINGS', ?, 0, 1)
+            ");
+            $stmt->execute([$news_svg]);
+            $news_id = (int)$db->lastInsertId();
+            if ($news_id) {
+                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                foreach ($roles as $rid) { $rsa->execute([$rid, $news_id]); }
+            }
+        } else {
+            $db->prepare("
+                UPDATE sidebar_items 
+                SET display_name = 'Universal News',
+                    page_route = 'modules/universal_news/index.php',
+                    sort_order = 13,
+                    active_page_key = 'universal_news',
+                    rbac_module_key = 'universal_news',
+                    menu_section = 'SETTINGS',
+                    icon_svg = ?,
+                    is_active = 1
+                WHERE id = ?
+            ")->execute([$news_svg, $news_chk['id']]);
+
+            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+            foreach ($roles as $rid) { $rsa->execute([$rid, $news_chk['id']]); }
+        }
+    } catch (Exception $e) {}
+}
+
 function get_user_sidebar_items() {
     $db = get_db_connection();
+    sode_heal_core_sidebar_items($db);
+
     if (is_superadmin()) {
         $stmt = $db->query("SELECT * FROM sidebar_items WHERE is_active = 1 ORDER BY sort_order ASC, id ASC");
         $items = $stmt->fetchAll();
