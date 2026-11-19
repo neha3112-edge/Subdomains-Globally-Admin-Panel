@@ -12,6 +12,7 @@
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --text-dim: #64748b;
+    --text-primary: #f8fafc;
 
     --primary: #4f46e5;
     --primary-hover: #4338ca;
@@ -53,6 +54,7 @@
     --text-main: #0f172a;
     --text-muted: #475569;
     --text-dim: #94a3b8;
+    --text-primary: #0f172a;
 
     --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
@@ -1181,6 +1183,121 @@ body {
 .form-textarea:focus {
     border-color: var(--border-focus);
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Date Inputs & Calendar Picker Theme Support */
+input[type="date"] {
+    color-scheme: dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.85;
+    filter: invert(1);
+    transition: opacity 0.2s ease;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+[data-theme="light"] input[type="date"] {
+    color-scheme: light !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none !important;
+    opacity: 0.75 !important;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1 !important;
+}
+
+/* SODE Theme Modals (Adapts to Dark & Light Themes) */
+.sode-theme-modal {
+    background: #1e2433;
+    border: 1px solid var(--border-color, #2d3748);
+    color: var(--text-main, #f8fafc);
+}
+.sode-theme-modal-header {
+    border-bottom: 1px solid var(--border-color, #2d3748);
+    background: rgba(255, 255, 255, 0.02);
+}
+.sode-theme-modal-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main, #f8fafc);
+}
+.sode-theme-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-dim, #94a3b8);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+.sode-theme-modal-close:hover {
+    color: var(--text-main, #f8fafc);
+}
+.sode-theme-modal-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main, #f8fafc);
+    margin-bottom: 7px;
+}
+.sode-theme-modal-helper {
+    color: var(--text-dim, #94a3b8);
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+[data-theme="light"] .sode-theme-modal {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .sode-theme-modal-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .sode-theme-modal-title {
+    color: #0f172a !important;
+}
+[data-theme="light"] .sode-theme-modal-close {
+    color: #64748b !important;
+}
+[data-theme="light"] .sode-theme-modal-close:hover {
+    color: #ef4444 !important;
+}
+[data-theme="light"] .sode-theme-modal-label {
+    color: #1e293b !important;
+}
+[data-theme="light"] .sode-theme-modal-helper {
+    color: #64748b !important;
+}
+[data-theme="light"] .sode-theme-modal .form-control {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .sode-theme-modal .form-control:focus {
+    border-color: #4f46e5 !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+}
+[data-theme="light"] .sode-theme-modal .sode-btn-secondary {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+[data-theme="light"] .sode-theme-modal .sode-btn-secondary:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
 }
 
 .form-textarea {

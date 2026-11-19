@@ -107,6 +107,51 @@ $defaults = sode_get_default_dates($db);
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
 
+<style>
+/* Scoped Date Inputs & Light Theme Polish */
+.sode-date-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+.date-format-preview {
+    color: #38bdf8;
+    font-weight: 700;
+}
+[data-theme="light"] .date-format-preview {
+    color: #2563eb !important;
+}
+[data-theme="light"] .card-title,
+[data-theme="light"] h2 {
+    color: #0f172a !important;
+}
+[data-theme="light"] .form-label {
+    color: #1e293b !important;
+}
+[data-theme="light"] input[type="date"].form-control {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none !important;
+    opacity: 0.75 !important;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1 !important;
+}
+[data-theme="light"] .card-header {
+    border-bottom-color: #e2e8f0 !important;
+}
+[data-theme="light"] .admin-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+</style>
+
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
     <div>
         <h2 style="font-size:20px; font-weight:700; margin:0 0 4px 0; color:var(--text-main, #fff);">Global Default Dates & Deadlines</h2>
@@ -141,11 +186,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <label class="form-label" style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">
                                 Default Admission Last Date (Application Deadline)
                             </label>
-                            <input type="date" name="default_admission_last_date" class="form-control" 
+                            <input type="date" name="default_admission_last_date" class="form-control sode-date-input" 
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['admission_last_date'])); ?>" 
-                                required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
+                                required>
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['admission_last_date'] ?? ''); ?></strong>
+                                Current Display Format: <strong class="date-format-preview"><?php echo htmlspecialchars($defaults['admission_last_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -153,11 +198,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <label class="form-label" style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">
                                 Default Admission Start Date (Semester Commencement)
                             </label>
-                            <input type="date" name="default_admission_start_date" class="form-control" 
+                            <input type="date" name="default_admission_start_date" class="form-control sode-date-input" 
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['admission_start_date'])); ?>" 
-                                required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
+                                required>
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['admission_start_date'] ?? ''); ?></strong>
+                                Current Display Format: <strong class="date-format-preview"><?php echo htmlspecialchars($defaults['admission_start_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -169,11 +214,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <label class="form-label" style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">
                                 Default Examination Date (Commencement)
                             </label>
-                            <input type="date" name="default_exam_date" class="form-control" 
+                            <input type="date" name="default_exam_date" class="form-control sode-date-input" 
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['exam_date'])); ?>" 
-                                required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
+                                required>
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['exam_date'] ?? ''); ?></strong>
+                                Current Display Format: <strong class="date-format-preview"><?php echo htmlspecialchars($defaults['exam_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -181,11 +226,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <label class="form-label" style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">
                                 Default Extended Exam Date
                             </label>
-                            <input type="date" name="default_extended_exam_date" class="form-control" 
+                            <input type="date" name="default_extended_exam_date" class="form-control sode-date-input" 
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['extended_exam_date'])); ?>" 
-                                required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
+                                required>
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['extended_exam_date'] ?? ''); ?></strong>
+                                Current Display Format: <strong class="date-format-preview"><?php echo htmlspecialchars($defaults['extended_exam_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -197,11 +242,11 @@ require_once ADMIN_PATH . '/includes/header.php';
                             <label class="form-label" style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">
                                 Default Assignment Submission Date
                             </label>
-                            <input type="date" name="default_assignment_date" class="form-control" 
+                            <input type="date" name="default_assignment_date" class="form-control sode-date-input" 
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['assignment_date'])); ?>" 
-                                required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
+                                required>
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['assignment_date'] ?? ''); ?></strong>
+                                Current Display Format: <strong class="date-format-preview"><?php echo htmlspecialchars($defaults['assignment_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -209,7 +254,7 @@ require_once ADMIN_PATH . '/includes/header.php';
 
                     <?php if ($can_edit): ?>
                         <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--border-color, #334155); display:flex; justify-content:flex-end;">
-                            <button type="submit" class="btn btn-primary" style="padding:10px 24px; font-weight:600; font-size:14px; background:var(--primary-color, #3b82f6); border:none; border-radius:6px; color:#fff; cursor:pointer;">
+                            <button type="submit" class="btn btn-primary" style="padding:11px 26px; font-weight:600; font-size:14px; background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border:none; border-radius:8px; color:#fff; cursor:pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                                 Save Global Default Dates
                             </button>
                         </div>

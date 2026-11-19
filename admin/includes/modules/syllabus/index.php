@@ -567,10 +567,10 @@ include dirname(__DIR__, 2) . '/includes/header.php';
 
 <!-- Add / Edit Single Modal -->
 <div id="subjectModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); justify-content: center; align-items: center; padding: 20px;">
-    <div style="background: #1e2433; border: 1px solid var(--border-color, #2d3748); border-radius: 12px; max-width: 480px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); overflow: hidden; animation: fadeIn 0.2s ease;">
-        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color, #2d3748); display: flex; justify-content: space-between; align-items: center;">
-            <h3 id="modalTitle" style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary);">+ Add Syllabus Subject</h3>
-            <button type="button" onclick="closeSubjectModal()" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 22px; line-height: 1; padding: 0;">&times;</button>
+    <div class="sode-theme-modal" style="border-radius: 12px; max-width: 480px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); overflow: hidden; animation: fadeIn 0.2s ease;">
+        <div class="sode-theme-modal-header" style="padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="modalTitle" class="sode-theme-modal-title">+ Add Syllabus Subject</h3>
+            <button type="button" onclick="closeSubjectModal()" class="sode-theme-modal-close">&times;</button>
         </div>
         <form method="POST" action="" id="subjectForm" style="padding: 22px;">
             <?= csrf_field() ?>
@@ -578,15 +578,15 @@ include dirname(__DIR__, 2) . '/includes/header.php';
             <input type="hidden" name="subject_id" id="subject_id" value="0">
 
             <div class="form-group" style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 7px;">
+                <label class="sode-theme-modal-label">
                     Subject Name <span style="color: #ef4444;">*</span>
                 </label>
                 <input type="text" name="subject_name" id="subject_name" class="form-control" required placeholder="e.g. Marketing Management, Data Structures, Accounting" style="width: 100%; font-size: 14px;">
-                <small style="color: var(--text-dim); font-size: 12px; margin-top: 5px; display: block;">This subject will be suggested across all semesters in Course Mappings.</small>
+                <small class="sode-theme-modal-helper">This subject will be suggested across all semesters in Course Mappings.</small>
             </div>
 
             <div class="form-group" style="margin-bottom: 24px;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-primary); cursor: pointer;">
+                <label class="sode-theme-modal-label" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="is_active" id="is_active" value="1" checked style="width: 16px; height: 16px; accent-color: #10b981;">
                     Active in Library
                 </label>
@@ -602,23 +602,23 @@ include dirname(__DIR__, 2) . '/includes/header.php';
 
 <!-- Bulk Add Modal -->
 <div id="bulkModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); justify-content: center; align-items: center; padding: 20px;">
-    <div style="background: #1e2433; border: 1px solid var(--border-color, #2d3748); border-radius: 12px; max-width: 520px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); overflow: hidden; animation: fadeIn 0.2s ease;">
-        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color, #2d3748); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+    <div class="sode-theme-modal" style="border-radius: 12px; max-width: 520px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); overflow: hidden; animation: fadeIn 0.2s ease;">
+        <div class="sode-theme-modal-header" style="padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="sode-theme-modal-title" style="display: flex; align-items: center; gap: 8px;">
                 <span>⚡</span> Bulk Add Syllabus Subjects
             </h3>
-            <button type="button" onclick="closeBulkModal()" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 22px; line-height: 1; padding: 0;">&times;</button>
+            <button type="button" onclick="closeBulkModal()" class="sode-theme-modal-close">&times;</button>
         </div>
         <form method="POST" action="" style="padding: 22px;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="bulk_save">
 
             <div class="form-group" style="margin-bottom: 18px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 7px;">
+                <label class="sode-theme-modal-label">
                     Paste Subjects (One per line)
                 </label>
                 <textarea name="bulk_subjects" class="form-control" rows="8" required placeholder="Accounting for Managers&#10;Marketing Management&#10;Organisational Behaviour&#10;Information Systems&#10;Business Economics" style="width: 100%; font-family: monospace; font-size: 13px; line-height: 1.5;"></textarea>
-                <small style="color: var(--text-dim); font-size: 12px; margin-top: 6px; display: block;">Duplicates already in the library will be automatically skipped.</small>
+                <small class="sode-theme-modal-helper">Duplicates already in the library will be automatically skipped.</small>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
@@ -1051,6 +1051,70 @@ window.onclick = function(event) {
     color: #fff !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+/* Light Theme Overrides for Mapped Modals */
+[data-theme="light"] .uni-courses-modal-dialog {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+    color: #0f172a !important;
+}
+[data-theme="light"] .uni-courses-modal-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .uni-courses-toolbar {
+    background: #f1f5f9 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .uni-courses-search-wrap {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #64748b !important;
+}
+[data-theme="light"] .uni-courses-search-wrap input {
+    color: #0f172a !important;
+}
+[data-theme="light"] .filter-pill {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+[data-theme="light"] .filter-pill:hover {
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+[data-theme="light"] .filter-pill.active {
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    border-color: #4f46e5 !important;
+}
+[data-theme="light"] .modal-courses-table th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .modal-courses-table td {
+    color: #1e293b !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+[data-theme="light"] .modal-courses-table tbody tr:hover {
+    background: #f8fafc !important;
+}
+[data-theme="light"] .uni-courses-modal-footer {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .uni-modal-footer-close-btn {
+    background: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .uni-modal-close-btn {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #64748b !important;
 }
 </style>
 
