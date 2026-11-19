@@ -2,6 +2,9 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_module_access('roles');
+if (!is_superadmin()) {
+    render_access_denied_page("Only Super Administrators can manage roles and permissions.", 'roles');
+}
 
 $page_title = 'Role Management';
 $page_subtitle = 'Define roles, sidebar module access, and team permissions';
@@ -12,8 +15,8 @@ $db = get_db_connection();
 $action = $_GET['action'] ?? '';
 $role_id = (int)($_GET['id'] ?? 0);
 
-// Fetch all sidebar modules and teams
-$all_modules = $db->query("SELECT id, display_name, rbac_module_key FROM sidebar_items WHERE is_active = 1 ORDER BY sort_order ASC")->fetchAll();
+// Fetch all assignable sidebar modules and teams
+$all_modules = $db->query("SELECT id, display_name, rbac_module_key FROM sidebar_items WHERE is_active = 1 AND is_superadmin_only = 0 ORDER BY sort_order ASC")->fetchAll();
 $all_teams = $db->query("SELECT id, name FROM teams ORDER BY name ASC")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

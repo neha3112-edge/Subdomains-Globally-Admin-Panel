@@ -2,6 +2,9 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_module_access('teams');
+if (!is_superadmin()) {
+    render_access_denied_page("Only Super Administrators can manage teams.", 'teams');
+}
 
 $page_title = 'Team Management';
 $page_subtitle = 'Manage user groups, departments, and teams';

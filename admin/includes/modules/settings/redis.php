@@ -1,7 +1,7 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
-require_permission('settings');
+require_permission('redis_manager');
 
 $can_edit = user_can('update') || user_can('write') || is_superadmin();
 
@@ -18,19 +18,9 @@ try {
         $icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>';
         $stmt = $db->prepare("
             INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active) 
-            VALUES ('Redis Cache', 'modules/settings/redis.php', 35, 'redis_manager', 'settings', 'SETTINGS', ?, 0, 1)
+            VALUES ('Redis Cache', 'modules/settings/redis.php', 35, 'redis_manager', 'redis_manager', 'SETTINGS', ?, 1, 1)
         ");
         $stmt->execute([$icon]);
-        $new_sb_id = $db->lastInsertId();
-        if ($new_sb_id) {
-            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-            if (!empty($roles)) {
-                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-                foreach ($roles as $rid) {
-                    $rsa->execute([$rid, $new_sb_id]);
-                }
-            }
-        }
     }
 } catch (Exception $e) {
 }

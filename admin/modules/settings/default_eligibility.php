@@ -1,7 +1,7 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
-require_permission('settings');
+require_permission('default_eligibility');
 
 $can_edit = user_can('update') || user_can('write');
 
@@ -17,7 +17,7 @@ try {
     if (!$check_item) {
         $db->exec("
             INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
-            VALUES ('SETTINGS', 'Default Eligibility', 'modules/settings/default_eligibility.php', 'default_eligibility', 'settings', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 10v6M2 10l10-5 10 5-10 5z\"></path><path d=\"M6 12v5c0 2 2 3 6 3s6-1 6-3v-5\"></path></svg>', 19, 1, 0)
+            VALUES ('SETTINGS', 'Default Eligibility', 'modules/settings/default_eligibility.php', 'default_eligibility', 'default_eligibility', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 10v6M2 10l10-5 10 5-10 5z\"></path><path d=\"M6 12v5c0 2 2 3 6 3s6-1 6-3v-5\"></path></svg>', 19, 1, 0)
         ");
         $item_id = (int) $db->lastInsertId();
         if ($item_id) {

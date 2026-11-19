@@ -3,6 +3,11 @@
  * Admin Panel Top Header Navigation
  */
 $current_user = get_logged_in_user();
+
+// Auto-enforce RBAC route access guard for non-superadmins
+if (!is_superadmin() && function_exists('check_current_route_access')) {
+    check_current_route_access();
+}
 $page_title = $page_title ?? 'Dashboard';
 $page_subtitle = $page_subtitle ?? ('Welcome back, ' . htmlspecialchars($current_user['name']));
 // Calculate remaining session time (fixed 2 hours = 7200s from login)

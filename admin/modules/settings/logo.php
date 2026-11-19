@@ -1,7 +1,7 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
-require_permission('settings');
+require_permission('logo_settings');
 
 $can_edit = user_can('update') || user_can('write');
 

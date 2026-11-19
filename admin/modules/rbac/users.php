@@ -2,6 +2,9 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_module_access('users');
+if (!is_superadmin()) {
+    render_access_denied_page("Only Super Administrators can manage user accounts.", 'users');
+}
 
 $page_title = 'User Management';
 $page_subtitle = 'Manage administrative logins and user access';

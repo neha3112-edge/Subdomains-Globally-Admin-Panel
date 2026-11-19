@@ -2,6 +2,9 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('sidebar_manager');
+if (!is_superadmin()) {
+    render_access_denied_page("Only Super Administrators can access the Sidebar Manager.", 'sidebar_manager');
+}
 
 $page_title = 'Sidebar Manager';
 $page_subtitle = 'Configure dynamic sidebar menus and RBAC permissions';

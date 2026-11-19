@@ -151,13 +151,126 @@ function require_action_permission($action, $module_key = '') {
     }
 }
 
+/**
+ * Detect the normalized relative route of the current executing admin script.
+ * e.g. "modules/settings/api_health.php", "modules/universities/edit.php", "dashboard.php"
+ */
+function get_current_admin_route() {
+    $script = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? ($_SERVER['SCRIPT_NAME'] ?? ''));
+    if (defined('ADMIN_PATH')) {
+        $admin_root = rtrim(str_replace('\\', '/', ADMIN_PATH), '/');
+        if (strpos($script, $admin_root) === 0) {
+            return ltrim(substr($script, strlen($admin_root)), '/');
+        }
+    }
+    $name = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ($_SERVER['PHP_SELF'] ?? ''));
+    if (preg_match('#/admin/(modules/.+|dashboard\.php|change_password\.php)#i', $name, $m)) {
+        return $m[1];
+    }
+    return '';
+}
+
+/**
+ * Automatically verify if the logged-in user is authorized to access the current URL/route.
+ * If unauthorized, immediately renders the 403 Access Denied page and halts execution.
+ */
+function check_current_route_access() {
+    if (!is_logged_in() || is_superadmin()) {
+        return true;
+    }
+
+    $current_route = get_current_admin_route();
+    if (empty($current_route)) {
+        return true;
+    }
+
+    // Always allowed utility routes for authenticated users
+    $allowed_utility = ['change_password.php', 'logout.php'];
+    if (in_array(basename($current_route), $allowed_utility, true)) {
+        return true;
+    }
+
+    $role_id = (int)($_SESSION['user_role_id'] ?? 0);
+    if (!$role_id) {
+        render_access_denied_page("Your account does not have an assigned role.", '', 'read');
+    }
+
+    $db = get_db_connection();
+    sode_heal_core_sidebar_items($db);
+
+    // 1. If current route is explicitly marked superadmin-only, block non-superadmins immediately
+    $sa_stmt = $db->prepare("
+        SELECT id, display_name 
+        FROM sidebar_items 
+        WHERE is_superadmin_only = 1 
+          AND (
+              page_route = :route 
+              OR (:route != '' AND page_route LIKE :route_like)
+          )
+        LIMIT 1
+    ");
+    $sa_stmt->execute([
+        'route'      => $current_route,
+        'route_like' => '%' . basename($current_route)
+    ]);
+    if ($sa_item = $sa_stmt->fetch(PDO::FETCH_ASSOC)) {
+        render_access_denied_page("The '" . htmlspecialchars($sa_item['display_name']) . "' section is restricted to Super Administrators only.", $sa_item['display_name'], 'read');
+    }
+
+    // 2. Derive parent module directory if inside a subdirectory (e.g. "modules/universities/edit.php" -> "modules/universities/%")
+    $route_dir = '';
+    if (preg_match('#^(modules/[^/]+)/#', $current_route, $m)) {
+        $route_dir = $m[1] . '/%';
+    }
+
+    // 3. Check if current role has explicit permission for this route in role_sidebar_access
+    $stmt = $db->prepare("
+        SELECT si.id, si.display_name, si.rbac_module_key 
+        FROM sidebar_items si
+        INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
+        WHERE rsa.role_id = :role_id 
+          AND si.is_active = 1
+          AND si.is_superadmin_only = 0
+          AND (
+              si.page_route = :route
+              OR (:route_dir != '' AND si.page_route LIKE :route_dir)
+          )
+        LIMIT 1
+    ");
+    $stmt->execute([
+        'role_id'   => $role_id,
+        'route'     => $current_route,
+        'route_dir' => $route_dir ?: '___NONE___'
+    ]);
+
+    if (!$stmt->fetch()) {
+        $info_stmt = $db->prepare("
+            SELECT display_name 
+            FROM sidebar_items 
+            WHERE page_route = :route 
+               OR (:route_dir != '' AND page_route LIKE :route_dir)
+            LIMIT 1
+        ");
+        $info_stmt->execute([
+            'route'     => $current_route,
+            'route_dir' => $route_dir ?: '___NONE___'
+        ]);
+        $info = $info_stmt->fetch(PDO::FETCH_ASSOC);
+        $denied_label = $info['display_name'] ?? basename($current_route, '.php');
+
+        render_access_denied_page("Your role does not have access to the '" . htmlspecialchars($denied_label) . "' section.", $denied_label, 'read');
+    }
+
+    return true;
+}
+
 function require_module_access($module_key) {
     require_login();
     if (is_superadmin()) {
         return true;
     }
 
-    $role_id = $_SESSION['user_role_id'] ?? 0;
+    $role_id = (int)($_SESSION['user_role_id'] ?? 0);
     if (!$role_id) {
         render_access_denied_page("You do not have permission to view this module.", $module_key, 'read');
     }
@@ -165,14 +278,58 @@ function require_module_access($module_key) {
     $db = get_db_connection();
     sode_heal_core_sidebar_items($db);
 
+    $current_route = get_current_admin_route();
+
+    // 1. Strict check: If requested module or current route is superadmin-only, block non-superadmins
+    $sa_stmt = $db->prepare("
+        SELECT id, display_name 
+        FROM sidebar_items 
+        WHERE is_superadmin_only = 1 
+          AND (
+              rbac_module_key = :mod_key 
+              OR active_page_key = :mod_key 
+              OR (page_route = :route AND :route != '')
+              OR (:route != '' AND page_route LIKE :route_like)
+          )
+        LIMIT 1
+    ");
+    $sa_stmt->execute([
+        'mod_key'    => $module_key,
+        'route'      => $current_route,
+        'route_like' => '%' . basename($current_route)
+    ]);
+    if ($sa_item = $sa_stmt->fetch(PDO::FETCH_ASSOC)) {
+        render_access_denied_page("The '" . htmlspecialchars($sa_item['display_name'] ?? $module_key) . "' section is restricted to Super Administrators only.", $module_key, 'read');
+    }
+
+    // 2. Check if the user's role has permission for this specific module or route
+    $route_dir = '';
+    if (!empty($current_route) && preg_match('#^(modules/[^/]+)/#', $current_route, $m)) {
+        $route_dir = $m[1] . '/%';
+    }
+
     $stmt = $db->prepare("
         SELECT si.id 
         FROM sidebar_items si
         INNER JOIN role_sidebar_access rsa ON si.id = rsa.sidebar_item_id
-        WHERE rsa.role_id = :role_id AND si.rbac_module_key = :module_key AND si.is_active = 1
+        WHERE rsa.role_id = :role_id 
+          AND si.is_active = 1
+          AND si.is_superadmin_only = 0
+          AND (
+              si.rbac_module_key = :mod_key 
+              OR si.active_page_key = :mod_key
+              OR (si.page_route = :route AND :route != '')
+              OR (:route_dir != '' AND si.page_route LIKE :route_dir)
+          )
         LIMIT 1
     ");
-    $stmt->execute(['role_id' => $role_id, 'module_key' => $module_key]);
+    $stmt->execute([
+        'role_id'   => $role_id,
+        'mod_key'   => $module_key,
+        'route'     => $current_route,
+        'route_dir' => $route_dir ?: '___NONE___'
+    ]);
+
     if (!$stmt->fetch()) {
         render_access_denied_page("You do not have permission to access the " . htmlspecialchars($module_key) . " module.", $module_key, 'read');
     }
@@ -626,146 +783,201 @@ function sode_heal_core_sidebar_items(PDO $db) {
     $done = true;
 
     try {
-        $news_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>';
-        $logo_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+        $news_svg   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>';
+        $logo_svg   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+        $dates_svg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+        $elig_svg   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>';
+        $health_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>';
+        $redis_svg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>';
+        $lead_svg   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>';
+        $wa_svg     = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+        $users_svg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
+        $roles_svg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        $teams_svg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>';
+        $sb_svg     = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
 
-        // 1. Correct Site & Brand Logo entry if corrupted with universal_news keys or wrong icon
-        $db->prepare("
-            UPDATE sidebar_items 
-            SET display_name = 'Site & Brand Logo',
-                page_route = 'modules/settings/logo.php',
-                sort_order = 17,
-                active_page_key = 'logo_settings',
-                rbac_module_key = 'settings',
-                menu_section = 'SETTINGS',
-                icon_svg = ?,
-                is_active = 1
-            WHERE page_route LIKE '%settings/logo.php%'
-        ")->execute([$logo_svg]);
+        // Full registry of core settings & access control items with discrete keys
+        $core_items = [
+            [
+                'name' => 'Site & Brand Logo',
+                'route' => 'modules/settings/logo.php',
+                'active' => 'logo_settings',
+                'rbac' => 'logo_settings',
+                'section' => 'SETTINGS',
+                'sort' => 17,
+                'svg' => $logo_svg,
+                'superadmin_only' => 0
+            ],
+            [
+                'name' => 'Universal News',
+                'route' => 'modules/universal_news/index.php',
+                'active' => 'universal_news',
+                'rbac' => 'universal_news',
+                'section' => 'SETTINGS',
+                'sort' => 13,
+                'svg' => $news_svg,
+                'superadmin_only' => 0
+            ],
+            [
+                'name' => 'Default Dates',
+                'route' => 'modules/settings/default_dates.php',
+                'active' => 'default_dates',
+                'rbac' => 'default_dates',
+                'section' => 'SETTINGS',
+                'sort' => 18,
+                'svg' => $dates_svg,
+                'superadmin_only' => 0
+            ],
+            [
+                'name' => 'Default Eligibility',
+                'route' => 'modules/settings/default_eligibility.php',
+                'active' => 'default_eligibility',
+                'rbac' => 'default_eligibility',
+                'section' => 'SETTINGS',
+                'sort' => 19,
+                'svg' => $elig_svg,
+                'superadmin_only' => 0
+            ],
+            [
+                'name' => 'Lead & API Settings',
+                'route' => 'modules/settings/api_integrations.php',
+                'active' => 'api_integrations',
+                'rbac' => 'api_integrations',
+                'section' => 'SETTINGS',
+                'sort' => 20,
+                'svg' => $lead_svg,
+                'superadmin_only' => 0
+            ],
+            [
+                'name' => 'WhatsApp Settings',
+                'route' => 'modules/settings/whatsapp.php',
+                'active' => 'whatsapp_settings',
+                'rbac' => 'whatsapp',
+                'section' => 'SETTINGS',
+                'sort' => 21,
+                'svg' => $wa_svg,
+                'superadmin_only' => 0
+            ],
+            [
+                'name' => 'API Health',
+                'route' => 'modules/settings/api_health.php',
+                'active' => 'api_health',
+                'rbac' => 'api_health',
+                'section' => 'SETTINGS',
+                'sort' => 36,
+                'svg' => $health_svg,
+                'superadmin_only' => 1
+            ],
+            [
+                'name' => 'Redis Cache',
+                'route' => 'modules/settings/redis.php',
+                'active' => 'redis_manager',
+                'rbac' => 'redis_manager',
+                'section' => 'SETTINGS',
+                'sort' => 35,
+                'svg' => $redis_svg,
+                'superadmin_only' => 1
+            ],
+            [
+                'name' => 'Manage Users',
+                'route' => 'modules/rbac/users.php',
+                'active' => 'users',
+                'rbac' => 'users',
+                'section' => 'ACCESS CONTROL',
+                'sort' => 8,
+                'svg' => $users_svg,
+                'superadmin_only' => 1
+            ],
+            [
+                'name' => 'Manage Teams',
+                'route' => 'modules/rbac/teams.php',
+                'active' => 'teams',
+                'rbac' => 'teams',
+                'section' => 'ACCESS CONTROL',
+                'sort' => 9,
+                'svg' => $teams_svg,
+                'superadmin_only' => 1
+            ],
+            [
+                'name' => 'Manage Roles',
+                'route' => 'modules/rbac/roles.php',
+                'active' => 'roles',
+                'rbac' => 'roles',
+                'section' => 'ACCESS CONTROL',
+                'sort' => 10,
+                'svg' => $roles_svg,
+                'superadmin_only' => 1
+            ],
+            [
+                'name' => 'Sidebar Manager',
+                'route' => 'modules/rbac/sidebar_manager.php',
+                'active' => 'sidebar_manager',
+                'rbac' => 'sidebar_manager',
+                'section' => 'ACCESS CONTROL',
+                'sort' => 11,
+                'svg' => $sb_svg,
+                'superadmin_only' => 1
+            ]
+        ];
 
-        // If no Site & Brand Logo row exists, insert it
-        $logo_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%settings/logo.php%' OR active_page_key = 'logo_settings' LIMIT 1")->fetch();
-        if (!$logo_chk) {
-            $stmt = $db->prepare("
-                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
-                VALUES ('Site & Brand Logo', 'modules/settings/logo.php', 17, 'logo_settings', 'settings', 'SETTINGS', ?, 0, 1)
-            ");
-            $stmt->execute([$logo_svg]);
-            $logo_id = (int)$db->lastInsertId();
-            if ($logo_id) {
-                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-                foreach ($roles as $rid) { $rsa->execute([$rid, $logo_id]); }
+        $superadmin_roles = $db->query("SELECT id FROM roles WHERE LOWER(name) LIKE '%superadmin%' OR id = 1")->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($core_items as $ci) {
+            $chk = $db->prepare("SELECT id FROM sidebar_items WHERE page_route = ? OR active_page_key = ? LIMIT 1");
+            $chk->execute([$ci['route'], $ci['active']]);
+            $existing = $chk->fetch(PDO::FETCH_ASSOC);
+
+            if ($existing) {
+                $db->prepare("
+                    UPDATE sidebar_items 
+                    SET display_name = ?,
+                        page_route = ?,
+                        sort_order = ?,
+                        active_page_key = ?,
+                        rbac_module_key = ?,
+                        menu_section = ?,
+                        icon_svg = ?,
+                        is_superadmin_only = ?,
+                        is_active = 1
+                    WHERE id = ?
+                ")->execute([
+                    $ci['name'], $ci['route'], $ci['sort'], $ci['active'],
+                    $ci['rbac'], $ci['section'], $ci['svg'], $ci['superadmin_only'],
+                    $existing['id']
+                ]);
+                $item_id = $existing['id'];
+            } else {
+                $ins = $db->prepare("
+                    INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                ");
+                $ins->execute([
+                    $ci['name'], $ci['route'], $ci['sort'], $ci['active'],
+                    $ci['rbac'], $ci['section'], $ci['svg'], $ci['superadmin_only']
+                ]);
+                $item_id = (int)$db->lastInsertId();
             }
-        } else {
-            // Ensure all roles have access
-            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-            foreach ($roles as $rid) { $rsa->execute([$rid, $logo_chk['id']]); }
+
+            // Always ensure superadmin has access to all core items
+            if ($item_id && !empty($superadmin_roles)) {
+                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                foreach ($superadmin_roles as $s_rid) {
+                    $rsa->execute([$s_rid, $item_id]);
+                }
+            }
         }
 
-        // 2. Ensure Universal News exists with proper route, icon, and keys
-        $news_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%universal_news%' OR (active_page_key = 'universal_news' AND page_route NOT LIKE '%settings/logo.php%') LIMIT 1")->fetch();
-        if (!$news_chk) {
-            $stmt = $db->prepare("
-                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
-                VALUES ('Universal News', 'modules/universal_news/index.php', 13, 'universal_news', 'universal_news', 'SETTINGS', ?, 0, 1)
+        // Clean up: Disallow non-superadmins from superadmin-only modules in role_sidebar_access
+        if (!empty($superadmin_roles)) {
+            $in_clause = implode(',', array_map('intval', $superadmin_roles));
+            $db->exec("
+                DELETE rsa FROM role_sidebar_access rsa
+                JOIN sidebar_items si ON rsa.sidebar_item_id = si.id
+                WHERE si.is_superadmin_only = 1 AND rsa.role_id NOT IN ($in_clause)
             ");
-            $stmt->execute([$news_svg]);
-            $news_id = (int)$db->lastInsertId();
-            if ($news_id) {
-                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-                foreach ($roles as $rid) { $rsa->execute([$rid, $news_id]); }
-            }
-        } else {
-            $db->prepare("
-                UPDATE sidebar_items 
-                SET display_name = 'Universal News',
-                    page_route = 'modules/universal_news/index.php',
-                    sort_order = 13,
-                    active_page_key = 'universal_news',
-                    rbac_module_key = 'universal_news',
-                    menu_section = 'SETTINGS',
-                    icon_svg = ?,
-                    is_active = 1
-                WHERE id = ?
-            ")->execute([$news_svg, $news_chk['id']]);
-
-            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-            foreach ($roles as $rid) { $rsa->execute([$rid, $news_chk['id']]); }
         }
 
-        // 3. Ensure Default Dates exists with proper route, icon, and keys
-        $dates_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
-        $dates_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%default_dates.php%' OR active_page_key = 'default_dates' LIMIT 1")->fetch();
-        if (!$dates_chk) {
-            $stmt = $db->prepare("
-                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
-                VALUES ('Default Dates', 'modules/settings/default_dates.php', 18, 'default_dates', 'settings', 'SETTINGS', ?, 0, 1)
-            ");
-            $stmt->execute([$dates_svg]);
-            $dates_id = (int)$db->lastInsertId();
-            if ($dates_id) {
-                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-                foreach ($roles as $rid) { $rsa->execute([$rid, $dates_id]); }
-            }
-        } else {
-            $db->prepare("
-                UPDATE sidebar_items 
-                SET display_name = 'Default Dates',
-                    page_route = 'modules/settings/default_dates.php',
-                    sort_order = 18,
-                    active_page_key = 'default_dates',
-                    rbac_module_key = 'settings',
-                    menu_section = 'SETTINGS',
-                    icon_svg = ?,
-                    is_active = 1
-                WHERE id = ?
-            ")->execute([$dates_svg, $dates_chk['id']]);
-
-            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-            foreach ($roles as $rid) { $rsa->execute([$rid, $dates_chk['id']]); }
-        }
-
-        // 4. Ensure Default Eligibility exists with proper route, icon, and keys
-        $elig_svg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>';
-        $elig_chk = $db->query("SELECT id FROM sidebar_items WHERE page_route LIKE '%default_eligibility.php%' OR active_page_key = 'default_eligibility' LIMIT 1")->fetch();
-        if (!$elig_chk) {
-            $stmt = $db->prepare("
-                INSERT INTO sidebar_items (display_name, page_route, sort_order, active_page_key, rbac_module_key, menu_section, icon_svg, is_superadmin_only, is_active)
-                VALUES ('Default Eligibility', 'modules/settings/default_eligibility.php', 19, 'default_eligibility', 'settings', 'SETTINGS', ?, 0, 1)
-            ");
-            $stmt->execute([$elig_svg]);
-            $elig_id = (int)$db->lastInsertId();
-            if ($elig_id) {
-                $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-                $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-                foreach ($roles as $rid) { $rsa->execute([$rid, $elig_id]); }
-            }
-        } else {
-            $db->prepare("
-                UPDATE sidebar_items 
-                SET display_name = 'Default Eligibility',
-                    page_route = 'modules/settings/default_eligibility.php',
-                    sort_order = 19,
-                    active_page_key = 'default_eligibility',
-                    rbac_module_key = 'settings',
-                    menu_section = 'SETTINGS',
-                    icon_svg = ?,
-                    is_active = 1
-                WHERE id = ?
-            ")->execute([$elig_svg, $elig_chk['id']]);
-
-            $roles = $db->query("SELECT id FROM roles")->fetchAll(PDO::FETCH_COLUMN);
-            $rsa = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
-            foreach ($roles as $rid) { $rsa->execute([$rid, $elig_chk['id']]); }
-        }
-
-        // 5. Ensure courses table has default_eligibility column
+        // Ensure courses table has default_eligibility column
         $col_check = $db->query("SHOW COLUMNS FROM courses LIKE 'default_eligibility'")->fetch();
         if (!$col_check) {
             $db->exec("ALTER TABLE courses ADD COLUMN default_eligibility TEXT NULL AFTER description");

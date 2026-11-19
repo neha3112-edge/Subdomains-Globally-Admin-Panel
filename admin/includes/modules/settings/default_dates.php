@@ -1,7 +1,7 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
-require_permission('settings');
+require_permission('default_dates');
 
 $can_edit = user_can('update') || user_can('write');
 
@@ -17,7 +17,7 @@ try {
     if (!$check_item) {
         $db->exec("
             INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
-            VALUES ('SETTINGS', 'Default Dates', 'modules/settings/default_dates.php', 'default_dates', 'settings', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg>', 18, 1, 0)
+            VALUES ('SETTINGS', 'Default Dates', 'modules/settings/default_dates.php', 'default_dates', 'default_dates', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg>', 18, 1, 0)
         ");
         $item_id = (int) $db->lastInsertId();
         if ($item_id) {

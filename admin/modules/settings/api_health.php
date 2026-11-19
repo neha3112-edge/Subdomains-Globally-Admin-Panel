@@ -4,7 +4,7 @@
  */
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
-require_permission('settings');
+require_permission('api_health');
 
 $page_title      = 'API Health & Endpoints Monitor';
 $page_subtitle   = 'Live status, latency analytics, and auto-discovery of all 3rd-party integrations & internal REST endpoints';
