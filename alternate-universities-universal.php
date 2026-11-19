@@ -147,6 +147,23 @@ if (!function_exists('sode_format_single_alt_uni_row')) {
                 $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
                 $crs['per_semester_fee'] = trim($f);
             }
+
+            // Determine mode and prefix to course name
+            $c_mode = !empty($crs['mode']) ? trim($crs['mode']) : (!empty($u['mode']) ? trim($u['mode']) : 'Online');
+            if (stripos($c_mode, 'Distance') !== false && stripos($c_mode, 'Online') === false) {
+                $clean_mode = 'Distance';
+            } elseif (stripos($c_mode, 'Online') !== false && stripos($c_mode, 'Distance') === false) {
+                $clean_mode = 'Online';
+            } else {
+                $clean_mode = $c_mode;
+            }
+            $crs['mode'] = $clean_mode;
+            $c_name = trim($crs['short_name'] ?? '');
+            if (!empty($clean_mode) && stripos($c_name, $clean_mode) !== 0) {
+                $crs['display_name'] = $clean_mode . ' ' . $c_name;
+            } else {
+                $crs['display_name'] = $c_name;
+            }
         }
         unset($crs);
 
@@ -257,7 +274,7 @@ if (!function_exists('sode_get_alternate_universities_list')) {
 
                     $course_stmt = $db->prepare("
                         SELECT c.id AS course_id, c.short_name, c.full_name, c.level,
-                               ucm.eligibility_text, ucm.per_semester_fee
+                               ucm.mode, ucm.eligibility_text, ucm.per_semester_fee
                         FROM university_course_mappings ucm
                         JOIN courses c ON ucm.course_id = c.id
                         WHERE ucm.university_id = ?
@@ -1187,9 +1204,26 @@ if (!function_exists('sode_alternate_universities_render')) {
                     $logo_src = !empty($uni['logo_url']) ? $uni['logo_url'] : '';
 
                     // Format course names for JSON data attribute
-                    $courses_json = htmlspecialchars(json_encode(array_map(function ($c) {
+                    $courses_json = htmlspecialchars(json_encode(array_map(function ($c) use ($uni) {
+                        $display_c_name = !empty($c['display_name']) ? $c['display_name'] : '';
+                        if (empty($display_c_name)) {
+                            $c_mode = !empty($c['mode']) ? trim($c['mode']) : (!empty($uni['mode']) ? trim($uni['mode']) : 'Online');
+                            if (stripos($c_mode, 'Distance') !== false && stripos($c_mode, 'Online') === false) {
+                                $clean_mode = 'Distance';
+                            } elseif (stripos($c_mode, 'Online') !== false && stripos($c_mode, 'Distance') === false) {
+                                $clean_mode = 'Online';
+                            } else {
+                                $clean_mode = $c_mode;
+                            }
+                            $c_name = trim($c['short_name'] ?? '');
+                            if (!empty($clean_mode) && stripos($c_name, $clean_mode) !== 0) {
+                                $display_c_name = $clean_mode . ' ' . $c_name;
+                            } else {
+                                $display_c_name = $c_name;
+                            }
+                        }
                         return [
-                            'name' => $c['short_name'],
+                            'name' => $display_c_name,
                             'full' => $c['full_name']
                         ];
                     }, $courses)), ENT_QUOTES, 'UTF-8');
@@ -1303,9 +1337,27 @@ if (!function_exists('sode_alternate_universities_render')) {
                                     </thead>
                                     <tbody>
                                         <?php if (!empty($courses)): ?>
-                                            <?php foreach ($courses as $c): ?>
+                                            <?php foreach ($courses as $c): 
+                                                $display_course_name = !empty($c['display_name']) ? $c['display_name'] : '';
+                                                if (empty($display_course_name)) {
+                                                    $c_mode = !empty($c['mode']) ? trim($c['mode']) : (!empty($uni['mode']) ? trim($uni['mode']) : 'Online');
+                                                    if (stripos($c_mode, 'Distance') !== false && stripos($c_mode, 'Online') === false) {
+                                                        $clean_mode = 'Distance';
+                                                    } elseif (stripos($c_mode, 'Online') !== false && stripos($c_mode, 'Distance') === false) {
+                                                        $clean_mode = 'Online';
+                                                    } else {
+                                                        $clean_mode = $c_mode;
+                                                    }
+                                                    $c_name = trim($c['short_name'] ?? '');
+                                                    if (!empty($clean_mode) && stripos($c_name, $clean_mode) !== 0) {
+                                                        $display_course_name = $clean_mode . ' ' . $c_name;
+                                                    } else {
+                                                        $display_course_name = $c_name;
+                                                    }
+                                                }
+                                            ?>
                                                 <tr>
-                                                    <td class="sode-alt-course-name"><?php echo esc_html($c['short_name']); ?></td>
+                                                    <td class="sode-alt-course-name"><?php echo esc_html($display_course_name); ?></td>
                                                     <td class="sode-alt-course-elig">
                                                         <?php echo esc_html($c['eligibility_text'] ?: '10+2 / Graduation as per university norms'); ?>
                                                     </td>

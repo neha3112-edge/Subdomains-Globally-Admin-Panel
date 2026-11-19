@@ -36,7 +36,7 @@ if (empty($uni_slug)) {
 }
 $uni_slug = strtolower(trim($uni_slug));
 
-$cache_key = 'api:alternate_universities:v2:' . (!empty($uni_slug) ? $uni_slug : 'all');
+$cache_key = 'api:alternate_universities:v3:' . (!empty($uni_slug) ? $uni_slug : 'all');
 if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached_response = Sode_Redis::get($cache_key);
     if ($cached_response !== null) {
@@ -82,11 +82,28 @@ if (!function_exists('sode_api_format_alt_uni_row')) {
             $desc = 'Explore top-rated online & distance degree programs offered by ' . $u['full_name'] . ', featuring ' . $c_text_list . '.';
         }
 
-        // Format fees: ensure no raw rupee or trailing slashes, clean string
+        // Format fees and mode: ensure clean strings
         foreach ($courses as &$crs) {
             $f = trim($crs['per_semester_fee'] ?? '');
             $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
             $crs['per_semester_fee'] = trim($f);
+
+            // Determine mode and prefix to course name
+            $c_mode = !empty($crs['mode']) ? trim($crs['mode']) : (!empty($u['mode']) ? trim($u['mode']) : 'Online');
+            if (stripos($c_mode, 'Distance') !== false && stripos($c_mode, 'Online') === false) {
+                $clean_mode = 'Distance';
+            } elseif (stripos($c_mode, 'Online') !== false && stripos($c_mode, 'Distance') === false) {
+                $clean_mode = 'Online';
+            } else {
+                $clean_mode = $c_mode;
+            }
+            $crs['mode'] = $clean_mode;
+            $c_name = trim($crs['short_name'] ?? '');
+            if (!empty($clean_mode) && stripos($c_name, $clean_mode) !== 0) {
+                $crs['display_name'] = $clean_mode . ' ' . $c_name;
+            } else {
+                $crs['display_name'] = $c_name;
+            }
         }
         unset($crs);
 
@@ -144,7 +161,7 @@ try {
 
     $course_stmt = $db->prepare("
         SELECT c.id AS course_id, c.short_name, c.full_name, c.level,
-               ucm.eligibility_text, ucm.per_semester_fee
+               ucm.mode, ucm.eligibility_text, ucm.per_semester_fee
         FROM university_course_mappings ucm
         JOIN courses c ON ucm.course_id = c.id
         WHERE ucm.university_id = ?
