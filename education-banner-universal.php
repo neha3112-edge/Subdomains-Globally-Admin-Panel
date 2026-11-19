@@ -288,7 +288,9 @@ function edu_banner_shortcode($atts)
     $mobile_bg = sode_normalize_asset_url(!empty($uni_data['mobile_banner_bg']) ? $uni_data['mobile_banner_bg'] : 'uploads/2026/07/mobile_new_bg_main.png');
     $logo_url = sode_normalize_asset_url(!empty($uni_data['logo_url']) ? $uni_data['logo_url'] : 'uploads/2026/08/DSU-online-Logo-2.png');
     $campus_mobile_img = sode_normalize_asset_url(!empty($uni_data['campus_mobile_img']) ? $uni_data['campus_mobile_img'] : 'uploads/2026/08/DSU-Mobile-Image-2.png');
-    $db_admission_date = !empty($uni_data['admission_last_date']) ? $uni_data['admission_last_date'] : '';
+    $def_dates = function_exists('sode_get_default_dates') ? sode_get_default_dates() : ['admission_last_date' => '30 Sep ' . date('Y')];
+    $raw_admission_date = !empty($uni_data['admission_last_date']) ? $uni_data['admission_last_date'] : ($def_dates['admission_last_date'] ?? '');
+    $db_admission_date = function_exists('sode_format_admin_date_for_db') ? sode_format_admin_date_for_db($raw_admission_date) : $raw_admission_date;
 
     // Global keys & Dynamic replacements
     $top_heading_text = !empty($uni_data['global_keys']['$BANNER_TOP_TEXT$']) ? $uni_data['global_keys']['$BANNER_TOP_TEXT$'] : (!empty($uni_data['global_keys']['BANNER_TOP_TEXT']) ? $uni_data['global_keys']['BANNER_TOP_TEXT'] : 'Welcome to SODE™ (School of Online and Distance Education)');

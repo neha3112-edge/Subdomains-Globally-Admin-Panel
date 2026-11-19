@@ -79,6 +79,13 @@ while ($row = $keys_stmt->fetch()) {
     $global_keys[$row['key_code']] = $row['key_value'];
 }
 
+$def_dates = function_exists('sode_get_default_dates') ? sode_get_default_dates($db) : [];
+$adm_last = !empty($uni['admission_last_date']) ? sode_format_admin_date_for_db($uni['admission_last_date']) : ($def_dates['admission_last_date'] ?? '');
+$adm_start = !empty($uni['admission_start_date']) ? sode_format_admin_date_for_db($uni['admission_start_date']) : ($def_dates['admission_start_date'] ?? '');
+$ex_date = !empty($uni['exam_date']) ? sode_format_admin_date_for_db($uni['exam_date']) : ($def_dates['exam_date'] ?? '');
+$ext_ex_date = !empty($uni['extended_exam_date']) ? sode_format_admin_date_for_db($uni['extended_exam_date']) : ($def_dates['extended_exam_date'] ?? '');
+$asg_date = !empty($uni['assignment_date']) ? sode_format_admin_date_for_db($uni['assignment_date']) : ($def_dates['assignment_date'] ?? '');
+
 $response_data = [
     'success' => true,
     'data' => [
@@ -97,11 +104,11 @@ $response_data = [
         'brochure_pdf_url' => $uni['brochure_pdf_url'] ?? '',
         'podcast_audio_url' => $uni['podcast_audio_url'] ?? '',
         'youtube_video_url' => $uni['youtube_video_url'] ?? '',
-        'exam_date' => $uni['exam_date'] ?? '',
-        'extended_exam_date' => $uni['extended_exam_date'] ?? '',
-        'admission_last_date' => $uni['admission_last_date'] ?? '',
-        'admission_start_date' => $uni['admission_start_date'] ?? '',
-        'assignment_date' => $uni['assignment_date'] ?? '',
+        'exam_date' => $ex_date,
+        'extended_exam_date' => $ext_ex_date,
+        'admission_last_date' => $adm_last,
+        'admission_start_date' => $adm_start,
+        'assignment_date' => $asg_date,
         'rating' => (float)$uni['rating'],
         'whatsapp_btn_intent' => $uni['whatsapp_btn_intent'] ?? '',
         'gallabox_message_text' => $uni['gallabox_message_text'] ?? '',

@@ -74,6 +74,63 @@ if (!function_exists('shortcode_atts')) {
     }
 }
 
+if (!function_exists('sode_format_admin_date_for_db')) {
+    function sode_format_admin_date_for_db($raw)
+    {
+        $raw = trim($raw ?? '');
+        if (empty($raw)) return '';
+        $ts = strtotime($raw);
+        if ($ts !== false && $ts > 0) {
+            return date('d M Y', $ts); // e.g. "15 Nov 2026"
+        }
+        return $raw;
+    }
+}
+
+if (!function_exists('sode_get_default_dates')) {
+    function sode_get_default_dates($db = null)
+    {
+        $current_year = date('Y');
+        $defaults = [
+            'admission_last_date'  => '30 Sep ' . $current_year,
+            'exam_date'            => '15 Dec ' . $current_year,
+            'extended_exam_date'   => '15 Jan ' . ((int)$current_year + 1),
+            'admission_start_date' => '01 Jun ' . $current_year,
+            'assignment_date'      => '15 Nov ' . $current_year,
+        ];
+
+        if (!$db && function_exists('get_db_connection')) {
+            try {
+                $db = get_db_connection();
+            } catch (Exception $e) {}
+        }
+
+        if ($db) {
+            try {
+                $stmt = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group = 'dates'");
+                $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                if (!empty($rows['default_admission_last_date'])) {
+                    $defaults['admission_last_date'] = sode_format_admin_date_for_db($rows['default_admission_last_date']);
+                }
+                if (!empty($rows['default_exam_date'])) {
+                    $defaults['exam_date'] = sode_format_admin_date_for_db($rows['default_exam_date']);
+                }
+                if (!empty($rows['default_extended_exam_date'])) {
+                    $defaults['extended_exam_date'] = sode_format_admin_date_for_db($rows['default_extended_exam_date']);
+                }
+                if (!empty($rows['default_admission_start_date'])) {
+                    $defaults['admission_start_date'] = sode_format_admin_date_for_db($rows['default_admission_start_date']);
+                }
+                if (!empty($rows['default_assignment_date'])) {
+                    $defaults['assignment_date'] = sode_format_admin_date_for_db($rows['default_assignment_date']);
+                }
+            } catch (Exception $e) {}
+        }
+
+        return $defaults;
+    }
+}
+
 /**
  * Fetch University Dates & Profile
  */
@@ -185,17 +242,17 @@ if (!function_exists('sode_get_university_dates_data')) {
 
         // 3. Fallback defaults if not found
         if (!$uni_data) {
-            $current_year = date('Y');
+            $def_dates = sode_get_default_dates();
             $uni_data = [
                 'full_name' => !empty($uni_slug) ? ucwords(str_replace(['-', '_'], ' ', $uni_slug)) . ' Online' : 'Dayananda Sagar University Online',
                 'short_name' => !empty($uni_slug) ? strtoupper($uni_slug) : 'DSU',
                 'slug' => $uni_slug ?: 'dsu',
                 'mode' => 'Online & Distance',
-                'admission_start_date' => '7th September ' . $current_year,
-                'admission_last_date' => '30th September ' . $current_year,
-                'assignment_date' => '15 November ' . $current_year,
-                'exam_date' => 'December ' . $current_year,
-                'extended_exam_date' => '15 Jan ' . ((int) $current_year + 1),
+                'admission_start_date' => $def_dates['admission_start_date'],
+                'admission_last_date' => $def_dates['admission_last_date'],
+                'assignment_date' => $def_dates['assignment_date'],
+                'exam_date' => $def_dates['exam_date'],
+                'extended_exam_date' => $def_dates['extended_exam_date'],
             ];
         }
 
@@ -217,52 +274,49 @@ if (!function_exists('sode_university_dates_table_render')) {
         $uni_slug = !empty($atts['university']) ? $atts['university'] : $atts['uni'];
         $uni = sode_get_university_dates_data($uni_slug);
 
-        $y = date('Y');
+        $def_dates = sode_get_default_dates();
+
+        $adm_last = !empty($uni['admission_last_date']) ? sode_format_admin_date_for_db($uni['admission_last_date']) : $def_dates['admission_last_date'];
+        $adm_start = !empty($uni['admission_start_date']) ? sode_format_admin_date_for_db($uni['admission_start_date']) : $def_dates['admission_start_date'];
+        $exam_d = !empty($uni['exam_date']) ? sode_format_admin_date_for_db($uni['exam_date']) : $def_dates['exam_date'];
+        $ext_exam = !empty($uni['extended_exam_date']) ? sode_format_admin_date_for_db($uni['extended_exam_date']) : $def_dates['extended_exam_date'];
+        $asg_d = !empty($uni['assignment_date']) ? sode_format_admin_date_for_db($uni['assignment_date']) : $def_dates['assignment_date'];
 
         // Events mapping according to user screenshot
         $rows = [];
 
-        if (!empty($uni['admission_last_date'])) {
+        if (!empty($adm_last)) {
             $rows[] = [
                 'event' => 'Application Deadline',
-                'date' => trim($uni['admission_last_date'])
+                'date' => $adm_last
             ];
         }
 
-        if (!empty($uni['admission_start_date'])) {
+        if (!empty($adm_start)) {
             $rows[] = [
                 'event' => 'Semester Commencement',
-                'date' => trim($uni['admission_start_date'])
+                'date' => $adm_start
             ];
         }
 
-        if (!empty($uni['exam_date'])) {
+        if (!empty($exam_d)) {
             $rows[] = [
                 'event' => 'Examination Commencement',
-                'date' => trim($uni['exam_date'])
+                'date' => $exam_d
             ];
         }
 
-        if (!empty($uni['extended_exam_date'])) {
+        if (!empty($ext_exam)) {
             $rows[] = [
                 'event' => 'Extended Examination',
-                'date' => trim($uni['extended_exam_date'])
+                'date' => $ext_exam
             ];
         }
 
-        if (!empty($uni['assignment_date'])) {
+        if (!empty($asg_d)) {
             $rows[] = [
                 'event' => 'Assignment Submission',
-                'date' => trim($uni['assignment_date'])
-            ];
-        }
-
-        // Fallback default sample if empty
-        if (empty($rows)) {
-            $rows = [
-                ['event' => 'Application Deadline', 'date' => '15th October ' . $y . ' *'],
-                ['event' => 'Semester Commencement', 'date' => 'October ' . $y . '*'],
-                ['event' => 'Examination Commencement', 'date' => 'December ' . $y . '*']
+                'date' => $asg_d
             ];
         }
 
@@ -363,34 +417,44 @@ if (function_exists('add_shortcode')) {
     add_shortcode('dates_table', 'sode_university_dates_table_render');
     add_shortcode('university_dates_table', 'sode_university_dates_table_render');
 
-    // Individual Date Shortcodes
+    // Individual Date Shortcodes (Auto-formatted as 15 Nov 2026 with default fallback)
     add_shortcode('admission_last_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
-        return esc_html($uni['admission_last_date'] ?? '');
+        $def = sode_get_default_dates();
+        $val = !empty($uni['admission_last_date']) ? $uni['admission_last_date'] : $def['admission_last_date'];
+        return esc_html(sode_format_admin_date_for_db($val));
     });
 
     add_shortcode('admission_start_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
-        return esc_html($uni['admission_start_date'] ?? '');
+        $def = sode_get_default_dates();
+        $val = !empty($uni['admission_start_date']) ? $uni['admission_start_date'] : $def['admission_start_date'];
+        return esc_html(sode_format_admin_date_for_db($val));
     });
 
     add_shortcode('exam_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
-        return esc_html($uni['exam_date'] ?? '');
+        $def = sode_get_default_dates();
+        $val = !empty($uni['exam_date']) ? $uni['exam_date'] : $def['exam_date'];
+        return esc_html(sode_format_admin_date_for_db($val));
     });
 
     add_shortcode('extended_exam_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
-        return esc_html($uni['extended_exam_date'] ?? '');
+        $def = sode_get_default_dates();
+        $val = !empty($uni['extended_exam_date']) ? $uni['extended_exam_date'] : $def['extended_exam_date'];
+        return esc_html(sode_format_admin_date_for_db($val));
     });
 
     add_shortcode('assignment_date', function ($atts) {
         $atts = shortcode_atts(['uni' => '', 'university' => ''], $atts);
         $uni = sode_get_university_dates_data(!empty($atts['university']) ? $atts['university'] : $atts['uni']);
-        return esc_html($uni['assignment_date'] ?? '');
+        $def = sode_get_default_dates();
+        $val = !empty($uni['assignment_date']) ? $uni['assignment_date'] : $def['assignment_date'];
+        return esc_html(sode_format_admin_date_for_db($val));
     });
 }

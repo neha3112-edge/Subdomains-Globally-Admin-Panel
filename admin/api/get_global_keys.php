@@ -175,6 +175,13 @@ if (!empty($uni_slug)) {
             $sample_degree_url = str_replace(' ', '%20', $sample_degree_url);
         }
 
+        $def_dates = function_exists('sode_get_default_dates') ? sode_get_default_dates($db) : [];
+        $adm_last = !empty($uni['admission_last_date']) ? sode_format_admin_date_for_db($uni['admission_last_date']) : ($def_dates['admission_last_date'] ?? '');
+        $adm_start = !empty($uni['admission_start_date']) ? sode_format_admin_date_for_db($uni['admission_start_date']) : ($def_dates['admission_start_date'] ?? '');
+        $ex_date = !empty($uni['exam_date']) ? sode_format_admin_date_for_db($uni['exam_date']) : ($def_dates['exam_date'] ?? '');
+        $ext_ex_date = !empty($uni['extended_exam_date']) ? sode_format_admin_date_for_db($uni['extended_exam_date']) : ($def_dates['extended_exam_date'] ?? '');
+        $asg_date = !empty($uni['assignment_date']) ? sode_format_admin_date_for_db($uni['assignment_date']) : ($def_dates['assignment_date'] ?? '');
+
         $uni_keys = [
             // University Name
             '{UNIVERSITY_NAME}'             => $uni['full_name']  ?? '',
@@ -280,17 +287,17 @@ if (!empty($uni_slug)) {
             'SAMPLE_DEGREE_IMG'          => $sample_degree_url,
             'SAMPLE_DEGREE'              => $sample_degree_url,
 
-            // Dates
-            '{ADMISSION_LAST_DATE}'      => $uni['admission_last_date']  ?? '',
-            '$ADMISSION_LAST_DATE$'      => $uni['admission_last_date']  ?? '',
-            '{ADMISSION_START_DATE}'     => $uni['admission_start_date'] ?? '',
-            '$ADMISSION_START_DATE$'     => $uni['admission_start_date'] ?? '',
-            '{EXAM_DATE}'                => $uni['exam_date']            ?? '',
-            '$EXAM_DATE$'                => $uni['exam_date']            ?? '',
-            '{ASSIGNMENT_DATE}'          => $uni['assignment_date']      ?? '',
-            '$ASSIGNMENT_DATE$'          => $uni['assignment_date']      ?? '',
-            '{EXTENDED_EXAM_DATE}'       => $uni['extended_exam_date']   ?? '',
-            '$EXTENDED_EXAM_DATE$'       => $uni['extended_exam_date']   ?? '',
+            // Dates with global defaults fallback & 15 Nov 2026 format
+            '{ADMISSION_LAST_DATE}'      => $adm_last,
+            '$ADMISSION_LAST_DATE$'      => $adm_last,
+            '{ADMISSION_START_DATE}'     => $adm_start,
+            '$ADMISSION_START_DATE$'     => $adm_start,
+            '{EXAM_DATE}'                => $ex_date,
+            '$EXAM_DATE$'                => $ex_date,
+            '{ASSIGNMENT_DATE}'          => $asg_date,
+            '$ASSIGNMENT_DATE$'          => $asg_date,
+            '{EXTENDED_EXAM_DATE}'       => $ext_ex_date,
+            '$EXTENDED_EXAM_DATE$'       => $ext_ex_date,
 
             // Approvals & Accreditations (Comma Separated)
             '{APPROVALS}'                => $approvals_str,

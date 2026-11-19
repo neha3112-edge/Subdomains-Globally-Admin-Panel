@@ -175,11 +175,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $youtube_video_url = trim($_POST['youtube_video_url'] ?? '');
     $whatsapp_btn_intent = trim($_POST['whatsapp_btn_intent'] ?? '');
     $gallabox_message_text = trim($_POST['gallabox_message_text'] ?? '');
-    $exam_date = trim($_POST['exam_date'] ?? '');
-    $extended_exam_date = trim($_POST['extended_exam_date'] ?? '');
-    $admission_last_date = trim($_POST['admission_last_date'] ?? '');
-    $admission_start_date = trim($_POST['admission_start_date'] ?? '');
-    $assignment_date = trim($_POST['assignment_date'] ?? '');
+    $exam_date = sode_format_admin_date_for_db($_POST['exam_date'] ?? '');
+    $extended_exam_date = sode_format_admin_date_for_db($_POST['extended_exam_date'] ?? '');
+    $admission_last_date = sode_format_admin_date_for_db($_POST['admission_last_date'] ?? '');
+    $admission_start_date = sode_format_admin_date_for_db($_POST['admission_start_date'] ?? '');
+    $assignment_date = sode_format_admin_date_for_db($_POST['assignment_date'] ?? '');
     $rating = (float) ($_POST['rating'] ?? 4.0);
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     $selected_accreditations = $_POST['accreditations'] ?? [];
@@ -414,6 +414,7 @@ if (!function_exists('sode_get_university_form_courses')) {
 
 // Fetch Form Courses for university selection
 $configured_courses = sode_get_university_form_courses($db, $form_cfg['allowed_courses_json'] ?? '');
+$default_dates = sode_get_default_dates($db);
 
 require_once ADMIN_PATH . '/includes/header.php';
 ?>
@@ -805,38 +806,82 @@ require_once ADMIN_PATH . '/includes/header.php';
 
             <!-- Important Dates -->
             <div class="admin-card">
-                <div class="card-header">
-                    <span class="card-title">4. Important Dates & Deadlines</span>
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span class="card-title">4. Important Dates & Deadlines</span>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                            Select calendar dates for this university (auto-formatted as <strong>15 Nov 2026</strong>). If left blank, the global default date will be used.
+                        </div>
+                    </div>
+                    <a href="<?php echo BASE_URL; ?>/modules/settings/default_dates.php" target="_blank" class="btn btn-sm btn-outline-secondary" style="font-size:12px; padding:4px 10px; display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>Manage Default Dates</span>
+                    </a>
                 </div>
                 <div class="card-body">
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;">
                         <div class="form-group">
                             <label class="form-label">Admission Last Date</label>
-                            <input type="text" name="admission_last_date" class="form-control"
-                                value="<?php echo htmlspecialchars($uni['admission_last_date'] ?? ''); ?>">
+                            <input type="date" name="admission_last_date" class="form-control"
+                                value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['admission_last_date'] ?? '')); ?>">
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
+                                <?php if (!empty($uni['admission_last_date'])): ?>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['admission_last_date'])); ?></strong>
+                                <?php else: ?>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['admission_last_date']); ?></strong>
+                                <?php endif; ?>
+                            </small>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Exam Date</label>
-                            <input type="text" name="exam_date" class="form-control"
-                                value="<?php echo htmlspecialchars($uni['exam_date'] ?? ''); ?>">
+                            <input type="date" name="exam_date" class="form-control"
+                                value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['exam_date'] ?? '')); ?>">
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
+                                <?php if (!empty($uni['exam_date'])): ?>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['exam_date'])); ?></strong>
+                                <?php else: ?>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['exam_date']); ?></strong>
+                                <?php endif; ?>
+                            </small>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Extended Exam Date</label>
-                            <input type="text" name="extended_exam_date" class="form-control"
-                                value="<?php echo htmlspecialchars($uni['extended_exam_date'] ?? ''); ?>">
+                            <input type="date" name="extended_exam_date" class="form-control"
+                                value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['extended_exam_date'] ?? '')); ?>">
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
+                                <?php if (!empty($uni['extended_exam_date'])): ?>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['extended_exam_date'])); ?></strong>
+                                <?php else: ?>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['extended_exam_date']); ?></strong>
+                                <?php endif; ?>
+                            </small>
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px;">
                         <div class="form-group">
                             <label class="form-label">Admission Start Date</label>
-                            <input type="text" name="admission_start_date" class="form-control"
-                                value="<?php echo htmlspecialchars($uni['admission_start_date'] ?? ''); ?>">
+                            <input type="date" name="admission_start_date" class="form-control"
+                                value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['admission_start_date'] ?? '')); ?>">
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
+                                <?php if (!empty($uni['admission_start_date'])): ?>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['admission_start_date'])); ?></strong>
+                                <?php else: ?>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['admission_start_date']); ?></strong>
+                                <?php endif; ?>
+                            </small>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Assignment Submission Date</label>
-                            <input type="text" name="assignment_date" class="form-control"
-                                value="<?php echo htmlspecialchars($uni['assignment_date'] ?? ''); ?>">
+                            <input type="date" name="assignment_date" class="form-control"
+                                value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['assignment_date'] ?? '')); ?>">
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
+                                <?php if (!empty($uni['assignment_date'])): ?>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['assignment_date'])); ?></strong>
+                                <?php else: ?>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['assignment_date']); ?></strong>
+                                <?php endif; ?>
+                            </small>
                         </div>
                     </div>
                 </div>

@@ -1182,6 +1182,28 @@ function sode_run_auto_migrations(PDO $pdo) {
                 } catch (Exception $e) {
                     error_log("Remove plain_password migration error: " . $e->getMessage());
                 }
+            },
+
+            '2026_11_19_001_register_default_dates_sidebar' => function(PDO $db) {
+                try {
+                    $check_item = $db->query("SELECT id FROM sidebar_items WHERE active_page_key = 'default_dates'")->fetch();
+                    if (!$check_item) {
+                        $db->exec("
+                            INSERT INTO sidebar_items (menu_section, display_name, page_route, active_page_key, rbac_module_key, icon_svg, sort_order, is_active, is_superadmin_only)
+                            VALUES ('SETTINGS', 'Default Dates', 'modules/settings/default_dates.php', 'default_dates', 'settings', '<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg>', 18, 1, 0)
+                        ");
+                        $item_id = (int) $db->lastInsertId();
+                        if ($item_id) {
+                            $roles = $db->query("SELECT id FROM roles")->fetchAll();
+                            $acc_stmt = $db->prepare("INSERT IGNORE INTO role_sidebar_access (role_id, sidebar_item_id) VALUES (?, ?)");
+                            foreach ($roles as $r) {
+                                $acc_stmt->execute([$r['id'], $item_id]);
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("Default dates migration error: " . $e->getMessage());
+                }
             }
         ];
 
