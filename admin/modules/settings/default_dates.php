@@ -145,7 +145,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['admission_last_date'])); ?>" 
                                 required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html($defaults['admission_last_date']); ?></strong>
+                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['admission_last_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -157,7 +157,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['admission_start_date'])); ?>" 
                                 required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html($defaults['admission_start_date']); ?></strong>
+                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['admission_start_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -173,7 +173,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['exam_date'])); ?>" 
                                 required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html($defaults['exam_date']); ?></strong>
+                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['exam_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -185,7 +185,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['extended_exam_date'])); ?>" 
                                 required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html($defaults['extended_exam_date']); ?></strong>
+                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['extended_exam_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 
@@ -201,7 +201,7 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($defaults['assignment_date'])); ?>" 
                                 required style="width:100%; padding:9px 12px; border-radius:6px; background:var(--bg-input, #0f172a); border:1px solid var(--border-color, #334155); color:#fff;">
                             <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-top:5px;">
-                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html($defaults['assignment_date']); ?></strong>
+                                Current Display Format: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars($defaults['assignment_date'] ?? ''); ?></strong>
                             </div>
                         </div>
 

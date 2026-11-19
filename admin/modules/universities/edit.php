@@ -826,9 +826,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['admission_last_date'] ?? '')); ?>">
                             <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
                                 <?php if (!empty($uni['admission_last_date'])): ?>
-                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['admission_last_date'])); ?></strong>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_admin_date_for_db($uni['admission_last_date'])); ?></strong>
                                 <?php else: ?>
-                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['admission_last_date']); ?></strong>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['admission_last_date'] ?? ''); ?></strong>
                                 <?php endif; ?>
                             </small>
                         </div>
@@ -838,9 +838,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['exam_date'] ?? '')); ?>">
                             <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
                                 <?php if (!empty($uni['exam_date'])): ?>
-                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['exam_date'])); ?></strong>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_admin_date_for_db($uni['exam_date'])); ?></strong>
                                 <?php else: ?>
-                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['exam_date']); ?></strong>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['exam_date'] ?? ''); ?></strong>
                                 <?php endif; ?>
                             </small>
                         </div>
@@ -850,9 +850,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['extended_exam_date'] ?? '')); ?>">
                             <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
                                 <?php if (!empty($uni['extended_exam_date'])): ?>
-                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['extended_exam_date'])); ?></strong>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_admin_date_for_db($uni['extended_exam_date'])); ?></strong>
                                 <?php else: ?>
-                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['extended_exam_date']); ?></strong>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['extended_exam_date'] ?? ''); ?></strong>
                                 <?php endif; ?>
                             </small>
                         </div>
@@ -865,9 +865,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['admission_start_date'] ?? '')); ?>">
                             <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
                                 <?php if (!empty($uni['admission_start_date'])): ?>
-                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['admission_start_date'])); ?></strong>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_admin_date_for_db($uni['admission_start_date'])); ?></strong>
                                 <?php else: ?>
-                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['admission_start_date']); ?></strong>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['admission_start_date'] ?? ''); ?></strong>
                                 <?php endif; ?>
                             </small>
                         </div>
@@ -877,9 +877,9 @@ require_once ADMIN_PATH . '/includes/header.php';
                                 value="<?php echo htmlspecialchars(sode_format_date_for_input($uni['assignment_date'] ?? '')); ?>">
                             <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">
                                 <?php if (!empty($uni['assignment_date'])): ?>
-                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo esc_html(sode_format_admin_date_for_db($uni['assignment_date'])); ?></strong>
+                                    Saved: <strong style="color:var(--primary-color, #38bdf8);"><?php echo htmlspecialchars(sode_format_admin_date_for_db($uni['assignment_date'])); ?></strong>
                                 <?php else: ?>
-                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['assignment_date']); ?></strong>
+                                    Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['assignment_date'] ?? ''); ?></strong>
                                 <?php endif; ?>
                             </small>
                         </div>

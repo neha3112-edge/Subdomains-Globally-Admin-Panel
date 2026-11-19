@@ -529,17 +529,17 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <div class="form-group">
                             <label class="form-label">Admission Last Date</label>
                             <input type="date" name="admission_last_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($_POST['admission_last_date'] ?? '')); ?>">
-                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['admission_last_date']); ?></strong></small>
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['admission_last_date'] ?? ''); ?></strong></small>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Exam Date</label>
                             <input type="date" name="exam_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($_POST['exam_date'] ?? '')); ?>">
-                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['exam_date']); ?></strong></small>
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['exam_date'] ?? ''); ?></strong></small>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Extended Exam Date</label>
                             <input type="date" name="extended_exam_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($_POST['extended_exam_date'] ?? '')); ?>">
-                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['extended_exam_date']); ?></strong></small>
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['extended_exam_date'] ?? ''); ?></strong></small>
                         </div>
                     </div>
 
@@ -547,12 +547,12 @@ require_once ADMIN_PATH . '/includes/header.php';
                         <div class="form-group">
                             <label class="form-label">Admission Start Date</label>
                             <input type="date" name="admission_start_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($_POST['admission_start_date'] ?? '')); ?>">
-                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['admission_start_date']); ?></strong></small>
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['admission_start_date'] ?? ''); ?></strong></small>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Assignment Submission Date</label>
                             <input type="date" name="assignment_date" class="form-control" value="<?php echo htmlspecialchars(sode_format_date_for_input($_POST['assignment_date'] ?? '')); ?>">
-                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo esc_html($default_dates['assignment_date']); ?></strong></small>
+                            <small style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:4px;">Default if blank: <strong style="color:var(--text-dim, #94a3b8);"><?php echo htmlspecialchars($default_dates['assignment_date'] ?? ''); ?></strong></small>
                         </div>
                     </div>
                 </div>
