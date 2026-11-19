@@ -3,6 +3,7 @@
  * API Endpoint: Get Alternate Universities List
  * Returns all active universities marked with show_in_alternate = 1
  * along with their linked accreditations and mapped courses.
+ * Always places the current subdomain's university at position 1 (top of list).
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -12,14 +13,111 @@ header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 require_once dirname(__DIR__) . '/config/config.php';
 
-$cache_key = 'api:alternate_universities:all';
-$cached_response = Sode_Redis::get($cache_key);
-if ($cached_response !== null) {
-    header('X-Cache: HIT (Redis)');
-    echo json_encode($cached_response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    exit;
+// Detect current subdomain university parameter
+$uni_slug = $_GET['uni'] ?? ($_POST['uni'] ?? ($_GET['university'] ?? ($_POST['university'] ?? '')));
+if (empty($uni_slug)) {
+    $ref = $_SERVER['HTTP_REFERER'] ?? ($_SERVER['HTTP_ORIGIN'] ?? '');
+    if (!empty($ref)) {
+        $host = parse_url($ref, PHP_URL_HOST);
+        if ($host && strpos($host, 'distanceeducationschool.com') !== false) {
+            $parts = explode('.', $host);
+            if (count($parts) >= 3 && $parts[0] !== 'admin' && $parts[0] !== 'www') {
+                $uni_slug = $parts[0];
+            }
+        }
+    }
+}
+$uni_slug = strtolower(trim($uni_slug));
+
+$cache_key = 'api:alternate_universities:v2:' . (!empty($uni_slug) ? $uni_slug : 'all');
+if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+    $cached_response = Sode_Redis::get($cache_key);
+    if ($cached_response !== null) {
+        header('X-Cache: HIT (Redis)');
+        echo json_encode($cached_response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if (!function_exists('sode_api_format_alt_uni_row')) {
+    function sode_api_format_alt_uni_row($u, $acc_stmt, $course_stmt)
+    {
+        $acc_stmt->execute([$u['id']]);
+        $accs = $acc_stmt->fetchAll(PDO::FETCH_ASSOC);
+        $acc_titles = array_column($accs, 'title');
+
+        $course_stmt->execute([$u['id']]);
+        $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Build list of course names for replacement if placeholder present
+        $c_short_names = array_column($courses, 'short_name');
+        $c_text_list = '';
+        if (!empty($c_short_names)) {
+            if (count($c_short_names) === 1) {
+                $c_text_list = $c_short_names[0];
+            } else {
+                $last_c = array_pop($c_short_names);
+                $c_text_list = implode(', ', $c_short_names) . ' and ' . $last_c;
+            }
+        }
+
+        $desc = $u['alt_description'] ?? '';
+        if (empty($desc) && !empty($u['description'])) {
+            $desc = $u['description'];
+        }
+        if (!empty($desc)) {
+            $desc = str_replace(
+                ['[university_courses_list and="true"]', '[university_courses_list]', '[courses_list]'],
+                $c_text_list,
+                $desc
+            );
+        } elseif (!empty($c_text_list)) {
+            $desc = 'Explore top-rated online & distance degree programs offered by ' . $u['full_name'] . ', featuring ' . $c_text_list . '.';
+        }
+
+        // Format fees: ensure no raw rupee or trailing slashes, clean string
+        foreach ($courses as &$crs) {
+            $f = trim($crs['per_semester_fee'] ?? '');
+            $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
+            $crs['per_semester_fee'] = trim($f);
+        }
+        unset($crs);
+
+        $desktop_img = !empty($u['alt_desktop_img'])
+            ? get_asset_url($u['alt_desktop_img'])
+            : (!empty($u['campus_mobile_img']) ? get_asset_url($u['campus_mobile_img']) : (!empty($u['logo_url']) ? get_asset_url($u['logo_url']) : ''));
+
+        $mobile_img = !empty($u['alt_mobile_img'])
+            ? get_asset_url($u['alt_mobile_img'])
+            : $desktop_img;
+
+        return [
+            'id' => (int) $u['id'],
+            'full_name' => $u['full_name'],
+            'short_name' => $u['short_name'],
+            'slug' => $u['slug'],
+            'mode' => $u['mode'],
+            'location' => $u['location'] ?? '',
+            'advantage_text' => $u['advantage_text'] ?? '',
+            'alt_desktop_img' => $desktop_img,
+            'alt_mobile_img' => $mobile_img,
+            'sample_degree_img' => !empty($u['sample_degree_img']) ? get_asset_url($u['sample_degree_img']) : '',
+            'logo_url' => !empty($u['logo_url']) ? get_asset_url($u['logo_url']) : '',
+            'campus_img' => !empty($u['campus_mobile_img']) ? get_asset_url($u['campus_mobile_img']) : '',
+            'alt_description' => $desc,
+            'approvals' => $acc_titles,
+            'approvals_string' => implode(' | ', $acc_titles),
+            'courses' => $courses,
+            'courses_count' => count($courses),
+        ];
+    }
 }
 
 try {
@@ -35,16 +133,6 @@ try {
             ADD COLUMN alt_description TEXT NULL AFTER sample_degree_img,
             ADD COLUMN show_in_alternate TINYINT(1) DEFAULT 0 AFTER alt_description");
     }
-
-    $stmt = $db->query("
-        SELECT id, full_name, short_name, slug, mode, location, advantage_text,
-               logo_url, campus_mobile_img, alt_desktop_img, alt_mobile_img, sample_degree_img,
-               alt_description, rating, is_active
-        FROM universities
-        WHERE show_in_alternate = 1 AND is_active = 1
-        ORDER BY id ASC
-    ");
-    $unis = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $acc_stmt = $db->prepare("
         SELECT a.id, a.title, a.image_url
@@ -63,63 +151,51 @@ try {
         ORDER BY ucm.id ASC
     ");
 
+    $current_uni_item = null;
+    $current_uni_id = 0;
+
+    // 1. Fetch current subdomain university for position 1
+    if (!empty($uni_slug)) {
+        $curr_stmt = $db->prepare("
+            SELECT id, full_name, short_name, slug, mode, location, advantage_text,
+                   logo_url, campus_mobile_img, alt_desktop_img, alt_mobile_img, sample_degree_img,
+                   alt_description, rating, is_active
+            FROM universities
+            WHERE (LOWER(slug) = ? OR LOWER(short_name) = ? OR id = ?) AND is_active = 1
+            LIMIT 1
+        ");
+        $curr_stmt->execute([$uni_slug, $uni_slug, (int) $uni_slug]);
+        $curr_row = $curr_stmt->fetch(PDO::FETCH_ASSOC);
+        if ($curr_row) {
+            $current_uni_id = (int) $curr_row['id'];
+            $current_uni_item = sode_api_format_alt_uni_row($curr_row, $acc_stmt, $course_stmt);
+        }
+    }
+
+    // 2. Fetch all alternative universities marked with show_in_alternate = 1
+    $stmt = $db->query("
+        SELECT id, full_name, short_name, slug, mode, location, advantage_text,
+               logo_url, campus_mobile_img, alt_desktop_img, alt_mobile_img, sample_degree_img,
+               alt_description, rating, is_active
+        FROM universities
+        WHERE show_in_alternate = 1 AND is_active = 1
+        ORDER BY id ASC
+    ");
+    $unis = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     $result = [];
 
+    // Position 1: Current subdomain university
+    if ($current_uni_item !== null) {
+        $result[] = $current_uni_item;
+    }
+
+    // Subsequent positions: checked alternative universities
     foreach ($unis as $u) {
-        $acc_stmt->execute([$u['id']]);
-        $accs = $acc_stmt->fetchAll(PDO::FETCH_ASSOC);
-        $acc_titles = array_column($accs, 'title');
-
-        $course_stmt->execute([$u['id']]);
-        $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Build list of course names for replacement if shortcode present
-        $c_short_names = array_column($courses, 'short_name');
-        $c_text_list = '';
-        if (!empty($c_short_names)) {
-            if (count($c_short_names) === 1) {
-                $c_text_list = $c_short_names[0];
-            } else {
-                $last_c = array_pop($c_short_names);
-                $c_text_list = implode(', ', $c_short_names) . ' and ' . $last_c;
-            }
+        if ($current_uni_id > 0 && (int) $u['id'] === $current_uni_id) {
+            continue;
         }
-
-        $desc = $u['alt_description'] ?? '';
-        if (!empty($desc)) {
-            $desc = str_replace(
-                ['[university_courses_list and="true"]', '[university_courses_list]', '[courses_list]'],
-                $c_text_list,
-                $desc
-            );
-        }
-
-        // Format fees: ensure no raw rupee or trailing slashes, clean string
-        foreach ($courses as &$crs) {
-            $f = trim($crs['per_semester_fee'] ?? '');
-            $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
-            $crs['per_semester_fee'] = trim($f);
-        }
-        unset($crs);
-
-        $result[] = [
-            'id' => (int) $u['id'],
-            'full_name' => $u['full_name'],
-            'short_name' => $u['short_name'],
-            'slug' => $u['slug'],
-            'mode' => $u['mode'],
-            'location' => $u['location'] ?? '',
-            'advantage_text' => $u['advantage_text'] ?? '',
-            'alt_desktop_img' => !empty($u['alt_desktop_img']) ? get_asset_url($u['alt_desktop_img']) : '',
-            'alt_mobile_img' => !empty($u['alt_mobile_img']) ? get_asset_url($u['alt_mobile_img']) : '',
-            'sample_degree_img' => !empty($u['sample_degree_img']) ? get_asset_url($u['sample_degree_img']) : '',
-            'logo_url' => !empty($u['logo_url']) ? get_asset_url($u['logo_url']) : '',
-            'alt_description' => $desc,
-            'approvals' => $acc_titles,
-            'approvals_string' => implode(' | ', $acc_titles),
-            'courses' => $courses,
-            'courses_count' => count($courses),
-        ];
+        $result[] = sode_api_format_alt_uni_row($u, $acc_stmt, $course_stmt);
     }
 
     $response_data = [
@@ -128,7 +204,9 @@ try {
         'data' => $result
     ];
 
-    Sode_Redis::set($cache_key, $response_data, 86400);
+    if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+        Sode_Redis::set($cache_key, $response_data, 86400);
+    }
     header('X-Cache: MISS');
     echo json_encode($response_data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 

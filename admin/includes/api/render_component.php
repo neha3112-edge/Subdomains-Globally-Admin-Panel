@@ -82,6 +82,20 @@ if (file_exists($root_dir . '/sample-degree-universal.php')) {
 $component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
 $params = array_merge($_GET, $_POST);
 
+if (empty($params['uni']) && empty($params['university'])) {
+    $ref = $_SERVER['HTTP_REFERER'] ?? ($_SERVER['HTTP_ORIGIN'] ?? '');
+    if (!empty($ref)) {
+        $host = parse_url($ref, PHP_URL_HOST);
+        if ($host && strpos($host, 'distanceeducationschool.com') !== false) {
+            $parts = explode('.', $host);
+            if (count($parts) >= 3 && $parts[0] !== 'admin' && $parts[0] !== 'www') {
+                $params['uni'] = $parts[0];
+                $params['university'] = $parts[0];
+            }
+        }
+    }
+}
+
 if (!empty($params['uni']) && empty($params['university'])) {
     $params['university'] = $params['uni'];
 }
@@ -97,7 +111,7 @@ unset($cache_params['_t'], $cache_params['t'], $cache_params['_']);
 $non_cacheable_components = ['lead_form', 'popup_modals'];
 $is_cacheable = !in_array($component, $non_cacheable_components, true);
 
-$cache_key = 'ssr:component:v2:' . md5($component . '|' . json_encode($cache_params));
+$cache_key = 'ssr:component:v3:' . md5($component . '|' . json_encode($cache_params));
 
 if ($is_cacheable && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached_html = Sode_Redis::get($cache_key);

@@ -103,11 +103,131 @@ if (!function_exists('sode_alt_format_fee')) {
 }
 
 /**
+ * Helper to cleanly format a single university row for Alternate Universities listing
+ */
+if (!function_exists('sode_format_single_alt_uni_row')) {
+    function sode_format_single_alt_uni_row($u, $acc_stmt, $course_stmt)
+    {
+        $acc_stmt->execute([$u['id']]);
+        $accs = $acc_stmt->fetchAll(PDO::FETCH_ASSOC);
+        $acc_titles = array_column($accs, 'title');
+
+        $course_stmt->execute([$u['id']]);
+        $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Format course list placeholder in description
+        $c_names = array_values(array_unique(array_column($courses, 'short_name')));
+        $c_text_list = '';
+        if (!empty($c_names)) {
+            if (count($c_names) === 1) {
+                $c_text_list = $c_names[0];
+            } else {
+                $last_c = array_pop($c_names);
+                $c_text_list = implode(', ', $c_names) . ' and ' . $last_c;
+            }
+        }
+
+        $desc = $u['alt_description'] ?? '';
+        if (empty($desc) && !empty($u['description'])) {
+            $desc = $u['description'];
+        }
+        if (!empty($desc)) {
+            $desc = str_replace(
+                ['[university_courses_list and="true"]', '[university_courses_list]', '[courses_list]'],
+                $c_text_list,
+                $desc
+            );
+        } elseif (!empty($c_text_list)) {
+            $desc = 'Explore top-rated online & distance degree programs offered by ' . $u['full_name'] . ', featuring ' . $c_text_list . '.';
+        }
+
+        foreach ($courses as &$crs) {
+            if (isset($crs['per_semester_fee'])) {
+                $f = trim($crs['per_semester_fee']);
+                $f = str_replace(['₹', 'Rs.', 'Rs'], '', $f);
+                $crs['per_semester_fee'] = trim($f);
+            }
+        }
+        unset($crs);
+
+        $desktop_img = !empty($u['alt_desktop_img']) 
+            ? (function_exists('get_asset_url') ? get_asset_url($u['alt_desktop_img']) : $u['alt_desktop_img']) 
+            : (!empty($u['campus_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['campus_mobile_img']) : $u['campus_mobile_img']) : (!empty($u['logo_url']) ? (function_exists('get_asset_url') ? get_asset_url($u['logo_url']) : $u['logo_url']) : ''));
+
+        $mobile_img = !empty($u['alt_mobile_img']) 
+            ? (function_exists('get_asset_url') ? get_asset_url($u['alt_mobile_img']) : $u['alt_mobile_img']) 
+            : $desktop_img;
+
+        $sample_img = !empty($u['sample_degree_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['sample_degree_img']) : $u['sample_degree_img']) : '';
+        $logo_img = !empty($u['logo_url']) ? (function_exists('get_asset_url') ? get_asset_url($u['logo_url']) : $u['logo_url']) : '';
+        $campus_img = !empty($u['campus_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['campus_mobile_img']) : $u['campus_mobile_img']) : '';
+
+        return [
+            'id' => (int) $u['id'],
+            'full_name' => $u['full_name'],
+            'short_name' => $u['short_name'],
+            'slug' => $u['slug'],
+            'mode' => $u['mode'],
+            'location' => $u['location'] ?? '',
+            'advantage_text' => $u['advantage_text'] ?? '',
+            'alt_desktop_img' => $desktop_img,
+            'alt_mobile_img' => $mobile_img,
+            'sample_degree_img' => $sample_img,
+            'logo_url' => $logo_img,
+            'campus_img' => $campus_img,
+            'alt_description' => $desc,
+            'approvals' => $acc_titles,
+            'approvals_string' => implode(' | ', $acc_titles),
+            'courses' => $courses,
+            'courses_count' => count($courses),
+        ];
+    }
+}
+
+/**
  * Fetch Alternate Universities from Local Database or Central API
+ * Always places the current subdomain's university at position 1 (top of list)
  */
 if (!function_exists('sode_get_alternate_universities_list')) {
-    function sode_get_alternate_universities_list()
+    function sode_get_alternate_universities_list($current_uni_identifier = '')
     {
+        static $cached_lists = [];
+
+        // Auto-detect current subdomain university if not explicitly passed
+        if (empty($current_uni_identifier)) {
+            if (!empty($_GET['uni'])) {
+                $current_uni_identifier = $_GET['uni'];
+            } elseif (!empty($_POST['uni'])) {
+                $current_uni_identifier = $_POST['uni'];
+            } elseif (!empty($_GET['university'])) {
+                $current_uni_identifier = $_GET['university'];
+            } elseif (!empty($_POST['university'])) {
+                $current_uni_identifier = $_POST['university'];
+            } elseif (defined('SODE_UNIVERSITY_SLUG') && SODE_UNIVERSITY_SLUG) {
+                $current_uni_identifier = SODE_UNIVERSITY_SLUG;
+            } else {
+                $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+                $parts = explode('.', $host);
+                if (count($parts) >= 3 && !in_array($parts[0], ['www', 'mail', 'admin', 'cpanel', 'webmail'])) {
+                    $current_uni_identifier = $parts[0];
+                } elseif (!empty($_SERVER['HTTP_REFERER'])) {
+                    $ref_host = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
+                    if ($ref_host) {
+                        $parts = explode('.', strtolower($ref_host));
+                        if (count($parts) >= 3 && !in_array($parts[0], ['www', 'mail', 'admin', 'cpanel', 'webmail'])) {
+                            $current_uni_identifier = $parts[0];
+                        }
+                    }
+                }
+            }
+        }
+        $current_uni_identifier = function_exists('sanitize_title') ? sanitize_title($current_uni_identifier) : strtolower(trim($current_uni_identifier));
+
+        $cache_bucket = !empty($current_uni_identifier) ? $current_uni_identifier : '__all__';
+        if (isset($cached_lists[$cache_bucket])) {
+            return $cached_lists[$cache_bucket];
+        }
+
         // 1. Try Local Database Connection
         if (!function_exists('get_db_connection')) {
             $possible_configs = [
@@ -127,6 +247,45 @@ if (!function_exists('sode_get_alternate_universities_list')) {
             try {
                 $db = get_db_connection();
                 if ($db) {
+                    $acc_stmt = $db->prepare("
+                        SELECT a.id, a.title, a.image_url
+                        FROM accreditations a
+                        JOIN university_accreditations ua ON a.id = ua.accreditation_id
+                        WHERE ua.university_id = ?
+                        ORDER BY a.id ASC
+                    ");
+
+                    $course_stmt = $db->prepare("
+                        SELECT c.id AS course_id, c.short_name, c.full_name, c.level,
+                               ucm.eligibility_text, ucm.per_semester_fee
+                        FROM university_course_mappings ucm
+                        JOIN courses c ON ucm.course_id = c.id
+                        WHERE ucm.university_id = ?
+                        ORDER BY ucm.id ASC
+                    ");
+
+                    $current_uni_item = null;
+                    $current_uni_id = 0;
+
+                    // 1. Fetch current subdomain university for position 1
+                    if (!empty($current_uni_identifier)) {
+                        $curr_stmt = $db->prepare("
+                            SELECT id, full_name, short_name, slug, mode, location, advantage_text,
+                                   logo_url, campus_mobile_img, alt_desktop_img, alt_mobile_img, sample_degree_img,
+                                   alt_description, rating, is_active
+                            FROM universities
+                            WHERE (LOWER(slug) = ? OR LOWER(short_name) = ? OR id = ?) AND is_active = 1
+                            LIMIT 1
+                        ");
+                        $curr_stmt->execute([$current_uni_identifier, $current_uni_identifier, (int) $current_uni_identifier]);
+                        $curr_row = $curr_stmt->fetch(PDO::FETCH_ASSOC);
+                        if ($curr_row) {
+                            $current_uni_id = (int) $curr_row['id'];
+                            $current_uni_item = sode_format_single_alt_uni_row($curr_row, $acc_stmt, $course_stmt);
+                        }
+                    }
+
+                    // 2. Fetch alternative universities marked with show_in_alternate = 1
                     $stmt = $db->query("
                         SELECT id, full_name, short_name, slug, mode, location, advantage_text,
                                logo_url, campus_mobile_img, alt_desktop_img, alt_mobile_img, sample_degree_img,
@@ -137,81 +296,23 @@ if (!function_exists('sode_get_alternate_universities_list')) {
                     ");
                     $unis = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    if (!empty($unis)) {
-                        $acc_stmt = $db->prepare("
-                            SELECT a.id, a.title, a.image_url
-                            FROM accreditations a
-                            JOIN university_accreditations ua ON a.id = ua.accreditation_id
-                            WHERE ua.university_id = ?
-                            ORDER BY a.id ASC
-                        ");
+                    $result = [];
+                    // Position 1: Current subdomain university
+                    if ($current_uni_item !== null) {
+                        $result[] = $current_uni_item;
+                    }
 
-                        $course_stmt = $db->prepare("
-                            SELECT c.id AS course_id, c.short_name, c.full_name, c.level,
-                                   ucm.eligibility_text, ucm.per_semester_fee
-                            FROM university_course_mappings ucm
-                            JOIN courses c ON ucm.course_id = c.id
-                            WHERE ucm.university_id = ?
-                            ORDER BY ucm.id ASC
-                        ");
-
-                        $result = [];
-                        foreach ($unis as $u) {
-                            $acc_stmt->execute([$u['id']]);
-                            $accs = $acc_stmt->fetchAll(PDO::FETCH_ASSOC);
-                            $acc_titles = array_column($accs, 'title');
-
-                            $course_stmt->execute([$u['id']]);
-                            $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                            // Format course list placeholder in description
-                            $c_names = array_values(array_unique(array_column($courses, 'short_name')));
-                            $c_text_list = '';
-                            if (!empty($c_names)) {
-                                if (count($c_names) === 1) {
-                                    $c_text_list = $c_names[0];
-                                } else {
-                                    $last_c = array_pop($c_names);
-                                    $c_text_list = implode(', ', $c_names) . ' and ' . $last_c;
-                                }
-                            }
-
-                            $desc = $u['alt_description'] ?? '';
-                            if (!empty($desc)) {
-                                $desc = str_replace(
-                                    ['[university_courses_list and="true"]', '[university_courses_list]', '[courses_list]'],
-                                    $c_text_list,
-                                    $desc
-                                );
-                            }
-
-                            $desktop_img = !empty($u['alt_desktop_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['alt_desktop_img']) : $u['alt_desktop_img']) : '';
-                            $mobile_img = !empty($u['alt_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['alt_mobile_img']) : $u['alt_mobile_img']) : '';
-                            $sample_img = !empty($u['sample_degree_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['sample_degree_img']) : $u['sample_degree_img']) : '';
-                            $logo_img = !empty($u['logo_url']) ? (function_exists('get_asset_url') ? get_asset_url($u['logo_url']) : $u['logo_url']) : '';
-                            $campus_img = !empty($u['campus_mobile_img']) ? (function_exists('get_asset_url') ? get_asset_url($u['campus_mobile_img']) : $u['campus_mobile_img']) : '';
-
-                            $result[] = [
-                                'id' => (int) $u['id'],
-                                'full_name' => $u['full_name'],
-                                'short_name' => $u['short_name'],
-                                'slug' => $u['slug'],
-                                'mode' => $u['mode'],
-                                'location' => $u['location'] ?? '',
-                                'advantage_text' => $u['advantage_text'] ?? '',
-                                'alt_desktop_img' => $desktop_img,
-                                'alt_mobile_img' => $mobile_img,
-                                'sample_degree_img' => $sample_img,
-                                'logo_url' => $logo_img,
-                                'campus_img' => $campus_img,
-                                'alt_description' => $desc,
-                                'approvals' => $acc_titles,
-                                'approvals_string' => implode(' | ', $acc_titles),
-                                'courses' => $courses,
-                            ];
+                    // Subsequent positions: checked alternative universities
+                    foreach ($unis as $u) {
+                        // Skip if it is already placed at the top
+                        if ($current_uni_id > 0 && (int) $u['id'] === $current_uni_id) {
+                            continue;
                         }
+                        $result[] = sode_format_single_alt_uni_row($u, $acc_stmt, $course_stmt);
+                    }
 
-                        $cached = $result;
+                    if (!empty($result)) {
+                        $cached_lists[$cache_bucket] = $result;
                         return $result;
                     }
                 }
@@ -222,6 +323,9 @@ if (!function_exists('sode_get_alternate_universities_list')) {
 
         // 2. Fallback: Central API (Live & Real-Time)
         $api_url = (defined('SODE_CENTRAL_ADMIN_URL') ? rtrim(SODE_CENTRAL_ADMIN_URL, '/') : 'https://admin.distanceeducationschool.com') . '/admin/api/get_alternate_universities.php?_t=' . time();
+        if (!empty($current_uni_identifier)) {
+            $api_url .= '&uni=' . urlencode($current_uni_identifier);
+        }
 
         $data = null;
         if (function_exists('wp_remote_get')) {
@@ -254,7 +358,11 @@ if (!function_exists('sode_get_alternate_universities_list')) {
             }
         }
 
-        return is_array($data) ? $data : [];
+        $res = is_array($data) ? $data : [];
+        if (!empty($res)) {
+            $cached_lists[$cache_bucket] = $res;
+        }
+        return $res;
     }
 }
 
@@ -277,23 +385,38 @@ if (!function_exists('sode_alternate_universities_render')) {
             'subheading' => '',
             'class' => '',
             'prefix' => 'auto',
+            'uni' => '',
+            'university' => '',
         ], $atts, 'alternative_universities');
 
-        $universities = sode_get_alternate_universities_list();
+        $curr_uni = !empty($atts['uni']) ? $atts['uni'] : (!empty($atts['university']) ? $atts['university'] : '');
+        $universities = sode_get_alternate_universities_list($curr_uni);
 
         if (empty($universities)) {
             return '';
         }
 
         // Filter: Exclude IDs or slugs (useful when displayed on a specific university's page)
+        // Note: The current subdomain university is intentionally positioned at index 0.
+        // We preserve the current subdomain university at the top and apply 'exclude' only to the alternative universities.
         if (!empty($atts['exclude'])) {
             $exclude_parts = array_map('trim', explode(',', strtolower($atts['exclude'])));
-            $universities = array_filter($universities, function ($u) use ($exclude_parts) {
+            $first_uni = null;
+            $rest_unis = $universities;
+            if (!empty($universities)) {
+                $first_uni = array_shift($rest_unis);
+            }
+
+            $rest_unis = array_filter($rest_unis, function ($u) use ($exclude_parts) {
                 $id = (string) $u['id'];
                 $slug = strtolower($u['slug'] ?? '');
                 $short = strtolower($u['short_name'] ?? '');
                 return !in_array($id, $exclude_parts) && !in_array($slug, $exclude_parts) && !in_array($short, $exclude_parts);
             });
+
+            $universities = $first_uni !== null ? array_merge([$first_uni], array_values($rest_unis)) : array_values($rest_unis);
+        } else {
+            $universities = array_values($universities);
         }
 
         // Filter: Specific Course
