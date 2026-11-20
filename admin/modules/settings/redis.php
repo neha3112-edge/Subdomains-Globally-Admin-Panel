@@ -2,6 +2,9 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('redis_manager');
+if (!is_superadmin()) {
+    render_access_denied_page("Only Super Administrators can access the Redis Cache Manager.", 'redis_manager');
+}
 
 $can_edit = user_can('update') || user_can('write') || is_superadmin();
 

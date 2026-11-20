@@ -5,6 +5,9 @@
 require_once dirname(__DIR__, 2) . '/config/config.php';
 require_login();
 require_permission('api_health');
+if (!is_superadmin()) {
+    render_access_denied_page("Only Super Administrators can access the API Health Monitor.", 'api_health');
+}
 
 $page_title      = 'API Health & Endpoints Monitor';
 $page_subtitle   = 'Live status, latency analytics, and auto-discovery of all 3rd-party integrations & internal REST endpoints';

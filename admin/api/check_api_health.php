@@ -9,9 +9,9 @@ require_once dirname(__DIR__) . '/config/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!function_exists('is_logged_in') || !is_logged_in()) {
-    http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+if (!function_exists('is_logged_in') || !is_logged_in() || !is_superadmin()) {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Access Denied: Super Administrator privilege required']);
     exit;
 }
 
