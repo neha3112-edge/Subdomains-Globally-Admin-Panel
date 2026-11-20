@@ -94,7 +94,22 @@ if (!function_exists('sode_get_course_fees_data')) {
         }
 
         $course_slug = !empty($course_slug) ? trim(strtolower($course_slug)) : 'mba';
-        $mode_clean = (stripos($mode, 'dist') !== false) ? 'Distance' : 'Online';
+        $mode_param  = !empty($mode) ? trim($mode) : '';
+
+        // Auto-detect mode if embedded in course slug (e.g. "distance_mba", "online-mba", "mba_distance", "mba-online")
+        if (preg_match('/^(online|distance)[-_](.+)$/i', $course_slug, $cm)) {
+            if (empty($mode_param)) {
+                $mode_param = $cm[1];
+            }
+            $course_slug = $cm[2];
+        } elseif (preg_match('/^(.+)[-_](online|distance)$/i', $course_slug, $cm)) {
+            if (empty($mode_param)) {
+                $mode_param = $cm[2];
+            }
+            $course_slug = $cm[1];
+        }
+
+        $mode_clean = (stripos($mode_param, 'dist') !== false) ? 'Distance' : 'Online';
 
         static $cache = [];
         $cache_key = "{$uni_slug}_{$course_slug}_{$mode_clean}";

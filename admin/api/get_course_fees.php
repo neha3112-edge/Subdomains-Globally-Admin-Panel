@@ -42,7 +42,21 @@ if (empty($uni_param)) {
 
 // 2. Resolve Course & Mode
 $course_param = trim($_GET['course'] ?? ($_POST['course'] ?? 'mba'));
-$mode_param = trim($_GET['mode'] ?? ($_POST['mode'] ?? 'Online'));
+$mode_param = trim($_GET['mode'] ?? ($_POST['mode'] ?? ''));
+
+// Auto-detect mode if embedded in course parameter (e.g. "distance_mba", "online-mba", "mba_distance", "mba-online")
+if (preg_match('/^(online|distance)[-_](.+)$/i', $course_param, $cm)) {
+    if (empty($mode_param)) {
+        $mode_param = $cm[1];
+    }
+    $course_param = $cm[2];
+} elseif (preg_match('/^(.+)[-_](online|distance)$/i', $course_param, $cm)) {
+    if (empty($mode_param)) {
+        $mode_param = $cm[2];
+    }
+    $course_param = $cm[1];
+}
+
 if (empty($mode_param)) {
     $mode_param = 'Online';
 }

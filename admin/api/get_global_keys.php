@@ -356,9 +356,32 @@ if (!empty($uni_slug)) {
         $course_mode_names  = [];
         $seen_short_keys    = [];
         $seen_full_keys     = [];
+        $seen_generic_courses = [];
+
+        // Helper to register keys across all casing & bracket syntaxes ($KEY$, {KEY}, lowercase, and raw)
+        $register_fee_key = function(&$target_keys, $key_name, $val) {
+            if ($val === null || $val === '') {
+                return;
+            }
+            $val = (string)$val;
+            $k_upper = strtoupper(trim($key_name, '$ {}'));
+            $k_lower = strtolower($k_upper);
+
+            // Upper variants
+            $target_keys['$' . $k_upper . '$'] = $val;
+            $target_keys['{' . $k_upper . '}'] = $val;
+            $target_keys[$k_upper]             = $val;
+
+            // Lower variants
+            $target_keys['$' . $k_lower . '$'] = $val;
+            $target_keys['{' . $k_lower . '}'] = $val;
+        };
+
+        $uni_mode_str = strtolower(trim((string)($uni['mode'] ?? '')));
 
         foreach ($courses as $c) {
-            $c_mode    = (!empty($c['mode']) && strtolower(trim($c['mode'])) === 'distance') ? 'Distance' : 'Online';
+            $raw_mode  = trim((string)($c['mode'] ?? ''));
+            $c_mode    = (stripos($raw_mode, 'dist') !== false) ? 'Distance' : ((stripos($raw_mode, 'online') !== false) ? 'Online' : (!empty($raw_mode) ? ucfirst($raw_mode) : 'Online'));
             $c_short   = ($c['short_name'] === 'B.Com') ? 'BCom' : trim($c['short_name']);
             $c_full    = trim($c['full_name']);
 
@@ -405,72 +428,85 @@ if (!empty($uni_slug)) {
             $slug_clean  = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c['slug'] ?? ''));
             $short_clean = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c['short_name'] ?? ''));
             $short_und   = strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', trim($c['short_name'] ?? '', '.')));
-            $mode_slug   = strtoupper($c_mode);
+            $mode_slug   = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $c_mode));
 
             $prefixes = array_unique(array_filter([$slug_clean, $short_clean, $short_und]));
 
             foreach ($prefixes as $pfx) {
-                // Main / Per Semester Fee
-                $fee_keys['$' . $pfx . '_FEE$']                  = $main_fee;
-                $fee_keys['$' . $pfx . '_FEES$']                 = $main_fee;
-                $fee_keys['{' . $pfx . '_FEE}']                  = $main_fee;
-                $fee_keys['{' . $pfx . '_FEES}']                 = $main_fee;
-
-                $fee_keys['$' . $mode_slug . '_' . $pfx . '_FEE$']  = $main_fee;
-                $fee_keys['{' . $mode_slug . '_' . $pfx . '_FEE}']  = $main_fee;
-
-                $fee_keys['$' . $pfx . '_PER_SEMESTER_FEE$']     = $per_sem;
-                $fee_keys['$' . $pfx . '_PER_SEMESTER_FEES$']    = $per_sem;
-                $fee_keys['{' . $pfx . '_PER_SEMESTER_FEE}']     = $per_sem;
-                $fee_keys['{' . $pfx . '_PER_SEMESTER_FEES}']    = $per_sem;
-
-                $fee_keys['$' . $pfx . '_SEMESTER_FEE$']         = $per_sem;
-                $fee_keys['$' . $pfx . '_SEMESTER_FEES$']        = $per_sem;
-                $fee_keys['{' . $pfx . '_SEMESTER_FEE}']         = $per_sem;
-                $fee_keys['{' . $pfx . '_SEMESTER_FEES}']        = $per_sem;
-
-                // Total Program Fee
-                $fee_keys['$' . $pfx . '_TOTAL_FEE$']            = $total_fee;
-                $fee_keys['$' . $pfx . '_TOTAL_FEES$']           = $total_fee;
-                $fee_keys['{' . $pfx . '_TOTAL_FEE}']            = $total_fee;
-                $fee_keys['{' . $pfx . '_TOTAL_FEES}']           = $total_fee;
-
-                $fee_keys['$' . $pfx . '_TOTAL_PROGRAM_FEE$']    = $total_fee;
-                $fee_keys['$' . $pfx . '_TOTAL_PROGRAM_FEES$']   = $total_fee;
-                $fee_keys['{' . $pfx . '_TOTAL_PROGRAM_FEE}']    = $total_fee;
-                $fee_keys['{' . $pfx . '_TOTAL_PROGRAM_FEES}']   = $total_fee;
-
-                // Tuition Fee
-                if ($tuition !== '') {
-                    $fee_keys['$' . $pfx . '_TUITION_FEE$']      = $tuition;
-                    $fee_keys['{' . $pfx . '_TUITION_FEE}']      = $tuition;
+                // Decide whether this row sets generic keys (e.g. $MBA_FEE$)
+                // Priority: match university's own mode; otherwise first seen wins (avoids random overwrite)
+                $should_set_generic = false;
+                if (!isset($seen_generic_courses[$pfx])) {
+                    $should_set_generic = true;
+                    $seen_generic_courses[$pfx] = $c_mode;
+                } else {
+                    $prev_mode = $seen_generic_courses[$pfx];
+                    if (strpos($uni_mode_str, strtolower($c_mode)) !== false && strpos($uni_mode_str, strtolower($prev_mode)) === false) {
+                        $should_set_generic = true;
+                        $seen_generic_courses[$pfx] = $c_mode;
+                    }
                 }
 
-                // Examination Fee
-                if ($exam !== '') {
-                    $fee_keys['$' . $pfx . '_EXAM_FEE$']         = $exam;
-                    $fee_keys['{' . $pfx . '_EXAM_FEE}']         = $exam;
-                    $fee_keys['$' . $pfx . '_EXAMINATION_FEE$']  = $exam;
-                    $fee_keys['{' . $pfx . '_EXAMINATION_FEE}']  = $exam;
+                if ($should_set_generic) {
+                    // Generic Course Fee Keys (no mode in key name)
+                    $register_fee_key($fee_keys, $pfx . '_FEE', $main_fee);
+                    $register_fee_key($fee_keys, $pfx . '_FEES', $main_fee);
+                    $register_fee_key($fee_keys, $pfx . '_PER_SEMESTER_FEE', $per_sem);
+                    $register_fee_key($fee_keys, $pfx . '_PER_SEMESTER_FEES', $per_sem);
+                    $register_fee_key($fee_keys, $pfx . '_SEMESTER_FEE', $per_sem);
+                    $register_fee_key($fee_keys, $pfx . '_SEMESTER_FEES', $per_sem);
+                    $register_fee_key($fee_keys, $pfx . '_SEM_FEE', $per_sem);
+                    $register_fee_key($fee_keys, $pfx . '_SEM_FEES', $per_sem);
+
+                    $register_fee_key($fee_keys, $pfx . '_TOTAL_FEE', $total_fee);
+                    $register_fee_key($fee_keys, $pfx . '_TOTAL_FEES', $total_fee);
+                    $register_fee_key($fee_keys, $pfx . '_TOTAL_PROGRAM_FEE', $total_fee);
+                    $register_fee_key($fee_keys, $pfx . '_TOTAL_PROGRAM_FEES', $total_fee);
+                    $register_fee_key($fee_keys, $pfx . '_FULL_FEE', $total_fee);
+                    $register_fee_key($fee_keys, $pfx . '_FULL_FEES', $total_fee);
+
+                    $register_fee_key($fee_keys, $pfx . '_TUITION_FEE', $tuition);
+                    $register_fee_key($fee_keys, $pfx . '_EXAM_FEE', $exam);
+                    $register_fee_key($fee_keys, $pfx . '_EXAMINATION_FEE', $exam);
+                    $register_fee_key($fee_keys, $pfx . '_REGISTRATION_FEE', $reg_fee);
+                    $register_fee_key($fee_keys, $pfx . '_ONE_TIME_FEE', $reg_fee);
+
+                    $register_fee_key($fee_keys, $pfx . '_ELIGIBILITY', $elig_text);
+                    $register_fee_key($fee_keys, $pfx . '_ELIGIBILITY_TEXT', $elig_text);
                 }
 
-                // One-time registration / processing fee
-                if ($reg_fee !== '') {
-                    $fee_keys['$' . $pfx . '_REGISTRATION_FEE$'] = $reg_fee;
-                    $fee_keys['{' . $pfx . '_REGISTRATION_FEE}'] = $reg_fee;
+                // Explicit Mode Keys: Both prefix (e.g. ONLINE_MBA) and suffix (e.g. MBA_ONLINE)
+                $mode_combos = [
+                    $mode_slug . '_' . $pfx, // e.g. ONLINE_MBA, DISTANCE_MBA
+                    $pfx . '_' . $mode_slug  // e.g. MBA_ONLINE, MBA_DISTANCE
+                ];
+
+                foreach ($mode_combos as $comb) {
+                    $register_fee_key($fee_keys, $comb . '_FEE', $main_fee);
+                    $register_fee_key($fee_keys, $comb . '_FEES', $main_fee);
+                    $register_fee_key($fee_keys, $comb . '_PER_SEMESTER_FEE', $per_sem);
+                    $register_fee_key($fee_keys, $comb . '_PER_SEMESTER_FEES', $per_sem);
+                    $register_fee_key($fee_keys, $comb . '_SEMESTER_FEE', $per_sem);
+                    $register_fee_key($fee_keys, $comb . '_SEMESTER_FEES', $per_sem);
+                    $register_fee_key($fee_keys, $comb . '_SEM_FEE', $per_sem);
+                    $register_fee_key($fee_keys, $comb . '_SEM_FEES', $per_sem);
+
+                    $register_fee_key($fee_keys, $comb . '_TOTAL_FEE', $total_fee);
+                    $register_fee_key($fee_keys, $comb . '_TOTAL_FEES', $total_fee);
+                    $register_fee_key($fee_keys, $comb . '_TOTAL_PROGRAM_FEE', $total_fee);
+                    $register_fee_key($fee_keys, $comb . '_TOTAL_PROGRAM_FEES', $total_fee);
+                    $register_fee_key($fee_keys, $comb . '_FULL_FEE', $total_fee);
+                    $register_fee_key($fee_keys, $comb . '_FULL_FEES', $total_fee);
+
+                    $register_fee_key($fee_keys, $comb . '_TUITION_FEE', $tuition);
+                    $register_fee_key($fee_keys, $comb . '_EXAM_FEE', $exam);
+                    $register_fee_key($fee_keys, $comb . '_EXAMINATION_FEE', $exam);
+                    $register_fee_key($fee_keys, $comb . '_REGISTRATION_FEE', $reg_fee);
+                    $register_fee_key($fee_keys, $comb . '_ONE_TIME_FEE', $reg_fee);
+
+                    $register_fee_key($fee_keys, $comb . '_ELIGIBILITY', $elig_text);
+                    $register_fee_key($fee_keys, $comb . '_ELIGIBILITY_TEXT', $elig_text);
                 }
-
-                // Course Eligibility Text
-                $fee_keys['$' . $pfx . '_ELIGIBILITY$']          = $elig_text;
-                $fee_keys['{' . $pfx . '_ELIGIBILITY}']          = $elig_text;
-                $fee_keys['$' . $pfx . '_ELIGIBILITY_TEXT$']     = $elig_text;
-                $fee_keys['{' . $pfx . '_ELIGIBILITY_TEXT}']     = $elig_text;
-
-                // Mode-prefixed eligibility keys (e.g. $DISTANCE_MBA_ELIGIBILITY$, $ONLINE_MBA_ELIGIBILITY$)
-                $fee_keys['$' . $mode_slug . '_' . $pfx . '_ELIGIBILITY$']      = $elig_text;
-                $fee_keys['{' . $mode_slug . '_' . $pfx . '_ELIGIBILITY}']      = $elig_text;
-                $fee_keys['$' . $mode_slug . '_' . $pfx . '_ELIGIBILITY_TEXT$'] = $elig_text;
-                $fee_keys['{' . $mode_slug . '_' . $pfx . '_ELIGIBILITY_TEXT}'] = $elig_text;
             }
         }
 
