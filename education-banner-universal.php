@@ -25,6 +25,31 @@ if (defined('EDUCATION_BANNER_UNIVERSAL_LOADED')) {
 define('EDUCATION_BANNER_UNIVERSAL_LOADED', true);
 
 // Safe polyfills for WP helpers
+if (!function_exists('add_query_arg')) {
+    function add_query_arg($args, $url = '')
+    {
+        if (is_array($args)) {
+            $sep = strpos($url, '?') !== false ? '&' : '?';
+            return $url . $sep . http_build_query($args);
+        }
+        return $url;
+    }
+}
+if (!function_exists('shortcode_atts')) {
+    function shortcode_atts($pairs, $atts, $shortcode = '')
+    {
+        $atts = (array) $atts;
+        $out = array();
+        foreach ($pairs as $name => $default) {
+            if (array_key_exists($name, $atts)) {
+                $out[$name] = $atts[$name];
+            } else {
+                $out[$name] = $default;
+            }
+        }
+        return $out;
+    }
+}
 if (!function_exists('sanitize_title')) {
     function sanitize_title($title)
     {
@@ -153,11 +178,12 @@ if (!function_exists('sode_get_university_banner_data')) {
                 require_once $local_config;
                 if (function_exists('get_db_connection')) {
                     $db = get_db_connection();
-                    $stmt = $db->prepare("SELECT * FROM universities WHERE (slug = ? OR LOWER(short_name) = ? OR LOWER(full_name) = ?) AND is_active = 1 LIMIT 1");
-                    $stmt->execute([$slug, strtolower($slug), strtolower($slug)]);
-                    $uni = $stmt->fetch();
+                    if ($db) {
+                        $stmt = $db->prepare("SELECT * FROM universities WHERE (slug = ? OR LOWER(short_name) = ? OR LOWER(full_name) = ?) AND is_active = 1 LIMIT 1");
+                        $stmt->execute([$slug, strtolower($slug), strtolower($slug)]);
+                        $uni = $stmt->fetch();
 
-                    if ($uni) {
+                        if ($uni) {
                         // Fetch accreditations
                         $acc_stmt = $db->prepare("
                             SELECT a.id, a.title, a.image_url, a.image_url AS badge_image_url, a.description, a.official_link
@@ -204,7 +230,8 @@ if (!function_exists('sode_get_university_banner_data')) {
                         );
                     }
                 }
-            } catch (Exception $e) {
+            }
+        } catch (Exception $e) {
                 // Ignore and fallback to HTTP API
             }
         }

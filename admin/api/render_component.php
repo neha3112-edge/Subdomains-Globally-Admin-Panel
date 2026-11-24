@@ -121,286 +121,325 @@ if ($is_cacheable && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     }
 }
 
-// 3. Dispatch Component Render
-header('Content-Type: text/html; charset=utf-8');
-ob_start();
+// 3. Component Rendering Engine
+function sode_render_single_component_internal($component, $params = []) {
+    ob_start();
+    switch ($component) {
+        case 'banner':
+        case 'edu_banner':
+            echo edu_banner_shortcode($params);
+            break;
 
-switch ($component) {
-    case 'banner':
-    case 'edu_banner':
-        echo edu_banner_shortcode($params);
-        break;
+        case 'courses':
+        case 'university_courses':
+        case 'uni_courses':
+        case 'university_programs':
+            echo sode_courses_tabs_render($params);
+            break;
 
-    case 'courses':
-    case 'university_courses':
-    case 'uni_courses':
-    case 'university_programs':
-        echo sode_courses_tabs_render($params);
-        break;
+        case 'courses_list':
+        case 'university_courses_list':
+        case 'uni_courses_list':
+        case 'uni_courses_text':
+            echo sode_courses_list_render($params);
+            break;
 
-    case 'courses_list':
-    case 'university_courses_list':
-    case 'uni_courses_list':
-    case 'uni_courses_text':
-        echo sode_courses_list_render($params);
-        break;
+        case 'eligibility_table':
+        case 'university_eligibility_table':
+        case 'uni_eligibility_table':
+        case 'courses_eligibility_table':
+        case 'university_eligibility':
+        case 'uni_eligibility':
+            echo sode_courses_eligibility_table_render($params);
+            break;
 
-    case 'eligibility_table':
-    case 'university_eligibility_table':
-    case 'uni_eligibility_table':
-    case 'courses_eligibility_table':
-    case 'university_eligibility':
-    case 'uni_eligibility':
-        echo sode_courses_eligibility_table_render($params);
-        break;
+        case 'university_eligibility_text':
+        case 'uni_eligibility_text':
+        case 'courses_eligibility_text':
+        case 'eligibility_text':
+        case 'course_eligibility':
+        case 'course_eligibility_text':
+            echo sode_courses_eligibility_text_render($params);
+            break;
 
-    case 'university_eligibility_text':
-    case 'uni_eligibility_text':
-    case 'courses_eligibility_text':
-    case 'eligibility_text':
-    case 'course_eligibility':
-    case 'course_eligibility_text':
-        echo sode_courses_eligibility_text_render($params);
-        break;
+        case 'university_programs_table':
+        case 'uni_programs_table':
+        case 'programs_table':
+        case 'university_fees_table':
+        case 'uni_fees_table':
+        case 'programs_fee_table':
+        case 'university_courses_table':
+        case 'uni_courses_table':
+            echo sode_university_programs_table_render($params);
+            break;
 
-    case 'university_programs_table':
-    case 'uni_programs_table':
-    case 'programs_table':
-    case 'university_fees_table':
-    case 'uni_fees_table':
-    case 'programs_fee_table':
-    case 'university_courses_table':
-    case 'uni_courses_table':
-        echo sode_university_programs_table_render($params);
-        break;
+        case 'application_process':
+        case 'university_application_process':
+        case 'uni_application_process':
+        case 'idol_application_process':
+        case 'admission_process':
+        case 'sode_application_process':
+            echo sode_application_process_render($params);
+            break;
 
-    case 'application_process':
-    case 'university_application_process':
-    case 'uni_application_process':
-    case 'idol_application_process':
-    case 'admission_process':
-    case 'sode_application_process':
-        echo sode_application_process_render($params);
-        break;
+        case 'footer':
+        case 'universal_footer':
+        case 'sode_footer':
+        case 'footer_section':
+            echo sode_footer_render($params);
+            break;
 
-    case 'footer':
-    case 'universal_footer':
-    case 'sode_footer':
-    case 'footer_section':
-        echo sode_footer_render($params);
-        break;
+        case 'course_syllabus':
+        case 'syllabus':
+        case 'uni_syllabus':
+        case 'university_course_syllabus':
+        case 'uni_course_syllabus':
+            echo sode_course_syllabus_render($params);
+            break;
 
-    case 'course_syllabus':
-    case 'syllabus':
-    case 'uni_syllabus':
-    case 'university_course_syllabus':
-    case 'uni_course_syllabus':
-        echo sode_course_syllabus_render($params);
-        break;
+        case 'course_fees':
+        case 'course_fee_table':
+        case 'course_fee':
+        case 'fee_table':
+        case 'fee_structure':
+        case 'university_course_fees':
+        case 'uni_course_fees':
+            echo sode_course_fees_render($params);
+            break;
 
-    case 'course_fees':
-    case 'course_fee_table':
-    case 'course_fee':
-    case 'fee_table':
-    case 'fee_structure':
-    case 'university_course_fees':
-    case 'uni_course_fees':
-        echo sode_course_fees_render($params);
-        break;
+        case 'course_specializations':
+        case 'course_specialization_table':
+        case 'course_specialization':
+        case 'specializations_table':
+        case 'university_course_specializations':
+        case 'uni_course_specializations':
+            echo sode_course_specializations_render($params);
+            break;
 
-    case 'course_specializations':
-    case 'course_specialization_table':
-    case 'course_specialization':
-    case 'specializations_table':
-    case 'university_course_specializations':
-    case 'uni_course_specializations':
-        echo sode_course_specializations_render($params);
-        break;
+        case 'job_roles_table':
+        case 'job_roles':
+        case 'course_job_roles':
+        case 'job_roles_salary':
+            echo sode_job_roles_table_render($params);
+            break;
 
-    case 'job_roles_table':
-    case 'job_roles':
-    case 'course_job_roles':
-    case 'job_roles_salary':
-        echo sode_job_roles_table_render($params);
-        break;
+        case 'course_table':
+        case 'universities_table':
+        case 'course_universities':
+        case 'top_universities':
+            echo sode_course_universities_table_render($params);
+            break;
 
-    case 'course_table':
-    case 'universities_table':
-    case 'course_universities':
-    case 'top_universities':
-        echo sode_course_universities_table_render($params);
-        break;
+        case 'legal_popups':
+        case 'disclaimer_popup':
+        case 'privacy_popup':
+        case 'terms_popup':
+        case 'legal_pages':
+            echo sode_legal_popups_render($params);
+            break;
 
+        case 'latest_news':
+        case 'news':
+        case 'news_marquee':
+        case 'universal_news':
+            echo sode_news_marquee_render($params);
+            break;
 
-    case 'legal_popups':
-    case 'disclaimer_popup':
-    case 'privacy_popup':
-    case 'terms_popup':
-    case 'legal_pages':
-        echo sode_legal_popups_render($params);
-        break;
+        case 'recent_announcements':
+        case 'announcements':
+        case 'announcements_list':
+        case 'university_announcements':
+        case 'uni_announcements':
+        case 'inner_page_news':
+            echo sode_announcements_list_render($params);
+            break;
 
-    case 'latest_news':
-    case 'news':
-    case 'news_marquee':
-    case 'universal_news':
-        echo sode_news_marquee_render($params);
-        break;
+        case 'university_dates':
+        case 'important_dates':
+        case 'uni_important_dates':
+        case 'admission_dates':
+        case 'dates_table':
+        case 'university_dates_table':
+            echo sode_university_dates_table_render($params);
+            break;
 
-    case 'recent_announcements':
-    case 'announcements':
-    case 'announcements_list':
-    case 'university_announcements':
-    case 'uni_announcements':
-    case 'inner_page_news':
-        echo sode_announcements_list_render($params);
-        break;
+        case 'alternate_universities':
+        case 'alternative_universities':
+        case 'alternatives_universities':
+        case 'alternate_university_list':
+        case 'alternative_university_list':
+        case 'alternatives_list':
+            echo function_exists('sode_alternate_universities_render') ? sode_alternate_universities_render($params) : '';
+            break;
 
-    case 'university_dates':
-    case 'important_dates':
-    case 'uni_important_dates':
-    case 'admission_dates':
-    case 'dates_table':
-    case 'university_dates_table':
-        echo sode_university_dates_table_render($params);
-        break;
+        case 'compare_universities_table':
+        case 'universities_comparison_table':
+        case 'compare_universities_fees':
+        case 'universities_fee_comparison':
+        case 'alternate_universities_fees':
+        case 'alternate_universities_fees_table':
+        case 'subdomain_fees_table':
+        case 'subdomain_course_fees_table':
+            echo function_exists('sode_render_university_fees_table') ? sode_render_university_fees_table($params) : '';
+            break;
 
-    case 'alternate_universities':
-    case 'alternative_universities':
-    case 'alternatives_universities':
-    case 'alternate_university_list':
-    case 'alternative_university_list':
-    case 'alternatives_list':
-        echo function_exists('sode_alternate_universities_render') ? sode_alternate_universities_render($params) : '';
-        break;
+        case 'subdomain_programmes_table':
+        case 'university_programmes_table':
+        case 'uni_programmes_table':
+        case 'ugc_deb_approved_courses_table':
+        case 'university_ugc_courses_table':
+            echo function_exists('sode_render_university_programmes_table') ? sode_render_university_programmes_table($params) : '';
+            break;
 
-    case 'compare_universities_table':
-    case 'universities_comparison_table':
-    case 'compare_universities_fees':
-    case 'universities_fee_comparison':
-    case 'alternate_universities_fees':
-    case 'alternate_universities_fees_table':
-    case 'subdomain_fees_table':
-    case 'subdomain_course_fees_table':
-        echo function_exists('sode_render_university_fees_table') ? sode_render_university_fees_table($params) : '';
-        break;
+        case 'sample_degree':
+        case 'university_sample_degree':
+        case 'uni_sample_degree':
+        case 'sample_degree_card':
+        case 'sample_degree_image':
+        case 'sample_degree_button':
+        case 'sample_degree_url':
+            echo function_exists('sode_sample_degree_render') ? sode_sample_degree_render($params) : '';
+            break;
 
-    case 'subdomain_programmes_table':
-    case 'university_programmes_table':
-    case 'uni_programmes_table':
-    case 'ugc_deb_approved_courses_table':
-    case 'university_ugc_courses_table':
-        echo function_exists('sode_render_university_programmes_table') ? sode_render_university_programmes_table($params) : '';
-        break;
+        case 'lead_form':
+        case 'custom_lead_form':
+            echo custom_lead_form_shortcode($params);
+            break;
 
-    case 'sample_degree':
-    case 'university_sample_degree':
-    case 'uni_sample_degree':
-    case 'sample_degree_card':
-    case 'sample_degree_image':
-    case 'sample_degree_button':
-    case 'sample_degree_url':
-        echo function_exists('sode_sample_degree_render') ? sode_sample_degree_render($params) : '';
-        break;
+        case 'counseling_lead_form':
+        case 'counseling_form':
+        case 'lead_form_box':
+        case 'sode_lead_form':
+            echo function_exists('sode_counseling_lead_form_box_shortcode') ? sode_counseling_lead_form_box_shortcode($params) : '';
+            break;
 
+        case 'counseling_button':
+        case 'counseling_btn':
+        case 'apply_now_button':
+        case 'free_counseling_button':
+        case 'applynow_button':
+        case 'applynow_btn':
+            echo function_exists('sode_counseling_button_shortcode') ? sode_counseling_button_shortcode($params) : '';
+            break;
 
-    case 'lead_form':
-    case 'custom_lead_form':
-        echo custom_lead_form_shortcode($params);
-        break;
+        case 'compare_form':
+        case 'compare_universities_form':
+            echo compare_universities_form_shortcode($params);
+            break;
 
-    case 'counseling_lead_form':
-    case 'counseling_form':
-    case 'lead_form_box':
-    case 'sode_lead_form':
-        echo function_exists('sode_counseling_lead_form_box_shortcode') ? sode_counseling_lead_form_box_shortcode($params) : '';
-        break;
+        case 'brochure_form':
+        case 'brochure_download_form':
+            echo brochure_download_form_shortcode($params);
+            break;
 
-    case 'counseling_button':
-    case 'counseling_btn':
-    case 'apply_now_button':
-    case 'free_counseling_button':
-    case 'applynow_button':
-    case 'applynow_btn':
-        echo function_exists('sode_counseling_button_shortcode') ? sode_counseling_button_shortcode($params) : '';
-        break;
+        case 'scholarship_form':
+        case 'scholarship_coupon_form':
+            echo scholarship_coupon_form_shortcode($params);
+            break;
 
-    case 'compare_form':
-    case 'compare_universities_form':
-        echo compare_universities_form_shortcode($params);
-        break;
-
-    case 'brochure_form':
-    case 'brochure_download_form':
-        echo brochure_download_form_shortcode($params);
-        break;
-
-    case 'scholarship_form':
-    case 'scholarship_coupon_form':
-        echo scholarship_coupon_form_shortcode($params);
-        break;
-
-    case 'popup_modals':
-        ?>
-        <style>
-            .sode-modal-overlay {
-                display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65);
-                z-index: 999999; justify-content: center; align-items: center; backdrop-filter: blur(3px);
-            }
-            .sode-modal-overlay.active { display: flex; }
-            .sode-modal-box {
-                background: #fff; border-radius: 12px; padding: 30px 24px 20px; width: 92%; max-width: 440px;
-                max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 15px 50px rgba(0,0,0,0.4);
-                animation: sodeModalIn 0.3s ease;
-            }
-            @keyframes sodeModalIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-            .sode-modal-close {
-                position: absolute; top: 12px; right: 16px; font-size: 26px; cursor: pointer; color: #444;
-                background: none; border: none; line-height: 1; z-index: 10;
-            }
-            .sode-modal-close:hover { color: #e11d48; }
-        </style>
-        <div id="counselingFormPopupOverlay" class="sode-modal-overlay">
-            <div class="sode-modal-box">
-                <button type="button" class="sode-modal-close counseling-popup-close" aria-label="Close">&times;</button>
-                <div id="sode-counseling-modal-content">
-                    <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['university' => $params['uni'] ?? '', 'form_name' => 'Counseling Popup Form']) : ''; ?>
+        case 'popup_modals':
+            ?>
+            <style>
+                .sode-modal-overlay {
+                    display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65);
+                    z-index: 999999; justify-content: center; align-items: center; backdrop-filter: blur(3px);
+                }
+                .sode-modal-overlay.active { display: flex; }
+                .sode-modal-box {
+                    background: #fff; border-radius: 12px; padding: 30px 24px 20px; width: 92%; max-width: 440px;
+                    max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+                    animation: sodeModalIn 0.3s ease;
+                }
+                @keyframes sodeModalIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                .sode-modal-close {
+                    position: absolute; top: 12px; right: 16px; font-size: 26px; cursor: pointer; color: #444;
+                    background: none; border: none; line-height: 1; z-index: 10;
+                }
+                .sode-modal-close:hover { color: #e11d48; }
+            </style>
+            <div id="counselingFormPopupOverlay" class="sode-modal-overlay">
+                <div class="sode-modal-box">
+                    <button type="button" class="sode-modal-close counseling-popup-close" aria-label="Close">&times;</button>
+                    <div id="sode-counseling-modal-content">
+                        <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['university' => $params['uni'] ?? '', 'form_name' => 'Counseling Popup Form']) : ''; ?>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div id="compareFormPopupOverlay" class="sode-modal-overlay">
-            <div class="sode-modal-box">
-                <button type="button" class="sode-modal-close compare-popup-close">&times;</button>
-                <div id="sode-compare-modal-content"></div>
+            <div id="compareFormPopupOverlay" class="sode-modal-overlay">
+                <div class="sode-modal-box">
+                    <button type="button" class="sode-modal-close compare-popup-close">&times;</button>
+                    <div id="sode-compare-modal-content"></div>
+                </div>
             </div>
-        </div>
-        <div id="brochureFormPopupOverlay" class="sode-modal-overlay">
-            <div class="sode-modal-box">
-                <button type="button" class="sode-modal-close brochure-popup-close">&times;</button>
-                <div class="popup-brochure-form" style="display:none;" id="sode-brochure-modal-content"></div>
-                <div class="popup-scholarship-form" style="display:none;" id="sode-scholarship-modal-content"></div>
+            <div id="brochureFormPopupOverlay" class="sode-modal-overlay">
+                <div class="sode-modal-box">
+                    <button type="button" class="sode-modal-close brochure-popup-close">&times;</button>
+                    <div class="popup-brochure-form" style="display:none;" id="sode-brochure-modal-content"></div>
+                    <div class="popup-scholarship-form" style="display:none;" id="sode-scholarship-modal-content"></div>
+                </div>
             </div>
-        </div>
-        <?php
-        break;
+            <?php
+            break;
 
-    case 'gallabox_widget':
-    case 'whatsapp_widget':
-    case 'gallabox':
-        echo function_exists('sode_gallabox_widget_render') ? sode_gallabox_widget_render($params) : '';
-        break;
+        case 'gallabox_widget':
+        case 'whatsapp_widget':
+        case 'gallabox':
+            echo function_exists('sode_gallabox_widget_render') ? sode_gallabox_widget_render($params) : '';
+            break;
 
-    default:
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            'success' => true,
-            'message' => 'SODE Universal Component SSR API Online',
-            'available_components' => ['banner', 'lead_form', 'compare_form', 'brochure_form', 'scholarship_form', 'popup_modals']
-        ]);
-        break;
+        default:
+            echo '';
+            break;
+    }
+    return ob_get_clean();
 }
 
-$rendered_output = ob_get_clean();
+// 4. Handle Batch Component Request
+if ($component === 'batch') {
+    header('Content-Type: application/json; charset=utf-8');
+    $raw_input = file_get_contents('php://input');
+    $json_input = json_decode($raw_input, true) ?: [];
+    $items = $json_input['items'] ?? $_POST['items'] ?? [];
+    if (is_string($items)) {
+        $items = json_decode($items, true) ?: [];
+    }
+
+    $results = [];
+    if (is_array($items)) {
+        foreach ($items as $k => $item) {
+            $c_name = is_string($item) ? $item : ($item['component'] ?? $item['tag'] ?? '');
+            $c_args = is_array($item) ? ($item['params'] ?? $item) : [];
+            if (!empty($params['uni']) && empty($c_args['uni'])) {
+                $c_args['uni'] = $params['uni'];
+            }
+            if (!empty($params['uni']) && empty($c_args['university'])) {
+                $c_args['university'] = $params['uni'];
+            }
+            $results[$k] = sode_render_single_component_internal($c_name, $c_args);
+        }
+    }
+
+    echo json_encode([
+        'success' => true,
+        'uni' => $params['uni'] ?? '',
+        'results' => $results
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// 5. Single Component Output
+header('Content-Type: text/html; charset=utf-8');
+$rendered_output = sode_render_single_component_internal($component, $params);
+
+if (empty($rendered_output) && empty($component)) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'success' => true,
+        'message' => 'SODE Universal Component SSR API Online',
+        'available_components' => ['banner', 'lead_form', 'compare_form', 'brochure_form', 'scholarship_form', 'popup_modals', 'batch']
+    ]);
+    exit;
+}
 
 // Cache HTML output in Redis for both GET and POST requests (24 hours)
 if ($is_cacheable && !empty($rendered_output) && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
