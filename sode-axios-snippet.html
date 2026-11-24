@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://admin.distanceeducationschool.com" crossorigin>
 <link rel="dns-prefetch" href="https://admin.distanceeducationschool.com">
 
-<!-- 2. Safe Anti-Flash & Banner Layout Armor -->
+<!-- 2. Safe Anti-Flash Armor (Only unhydrated shortcodes hidden until rendered) -->
 <style id="sode-anti-flash" data-nowprocket="1" data-no-optimize="1">
 .elementor-shortcode:not(.sode-hydrated),
 .wp-block-shortcode:not(.sode-hydrated) {
@@ -18,45 +18,9 @@
 .sode-rendered-component {
     visibility: visible !important;
 }
-
-/* Core Banner Layout Armor: Prevents WP Rocket CSS stripping & broken layouts */
-.edu-banner-desktop {
-    display: block !important;
-    width: 100% !important;
-    background-size: cover !important;
-    background-position: center top !important;
-    background-repeat: no-repeat !important;
-    min-height: 520px !important;
-}
-.edu-banner-desktop-inner {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 1200px !important;
-    max-width: 90% !important;
-    margin: 0 auto !important;
-    padding: 40px 0 !important;
-    gap: 60px !important;
-}
-.edu-banner-left {
-    flex: 1 1 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 14px !important;
-}
-.edu-banner-right {
-    flex: 0 0 380px !important;
-    width: 380px !important;
-    max-width: 100% !important;
-}
-@media (max-width: 768px) {
-    .edu-banner-desktop { display: none !important; }
-    .edu-banner-mobile { display: block !important; width: 100% !important; }
-}
 </style>
 
-<!-- 3. SODE Universal Engine (v8.0 Full Modals, URL Key Fix & Instant Hero Paint) -->
+<!-- 3. SODE Universal Engine (v9.0 100% Dynamic - Zero Static Dictionaries) -->
 <script id="sode-universal-engine" data-nowprocket="1" data-no-optimize="1" data-cfasync="false" class="nowprocket">
 (function () {
     'use strict';
@@ -76,101 +40,52 @@
     const uniSlug = getUniSlug();
     const storagePrefix = 'sode_v9_' + uniSlug + '_';
     const pagePath = window.location.pathname;
-
-    // Known university metadata dictionary for instant 0ms fallback
-    const UNIVERSITY_MAP = {
-        'dsu':    { name: 'Dayananda Sagar University', short: 'DSU', mode: 'Online' },
-        'cu':     { name: 'Chandigarh University', short: 'CU', mode: 'Online' },
-        'mu':     { name: 'Manipal University', short: 'MUJ', mode: 'Online' },
-        'amity':  { name: 'Amity University', short: 'Amity', mode: 'Online' },
-        'lpu':    { name: 'Lovely Professional University', short: 'LPU', mode: 'Online' },
-        'jgu':    { name: 'O.P. Jindal Global University', short: 'JGU', mode: 'Online' },
-        'sharda': { name: 'Sharda University', short: 'Sharda', mode: 'Online' },
-        'srm':    { name: 'SRM University', short: 'SRM', mode: 'Online' },
-        'upes':   { name: 'UPES', short: 'UPES', mode: 'Online' },
-        'gla':    { name: 'GLA University', short: 'GLA', mode: 'Online' },
-        'vgu':    { name: 'Vivekananda Global University', short: 'VGU', mode: 'Online' },
-        'uu':     { name: 'Uttaranchal University', short: 'UU', mode: 'Online' },
-        'klu':    { name: 'K L University', short: 'KLU', mode: 'Online' }
-    };
-
-    const uniInfo = UNIVERSITY_MAP[uniSlug] || {
-        name: uniSlug.toUpperCase() + ' University',
-        short: uniSlug.toUpperCase(),
-        mode: 'Online'
-    };
-
     const currentYear = new Date().getFullYear().toString();
 
-    // Instant Master Key Replacements (ONLY bracketed/delimited keys to prevent modifying plain text or menus)
+    // 1. Dynamic Key Store (Zero hardcoded university/key dictionaries)
     let activeKeys = {
-        '{UNIVERSITY_NAME}': uniInfo.name,
-        '[UNIVERSITY_NAME]': uniInfo.name,
-        '$UNIVERSITY_NAME$': uniInfo.name,
-        '{{UNIVERSITY_NAME}}': uniInfo.name,
-
-        '{MODE}': uniInfo.mode,
-        '[MODE]': uniInfo.mode,
-        '$MODE$': uniInfo.mode,
-        '{{MODE}}': uniInfo.mode,
-
-        '{UNIVERSITY_SHORT_NAME}': uniInfo.short,
-        '[UNIVERSITY_SHORT_NAME]': uniInfo.short,
-        '$UNIVERSITY_SHORT_NAME$': uniInfo.short,
-        '{{UNIVERSITY_SHORT_NAME}}': uniInfo.short,
-        '{UNI_SHORT_NAME}': uniInfo.short,
-        '[UNI_SHORT_NAME]': uniInfo.short,
-        '$UNI_SHORT_NAME$': uniInfo.short,
-        '{UNI}': uniInfo.short,
-        '[UNI]': uniInfo.short,
-        '$UNI$': uniInfo.short,
-
-        '{UNIVERSITY_SLUG}': uniSlug,
-        '[UNIVERSITY_SLUG]': uniSlug,
-        '$UNIVERSITY_SLUG$': uniSlug,
-        '{UNI_SLUG}': uniSlug,
-        '[UNI_SLUG]': uniSlug,
-        '$UNI_SLUG$': uniSlug,
-        '{SLUG}': uniSlug,
-        '{slug}': uniSlug,
-
-        // Specific lowercase keys ({DSU_LOWER}, {UNI_LOWER}, etc.)
-        '{DSU_LOWER}': uniSlug,
-        '[DSU_LOWER]': uniSlug,
-        '$DSU_LOWER$': uniSlug,
-        '{UNI_LOWER}': uniSlug,
-        '[UNI_LOWER]': uniSlug,
-        '$UNI_LOWER$': uniSlug,
-        '{uni_lower}': uniSlug,
-        '{UNIVERSITY_SHORT_NAME_LOWER}': uniSlug,
-        '[UNIVERSITY_SHORT_NAME_LOWER]': uniSlug,
-
         '$YEAR$': currentYear,
         '{YEAR}': currentYear,
-        '[YEAR]': currentYear
+        '[YEAR]': currentYear,
+        '{DSU_LOWER}': uniSlug,
+        '{UNI_LOWER}': uniSlug,
+        '{UNIVERSITY_SLUG}': uniSlug,
+        '{UNI_SLUG}': uniSlug
     };
 
-    // Load persisted keys from storage
+    // Load persisted dynamic keys from storage (0ms instant render on repeat visits)
     try {
         const savedKeys = localStorage.getItem(storagePrefix + 'keys');
         if (savedKeys) {
             const parsed = JSON.parse(savedKeys);
-            Object.entries(parsed).forEach(([k, v]) => {
-                if (typeof v === 'string' && v.trim() !== '') {
-                    activeKeys[k] = v.trim();
-                }
-            });
+            if (parsed && typeof parsed === 'object') {
+                Object.assign(activeKeys, parsed);
+            }
         }
     } catch (e) {}
 
-    // 2. Early Background Preload Promises (Started at microsecond 0)
+    // 2. Early Dynamic Key Preload in Parallel (Microsecond 0)
+    let earlyKeysPromise = fetch(`${BASE_URL}/admin/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`, { priority: 'high' })
+        .then(res => res.json())
+        .then(data => {
+            if (data && (data.keys || data.data)) {
+                const fetchedKeys = data.keys || data.data;
+                Object.assign(activeKeys, fetchedKeys);
+                try {
+                    localStorage.setItem(storagePrefix + 'keys', JSON.stringify(activeKeys));
+                } catch (e) {}
+                replaceDOMKeys(activeKeys);
+            }
+            return data;
+        })
+        .catch(() => null);
+
+    // 3. Early Hero Banner Preload in Parallel (Microsecond 0)
     let earlyBannerHtmlPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=banner&uni=${encodeURIComponent(uniSlug)}`, { priority: 'high' })
         .then(res => res.text()).catch(() => null);
 
-    const earlyKeysPromise = fetch(`${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`)
-        .then(res => res.json()).catch(() => null);
-
-    const earlyModalsPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
+    // 4. Early Modals Preload
+    let earlyModalsPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
         .then(res => res.text()).catch(() => null);
 
     // Comprehensive list of known shortcodes
