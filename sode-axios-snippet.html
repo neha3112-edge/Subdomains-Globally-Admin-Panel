@@ -27,6 +27,12 @@
 
     const BASE_URL = 'https://admin.distanceeducationschool.com';
 
+    // Suppress Browser PWA "Install App" Icon in Address Bar
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        return false;
+    });
+
     // 1. Detect University Slug from Subdomain
     function getUniSlug() {
         const host = window.location.hostname.toLowerCase();
