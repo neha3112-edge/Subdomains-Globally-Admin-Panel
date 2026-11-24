@@ -1,5 +1,5 @@
 <!-- ==================================================== -->
-<!-- 🚀 SODE Central Universal Client Engine (High Performance & Zero Flash) -->
+<!-- 🚀 SODE Central Universal Client Engine (Ultra Fast Promise.all & 0ms Cache) -->
 <!-- Copy-paste this block into WordPress Code Snippets / WPCode -->
 <!-- Location: Header or Footer (Run Everywhere) -->
 <!-- ==================================================== -->
@@ -57,7 +57,7 @@
 }
 </style>
 
-<!-- 3. SODE Universal Engine (Unified 1-Roundtrip Engine, Exempted from WP Rocket & LiteSpeed Delay JS) -->
+<!-- 3. SODE Universal Engine (Parallel Promise.all & 0ms Local Storage Cache) -->
 <script id="sode-universal-engine" data-nowprocket="1" data-no-optimize="1" data-cfasync="false" class="nowprocket">
 (function () {
     'use strict';
@@ -75,11 +75,9 @@
     }
 
     const uniSlug = getUniSlug();
-    const cacheKeyKeys = 'sode_keys_' + uniSlug;
-    const cacheKeyComponents = 'sode_comps_' + uniSlug;
-    console.log('🚀 [SODE UNIVERSAL ENGINE] Initialized for university:', uniSlug);
+    const storagePrefix = 'sode_v6_' + uniSlug + '_';
 
-    // Active keys storage with instant local fallbacks
+    // Instant University Defaults
     let activeKeys = {
         '{UNIVERSITY_NAME}': 'Dayananda Sagar University',
         '[UNIVERSITY_NAME]': 'Dayananda Sagar University',
@@ -101,6 +99,12 @@
         '{YEAR}': new Date().getFullYear().toString()
     };
 
+    // Load persisted keys from storage immediately (0ms)
+    try {
+        const savedKeys = localStorage.getItem(storagePrefix + 'keys');
+        if (savedKeys) Object.assign(activeKeys, JSON.parse(savedKeys));
+    } catch (e) {}
+
     // Helper: Execute scripts inside dynamically inserted HTML
     function runScripts(container) {
         if (!container) return;
@@ -113,7 +117,7 @@
         });
     }
 
-    // Comprehensive list of all universal shortcode tags and aliases
+    // Comprehensive list of known shortcodes
     const knownShortcodes = [
         'edu_banner', 'banner',
         'latest_news', 'news', 'news_marquee', 'universal_news',
@@ -138,10 +142,9 @@
         'footer', 'universal_footer', 'sode_footer', 'footer_section'
     ];
 
-    // 2. Parse Shortcode string into { tag, params } with smart quotes normalization
+    // 2. Parse Shortcode string
     function parseShortcode(raw) {
         if (!raw) return null;
-
         const cleaned = raw
             .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
             .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
@@ -172,7 +175,7 @@
     function applyRenderedHTML(item, html) {
         if (!html) return;
 
-        // Perform instant key replacement on the incoming HTML string directly
+        // Replace keys in the HTML string directly before inserting
         if (activeKeys) {
             Object.entries(activeKeys).forEach(([k, v]) => {
                 if (typeof v === 'string' && v.trim() !== '') {
@@ -181,23 +184,20 @@
             });
         }
 
-        // If item matched via direct Elementor element container
+        // Cache this specific component for instant 0ms reload
+        try {
+            localStorage.setItem(storagePrefix + 'comp_' + item.raw, html);
+        } catch (e) {}
+
         if (item.element && item.element.parentNode) {
             const wrapper = document.createElement('div');
             wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
             wrapper.innerHTML = html;
-            wrapper.style.opacity = '1';
-            wrapper.style.visibility = 'visible';
-            wrapper.style.display = 'block';
-
-            const p = item.element.parentNode;
-            p.replaceChild(wrapper, item.element);
-            if (p.style) p.style.opacity = '1';
+            item.element.parentNode.replaceChild(wrapper, item.element);
             runScripts(wrapper);
             return;
         }
 
-        // If item matched via TextNode
         if (item.node && item.node.parentNode) {
             const parent = item.node.parentNode;
             const textVal = item.node.nodeValue;
@@ -206,17 +206,11 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
                 wrapper.innerHTML = html;
-                wrapper.style.opacity = '1';
-                wrapper.style.visibility = 'visible';
-                wrapper.style.display = 'block';
 
                 if ((parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
-                    const grandParent = parent.parentNode;
-                    grandParent.replaceChild(wrapper, parent);
-                    if (grandParent.style) grandParent.style.opacity = '1';
+                    parent.parentNode.replaceChild(wrapper, parent);
                 } else {
                     parent.replaceChild(wrapper, item.node);
-                    if (parent.style) parent.style.opacity = '1';
                 }
                 runScripts(wrapper);
             } else {
@@ -228,8 +222,6 @@
                     const span = document.createElement('span');
                     span.className = 'sode-rendered-inline sode-' + item.name + ' sode-hydrated';
                     span.innerHTML = html;
-                    span.style.opacity = '1';
-                    span.style.visibility = 'visible';
 
                     const frag = document.createDocumentFragment();
                     if (beforeText) frag.appendChild(document.createTextNode(beforeText));
@@ -237,7 +229,6 @@
                     if (afterText) frag.appendChild(document.createTextNode(afterText));
 
                     parent.replaceChild(frag, item.node);
-                    if (parent.style) parent.style.opacity = '1';
                     runScripts(span);
                 }
             }
@@ -245,7 +236,7 @@
     }
 
     // 3. Collect all shortcodes currently in the DOM
-    function collectShortcodesFromDOM() {
+    function collectShortcodes() {
         if (!document.body) return [];
 
         const shortcodeRegex = /\[([a-zA-Z0-9_-]+)([\s\S]*?)\]/g;
@@ -276,7 +267,6 @@
             }
         }
 
-        // Also check Elementor shortcode containers directly
         const elementorWidgets = document.querySelectorAll('.elementor-shortcode, .elementor-widget-shortcode .elementor-widget-container');
         elementorWidgets.forEach(el => {
             if (el.dataset.sodeProcessed) return;
@@ -300,11 +290,10 @@
         return matchedItems;
     }
 
-    // 4. DOM Global Keys Replacement Engine ($KEY$, {KEY}, [KEY], #LEAD_FORM#)
+    // 4. Fast DOM Global Keys Replacement ($KEY$, {KEY}, [KEY], #LEAD_FORM#)
     function replaceDOMKeys(keys) {
         if (!keys || !Object.keys(keys).length || !document.body) return;
 
-        // Merge into activeKeys
         Object.assign(activeKeys, keys);
 
         const replacements = {};
@@ -393,62 +382,43 @@
         walk(document.body);
     }
 
-    // 5. Inject Footer Modals & Widgets
-    async function injectFooterModals() {
-        if (document.getElementById('counselingFormPopupOverlay')) return;
+    // 5. Instant 0ms Pre-Hydration from LocalStorage
+    function hydrateFromLocalCache(matchedItems) {
+        if (!matchedItems || !matchedItems.length) return false;
+        let hydratedCount = 0;
 
-        try {
-            const modalsUrl = `${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`;
-            const res = await fetch(modalsUrl);
-            const html = await res.text();
-            if (html && html.indexOf('sode-modal-overlay') !== -1) {
-                const modalWrap = document.createElement('div');
-                modalWrap.id = 'sode-footer-modals-wrap';
-                modalWrap.innerHTML = html;
-                document.body.appendChild(modalWrap);
-                runScripts(modalWrap);
-            }
-        } catch (e) {}
+        matchedItems.forEach(item => {
+            try {
+                const cachedHtml = localStorage.getItem(storagePrefix + 'comp_' + item.raw);
+                if (cachedHtml) {
+                    applyRenderedHTML(item, cachedHtml);
+                    hydratedCount++;
+                }
+            } catch (e) {}
+        });
+
+        if (hydratedCount > 0) {
+            console.log(`⚡ [SODE 0MS HYDRATED] ${hydratedCount} components rendered instantly from local storage`);
+            replaceDOMKeys(activeKeys);
+            return true;
+        }
+        return false;
     }
 
-    // 6. Unified High-Performance Orchestrator
-    let isInitialized = false;
-    async function runUniversalEngine() {
-        if (isInitialized) return;
-        isInitialized = true;
+    // 6. High-Performance Parallel Promise.all Execution Engine
+    let isExecuting = false;
+    async function executeEngine() {
+        if (isExecuting) return;
+        isExecuting = true;
 
         const startTime = performance.now();
+        const matchedItems = collectShortcodes();
 
-        // Step A: Instant Local Hydration (0ms from SessionStorage)
-        let cachedKeys = null;
-        let cachedComps = null;
-        try {
-            const kStr = sessionStorage.getItem(cacheKeyKeys);
-            const cStr = sessionStorage.getItem(cacheKeyComponents);
-            if (kStr) cachedKeys = JSON.parse(kStr);
-            if (cStr) cachedComps = JSON.parse(cStr);
-        } catch (e) {}
-
-        if (cachedKeys) {
-            Object.assign(activeKeys, cachedKeys);
-        }
-
-        const matchedItems = collectShortcodesFromDOM();
-
-        // If local cache hit, hydrate immediately (0ms instant render!)
-        if (cachedComps && matchedItems.length) {
-            matchedItems.forEach(item => {
-                if (cachedComps[item.raw]) {
-                    applyRenderedHTML(item, cachedComps[item.raw]);
-                }
-            });
-            console.log('⚡ [SODE 0MS HIT] Components hydrated instantly from local session cache');
-        }
-
-        // Replace keys in current DOM
+        // Step A: Instant 0ms Local Render (Hero banner paints with ZERO delay!)
+        hydrateFromLocalCache(matchedItems);
         replaceDOMKeys(activeKeys);
 
-        // Step B: Prepare unified single API request
+        // Step B: Prepare Batch Payload for any unhydrated / background revalidation
         const batchItems = {};
         matchedItems.forEach(item => {
             if (!batchItems[item.raw]) {
@@ -462,52 +432,71 @@
             }
         });
 
-        // Trigger footer modals in parallel
-        injectFooterModals();
+        // Step C: Execute All Network Requests in Parallel using Promise.all
+        const keysPromise = fetch(`${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`)
+            .then(res => res.json())
+            .catch(() => null);
 
-        // Single Unified API Call: Fetches batch components AND global keys in 1 roundtrip
-        try {
-            const batchUrl = `${BASE_URL}/admin/api/render_component.php?component=batch`;
-            const res = await fetch(batchUrl, {
+        const batchPromise = Object.keys(batchItems).length > 0
+            ? fetch(`${BASE_URL}/admin/api/render_component.php?component=batch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ items: batchItems, uni: uniSlug })
-            });
-            const data = await res.json();
+            }).then(res => res.json()).catch(() => null)
+            : Promise.resolve(null);
 
-            if (data) {
-                // Update keys dictionary
-                if (data.keys && Object.keys(data.keys).length) {
-                    Object.assign(activeKeys, data.keys);
-                    try { sessionStorage.setItem(cacheKeyKeys, JSON.stringify(data.keys)); } catch (e) {}
-                }
+        const modalsPromise = !document.getElementById('counselingFormPopupOverlay')
+            ? fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
+                .then(res => res.text()).catch(() => null)
+            : Promise.resolve(null);
 
-                // 1. Process and render Components into DOM FIRST
-                if (data.results && Object.keys(data.results).length) {
-                    matchedItems.forEach(item => {
-                        const html = data.results[item.raw];
-                        if (html) {
-                            applyRenderedHTML(item, html);
-                        }
-                    });
+        try {
+            // Wait for parallel requests together
+            const [keysData, batchData, modalsHtml] = await Promise.all([
+                keysPromise,
+                batchPromise,
+                modalsPromise
+            ]);
 
-                    // Update session cache
-                    try {
-                        const updatedComps = Object.assign({}, cachedComps || {}, data.results);
-                        sessionStorage.setItem(cacheKeyComponents, JSON.stringify(updatedComps));
-                    } catch (e) {}
-                }
-
-                // 2. Perform full DOM key replacement on the ENTIRE page (including newly injected Banner!)
-                replaceDOMKeys(activeKeys);
-
-                const elapsed = Math.round(performance.now() - startTime);
-                console.log(`✅ [SODE COMPLETED] All components & keys rendered in ${elapsed}ms`);
+            // 1. Process Global Keys
+            if (keysData && keysData.keys) {
+                Object.assign(activeKeys, keysData.keys);
+                try {
+                    localStorage.setItem(storagePrefix + 'keys', JSON.stringify(keysData.keys));
+                } catch (e) {}
             }
+
+            // 2. Render Batch Components (Banner, Courses, News, etc.)
+            if (batchData && batchData.results) {
+                if (batchData.keys) {
+                    Object.assign(activeKeys, batchData.keys);
+                }
+
+                matchedItems.forEach(item => {
+                    const html = batchData.results[item.raw];
+                    if (html) {
+                        applyRenderedHTML(item, html);
+                    }
+                });
+            }
+
+            // 3. Inject Footer Modals
+            if (modalsHtml && modalsHtml.indexOf('sode-modal-overlay') !== -1 && !document.getElementById('counselingFormPopupOverlay')) {
+                const modalWrap = document.createElement('div');
+                modalWrap.id = 'sode-footer-modals-wrap';
+                modalWrap.innerHTML = modalsHtml;
+                document.body.appendChild(modalWrap);
+                runScripts(modalWrap);
+            }
+
+            // 4. Final Key Sweep on Whole Page
+            replaceDOMKeys(activeKeys);
+
+            const duration = Math.round(performance.now() - startTime);
+            console.log(`🚀 [SODE PROMISE.ALL COMPLETE] Full page hydrated in ${duration}ms`);
         } catch (err) {
-            console.error('❌ [SODE ENGINE ERROR]:', err);
+            console.error('❌ [SODE PROMISE.ALL ERROR]:', err);
         } finally {
-            // Guarantee all keys replaced
             replaceDOMKeys(activeKeys);
         }
     }
@@ -534,10 +523,10 @@
 
     // Execute immediately without delay
     if (document.readyState === 'interactive' || document.readyState === 'complete') {
-        runUniversalEngine();
+        executeEngine();
     } else {
-        document.addEventListener('DOMContentLoaded', runUniversalEngine);
-        window.addEventListener('load', runUniversalEngine);
+        document.addEventListener('DOMContentLoaded', executeEngine);
+        window.addEventListener('load', executeEngine);
     }
 })();
 </script>
