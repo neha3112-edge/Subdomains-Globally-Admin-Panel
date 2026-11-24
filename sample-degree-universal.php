@@ -479,19 +479,8 @@ if (!function_exists('sode_sample_degree_render')) {
                 <img src="<?php echo $degree_url; ?>" alt="<?php echo $alt_text; ?>" class="sode-deg-image-only <?php echo $zoom_enabled ? 'sode-deg-trigger' : ''; ?>" data-target="<?php echo $uid; ?>_modal" loading="lazy">
 
             <?php else: ?>
-                <!-- Layout: Modern Card (Default) -->
-                <div class="sode-deg-card">
-                    <div class="sode-deg-card-header">
-                        <div class="sode-deg-title-group">
-                            <h3><?php echo $heading; ?></h3>
-                            <p><?php echo $subtext; ?></p>
-                        </div>
-                        <span class="sode-deg-badge">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                            Verified Sample Format
-                        </span>
-                    </div>
-
+                <!-- Layout: Clean Image Container (Default: Only Sample Degree Image) -->
+                <div class="sode-deg-card" style="padding: 12px; background: transparent; border: none; box-shadow: none;">
                     <div class="sode-deg-img-wrap <?php echo $zoom_enabled ? 'sode-deg-trigger' : ''; ?>" data-target="<?php echo $uid; ?>_modal">
                         <img src="<?php echo $degree_url; ?>" alt="<?php echo $alt_text; ?>" class="sode-deg-img" loading="lazy">
                         <?php if ($zoom_enabled): ?>

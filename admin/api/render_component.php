@@ -123,10 +123,10 @@ if (!empty($params['university']) && empty($params['uni'])) {
 $cache_params = $params;
 unset($cache_params['_t'], $cache_params['t'], $cache_params['_']);
 
-// Cache all display components in Redis (Bumped to v8)
+// Cache all display components in Redis (Bumped to v9)
 $is_cacheable = true;
 
-$cache_key = 'ssr:component:v8:' . md5($component . '|' . json_encode($cache_params));
+$cache_key = 'ssr:component:v9:' . md5($component . '|' . json_encode($cache_params));
 
 if ($is_cacheable && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached_html = Sode_Redis::get($cache_key);
@@ -203,6 +203,9 @@ function sode_render_single_component_internal($component, $params = []) {
         case 'universal_footer':
         case 'sode_footer':
         case 'footer_section':
+        case 'footer_ai_tools':
+        case 'footer_tools':
+        case 'ai_tools_grid':
             echo sode_footer_render($params);
             break;
 
@@ -435,7 +438,7 @@ if ($component === 'batch') {
         foreach ($items as $k => $item) {
             $c_name = is_string($item) ? $item : ($item['component'] ?? $item['tag'] ?? '');
             $c_name = strtolower(trim((string)$c_name));
-            $c_args = is_array($item) ? ($item['params'] ?? $item) : [];
+            $c_args = is_array($item) ? ($item['args'] ?? ($item['params'] ?? $item)) : [];
             if (!empty($params['uni']) && empty($c_args['uni'])) {
                 $c_args['uni'] = $params['uni'];
             }
@@ -443,8 +446,8 @@ if ($component === 'batch') {
                 $c_args['university'] = $params['uni'];
             }
 
-            // Per-component Redis caching (24 hours) - Bumped to v8
-            $item_cache_key = 'ssr:comp:v8:' . md5($c_name . '|' . json_encode($c_args));
+            // Per-component Redis caching (24 hours) - Bumped to v9
+            $item_cache_key = 'ssr:comp:v9:' . md5($c_name . '|' . json_encode($c_args));
             $item_html = null;
             if ($use_redis) {
                 $item_html = Sode_Redis::get($item_cache_key);
@@ -493,7 +496,6 @@ if ($component === 'batch') {
                     $keys_map['{UNIVERSITY_NAME}'] = $u_full;
                     $keys_map['[UNIVERSITY_NAME]'] = $u_full;
                     $keys_map['$UNIVERSITY_NAME$'] = $u_full;
-                    $keys_map['UNIVERSITY_NAME']   = $u_full;
 
                     $keys_map['{MODE}']            = $u_mode;
                     $keys_map['[MODE]']            = $u_mode;

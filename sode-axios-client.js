@@ -27,7 +27,7 @@
     }
 
     const uniSlug = getUniSlug();
-    const storagePrefix = 'sode_v8_' + uniSlug + '_';
+    const storagePrefix = 'sode_v9_' + uniSlug + '_';
     const pagePath = window.location.pathname;
 
     // Known university metadata dictionary for instant 0ms fallback
@@ -55,25 +55,22 @@
 
     const currentYear = new Date().getFullYear().toString();
 
-    // Instant Master Key Replacements
+    // Instant Master Key Replacements (ONLY bracketed/delimited keys to prevent modifying plain text or menus)
     let activeKeys = {
         '{UNIVERSITY_NAME}': uniInfo.name,
         '[UNIVERSITY_NAME]': uniInfo.name,
         '$UNIVERSITY_NAME$': uniInfo.name,
         '{{UNIVERSITY_NAME}}': uniInfo.name,
-        'UNIVERSITY_NAME': uniInfo.name,
 
         '{MODE}': uniInfo.mode,
         '[MODE]': uniInfo.mode,
         '$MODE$': uniInfo.mode,
         '{{MODE}}': uniInfo.mode,
-        'MODE': uniInfo.mode,
 
         '{UNIVERSITY_SHORT_NAME}': uniInfo.short,
         '[UNIVERSITY_SHORT_NAME]': uniInfo.short,
         '$UNIVERSITY_SHORT_NAME$': uniInfo.short,
         '{{UNIVERSITY_SHORT_NAME}}': uniInfo.short,
-        'UNIVERSITY_SHORT_NAME': uniInfo.short,
         '{UNI_SHORT_NAME}': uniInfo.short,
         '[UNI_SHORT_NAME]': uniInfo.short,
         '$UNI_SHORT_NAME$': uniInfo.short,
@@ -293,6 +290,8 @@
         if (item.node && item.node.parentNode) {
             const parent = item.node.parentNode;
             const textVal = item.node.nodeValue;
+            const shortcodeContainer = parent.closest ? parent.closest('.elementor-shortcode, .wp-block-shortcode') : null;
+            if (shortcodeContainer) shortcodeContainer.classList.add('sode-hydrated');
 
             if (textVal.trim() === item.raw.trim()) {
                 const wrapper = document.createElement('div');
@@ -380,36 +379,24 @@
         Object.assign(activeKeys, keys);
 
         const replacements = {};
-        const safeBareKeywords = [
-            'UNIVERSITY_SHORT_NAME_LOWER',
-            'UNIVERSITY_SHORT_NAME',
-            'UNIVERSITY_SLUG',
-            'UNI_SHORT_NAME_LOWER',
-            'UNI_SHORT_NAME',
-            'UNIVERSITY_NAME',
-            'UNI_SLUG',
-            'MODE'
-        ];
 
         Object.entries(activeKeys).forEach(([code, val]) => {
             const strVal = String(val);
-            const raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '').replace(/^\[|\]$/g, '').replace(/^#|#$/g, '');
+            const raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '').replace(/^\[|\]$/g, '').replace(/^#|#$/g, '').trim();
+            if (!raw || raw.length <= 1) return;
 
+            // STRICT: ONLY delimited patterns ({KEY}, [KEY], $KEY$, {{KEY}}) - NEVER bare words!
             [
-                code,
-                `$${raw}$`,
-                `{{${raw}}}`,
                 `{${raw}}`,
                 `[${raw}]`,
-                `#${raw}#`
+                `$${raw}$`,
+                `{{${raw}}}`,
+                `{${raw.toLowerCase()}}`,
+                `[${raw.toLowerCase()}]`,
+                `$${raw.toLowerCase()}$`
             ].forEach(p => {
                 if (p && !replacements[p]) replacements[p] = strVal;
             });
-
-            const upperRaw = raw.toUpperCase();
-            if (safeBareKeywords.includes(upperRaw) && upperRaw === raw) {
-                if (!replacements[upperRaw]) replacements[upperRaw] = strVal;
-            }
         });
 
         const patterns = Object.keys(replacements).sort((a, b) => b.length - a.length);
