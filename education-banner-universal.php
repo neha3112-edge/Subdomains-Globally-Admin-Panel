@@ -336,6 +336,46 @@ function edu_banner_shortcode($atts)
     // Global keys & Dynamic replacements
     $top_heading_text = !empty($uni_data['global_keys']['$BANNER_TOP_TEXT$']) ? $uni_data['global_keys']['$BANNER_TOP_TEXT$'] : (!empty($uni_data['global_keys']['BANNER_TOP_TEXT']) ? $uni_data['global_keys']['BANNER_TOP_TEXT'] : 'Welcome to SODE™ (School of Online and Distance Education)');
 
+    // Direct University Key Replacements ({UNIVERSITY_NAME}, [UNIVERSITY_NAME], {MODE}, [MODE], etc.)
+    $uni_replacements = [
+        '{UNIVERSITY_NAME}'         => $full_uni_name,
+        '[UNIVERSITY_NAME]'         => $full_uni_name,
+        '$UNIVERSITY_NAME$'         => $full_uni_name,
+        '{{UNIVERSITY_NAME}}'       => $full_uni_name,
+        '{university_name}'         => $full_uni_name,
+        '[university_name]'         => $full_uni_name,
+        '$university_name$'         => $full_uni_name,
+        'UNIVERSITY_NAME'           => $full_uni_name,
+
+        '{MODE}'                    => $mode_text,
+        '[MODE]'                    => $mode_text,
+        '$MODE$'                    => $mode_text,
+        '{{MODE}}'                  => $mode_text,
+        '{mode}'                    => $mode_text,
+        '[mode]'                    => $mode_text,
+        '$mode$'                    => $mode_text,
+
+        '{UNIVERSITY_SHORT_NAME}'   => $short_uni_name,
+        '[UNIVERSITY_SHORT_NAME]'   => $short_uni_name,
+        '$UNIVERSITY_SHORT_NAME$'   => $short_uni_name,
+        '{{UNIVERSITY_SHORT_NAME}}' => $short_uni_name,
+        '{UNI_SHORT_NAME}'          => $short_uni_name,
+        '[UNI_SHORT_NAME]'          => $short_uni_name,
+        '$UNI_SHORT_NAME$'          => $short_uni_name,
+        '{UNI}'                     => $short_uni_name,
+        '[UNI]'                     => $short_uni_name,
+        '$UNI$'                     => $short_uni_name,
+
+        '{ADMISSION_LAST_DATE}'     => $db_admission_date,
+        '[ADMISSION_LAST_DATE]'     => $db_admission_date,
+        '$ADMISSION_LAST_DATE$'     => $db_admission_date,
+    ];
+    foreach ($uni_replacements as $uk => $uv) {
+        $heading = str_replace($uk, $uv, $heading);
+        $subheading = str_replace($uk, $uv, $subheading);
+        $description = str_replace($uk, $uv, $description);
+    }
+
     if (!empty($uni_data['global_keys']) && is_array($uni_data['global_keys'])) {
         foreach ($uni_data['global_keys'] as $gk_key => $gk_val) {
             if (is_string($gk_val)) {

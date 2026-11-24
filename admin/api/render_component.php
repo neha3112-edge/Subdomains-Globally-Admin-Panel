@@ -457,9 +457,39 @@ if ($component === 'batch') {
         $db_conn = get_db_connection();
         if ($db_conn) {
             try {
+                // 1. Fetch base global keys table
                 $stmt = $db_conn->query("SELECT key_code, key_value FROM global_keys WHERE is_active = 1");
                 while ($row = $stmt->fetch()) {
                     $keys_map[$row['key_code']] = $row['key_value'];
+                }
+
+                // 2. Fetch university details for {UNIVERSITY_NAME}, {MODE}, etc.
+                if (!empty($uni_slug)) {
+                    $u_stmt = $db_conn->prepare("SELECT * FROM universities WHERE (slug = ? OR LOWER(short_name) = ?) AND is_active = 1 LIMIT 1");
+                    $u_stmt->execute([$uni_slug, strtolower($uni_slug)]);
+                    $u_row = $u_stmt->fetch();
+                    if ($u_row) {
+                        $u_full = $u_row['full_name'] ?? '';
+                        $u_short = strtoupper($u_row['short_name'] ?? '');
+                        $u_mode = $u_row['mode'] ?? 'Online';
+
+                        $keys_map['{UNIVERSITY_NAME}'] = $u_full;
+                        $keys_map['[UNIVERSITY_NAME]'] = $u_full;
+                        $keys_map['$UNIVERSITY_NAME$'] = $u_full;
+                        $keys_map['UNIVERSITY_NAME']   = $u_full;
+
+                        $keys_map['{MODE}']            = $u_mode;
+                        $keys_map['[MODE]']            = $u_mode;
+                        $keys_map['$MODE$']            = $u_mode;
+
+                        $keys_map['{UNIVERSITY_SHORT_NAME}'] = $u_short;
+                        $keys_map['[UNIVERSITY_SHORT_NAME]'] = $u_short;
+                        $keys_map['$UNIVERSITY_SHORT_NAME$'] = $u_short;
+                        $keys_map['{UNI_SHORT_NAME}']        = $u_short;
+                        $keys_map['[UNI_SHORT_NAME]']        = $u_short;
+                        $keys_map['{UNI}']                   = $u_short;
+                        $keys_map['[UNI]']                   = $u_short;
+                    }
                 }
             } catch (Exception $e) {}
         }

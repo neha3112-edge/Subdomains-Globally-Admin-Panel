@@ -6,10 +6,10 @@
  * 100% Client-Side Engine — ZERO PHP plugins required on subdomains.
  * - Auto-detects University from Subdomain URL.
  * - Zero Flash: Synchronously hides unrendered shortcodes before paint.
+ * - Guaranteed Key Replacement: Replaces {UNIVERSITY_NAME}, [UNIVERSITY_NAME],
+ *   {MODE}, [MODE], etc. in both page text AND dynamically injected banners.
  * - Single Unified Network Request: Fetches components & keys together.
  * - Redis-backed server caching & Local Storage 0ms hydration.
- * - Replaces all Global Keys ($KEY$, {KEY}, #LEAD_FORM#, etc.).
- * - Renders all WordPress Shortcodes ([edu_banner], [latest_news], etc.).
  * ====================================================================
  */
 (function () {
@@ -31,6 +31,28 @@
     const cacheKeyKeys = 'sode_keys_' + uniSlug;
     const cacheKeyComponents = 'sode_comps_' + uniSlug;
     console.log('🚀 [SODE UNIVERSAL ENGINE] Initialized for university:', uniSlug);
+
+    // Active keys storage
+    let activeKeys = {
+        '{UNIVERSITY_NAME}': 'Dayananda Sagar University',
+        '[UNIVERSITY_NAME]': 'Dayananda Sagar University',
+        '$UNIVERSITY_NAME$': 'Dayananda Sagar University',
+        'UNIVERSITY_NAME': 'Dayananda Sagar University',
+        '{MODE}': 'Online',
+        '[MODE]': 'Online',
+        '$MODE$': 'Online',
+        'MODE': 'Online',
+        '{UNIVERSITY_SHORT_NAME}': uniSlug.toUpperCase(),
+        '[UNIVERSITY_SHORT_NAME]': uniSlug.toUpperCase(),
+        '$UNIVERSITY_SHORT_NAME$': uniSlug.toUpperCase(),
+        '{UNI_SHORT_NAME}': uniSlug.toUpperCase(),
+        '[UNI_SHORT_NAME]': uniSlug.toUpperCase(),
+        '{UNI}': uniSlug.toUpperCase(),
+        '[UNI]': uniSlug.toUpperCase(),
+        '{UNIVERSITY_SLUG}': uniSlug,
+        '$YEAR$': new Date().getFullYear().toString(),
+        '{YEAR}': new Date().getFullYear().toString()
+    };
 
     // Helper: Execute scripts inside dynamically inserted HTML
     function runScripts(container) {
@@ -102,6 +124,15 @@
     // Helper: Safely insert rendered HTML replacing shortcode node or element
     function applyRenderedHTML(item, html) {
         if (!html) return;
+
+        // Perform instant key replacement on the incoming HTML string directly
+        if (activeKeys) {
+            Object.entries(activeKeys).forEach(([k, v]) => {
+                if (typeof v === 'string' && v.trim() !== '') {
+                    html = html.split(k).join(v);
+                }
+            });
+        }
 
         // If item matched via direct Elementor element container
         if (item.element && item.element.parentNode) {
@@ -207,9 +238,12 @@
         return matchedItems;
     }
 
-    // 4. DOM Global Keys Replacement Engine ($KEY$, {KEY}, #LEAD_FORM#)
+    // 4. DOM Global Keys Replacement Engine ($KEY$, {KEY}, [KEY], #LEAD_FORM#)
     function replaceDOMKeys(keys) {
         if (!keys || !Object.keys(keys).length || !document.body) return;
+
+        // Merge into activeKeys
+        Object.assign(activeKeys, keys);
 
         const replacements = {};
         const safeBareKeywords = [
@@ -219,10 +253,11 @@
             'UNI_SHORT_NAME_LOWER',
             'UNI_SHORT_NAME',
             'UNIVERSITY_NAME',
-            'UNI_SLUG'
+            'UNI_SLUG',
+            'MODE'
         ];
 
-        Object.entries(keys).forEach(([code, val]) => {
+        Object.entries(activeKeys).forEach(([code, val]) => {
             const strVal = String(val);
             const raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '').replace(/^\[|\]$/g, '').replace(/^#|#$/g, '');
 
@@ -231,6 +266,7 @@
                 `$${raw}$`,
                 `{{${raw}}}`,
                 `{${raw}}`,
+                `[${raw}]`,
                 `#${raw}#`
             ].forEach(p => {
                 if (p && !replacements[p]) replacements[p] = strVal;
@@ -319,7 +355,6 @@
         if (isInitialized) return;
         isInitialized = true;
 
-        // Disconnect prehide observer once engine takes over
         if (window.__sodePrehideObserver) {
             window.__sodePrehideObserver.disconnect();
         }
@@ -336,6 +371,10 @@
             if (cStr) cachedComps = JSON.parse(cStr);
         } catch (e) {}
 
+        if (cachedKeys) {
+            Object.assign(activeKeys, cachedKeys);
+        }
+
         const matchedItems = collectShortcodesFromDOM();
 
         // If local cache hit, hydrate immediately (0ms instant render!)
@@ -348,9 +387,8 @@
             console.log('⚡ [SODE 0MS HIT] Components hydrated instantly from local session cache');
         }
 
-        if (cachedKeys) {
-            replaceDOMKeys(cachedKeys);
-        }
+        // Replace keys in current DOM
+        replaceDOMKeys(activeKeys);
 
         // Step B: Prepare unified single API request
         const batchItems = {};
@@ -369,11 +407,6 @@
         // Trigger footer modals in parallel
         injectFooterModals();
 
-        // If no shortcodes and keys are already cached, we are done
-        if (!Object.keys(batchItems).length && cachedKeys) {
-            return;
-        }
-
         // Single Unified API Call: Fetches batch components AND global keys in 1 roundtrip
         try {
             const batchUrl = `${BASE_URL}/admin/api/render_component.php?component=batch`;
@@ -385,13 +418,13 @@
             const data = await res.json();
 
             if (data) {
-                // 1. Process and cache Global Keys
+                // Update keys dictionary
                 if (data.keys && Object.keys(data.keys).length) {
-                    replaceDOMKeys(data.keys);
+                    Object.assign(activeKeys, data.keys);
                     try { sessionStorage.setItem(cacheKeyKeys, JSON.stringify(data.keys)); } catch (e) {}
                 }
 
-                // 2. Process and cache Rendered Components
+                // 1. Process and render Components into DOM FIRST
                 if (data.results && Object.keys(data.results).length) {
                     matchedItems.forEach(item => {
                         const html = data.results[item.raw];
@@ -407,13 +440,17 @@
                     } catch (e) {}
                 }
 
+                // 2. Perform full DOM key replacement on the ENTIRE page (including newly injected Banner!)
+                replaceDOMKeys(activeKeys);
+
                 const elapsed = Math.round(performance.now() - startTime);
                 console.log(`✅ [SODE COMPLETED] All components & keys rendered in ${elapsed}ms`);
             }
         } catch (err) {
             console.error('❌ [SODE ENGINE ERROR]:', err);
         } finally {
-            // Unhide any remaining pending containers
+            // Guarantee all pending containers are visible and keys replaced
+            replaceDOMKeys(activeKeys);
             document.querySelectorAll('[data-sode-pending]').forEach(el => {
                 el.style.opacity = '1';
                 el.removeAttribute('data-sode-pending');
