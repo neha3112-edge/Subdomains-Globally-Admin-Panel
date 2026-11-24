@@ -258,6 +258,20 @@ if (!function_exists('sode_get_university_banner_data')) {
                     return $json['data'];
                 }
             }
+        } elseif (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $api_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $body = curl_exec($ch);
+            curl_close($ch);
+            if ($body) {
+                $json = json_decode($body, true);
+                if (!empty($json['success']) && !empty($json['data'])) {
+                    return $json['data'];
+                }
+            }
         }
 
         return false;

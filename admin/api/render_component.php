@@ -77,8 +77,14 @@ if (file_exists($root_dir . '/sample-degree-universal.php')) {
 
 
 // 2. Resolve Component and Request Parameters
-$component = trim($_GET['component'] ?? ($_POST['component'] ?? 'banner'));
-$params = array_merge($_GET, $_POST);
+$raw_input = file_get_contents('php://input');
+$json_input = !empty($raw_input) ? json_decode($raw_input, true) : [];
+if (!is_array($json_input)) {
+    $json_input = [];
+}
+
+$component = trim($_GET['component'] ?? ($json_input['component'] ?? ($_POST['component'] ?? 'banner')));
+$params = array_merge($_GET, $_POST, $json_input);
 
 if (empty($params['uni']) && empty($params['university'])) {
     $ref = $_SERVER['HTTP_REFERER'] ?? ($_SERVER['HTTP_ORIGIN'] ?? '');
@@ -408,6 +414,7 @@ if ($component === 'batch') {
     if (is_array($items)) {
         foreach ($items as $k => $item) {
             $c_name = is_string($item) ? $item : ($item['component'] ?? $item['tag'] ?? '');
+            $c_name = strtolower(trim((string)$c_name));
             $c_args = is_array($item) ? ($item['params'] ?? $item) : [];
             if (!empty($params['uni']) && empty($c_args['uni'])) {
                 $c_args['uni'] = $params['uni'];
