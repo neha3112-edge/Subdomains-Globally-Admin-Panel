@@ -75,9 +75,11 @@
         })
         .catch(() => null);
 
-    // 3. Early Hero Banner Preload in Parallel (Microsecond 0)
-    let earlyBannerHtmlPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=banner&uni=${encodeURIComponent(uniSlug)}`, { priority: 'high' })
-        .then(res => res.text()).catch(() => null);
+    // 3. Early Hero Banner Preload in Parallel (Microsecond 0 - Homepage only)
+    let earlyBannerHtmlPromise = (pagePath === '/' || pagePath === '')
+        ? fetch(`${BASE_URL}/admin/api/render_component.php?component=banner&uni=${encodeURIComponent(uniSlug)}`, { priority: 'high' })
+            .then(res => res.text()).catch(() => null)
+        : null;
 
     // 4. Early Modals Preload
     const earlyModalsPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
@@ -231,7 +233,6 @@
             localStorage.setItem(storagePrefix + 'comp_' + item.raw, html);
             if (item.name === 'edu_banner' || item.name === 'banner') {
                 localStorage.setItem(storagePrefix + 'hero_banner_' + pagePath, html);
-                localStorage.setItem(storagePrefix + 'latest_hero_banner', html);
             }
         } catch (e) {}
 
@@ -240,6 +241,8 @@
             wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
             wrapper.innerHTML = html;
             item.element.parentNode.replaceChild(wrapper, item.element);
+            item.element = wrapper;
+            item.node = null;
             runScripts(wrapper);
             return;
         }
@@ -260,6 +263,8 @@
                 } else {
                     parent.replaceChild(wrapper, item.node);
                 }
+                item.element = wrapper;
+                item.node = null;
                 runScripts(wrapper);
             } else {
                 const idx = textVal.indexOf(item.raw);
@@ -277,6 +282,8 @@
                     if (afterText) frag.appendChild(document.createTextNode(afterText));
 
                     parent.replaceChild(frag, item.node);
+                    item.element = span;
+                    item.node = null;
                     runScripts(span);
                 }
             }
@@ -425,16 +432,21 @@
         walk(document.body);
     }
 
-    // 7. Instant 0ms Pre-Hydration from LocalStorage
+    // 7. Instant 0ms Pre-Hydration from LocalStorage (Isolated per Shortcode & Page)
     function hydrateFromLocalCache(matchedItems) {
         if (!matchedItems || !matchedItems.length) return false;
         let hydratedCount = 0;
+
+        try {
+            // Clean legacy domain-wide banner key that caused cross-page text pollution
+            localStorage.removeItem(storagePrefix + 'latest_hero_banner');
+        } catch (e) {}
 
         matchedItems.forEach(item => {
             try {
                 let cachedHtml = localStorage.getItem(storagePrefix + 'comp_' + item.raw);
                 if (!cachedHtml && (item.name === 'edu_banner' || item.name === 'banner')) {
-                    cachedHtml = localStorage.getItem(storagePrefix + 'hero_banner_' + pagePath) || localStorage.getItem(storagePrefix + 'latest_hero_banner');
+                    cachedHtml = localStorage.getItem(storagePrefix + 'hero_banner_' + pagePath);
                 }
 
                 if (cachedHtml) {
@@ -451,52 +463,62 @@
         return false;
     }
 
-    // 8. Dedicated Priority Hero Banner Pipeline
-    let isBannerRendered = false;
+    // 8. Dedicated Priority Hero Banner Pipeline (Per-page isolated & Instant 0ms Paint)
+    const hydratedBanners = new Set();
     function renderBannerPriority(bannerItem) {
-        if (!bannerItem || isBannerRendered) return;
+        if (!bannerItem || hydratedBanners.has(bannerItem.raw)) return;
+        hydratedBanners.add(bannerItem.raw);
 
-        // Step 1: Try Instant 0ms Local Cache first
+        // Step 1: Isolate Cache Strictly by URL pagePath and raw shortcode (NEVER leak homepage banner to inner pages!)
         const pageKey = storagePrefix + 'hero_banner_' + pagePath;
         const compKey = storagePrefix + 'comp_' + bannerItem.raw;
-        const latestKey = storagePrefix + 'latest_hero_banner';
+        const cached = localStorage.getItem(compKey) || localStorage.getItem(pageKey);
 
-        const cached = localStorage.getItem(pageKey) || localStorage.getItem(compKey) || localStorage.getItem(latestKey);
         if (cached) {
+            // Instant 0ms paint from local cache
             applyRenderedHTML(bannerItem, cached);
-            isBannerRendered = true;
             replaceDOMKeys(activeKeys);
-        }
-
-        // Step 2: Trigger Dedicated High-Priority Banner Fetch in Parallel
-        const parsed = parseShortcode(bannerItem.raw) || { tag: 'banner', params: { uni: uniSlug } };
-        const hasCustomParams = Object.keys(parsed.params).some(k => k !== 'uni' && k !== 'university');
-
-        if (!hasCustomParams && earlyBannerHtmlPromise) {
-            earlyBannerHtmlPromise.then(html => {
-                if (html && html.indexOf('edu-banner') !== -1) {
-                    applyRenderedHTML(bannerItem, html);
-                    isBannerRendered = true;
-                    replaceDOMKeys(activeKeys);
-                }
-            });
         } else {
-            fetch(`${BASE_URL}/admin/api/render_component.php?component=banner`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parsed.params),
-                priority: 'high'
-            })
-            .then(res => res.text())
-            .then(html => {
-                if (html && html.indexOf('edu-banner') !== -1) {
+            // Wipe raw shortcode text IMMEDIATELY (0ms) so user NEVER sees [edu_banner...] on screen
+            const placeholder = document.createElement('div');
+            placeholder.className = 'sode-rendered-component sode-edu_banner sode-hydrated';
+            placeholder.style.cssText = 'min-height:480px; width:100%;';
+            if (bannerItem.node && bannerItem.node.parentNode) {
+                const parent = bannerItem.node.parentNode;
+                const shortcodeContainer = parent.closest ? parent.closest('.elementor-shortcode, .wp-block-shortcode') : null;
+                if (shortcodeContainer) shortcodeContainer.classList.add('sode-hydrated');
+                parent.replaceChild(placeholder, bannerItem.node);
+                bannerItem.element = placeholder;
+                bannerItem.node = null;
+            } else if (bannerItem.element) {
+                bannerItem.element.classList.add('sode-hydrated');
+            }
+        }
+
+        // Step 2: Trigger High-Priority Fetch in Parallel (Stale-While-Revalidate)
+        const parsed = parseShortcode(bannerItem.raw) || { tag: 'banner', params: { uni: uniSlug } };
+
+        fetch(`${BASE_URL}/admin/api/render_component.php?component=banner`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed.params),
+            priority: 'high'
+        })
+        .then(res => res.text())
+        .then(html => {
+            if (html && html.indexOf('edu-banner') !== -1) {
+                // If content is new or differed from old cache, update seamlessly
+                if (!cached || html !== cached) {
                     applyRenderedHTML(bannerItem, html);
-                    isBannerRendered = true;
                     replaceDOMKeys(activeKeys);
                 }
-            })
-            .catch(() => {});
-        }
+                try {
+                    localStorage.setItem(compKey, html);
+                    localStorage.setItem(pageKey, html);
+                } catch (e) {}
+            }
+        })
+        .catch(() => {});
     }
 
     // 9. Modal Management System (Counseling, Brochure, Compare, and Legal Modals)
@@ -827,10 +849,10 @@
 
     // 13. Instant Hero Mutation Detection
     function scanAndHydrateBanner() {
-        if (isBannerRendered || !document.body) return;
+        if (!document.body && !document.documentElement) return;
         const items = collectShortcodes();
         const bItem = items.find(it => it.name === 'edu_banner' || it.name === 'banner');
-        if (bItem) {
+        if (bItem && !hydratedBanners.has(bItem.raw)) {
             renderBannerPriority(bItem);
         }
     }
@@ -838,7 +860,7 @@
     scanAndHydrateBanner();
 
     const observer = new MutationObserver(function () {
-        if (!isBannerRendered) {
+        if (hydratedBanners.size === 0) {
             scanAndHydrateBanner();
         }
         if (!isBatchExecuting && document.body) {

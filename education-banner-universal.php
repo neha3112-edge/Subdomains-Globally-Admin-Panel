@@ -300,7 +300,7 @@ function edu_banner_shortcode($atts)
 
     $heading = stripslashes(trim((string) ($atts['heading'] ?? '')));
     $subheading = stripslashes(trim((string) ($atts['subheading'] ?? '')));
-    $description = stripslashes(trim((string) ($atts['description'] ?? '')));
+    $description = stripslashes(trim((string) ($atts['description'] ?? ($atts['desc'] ?? ''))));
     $audio_url = !empty($atts['audio_url']) ? esc_url($atts['audio_url']) : '';
     $video_url = !empty($atts['video_url']) ? esc_url($atts['video_url']) : '';
     $brochure_btn_class = !empty($atts['brochure_btn_class']) ? sanitize_html_class($atts['brochure_btn_class']) : 'download-brochure';
