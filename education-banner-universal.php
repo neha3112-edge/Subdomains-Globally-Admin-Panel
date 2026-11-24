@@ -431,7 +431,7 @@ function edu_banner_shortcode($atts)
     <!-- ======================================================
          STYLES  (scoped to uid so multiple banners are safe)
          ====================================================== -->
-    <style>
+    <style id="<?php echo $uid; ?>-styles" data-nowprocket="1" data-no-optimize="1">
         /* ----- RESET ----- */
         #<?php echo $uid; ?> *,
         #<?php echo $uid; ?> *::before,

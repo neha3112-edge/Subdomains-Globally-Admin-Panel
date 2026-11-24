@@ -4,54 +4,60 @@
 <!-- Location: Header or Footer (Run Everywhere) -->
 <!-- ==================================================== -->
 
-<!-- Anti-Flicker Pre-hide Style: Prevents raw shortcode text flashes before hydration -->
-<style id="sode-prehide-style">
-[data-sode-pending="1"],
-.elementor-shortcode:not(.sode-hydrated),
-.elementor-widget-shortcode:not(.sode-hydrated) {
-    opacity: 0 !important;
-    transition: opacity 0.2s ease-in;
+<!-- 1. Safe Anti-Flash: Hides raw shortcode text without collapsing or hiding sections -->
+<style id="sode-anti-flash" data-nowprocket="1" data-no-optimize="1">
+.elementor-shortcode:not(.sode-hydrated) {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    color: transparent !important;
 }
 .sode-rendered-component,
-.sode-rendered-inline,
-.sode-hydrated {
+.sode-rendered-component * {
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
     opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 2. Core Banner Layout Armor: Prevents WP Rocket CSS stripping & broken layouts */
+.edu-banner-desktop {
+    display: block !important;
+    width: 100% !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
+    min-height: 520px !important;
+}
+.edu-banner-desktop-inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 1200px !important;
+    max-width: 90% !important;
+    margin: 0 auto !important;
+    padding: 40px 0 !important;
+    gap: 60px !important;
+}
+.edu-banner-left {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+}
+.edu-banner-right {
+    flex: 0 0 380px !important;
+    width: 380px !important;
+    max-width: 100% !important;
+}
+@media (max-width: 768px) {
+    .edu-banner-desktop { display: none !important; }
+    .edu-banner-mobile { display: block !important; width: 100% !important; }
 }
 </style>
 
-<!-- Synchronous Prehide Observer: Catches shortcode elements BEFORE the browser paints them -->
-<script id="sode-prehide-observer" data-nowprocket="1" data-no-optimize="1" data-cfasync="false" class="nowprocket">
-(function(){
-    if (typeof window === 'undefined') return;
-    var tags = ['[edu_banner', '[latest_news', '[university_', '[courses', '[eligibility', '[sample_degree', '[custom_lead_form', '[lead_form', '[syllabus', '[course_fees'];
-    function checkNode(n) {
-        if (n.nodeType === 1) {
-            var txt = n.textContent || '';
-            for (var i = 0; i < tags.length; i++) {
-                if (txt.indexOf(tags[i]) !== -1) {
-                    n.setAttribute('data-sode-pending', '1');
-                    n.style.opacity = '0';
-                    break;
-                }
-            }
-        }
-    }
-    if (window.MutationObserver) {
-        var obs = new MutationObserver(function(mutations) {
-            for (var i = 0; i < mutations.length; i++) {
-                var added = mutations[i].addedNodes;
-                for (var j = 0; j < added.length; j++) {
-                    checkNode(added[j]);
-                }
-            }
-        });
-        obs.observe(document.documentElement, { childList: true, subtree: true });
-        window.__sodePrehideObserver = obs;
-    }
-})();
-</script>
-
-<!-- SODE Universal Engine (Unified 1-Roundtrip Engine, Exempted from WP Rocket & LiteSpeed Delay JS) -->
+<!-- 3. SODE Universal Engine (Unified 1-Roundtrip Engine, Exempted from WP Rocket & LiteSpeed Delay JS) -->
 <script id="sode-universal-engine" data-nowprocket="1" data-no-optimize="1" data-cfasync="false" class="nowprocket">
 (function () {
     'use strict';
@@ -180,7 +186,13 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
             wrapper.innerHTML = html;
-            item.element.parentNode.replaceChild(wrapper, item.element);
+            wrapper.style.opacity = '1';
+            wrapper.style.visibility = 'visible';
+            wrapper.style.display = 'block';
+
+            const p = item.element.parentNode;
+            p.replaceChild(wrapper, item.element);
+            if (p.style) p.style.opacity = '1';
             runScripts(wrapper);
             return;
         }
@@ -194,11 +206,17 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
                 wrapper.innerHTML = html;
+                wrapper.style.opacity = '1';
+                wrapper.style.visibility = 'visible';
+                wrapper.style.display = 'block';
 
                 if ((parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
-                    parent.parentNode.replaceChild(wrapper, parent);
+                    const grandParent = parent.parentNode;
+                    grandParent.replaceChild(wrapper, parent);
+                    if (grandParent.style) grandParent.style.opacity = '1';
                 } else {
                     parent.replaceChild(wrapper, item.node);
+                    if (parent.style) parent.style.opacity = '1';
                 }
                 runScripts(wrapper);
             } else {
@@ -210,6 +228,8 @@
                     const span = document.createElement('span');
                     span.className = 'sode-rendered-inline sode-' + item.name + ' sode-hydrated';
                     span.innerHTML = html;
+                    span.style.opacity = '1';
+                    span.style.visibility = 'visible';
 
                     const frag = document.createDocumentFragment();
                     if (beforeText) frag.appendChild(document.createTextNode(beforeText));
@@ -217,6 +237,7 @@
                     if (afterText) frag.appendChild(document.createTextNode(afterText));
 
                     parent.replaceChild(frag, item.node);
+                    if (parent.style) parent.style.opacity = '1';
                     runScripts(span);
                 }
             }
@@ -396,10 +417,6 @@
         if (isInitialized) return;
         isInitialized = true;
 
-        if (window.__sodePrehideObserver) {
-            window.__sodePrehideObserver.disconnect();
-        }
-
         const startTime = performance.now();
 
         // Step A: Instant Local Hydration (0ms from SessionStorage)
@@ -490,12 +507,8 @@
         } catch (err) {
             console.error('❌ [SODE ENGINE ERROR]:', err);
         } finally {
-            // Guarantee all pending containers are visible and keys replaced
+            // Guarantee all keys replaced
             replaceDOMKeys(activeKeys);
-            document.querySelectorAll('[data-sode-pending]').forEach(el => {
-                el.style.opacity = '1';
-                el.removeAttribute('data-sode-pending');
-            });
         }
     }
 

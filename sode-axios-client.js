@@ -5,7 +5,7 @@
  * 
  * 100% Client-Side Engine — ZERO PHP plugins required on subdomains.
  * - Auto-detects University from Subdomain URL.
- * - Zero Flash: Synchronously hides unrendered shortcodes before paint.
+ * - Robust Layout Armor: Immune to WP Rocket CSS purging & cache delay.
  * - Guaranteed Key Replacement: Replaces {UNIVERSITY_NAME}, [UNIVERSITY_NAME],
  *   {MODE}, [MODE], etc. in both page text AND dynamically injected banners.
  * - Single Unified Network Request: Fetches components & keys together.
@@ -32,7 +32,7 @@
     const cacheKeyComponents = 'sode_comps_' + uniSlug;
     console.log('🚀 [SODE UNIVERSAL ENGINE] Initialized for university:', uniSlug);
 
-    // Active keys storage
+    // Active keys storage with instant local fallbacks
     let activeKeys = {
         '{UNIVERSITY_NAME}': 'Dayananda Sagar University',
         '[UNIVERSITY_NAME]': 'Dayananda Sagar University',
@@ -139,7 +139,13 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
             wrapper.innerHTML = html;
-            item.element.parentNode.replaceChild(wrapper, item.element);
+            wrapper.style.opacity = '1';
+            wrapper.style.visibility = 'visible';
+            wrapper.style.display = 'block';
+
+            const p = item.element.parentNode;
+            p.replaceChild(wrapper, item.element);
+            if (p.style) p.style.opacity = '1';
             runScripts(wrapper);
             return;
         }
@@ -153,11 +159,17 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
                 wrapper.innerHTML = html;
+                wrapper.style.opacity = '1';
+                wrapper.style.visibility = 'visible';
+                wrapper.style.display = 'block';
 
                 if ((parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
-                    parent.parentNode.replaceChild(wrapper, parent);
+                    const grandParent = parent.parentNode;
+                    grandParent.replaceChild(wrapper, parent);
+                    if (grandParent.style) grandParent.style.opacity = '1';
                 } else {
                     parent.replaceChild(wrapper, item.node);
+                    if (parent.style) parent.style.opacity = '1';
                 }
                 runScripts(wrapper);
             } else {
@@ -169,6 +181,8 @@
                     const span = document.createElement('span');
                     span.className = 'sode-rendered-inline sode-' + item.name + ' sode-hydrated';
                     span.innerHTML = html;
+                    span.style.opacity = '1';
+                    span.style.visibility = 'visible';
 
                     const frag = document.createDocumentFragment();
                     if (beforeText) frag.appendChild(document.createTextNode(beforeText));
@@ -176,6 +190,7 @@
                     if (afterText) frag.appendChild(document.createTextNode(afterText));
 
                     parent.replaceChild(frag, item.node);
+                    if (parent.style) parent.style.opacity = '1';
                     runScripts(span);
                 }
             }
@@ -355,10 +370,6 @@
         if (isInitialized) return;
         isInitialized = true;
 
-        if (window.__sodePrehideObserver) {
-            window.__sodePrehideObserver.disconnect();
-        }
-
         const startTime = performance.now();
 
         // Step A: Instant Local Hydration (0ms from SessionStorage)
@@ -449,12 +460,8 @@
         } catch (err) {
             console.error('❌ [SODE ENGINE ERROR]:', err);
         } finally {
-            // Guarantee all pending containers are visible and keys replaced
+            // Guarantee all keys replaced
             replaceDOMKeys(activeKeys);
-            document.querySelectorAll('[data-sode-pending]').forEach(el => {
-                el.style.opacity = '1';
-                el.removeAttribute('data-sode-pending');
-            });
         }
     }
 

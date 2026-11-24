@@ -693,7 +693,7 @@ if (!function_exists('sode_courses_tabs_render')) {
             </div>
         </div>
 
-        <style>
+        <style data-nowprocket="1" data-no-optimize="1">
             #<?php echo esc_attr($unique_id); ?>.sode-courses-wrapper {
                 width: 100%;
                 max-width: 1240px;
@@ -1653,7 +1653,7 @@ if (!function_exists('sode_courses_eligibility_table_render')) {
             }
         </script>
 
-        <style>
+        <style data-nowprocket="1" data-no-optimize="1">
             #<?php echo esc_attr($table_id); ?>.sode-eligibility-table-wrapper {
                 width: 100%;
                 max-width: 100%;
@@ -2066,7 +2066,7 @@ if (!function_exists('sode_university_programs_table_render')) {
             </div>
         </div>
 
-        <style>
+        <style data-nowprocket="1" data-no-optimize="1">
             #<?php echo esc_attr($table_id); ?>.sode-programs-table-wrapper {
                 width: 100%;
                 margin: 0px;
