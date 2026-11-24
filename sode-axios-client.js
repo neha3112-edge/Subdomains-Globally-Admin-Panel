@@ -1,18 +1,15 @@
 /**
  * ====================================================================
- * SODE Central Universal Client Engine (Pure JavaScript & Fetch)
+ * SODE Central Universal Client Engine (High Performance & Zero Flash)
  * File: sode-axios-client.js
  * 
  * 100% Client-Side Engine — ZERO PHP plugins required on subdomains.
  * - Auto-detects University from Subdomain URL.
+ * - Zero Flash: Synchronously hides unrendered shortcodes before paint.
+ * - Single Unified Network Request: Fetches components & keys together.
+ * - Redis-backed server caching & Local Storage 0ms hydration.
  * - Replaces all Global Keys ($KEY$, {KEY}, #LEAD_FORM#, etc.).
- * - Detects and Server-Side Renders (SSR) all WordPress Shortcodes:
- *   [edu_banner], [latest_news], [university_courses],
- *   [university_courses_list], [university_eligibility_table],
- *   [sample_degree], [course_fees], [syllabus], etc.
- * - Injects Counseling Modals, Popups, and WhatsApp Widgets.
- * - Zero delay: Runs instantly on page load without waiting for scroll.
- * - Caches in SessionStorage for 0ms lightning-fast page transitions.
+ * - Renders all WordPress Shortcodes ([edu_banner], [latest_news], etc.).
  * ====================================================================
  */
 (function () {
@@ -32,7 +29,8 @@
 
     const uniSlug = getUniSlug();
     const cacheKeyKeys = 'sode_keys_' + uniSlug;
-    console.log('🚀 [SODE UNIVERSAL ENGINE] Active for university:', uniSlug);
+    const cacheKeyComponents = 'sode_comps_' + uniSlug;
+    console.log('🚀 [SODE UNIVERSAL ENGINE] Initialized for university:', uniSlug);
 
     // Helper: Execute scripts inside dynamically inserted HTML
     function runScripts(container) {
@@ -75,7 +73,6 @@
     function parseShortcode(raw) {
         if (!raw) return null;
 
-        // Normalize smart quotes and HTML entities
         const cleaned = raw
             .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
             .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
@@ -102,174 +99,117 @@
         return { tag, params };
     }
 
-    // 3. Scan DOM for Raw Shortcodes & Batch Render
-    let isProcessing = false;
-    async function processShortcodes() {
-        if (!document.body || isProcessing) return;
-        isProcessing = true;
+    // Helper: Safely insert rendered HTML replacing shortcode node or element
+    function applyRenderedHTML(item, html) {
+        if (!html) return;
 
-        try {
-            const shortcodeRegex = /\[([a-zA-Z0-9_-]+)([\s\S]*?)\]/g;
-            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-            const matchedItems = [];
-            let node;
-
-            while ((node = walker.nextNode())) {
-                const parent = node.parentNode;
-                if (!parent) continue;
-                const tag = parent.tagName;
-                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'NOSCRIPT') continue;
-
-                const val = node.nodeValue;
-                if (val && val.indexOf('[') !== -1 && val.indexOf(']') !== -1) {
-                    let match;
-                    shortcodeRegex.lastIndex = 0;
-                    while ((match = shortcodeRegex.exec(val)) !== null) {
-                        const shortcodeName = match[1].toLowerCase();
-                        if (knownShortcodes.includes(shortcodeName)) {
-                            matchedItems.push({
-                                node: node,
-                                raw: match[0],
-                                name: shortcodeName
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Also check Elementor shortcode containers directly
-            const elementorWidgets = document.querySelectorAll('.elementor-shortcode, .elementor-widget-shortcode .elementor-widget-container');
-            elementorWidgets.forEach(el => {
-                if (el.dataset.sodeProcessed) return;
-                const txt = el.textContent.trim();
-                if (txt.startsWith('[') && txt.endsWith(']')) {
-                    const tagMatch = txt.match(/^\[([a-zA-Z0-9_-]+)/);
-                    if (tagMatch) {
-                        const name = tagMatch[1].toLowerCase();
-                        if (knownShortcodes.includes(name)) {
-                            matchedItems.push({
-                                element: el,
-                                raw: txt,
-                                name: name
-                            });
-                            el.dataset.sodeProcessed = '1';
-                        }
-                    }
-                }
-            });
-
-            if (!matchedItems.length) {
-                isProcessing = false;
-                return;
-            }
-
-            console.log(`🔎 [SODE] Found ${matchedItems.length} shortcode(s) in DOM:`, matchedItems.map(m => m.name));
-
-            // Prepare batch request payload
-            const batchItems = {};
-            matchedItems.forEach(item => {
-                if (!batchItems[item.raw]) {
-                    const parsed = parseShortcode(item.raw);
-                    if (parsed) {
-                        batchItems[item.raw] = {
-                            component: parsed.tag,
-                            params: parsed.params
-                        };
-                    }
-                }
-            });
-
-            if (!Object.keys(batchItems).length) {
-                isProcessing = false;
-                return;
-            }
-
-            // Send Batch Render API Call
-            const batchUrl = `${BASE_URL}/admin/api/render_component.php?component=batch`;
-            let responseData = null;
-
-            try {
-                if (typeof axios !== 'undefined') {
-                    const res = await axios.post(batchUrl, { items: batchItems, uni: uniSlug });
-                    responseData = res.data;
-                } else {
-                    const res = await fetch(batchUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ items: batchItems, uni: uniSlug })
-                    });
-                    responseData = await res.json();
-                }
-            } catch (netErr) {
-                console.error('❌ [SODE BATCH NETWORK ERROR]:', netErr);
-            }
-
-            if (responseData && responseData.results) {
-                console.log('✅ [SODE BATCH SUCCESS] Rendered Components Received:', Object.keys(responseData.results).length);
-
-                matchedItems.forEach(item => {
-                    const html = responseData.results[item.raw];
-                    if (!html) return;
-
-                    // If item matched via direct Elementor element container
-                    if (item.element && item.element.parentNode) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'sode-rendered-component sode-' + item.name;
-                        wrapper.innerHTML = html;
-                        item.element.parentNode.replaceChild(wrapper, item.element);
-                        runScripts(wrapper);
-                        return;
-                    }
-
-                    // If item matched via TextNode
-                    if (item.node && item.node.parentNode) {
-                        const parent = item.node.parentNode;
-                        const textVal = item.node.nodeValue;
-
-                        // Case A: TextNode ONLY contains the shortcode
-                        if (textVal.trim() === item.raw.trim()) {
-                            const wrapper = document.createElement('div');
-                            wrapper.className = 'sode-rendered-component sode-' + item.name;
-                            wrapper.innerHTML = html;
-
-                            // If alone inside a wrapper paragraph or div, replace parent cleanly
-                            if ((parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
-                                parent.parentNode.replaceChild(wrapper, parent);
-                            } else {
-                                parent.replaceChild(wrapper, item.node);
-                            }
-                            runScripts(wrapper);
-                        } else {
-                            // Case B: Shortcode is INLINE inside surrounding text
-                            const idx = textVal.indexOf(item.raw);
-                            if (idx !== -1) {
-                                const beforeText = textVal.substring(0, idx);
-                                const afterText = textVal.substring(idx + item.raw.length);
-
-                                const span = document.createElement('span');
-                                span.className = 'sode-rendered-inline sode-' + item.name;
-                                span.innerHTML = html;
-
-                                const frag = document.createDocumentFragment();
-                                if (beforeText) frag.appendChild(document.createTextNode(beforeText));
-                                frag.appendChild(span);
-                                if (afterText) frag.appendChild(document.createTextNode(afterText));
-
-                                parent.replaceChild(frag, item.node);
-                                runScripts(span);
-                            }
-                        }
-                    }
-                });
-            }
-        } finally {
-            isProcessing = false;
+        // If item matched via direct Elementor element container
+        if (item.element && item.element.parentNode) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
+            wrapper.innerHTML = html;
+            item.element.parentNode.replaceChild(wrapper, item.element);
+            runScripts(wrapper);
+            return;
         }
+
+        // If item matched via TextNode
+        if (item.node && item.node.parentNode) {
+            const parent = item.node.parentNode;
+            const textVal = item.node.nodeValue;
+
+            if (textVal.trim() === item.raw.trim()) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
+                wrapper.innerHTML = html;
+
+                if ((parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
+                    parent.parentNode.replaceChild(wrapper, parent);
+                } else {
+                    parent.replaceChild(wrapper, item.node);
+                }
+                runScripts(wrapper);
+            } else {
+                const idx = textVal.indexOf(item.raw);
+                if (idx !== -1) {
+                    const beforeText = textVal.substring(0, idx);
+                    const afterText = textVal.substring(idx + item.raw.length);
+
+                    const span = document.createElement('span');
+                    span.className = 'sode-rendered-inline sode-' + item.name + ' sode-hydrated';
+                    span.innerHTML = html;
+
+                    const frag = document.createDocumentFragment();
+                    if (beforeText) frag.appendChild(document.createTextNode(beforeText));
+                    frag.appendChild(span);
+                    if (afterText) frag.appendChild(document.createTextNode(afterText));
+
+                    parent.replaceChild(frag, item.node);
+                    runScripts(span);
+                }
+            }
+        }
+    }
+
+    // 3. Collect all shortcodes currently in the DOM
+    function collectShortcodesFromDOM() {
+        if (!document.body) return [];
+
+        const shortcodeRegex = /\[([a-zA-Z0-9_-]+)([\s\S]*?)\]/g;
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        const matchedItems = [];
+        let node;
+
+        while ((node = walker.nextNode())) {
+            const parent = node.parentNode;
+            if (!parent) continue;
+            const tag = parent.tagName;
+            if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'NOSCRIPT') continue;
+
+            const val = node.nodeValue;
+            if (val && val.indexOf('[') !== -1 && val.indexOf(']') !== -1) {
+                let match;
+                shortcodeRegex.lastIndex = 0;
+                while ((match = shortcodeRegex.exec(val)) !== null) {
+                    const shortcodeName = match[1].toLowerCase();
+                    if (knownShortcodes.includes(shortcodeName)) {
+                        matchedItems.push({
+                            node: node,
+                            raw: match[0],
+                            name: shortcodeName
+                        });
+                    }
+                }
+            }
+        }
+
+        // Also check Elementor shortcode containers directly
+        const elementorWidgets = document.querySelectorAll('.elementor-shortcode, .elementor-widget-shortcode .elementor-widget-container');
+        elementorWidgets.forEach(el => {
+            if (el.dataset.sodeProcessed) return;
+            const txt = el.textContent.trim();
+            if (txt.startsWith('[') && txt.endsWith(']')) {
+                const tagMatch = txt.match(/^\[([a-zA-Z0-9_-]+)/);
+                if (tagMatch) {
+                    const name = tagMatch[1].toLowerCase();
+                    if (knownShortcodes.includes(name)) {
+                        matchedItems.push({
+                            element: el,
+                            raw: txt,
+                            name: name
+                        });
+                        el.dataset.sodeProcessed = '1';
+                    }
+                }
+            }
+        });
+
+        return matchedItems;
     }
 
     // 4. DOM Global Keys Replacement Engine ($KEY$, {KEY}, #LEAD_FORM#)
     function replaceDOMKeys(keys) {
-        if (!keys || !Object.keys(keys).length) return;
+        if (!keys || !Object.keys(keys).length || !document.body) return;
 
         const replacements = {};
         const safeBareKeywords = [
@@ -352,9 +292,7 @@
             }
         }
 
-        if (document.body) {
-            walk(document.body);
-        }
+        walk(document.body);
     }
 
     // 5. Inject Footer Modals & Widgets
@@ -371,89 +309,143 @@
                 modalWrap.innerHTML = html;
                 document.body.appendChild(modalWrap);
                 runScripts(modalWrap);
-                console.log('✅ [SODE] Popup modals injected into DOM');
             }
         } catch (e) {}
     }
 
-    // 6. Main Orchestrator
+    // 6. Unified High-Performance Orchestrator
     let isInitialized = false;
-    async function initSodeUniversalEngine() {
-        if (isInitialized) {
-            // Re-check for any lazy-loaded DOM elements or late shortcodes
-            processShortcodes();
-            return;
-        }
+    async function runUniversalEngine() {
+        if (isInitialized) return;
         isInitialized = true;
-        console.log('⚡ [SODE] Executing Universal Engine instantly...');
 
-        // Step 1: Check SessionStorage or fetch Global Keys
-        let keys = null;
+        // Disconnect prehide observer once engine takes over
+        if (window.__sodePrehideObserver) {
+            window.__sodePrehideObserver.disconnect();
+        }
+
+        const startTime = performance.now();
+
+        // Step A: Instant Local Hydration (0ms from SessionStorage)
+        let cachedKeys = null;
+        let cachedComps = null;
         try {
-            const cached = sessionStorage.getItem(cacheKeyKeys);
-            if (cached) {
-                keys = JSON.parse(cached);
-                console.log('⚡ [SODE CACHE HIT] Global keys loaded in 0ms');
-            }
+            const kStr = sessionStorage.getItem(cacheKeyKeys);
+            const cStr = sessionStorage.getItem(cacheKeyComponents);
+            if (kStr) cachedKeys = JSON.parse(kStr);
+            if (cStr) cachedComps = JSON.parse(cStr);
         } catch (e) {}
 
-        if (!keys) {
-            try {
-                const apiUrl = `${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`;
-                const res = await fetch(apiUrl);
-                const data = await res.json();
-                if (data && data.keys) {
-                    keys = data.keys;
-                    try { sessionStorage.setItem(cacheKeyKeys, JSON.stringify(keys)); } catch (e) {}
-                    console.log('✅ [SODE SUCCESS] Global Keys Fetched:', Object.keys(keys).length);
+        const matchedItems = collectShortcodesFromDOM();
+
+        // If local cache hit, hydrate immediately (0ms instant render!)
+        if (cachedComps && matchedItems.length) {
+            matchedItems.forEach(item => {
+                if (cachedComps[item.raw]) {
+                    applyRenderedHTML(item, cachedComps[item.raw]);
                 }
-            } catch (err) {
-                console.error('❌ [SODE KEY ERROR]:', err);
-            }
+            });
+            console.log('⚡ [SODE 0MS HIT] Components hydrated instantly from local session cache');
         }
 
-        // Step 2: Replace text keys in DOM ($KEY$, {KEY}, #LEAD_FORM#)
-        if (keys) {
-            replaceDOMKeys(keys);
+        if (cachedKeys) {
+            replaceDOMKeys(cachedKeys);
         }
 
-        // Step 3: Render all unparsed shortcodes in DOM ([edu_banner], [university_courses], etc.)
-        await processShortcodes();
-
-        // Step 4: Inject footer popups
-        injectFooterModals();
-
-        // Step 5: Attach Modal Click Triggers
-        document.addEventListener('click', function (e) {
-            const target = e.target.closest('.applynow, .sode-apply-btn, [href="#custom_lead_form"], [href="#apply"]');
-            if (target) {
-                e.preventDefault();
-                const overlay = document.getElementById('counselingFormPopupOverlay');
-                if (overlay) overlay.classList.add('active');
-            }
-            if (e.target.closest('.sode-modal-close, .sode-modal-overlay')) {
-                if (e.target.classList.contains('sode-modal-overlay') || e.target.closest('.sode-modal-close')) {
-                    document.querySelectorAll('.sode-modal-overlay').forEach(o => o.classList.remove('active'));
+        // Step B: Prepare unified single API request
+        const batchItems = {};
+        matchedItems.forEach(item => {
+            if (!batchItems[item.raw]) {
+                const parsed = parseShortcode(item.raw);
+                if (parsed) {
+                    batchItems[item.raw] = {
+                        component: parsed.tag,
+                        params: parsed.params
+                    };
                 }
             }
         });
 
-        // Global apply modal helper
-        window.openApplyModal = function () {
+        // Trigger footer modals in parallel
+        injectFooterModals();
+
+        // If no shortcodes and keys are already cached, we are done
+        if (!Object.keys(batchItems).length && cachedKeys) {
+            return;
+        }
+
+        // Single Unified API Call: Fetches batch components AND global keys in 1 roundtrip
+        try {
+            const batchUrl = `${BASE_URL}/admin/api/render_component.php?component=batch`;
+            const res = await fetch(batchUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: batchItems, uni: uniSlug })
+            });
+            const data = await res.json();
+
+            if (data) {
+                // 1. Process and cache Global Keys
+                if (data.keys && Object.keys(data.keys).length) {
+                    replaceDOMKeys(data.keys);
+                    try { sessionStorage.setItem(cacheKeyKeys, JSON.stringify(data.keys)); } catch (e) {}
+                }
+
+                // 2. Process and cache Rendered Components
+                if (data.results && Object.keys(data.results).length) {
+                    matchedItems.forEach(item => {
+                        const html = data.results[item.raw];
+                        if (html) {
+                            applyRenderedHTML(item, html);
+                        }
+                    });
+
+                    // Update session cache
+                    try {
+                        const updatedComps = Object.assign({}, cachedComps || {}, data.results);
+                        sessionStorage.setItem(cacheKeyComponents, JSON.stringify(updatedComps));
+                    } catch (e) {}
+                }
+
+                const elapsed = Math.round(performance.now() - startTime);
+                console.log(`✅ [SODE COMPLETED] All components & keys rendered in ${elapsed}ms`);
+            }
+        } catch (err) {
+            console.error('❌ [SODE ENGINE ERROR]:', err);
+        } finally {
+            // Unhide any remaining pending containers
+            document.querySelectorAll('[data-sode-pending]').forEach(el => {
+                el.style.opacity = '1';
+                el.removeAttribute('data-sode-pending');
+            });
+        }
+    }
+
+    // Modal click triggers
+    document.addEventListener('click', function (e) {
+        const target = e.target.closest('.applynow, .sode-apply-btn, [href="#custom_lead_form"], [href="#apply"]');
+        if (target) {
+            e.preventDefault();
             const overlay = document.getElementById('counselingFormPopupOverlay');
             if (overlay) overlay.classList.add('active');
-        };
-    }
+        }
+        if (e.target.closest('.sode-modal-close, .sode-modal-overlay')) {
+            if (e.target.classList.contains('sode-modal-overlay') || e.target.closest('.sode-modal-close')) {
+                document.querySelectorAll('.sode-modal-overlay').forEach(o => o.classList.remove('active'));
+            }
+        }
+    });
+
+    window.openApplyModal = function () {
+        const overlay = document.getElementById('counselingFormPopupOverlay');
+        if (overlay) overlay.classList.add('active');
+    };
 
     // Execute immediately without delay
     if (document.readyState === 'interactive' || document.readyState === 'complete') {
-        initSodeUniversalEngine();
+        runUniversalEngine();
     } else {
-        document.addEventListener('DOMContentLoaded', initSodeUniversalEngine);
-        // Safety: also run on window.onload if Elementor widgets took longer
-        window.addEventListener('load', () => {
-            initSodeUniversalEngine();
-            processShortcodes();
-        });
+        document.addEventListener('DOMContentLoaded', runUniversalEngine);
+        window.addEventListener('load', runUniversalEngine);
     }
 })();

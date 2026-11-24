@@ -411,6 +411,8 @@ if ($component === 'batch') {
     }
 
     $results = [];
+    $use_redis = class_exists('Sode_Redis') && Sode_Redis::isAvailable();
+
     if (is_array($items)) {
         foreach ($items as $k => $item) {
             $c_name = is_string($item) ? $item : ($item['component'] ?? $item['tag'] ?? '');
@@ -422,14 +424,52 @@ if ($component === 'batch') {
             if (!empty($params['uni']) && empty($c_args['university'])) {
                 $c_args['university'] = $params['uni'];
             }
-            $results[$k] = sode_render_single_component_internal($c_name, $c_args);
+
+            // Per-component Redis caching (24 hours)
+            $item_cache_key = 'ssr:comp:v5:' . md5($c_name . '|' . json_encode($c_args));
+            $item_html = null;
+            if ($use_redis) {
+                $item_html = Sode_Redis::get($item_cache_key);
+            }
+
+            if ($item_html === null) {
+                $item_html = sode_render_single_component_internal($c_name, $c_args);
+                if ($use_redis && !empty($item_html)) {
+                    Sode_Redis::set($item_cache_key, $item_html, 86400);
+                }
+            }
+
+            $results[$k] = $item_html;
+        }
+    }
+
+    // Resolve global keys in the same batch response
+    $keys_map = [];
+    $uni_slug = $params['uni'] ?? '';
+    $keys_cache_key = "api:keys:" . ($uni_slug ?: 'global');
+    if ($use_redis) {
+        $cached_k = Sode_Redis::get($keys_cache_key);
+        if ($cached_k && is_array($cached_k) && !empty($cached_k['keys'])) {
+            $keys_map = $cached_k['keys'];
+        }
+    }
+    if (empty($keys_map) && function_exists('get_db_connection')) {
+        $db_conn = get_db_connection();
+        if ($db_conn) {
+            try {
+                $stmt = $db_conn->query("SELECT key_code, key_value FROM global_keys WHERE is_active = 1");
+                while ($row = $stmt->fetch()) {
+                    $keys_map[$row['key_code']] = $row['key_value'];
+                }
+            } catch (Exception $e) {}
         }
     }
 
     echo json_encode([
         'success' => true,
         'uni' => $params['uni'] ?? '',
-        'results' => $results
+        'results' => $results,
+        'keys' => $keys_map
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
