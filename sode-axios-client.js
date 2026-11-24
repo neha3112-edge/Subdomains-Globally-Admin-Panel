@@ -1,14 +1,13 @@
 /**
  * ====================================================================
- * SODE Central Universal Client Engine (Ultra Fast Promise.all & 0ms Cache)
- * File: sode-axios-client.js - Version 7.0
+ * SODE Central Universal Client Engine (Ultra Fast Priority Paint & 0ms Cache)
+ * File: sode-axios-client.js - Version 7.1
  * 
- * - Instant Hero Preload: Initiates fetch in parallel at earliest script execution.
- * - Quote-Aware Shortcode Parser: Handles nested [UNIVERSITY_NAME] and [MODE] brackets.
- * - 0ms Pre-Hydration & Redis/LocalStorage Cache.
- * - Zero Scroll-Jump Armor: Eliminates empty "#" scroll jumps and sticky nav resets.
- * - 100% Guaranteed Key Replacement: Replaces {UNIVERSITY_NAME}, [UNIVERSITY_NAME],
- *   {MODE}, [MODE], $YEAR$, etc.
+ * - Instant Hero Priority Pipeline: Decoupled from slow batch Promise.all.
+ * - 0ms Hero First-Paint: Hydrates from page/component localStorage at DOM insertion.
+ * - Isolated High-Priority Banner Stream: Fetches banner first with priority: 'high'.
+ * - Quote-Aware Shortcode Extractor: Full support for nested brackets in attributes.
+ * - Zero Scroll-Jump Armor: Completely blocks empty "#" jumps and resets.
  * ====================================================================
  */
 (function () {
@@ -28,6 +27,7 @@
 
     const uniSlug = getUniSlug();
     const storagePrefix = 'sode_v7_' + uniSlug + '_';
+    const pagePath = window.location.pathname;
 
     // Known university metadata dictionary for instant 0ms fallback
     const UNIVERSITY_MAP = {
@@ -100,7 +100,7 @@
     } catch (e) {}
 
     // 2. Early Background Preload Promises (Started at microsecond 0)
-    const earlyBannerPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=banner&uni=${encodeURIComponent(uniSlug)}`)
+    let earlyBannerHtmlPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=banner&uni=${encodeURIComponent(uniSlug)}`, { priority: 'high' })
         .then(res => res.text()).catch(() => null);
 
     const earlyKeysPromise = fetch(`${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`)
@@ -248,6 +248,10 @@
         // Cache this specific component for instant 0ms reload
         try {
             localStorage.setItem(storagePrefix + 'comp_' + item.raw, html);
+            if (item.name === 'edu_banner' || item.name === 'banner') {
+                localStorage.setItem(storagePrefix + 'hero_banner_' + pagePath, html);
+                localStorage.setItem(storagePrefix + 'latest_hero_banner', html);
+            }
         } catch (e) {}
 
         if (item.element && item.element.parentNode) {
@@ -441,7 +445,12 @@
 
         matchedItems.forEach(item => {
             try {
-                const cachedHtml = localStorage.getItem(storagePrefix + 'comp_' + item.raw);
+                // For banner, check exact raw, page-specific, or latest hero banner cache
+                let cachedHtml = localStorage.getItem(storagePrefix + 'comp_' + item.raw);
+                if (!cachedHtml && (item.name === 'edu_banner' || item.name === 'banner')) {
+                    cachedHtml = localStorage.getItem(storagePrefix + 'hero_banner_' + pagePath) || localStorage.getItem(storagePrefix + 'latest_hero_banner');
+                }
+
                 if (cachedHtml) {
                     applyRenderedHTML(item, cachedHtml);
                     hydratedCount++;
@@ -456,20 +465,75 @@
         return false;
     }
 
-    // 8. High-Performance Parallel Promise.all Execution Engine
-    let isExecuting = false;
+    // 8. Dedicated Priority Hero Banner Pipeline (Never waits for slow batch or Promise.all!)
+    let isBannerRendered = false;
+    function renderBannerPriority(bannerItem) {
+        if (!bannerItem || isBannerRendered) return;
+
+        // Step 1: Try Instant 0ms Local Cache first
+        const pageKey = storagePrefix + 'hero_banner_' + pagePath;
+        const compKey = storagePrefix + 'comp_' + bannerItem.raw;
+        const latestKey = storagePrefix + 'latest_hero_banner';
+
+        const cached = localStorage.getItem(pageKey) || localStorage.getItem(compKey) || localStorage.getItem(latestKey);
+        if (cached) {
+            applyRenderedHTML(bannerItem, cached);
+            isBannerRendered = true;
+            replaceDOMKeys(activeKeys);
+        }
+
+        // Step 2: Trigger Dedicated High-Priority Banner Fetch in Parallel
+        const parsed = parseShortcode(bannerItem.raw) || { tag: 'banner', params: { uni: uniSlug } };
+        const hasCustomParams = Object.keys(parsed.params).some(k => k !== 'uni' && k !== 'university');
+
+        if (!hasCustomParams && earlyBannerHtmlPromise) {
+            earlyBannerHtmlPromise.then(html => {
+                if (html && html.indexOf('edu-banner') !== -1) {
+                    applyRenderedHTML(bannerItem, html);
+                    isBannerRendered = true;
+                    replaceDOMKeys(activeKeys);
+                }
+            });
+        } else {
+            // Course page or custom attributes banner: fetch immediately with high priority
+            fetch(`${BASE_URL}/admin/api/render_component.php?component=banner`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parsed.params),
+                priority: 'high'
+            })
+            .then(res => res.text())
+            .then(html => {
+                if (html && html.indexOf('edu-banner') !== -1) {
+                    applyRenderedHTML(bannerItem, html);
+                    isBannerRendered = true;
+                    replaceDOMKeys(activeKeys);
+                }
+            })
+            .catch(() => {});
+        }
+    }
+
+    // 9. High-Performance Parallel Execution Engine for Remaining Components
+    let isBatchExecuting = false;
     async function executeEngine() {
-        if (isExecuting) return;
-        isExecuting = true;
+        if (isBatchExecuting) return;
+        isBatchExecuting = true;
 
         const startTime = performance.now();
         const matchedItems = collectShortcodes();
 
-        // Step A: Instant 0ms Local Render
+        // 1. Prioritize Hero Banner Immediately (0ms)
+        const bannerItem = matchedItems.find(it => it.name === 'edu_banner' || it.name === 'banner');
+        if (bannerItem) {
+            renderBannerPriority(bannerItem);
+        }
+
+        // 2. Instant Local Render for other components
         hydrateFromLocalCache(matchedItems);
         replaceDOMKeys(activeKeys);
 
-        // Step B: Prepare Batch Payload for any unhydrated shortcodes
+        // 3. Prepare Batch Payload for non-banner / unhydrated components
         const batchItems = {};
         matchedItems.forEach(item => {
             if (!batchItems[item.raw]) {
@@ -483,7 +547,7 @@
             }
         });
 
-        // Step C: Execute Parallel Network Requests (Reuse early background preloads!)
+        // 4. Parallel Requests for remaining widgets
         const keysPromise = earlyKeysPromise;
 
         const batchPromise = Object.keys(batchItems).length > 0
@@ -500,14 +564,13 @@
             : Promise.resolve(null);
 
         try {
-            const [keysData, batchData, modalsHtml, earlyBannerHtml] = await Promise.all([
+            const [keysData, batchData, modalsHtml] = await Promise.all([
                 keysPromise,
                 batchPromise,
-                modalsPromise,
-                earlyBannerPromise
+                modalsPromise
             ]);
 
-            // 1. Process Global Keys (Never overwrite known university defaults with empty strings)
+            // Process Global Keys
             if (keysData && keysData.keys) {
                 Object.entries(keysData.keys).forEach(([k, v]) => {
                     if (typeof v === 'string' && v.trim() !== '') {
@@ -519,7 +582,7 @@
                 } catch (e) {}
             }
 
-            // 2. Render Batch Components (Banner, Courses, News, etc.)
+            // Render Batch Components (Courses, News, Dates, etc.)
             if (batchData && batchData.results) {
                 if (batchData.keys) {
                     Object.entries(batchData.keys).forEach(([k, v]) => {
@@ -535,16 +598,9 @@
                         applyRenderedHTML(item, html);
                     }
                 });
-            } else if (earlyBannerHtml) {
-                // Direct fallback for hero banner if batch was delayed
-                matchedItems.forEach(item => {
-                    if (item.name === 'edu_banner' || item.name === 'banner') {
-                        applyRenderedHTML(item, earlyBannerHtml);
-                    }
-                });
             }
 
-            // 3. Inject Footer Modals
+            // Inject Footer Modals
             if (modalsHtml && modalsHtml.indexOf('sode-modal-overlay') !== -1 && !document.getElementById('counselingFormPopupOverlay')) {
                 const modalWrap = document.createElement('div');
                 modalWrap.id = 'sode-footer-modals-wrap';
@@ -553,7 +609,7 @@
                 runScripts(modalWrap);
             }
 
-            // 4. Final Key Sweep on Whole Page
+            // Final Key Sweep on Whole Page
             replaceDOMKeys(activeKeys);
 
             const duration = Math.round(performance.now() - startTime);
@@ -561,11 +617,12 @@
         } catch (err) {
             console.error('❌ [SODE ENGINE ERROR]:', err);
         } finally {
+            isBatchExecuting = false;
             replaceDOMKeys(activeKeys);
         }
     }
 
-    // 9. Zero Scroll-Jump Armor: Prevent jumping to top on halfway scroll or empty "#" clicks
+    // 10. Zero Scroll-Jump Armor: Prevent jumping to top on halfway scroll or empty "#" clicks
     document.addEventListener('click', function (e) {
         const a = e.target.closest('a');
         if (a) {
@@ -602,15 +659,25 @@
         if (overlay) overlay.classList.add('active');
     };
 
-    // 10. Instant Observer & Multi-Stage Execution
-    // Step 1: Scan immediately if body already exists
-    if (document.body) {
-        executeEngine();
+    // 11. Instant Hero Mutation Detection (Runs continuously as DOM nodes are streamed)
+    function scanAndHydrateBanner() {
+        if (isBannerRendered || !document.body) return;
+        const items = collectShortcodes();
+        const bItem = items.find(it => it.name === 'edu_banner' || it.name === 'banner');
+        if (bItem) {
+            renderBannerPriority(bItem);
+        }
     }
 
-    // Step 2: MutationObserver catches shortcodes the moment they are inserted by Elementor
+    // Step 1: Scan immediately
+    scanAndHydrateBanner();
+
+    // Step 2: MutationObserver detects hero banner instantly upon insertion
     const observer = new MutationObserver(function () {
-        if (!isExecuting && document.body) {
+        if (!isBannerRendered) {
+            scanAndHydrateBanner();
+        }
+        if (!isBatchExecuting && document.body) {
             const items = collectShortcodes();
             if (items.length > 0) {
                 executeEngine();
@@ -622,15 +689,18 @@
         observer.observe(document.documentElement, { childList: true, subtree: true });
     }
 
-    // Step 3: Event Listeners as rock-solid backstops
+    // Step 3: Event Listeners for full page finish
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            isExecuting = false;
+            scanAndHydrateBanner();
             executeEngine();
         });
+    } else {
+        scanAndHydrateBanner();
+        executeEngine();
     }
+
     window.addEventListener('load', () => {
-        isExecuting = false;
         executeEngine();
         observer.disconnect();
     });
