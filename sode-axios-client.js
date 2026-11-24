@@ -1,14 +1,14 @@
 /**
  * ====================================================================
  * SODE Central Universal Client Engine (Ultra Fast Promise.all & 0ms Cache)
- * File: sode-axios-client.js
+ * File: sode-axios-client.js - Version 7.0
  * 
- * - Auto-detects University from Subdomain URL.
- * - Instant 0ms Banner Render: Hydrates from localStorage before network.
- * - Parallel Promise.all: Simultaneously fetches keys, components, and modals.
- * - Banner-First Priority: Hero section paints instantly without pop-in.
- * - Guaranteed Key Replacement: Replaces {UNIVERSITY_NAME}, [UNIVERSITY_NAME],
- *   {MODE}, [MODE], etc. across the entire page.
+ * - Instant Hero Preload: Initiates fetch in parallel at earliest script execution.
+ * - Quote-Aware Shortcode Parser: Handles nested [UNIVERSITY_NAME] and [MODE] brackets.
+ * - 0ms Pre-Hydration & Redis/LocalStorage Cache.
+ * - Zero Scroll-Jump Armor: Eliminates empty "#" scroll jumps and sticky nav resets.
+ * - 100% Guaranteed Key Replacement: Replaces {UNIVERSITY_NAME}, [UNIVERSITY_NAME],
+ *   {MODE}, [MODE], $YEAR$, etc.
  * ====================================================================
  */
 (function () {
@@ -27,47 +27,84 @@
     }
 
     const uniSlug = getUniSlug();
-    const storagePrefix = 'sode_v6_' + uniSlug + '_';
+    const storagePrefix = 'sode_v7_' + uniSlug + '_';
 
-    // Instant University Defaults
-    let activeKeys = {
-        '{UNIVERSITY_NAME}': 'Dayananda Sagar University',
-        '[UNIVERSITY_NAME]': 'Dayananda Sagar University',
-        '$UNIVERSITY_NAME$': 'Dayananda Sagar University',
-        'UNIVERSITY_NAME': 'Dayananda Sagar University',
-        '{MODE}': 'Online',
-        '[MODE]': 'Online',
-        '$MODE$': 'Online',
-        'MODE': 'Online',
-        '{UNIVERSITY_SHORT_NAME}': uniSlug.toUpperCase(),
-        '[UNIVERSITY_SHORT_NAME]': uniSlug.toUpperCase(),
-        '$UNIVERSITY_SHORT_NAME$': uniSlug.toUpperCase(),
-        '{UNI_SHORT_NAME}': uniSlug.toUpperCase(),
-        '[UNI_SHORT_NAME]': uniSlug.toUpperCase(),
-        '{UNI}': uniSlug.toUpperCase(),
-        '[UNI]': uniSlug.toUpperCase(),
-        '{UNIVERSITY_SLUG}': uniSlug,
-        '$YEAR$': new Date().getFullYear().toString(),
-        '{YEAR}': new Date().getFullYear().toString()
+    // Known university metadata dictionary for instant 0ms fallback
+    const UNIVERSITY_MAP = {
+        'dsu':    { name: 'Dayananda Sagar University', short: 'DSU', mode: 'Online' },
+        'cu':     { name: 'Chandigarh University', short: 'CU', mode: 'Online' },
+        'mu':     { name: 'Manipal University', short: 'MUJ', mode: 'Online' },
+        'amity':  { name: 'Amity University', short: 'Amity', mode: 'Online' },
+        'lpu':    { name: 'Lovely Professional University', short: 'LPU', mode: 'Online' },
+        'jgu':    { name: 'O.P. Jindal Global University', short: 'JGU', mode: 'Online' },
+        'sharda': { name: 'Sharda University', short: 'Sharda', mode: 'Online' },
+        'srm':    { name: 'SRM University', short: 'SRM', mode: 'Online' },
+        'upes':   { name: 'UPES', short: 'UPES', mode: 'Online' },
+        'gla':    { name: 'GLA University', short: 'GLA', mode: 'Online' },
+        'vgu':    { name: 'Vivekananda Global University', short: 'VGU', mode: 'Online' },
+        'uu':     { name: 'Uttaranchal University', short: 'UU', mode: 'Online' },
+        'klu':    { name: 'K L University', short: 'KLU', mode: 'Online' }
     };
 
-    // Load persisted keys from storage immediately (0ms)
+    const uniInfo = UNIVERSITY_MAP[uniSlug] || {
+        name: uniSlug.toUpperCase() + ' University',
+        short: uniSlug.toUpperCase(),
+        mode: 'Online'
+    };
+
+    const currentYear = new Date().getFullYear().toString();
+
+    // Instant Master Key Replacements
+    let activeKeys = {
+        '{UNIVERSITY_NAME}': uniInfo.name,
+        '[UNIVERSITY_NAME]': uniInfo.name,
+        '$UNIVERSITY_NAME$': uniInfo.name,
+        '{{UNIVERSITY_NAME}}': uniInfo.name,
+        'UNIVERSITY_NAME': uniInfo.name,
+
+        '{MODE}': uniInfo.mode,
+        '[MODE]': uniInfo.mode,
+        '$MODE$': uniInfo.mode,
+        '{{MODE}}': uniInfo.mode,
+        'MODE': uniInfo.mode,
+
+        '{UNIVERSITY_SHORT_NAME}': uniInfo.short,
+        '[UNIVERSITY_SHORT_NAME]': uniInfo.short,
+        '$UNIVERSITY_SHORT_NAME$': uniInfo.short,
+        '{{UNIVERSITY_SHORT_NAME}}': uniInfo.short,
+        'UNIVERSITY_SHORT_NAME': uniInfo.short,
+        '{UNI_SHORT_NAME}': uniInfo.short,
+        '[UNI_SHORT_NAME]': uniInfo.short,
+        '$UNI_SHORT_NAME$': uniInfo.short,
+        '{UNI}': uniInfo.short,
+        '[UNI]': uniInfo.short,
+        '$UNI$': uniInfo.short,
+
+        '{UNIVERSITY_SLUG}': uniSlug,
+        '$YEAR$': currentYear,
+        '{YEAR}': currentYear,
+        '[YEAR]': currentYear
+    };
+
+    // Load persisted keys from storage
     try {
         const savedKeys = localStorage.getItem(storagePrefix + 'keys');
-        if (savedKeys) Object.assign(activeKeys, JSON.parse(savedKeys));
+        if (savedKeys) {
+            const parsed = JSON.parse(savedKeys);
+            Object.entries(parsed).forEach(([k, v]) => {
+                if (typeof v === 'string' && v.trim() !== '') {
+                    activeKeys[k] = v.trim();
+                }
+            });
+        }
     } catch (e) {}
 
-    // Helper: Execute scripts inside dynamically inserted HTML
-    function runScripts(container) {
-        if (!container) return;
-        const scripts = container.querySelectorAll('script');
-        scripts.forEach(oldScript => {
-            const newScript = document.createElement('script');
-            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-            newScript.textContent = oldScript.textContent;
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-        });
-    }
+    // 2. Early Background Preload Promises (Started at microsecond 0)
+    const earlyBannerPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=banner&uni=${encodeURIComponent(uniSlug)}`)
+        .then(res => res.text()).catch(() => null);
+
+    const earlyKeysPromise = fetch(`${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`)
+        .then(res => res.json()).catch(() => null);
 
     // Comprehensive list of known shortcodes
     const knownShortcodes = [
@@ -94,7 +131,73 @@
         'footer', 'universal_footer', 'sode_footer', 'footer_section'
     ];
 
-    // 2. Parse Shortcode string
+    // Helper: Execute scripts inside dynamically inserted HTML
+    function runScripts(container) {
+        if (!container) return;
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    // 3. Robust Quote-Aware Shortcode Extractor (Handles nested brackets like [UNIVERSITY_NAME] inside quotes)
+    function extractShortcodesFromText(text) {
+        if (!text || text.indexOf('[') === -1 || text.indexOf(']') === -1) return [];
+
+        const results = [];
+        const len = text.length;
+        let i = 0;
+
+        while (i < len) {
+            const start = text.indexOf('[', i);
+            if (start === -1) break;
+
+            let tagEnd = start + 1;
+            while (tagEnd < len && /[a-zA-Z0-9_-]/.test(text[tagEnd])) {
+                tagEnd++;
+            }
+            const tag = text.substring(start + 1, tagEnd).toLowerCase();
+
+            if (tag && knownShortcodes.includes(tag)) {
+                let inQuotes = false;
+                let quoteChar = '';
+                let j = tagEnd;
+                let foundEnd = -1;
+
+                while (j < len) {
+                    const ch = text[j];
+                    if ((ch === '"' || ch === "'") && text[j - 1] !== '\\') {
+                        if (!inQuotes) {
+                            inQuotes = true;
+                            quoteChar = ch;
+                        } else if (quoteChar === ch) {
+                            inQuotes = false;
+                            quoteChar = '';
+                        }
+                    } else if (ch === ']' && !inQuotes) {
+                        foundEnd = j;
+                        break;
+                    }
+                    j++;
+                }
+
+                if (foundEnd !== -1) {
+                    const raw = text.substring(start, foundEnd + 1);
+                    results.push({ name: tag, raw: raw });
+                    i = foundEnd + 1;
+                    continue;
+                }
+            }
+            i = start + 1;
+        }
+
+        return results;
+    }
+
+    // 4. Parse Shortcode attributes cleanly
     function parseShortcode(raw) {
         if (!raw) return null;
         const cleaned = raw
@@ -105,11 +208,11 @@
             .replace(/&#8216;|&#8217;/g, "'")
             .replace(/&amp;/g, '&');
 
-        const match = cleaned.match(/^\[([a-zA-Z0-9_-]+)([\s\S]*?)\]\s*$/);
-        if (!match) return null;
+        const tagMatch = cleaned.match(/^\[([a-zA-Z0-9_-]+)/);
+        if (!tagMatch) return null;
 
-        const tag = match[1].toLowerCase();
-        const rawAttrs = match[2];
+        const tag = tagMatch[1].toLowerCase();
+        const rawAttrs = cleaned.substring(tagMatch[0].length, cleaned.length - 1);
         const params = { uni: uniSlug, university: uniSlug };
 
         const attrRegex = /([a-zA-Z0-9_-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/g;
@@ -127,7 +230,13 @@
     function applyRenderedHTML(item, html) {
         if (!html) return;
 
-        // Replace keys in the HTML string directly before inserting
+        // Guaranteed university key replacement in the HTML string directly
+        html = html
+            .replace(/\{UNIVERSITY_NAME\}|\[UNIVERSITY_NAME\]|\$UNIVERSITY_NAME\$|\{\{UNIVERSITY_NAME\}\}/gi, activeKeys['{UNIVERSITY_NAME}'])
+            .replace(/\{MODE\}|\[MODE\]|\$MODE\$|\{\{MODE\}\}/gi, activeKeys['{MODE}'])
+            .replace(/\{UNIVERSITY_SHORT_NAME\}|\[UNIVERSITY_SHORT_NAME\]|\$UNIVERSITY_SHORT_NAME\$|\{UNI_SHORT_NAME\}|\[UNI_SHORT_NAME\]|\{UNI\}|\[UNI\]/gi, activeKeys['{UNIVERSITY_SHORT_NAME}'])
+            .replace(/\$YEAR\$|\{YEAR\}|\[YEAR\]/gi, currentYear);
+
         if (activeKeys) {
             Object.entries(activeKeys).forEach(([k, v]) => {
                 if (typeof v === 'string' && v.trim() !== '') {
@@ -187,11 +296,10 @@
         }
     }
 
-    // 3. Collect all shortcodes currently in the DOM
+    // 5. Collect all shortcodes currently in the DOM
     function collectShortcodes() {
         if (!document.body) return [];
 
-        const shortcodeRegex = /\[([a-zA-Z0-9_-]+)([\s\S]*?)\]/g;
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
         const matchedItems = [];
         let node;
@@ -204,18 +312,14 @@
 
             const val = node.nodeValue;
             if (val && val.indexOf('[') !== -1 && val.indexOf(']') !== -1) {
-                let match;
-                shortcodeRegex.lastIndex = 0;
-                while ((match = shortcodeRegex.exec(val)) !== null) {
-                    const shortcodeName = match[1].toLowerCase();
-                    if (knownShortcodes.includes(shortcodeName)) {
-                        matchedItems.push({
-                            node: node,
-                            raw: match[0],
-                            name: shortcodeName
-                        });
-                    }
-                }
+                const found = extractShortcodesFromText(val);
+                found.forEach(sc => {
+                    matchedItems.push({
+                        node: node,
+                        raw: sc.raw,
+                        name: sc.name
+                    });
+                });
             }
         }
 
@@ -224,17 +328,14 @@
             if (el.dataset.sodeProcessed) return;
             const txt = el.textContent.trim();
             if (txt.startsWith('[') && txt.endsWith(']')) {
-                const tagMatch = txt.match(/^\[([a-zA-Z0-9_-]+)/);
-                if (tagMatch) {
-                    const name = tagMatch[1].toLowerCase();
-                    if (knownShortcodes.includes(name)) {
-                        matchedItems.push({
-                            element: el,
-                            raw: txt,
-                            name: name
-                        });
-                        el.dataset.sodeProcessed = '1';
-                    }
+                const found = extractShortcodesFromText(txt);
+                if (found.length === 1 && found[0].raw === txt) {
+                    matchedItems.push({
+                        element: el,
+                        raw: txt,
+                        name: found[0].name
+                    });
+                    el.dataset.sodeProcessed = '1';
                 }
             }
         });
@@ -242,10 +343,9 @@
         return matchedItems;
     }
 
-    // 4. Fast DOM Global Keys Replacement ($KEY$, {KEY}, [KEY], #LEAD_FORM#)
+    // 6. Fast DOM Global Keys Replacement ({UNIVERSITY_NAME}, [UNIVERSITY_NAME], {MODE}, [MODE], $YEAR$)
     function replaceDOMKeys(keys) {
         if (!keys || !Object.keys(keys).length || !document.body) return;
-
         Object.assign(activeKeys, keys);
 
         const replacements = {};
@@ -334,7 +434,7 @@
         walk(document.body);
     }
 
-    // 5. Instant 0ms Pre-Hydration from LocalStorage
+    // 7. Instant 0ms Pre-Hydration from LocalStorage
     function hydrateFromLocalCache(matchedItems) {
         if (!matchedItems || !matchedItems.length) return false;
         let hydratedCount = 0;
@@ -350,14 +450,13 @@
         });
 
         if (hydratedCount > 0) {
-            console.log(`⚡ [SODE 0MS HYDRATED] ${hydratedCount} components rendered instantly from local storage`);
             replaceDOMKeys(activeKeys);
             return true;
         }
         return false;
     }
 
-    // 6. High-Performance Parallel Promise.all Execution Engine
+    // 8. High-Performance Parallel Promise.all Execution Engine
     let isExecuting = false;
     async function executeEngine() {
         if (isExecuting) return;
@@ -366,11 +465,11 @@
         const startTime = performance.now();
         const matchedItems = collectShortcodes();
 
-        // Step A: Instant 0ms Local Render (Hero banner paints with ZERO delay!)
+        // Step A: Instant 0ms Local Render
         hydrateFromLocalCache(matchedItems);
         replaceDOMKeys(activeKeys);
 
-        // Step B: Prepare Batch Payload for any unhydrated / background revalidation
+        // Step B: Prepare Batch Payload for any unhydrated shortcodes
         const batchItems = {};
         matchedItems.forEach(item => {
             if (!batchItems[item.raw]) {
@@ -384,10 +483,8 @@
             }
         });
 
-        // Step C: Execute All Network Requests in Parallel using Promise.all
-        const keysPromise = fetch(`${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`)
-            .then(res => res.json())
-            .catch(() => null);
+        // Step C: Execute Parallel Network Requests (Reuse early background preloads!)
+        const keysPromise = earlyKeysPromise;
 
         const batchPromise = Object.keys(batchItems).length > 0
             ? fetch(`${BASE_URL}/admin/api/render_component.php?component=batch`, {
@@ -403,32 +500,46 @@
             : Promise.resolve(null);
 
         try {
-            // Wait for parallel requests together
-            const [keysData, batchData, modalsHtml] = await Promise.all([
+            const [keysData, batchData, modalsHtml, earlyBannerHtml] = await Promise.all([
                 keysPromise,
                 batchPromise,
-                modalsPromise
+                modalsPromise,
+                earlyBannerPromise
             ]);
 
-            // 1. Process Global Keys
+            // 1. Process Global Keys (Never overwrite known university defaults with empty strings)
             if (keysData && keysData.keys) {
-                Object.assign(activeKeys, keysData.keys);
+                Object.entries(keysData.keys).forEach(([k, v]) => {
+                    if (typeof v === 'string' && v.trim() !== '') {
+                        activeKeys[k] = v.trim();
+                    }
+                });
                 try {
-                    localStorage.setItem(storagePrefix + 'keys', JSON.stringify(keysData.keys));
+                    localStorage.setItem(storagePrefix + 'keys', JSON.stringify(activeKeys));
                 } catch (e) {}
             }
 
             // 2. Render Batch Components (Banner, Courses, News, etc.)
             if (batchData && batchData.results) {
-                // If batch also returned extra keys, merge them
                 if (batchData.keys) {
-                    Object.assign(activeKeys, batchData.keys);
+                    Object.entries(batchData.keys).forEach(([k, v]) => {
+                        if (typeof v === 'string' && v.trim() !== '') {
+                            activeKeys[k] = v.trim();
+                        }
+                    });
                 }
 
                 matchedItems.forEach(item => {
                     const html = batchData.results[item.raw];
                     if (html) {
                         applyRenderedHTML(item, html);
+                    }
+                });
+            } else if (earlyBannerHtml) {
+                // Direct fallback for hero banner if batch was delayed
+                matchedItems.forEach(item => {
+                    if (item.name === 'edu_banner' || item.name === 'banner') {
+                        applyRenderedHTML(item, earlyBannerHtml);
                     }
                 });
             }
@@ -446,16 +557,24 @@
             replaceDOMKeys(activeKeys);
 
             const duration = Math.round(performance.now() - startTime);
-            console.log(`🚀 [SODE PROMISE.ALL COMPLETE] Full page hydrated in ${duration}ms`);
+            console.log(`🚀 [SODE ENGINE COMPLETE] Hydrated in ${duration}ms`);
         } catch (err) {
-            console.error('❌ [SODE PROMISE.ALL ERROR]:', err);
+            console.error('❌ [SODE ENGINE ERROR]:', err);
         } finally {
             replaceDOMKeys(activeKeys);
         }
     }
 
-    // Modal click triggers
+    // 9. Zero Scroll-Jump Armor: Prevent jumping to top on halfway scroll or empty "#" clicks
     document.addEventListener('click', function (e) {
+        const a = e.target.closest('a');
+        if (a) {
+            const href = (a.getAttribute('href') || '').trim();
+            if (href === '#' || href === '' || href === 'javascript:void(0);' || href === 'javascript:;') {
+                e.preventDefault();
+            }
+        }
+
         const target = e.target.closest('.applynow, .sode-apply-btn, [href="#custom_lead_form"], [href="#apply"]');
         if (target) {
             e.preventDefault();
@@ -467,6 +586,15 @@
                 document.querySelectorAll('.sode-modal-overlay').forEach(o => o.classList.remove('active'));
             }
         }
+    }, { capture: true, passive: false });
+
+    // Clean up any empty "#" pushed to URL without jumping scroll
+    window.addEventListener('hashchange', function () {
+        if (window.location.hash === '#' || window.location.hash === '') {
+            try {
+                history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            } catch (err) {}
+        }
     });
 
     window.openApplyModal = function () {
@@ -474,11 +602,36 @@
         if (overlay) overlay.classList.add('active');
     };
 
-    // Execute immediately without delay
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    // 10. Instant Observer & Multi-Stage Execution
+    // Step 1: Scan immediately if body already exists
+    if (document.body) {
         executeEngine();
-    } else {
-        document.addEventListener('DOMContentLoaded', executeEngine);
-        window.addEventListener('load', executeEngine);
     }
+
+    // Step 2: MutationObserver catches shortcodes the moment they are inserted by Elementor
+    const observer = new MutationObserver(function () {
+        if (!isExecuting && document.body) {
+            const items = collectShortcodes();
+            if (items.length > 0) {
+                executeEngine();
+            }
+        }
+    });
+
+    if (document.documentElement) {
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
+    // Step 3: Event Listeners as rock-solid backstops
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            isExecuting = false;
+            executeEngine();
+        });
+    }
+    window.addEventListener('load', () => {
+        isExecuting = false;
+        executeEngine();
+        observer.disconnect();
+    });
 })();

@@ -294,6 +294,8 @@ function edu_banner_shortcode($atts)
         'video_url' => '',
         'brochure_btn_class' => '',
         'university' => '',
+        'course' => '',
+        'mode' => '',
     ), $atts, 'edu_banner');
 
     $heading = stripslashes(trim((string) ($atts['heading'] ?? '')));
@@ -324,7 +326,7 @@ function edu_banner_shortcode($atts)
     // Fallbacks from Admin Data if not supplied in shortcode attributes
     $full_uni_name = !empty($uni_data['full_name']) ? $uni_data['full_name'] : 'Dayananda Sagar University';
     $short_uni_name = !empty($uni_data['short_name']) ? $uni_data['short_name'] : 'DSU';
-    $mode_text = !empty($uni_data['mode']) ? $uni_data['mode'] : 'Online';
+    $mode_text = !empty($atts['mode']) ? ucfirst(trim($atts['mode'])) : (!empty($uni_data['mode']) ? $uni_data['mode'] : 'Online');
     $desktop_bg = sode_normalize_asset_url(!empty($uni_data['desktop_banner_bg']) ? $uni_data['desktop_banner_bg'] : 'uploads/2026/08/DSU_Desktop.png');
     $mobile_bg = sode_normalize_asset_url(!empty($uni_data['mobile_banner_bg']) ? $uni_data['mobile_banner_bg'] : 'uploads/2026/07/mobile_new_bg_main.png');
     $logo_url = sode_normalize_asset_url(!empty($uni_data['logo_url']) ? $uni_data['logo_url'] : 'uploads/2026/08/DSU-online-Logo-2.png');

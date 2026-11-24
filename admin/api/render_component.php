@@ -115,7 +115,7 @@ unset($cache_params['_t'], $cache_params['t'], $cache_params['_']);
 // Dynamic CSRF tokens and lead submissions are handled client-side via AJAX endpoints.
 $is_cacheable = true;
 
-$cache_key = 'ssr:component:v4:' . md5($component . '|' . json_encode($cache_params));
+$cache_key = 'ssr:component:v7:' . md5($component . '|' . json_encode($cache_params));
 
 if ($is_cacheable && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached_html = Sode_Redis::get($cache_key);
@@ -425,8 +425,8 @@ if ($component === 'batch') {
                 $c_args['university'] = $params['uni'];
             }
 
-            // Per-component Redis caching (24 hours)
-            $item_cache_key = 'ssr:comp:v5:' . md5($c_name . '|' . json_encode($c_args));
+            // Per-component Redis caching (24 hours) - Bumped to v7
+            $item_cache_key = 'ssr:comp:v7:' . md5($c_name . '|' . json_encode($c_args));
             $item_html = null;
             if ($use_redis) {
                 $item_html = Sode_Redis::get($item_cache_key);
@@ -468,28 +468,26 @@ if ($component === 'batch') {
                     $u_stmt = $db_conn->prepare("SELECT * FROM universities WHERE (slug = ? OR LOWER(short_name) = ?) AND is_active = 1 LIMIT 1");
                     $u_stmt->execute([$uni_slug, strtolower($uni_slug)]);
                     $u_row = $u_stmt->fetch();
-                    if ($u_row) {
-                        $u_full = $u_row['full_name'] ?? '';
-                        $u_short = strtoupper($u_row['short_name'] ?? '');
-                        $u_mode = $u_row['mode'] ?? 'Online';
+                    $u_full = $u_row['full_name'] ?? ($uni_slug === 'dsu' ? 'Dayananda Sagar University' : strtoupper($uni_slug) . ' University');
+                    $u_short = strtoupper($u_row['short_name'] ?? $uni_slug);
+                    $u_mode = $u_row['mode'] ?? 'Online';
 
-                        $keys_map['{UNIVERSITY_NAME}'] = $u_full;
-                        $keys_map['[UNIVERSITY_NAME]'] = $u_full;
-                        $keys_map['$UNIVERSITY_NAME$'] = $u_full;
-                        $keys_map['UNIVERSITY_NAME']   = $u_full;
+                    $keys_map['{UNIVERSITY_NAME}'] = $u_full;
+                    $keys_map['[UNIVERSITY_NAME]'] = $u_full;
+                    $keys_map['$UNIVERSITY_NAME$'] = $u_full;
+                    $keys_map['UNIVERSITY_NAME']   = $u_full;
 
-                        $keys_map['{MODE}']            = $u_mode;
-                        $keys_map['[MODE]']            = $u_mode;
-                        $keys_map['$MODE$']            = $u_mode;
+                    $keys_map['{MODE}']            = $u_mode;
+                    $keys_map['[MODE]']            = $u_mode;
+                    $keys_map['$MODE$']            = $u_mode;
 
-                        $keys_map['{UNIVERSITY_SHORT_NAME}'] = $u_short;
-                        $keys_map['[UNIVERSITY_SHORT_NAME]'] = $u_short;
-                        $keys_map['$UNIVERSITY_SHORT_NAME$'] = $u_short;
-                        $keys_map['{UNI_SHORT_NAME}']        = $u_short;
-                        $keys_map['[UNI_SHORT_NAME]']        = $u_short;
-                        $keys_map['{UNI}']                   = $u_short;
-                        $keys_map['[UNI]']                   = $u_short;
-                    }
+                    $keys_map['{UNIVERSITY_SHORT_NAME}'] = $u_short;
+                    $keys_map['[UNIVERSITY_SHORT_NAME]'] = $u_short;
+                    $keys_map['$UNIVERSITY_SHORT_NAME$'] = $u_short;
+                    $keys_map['{UNI_SHORT_NAME}']        = $u_short;
+                    $keys_map['[UNI_SHORT_NAME]']        = $u_short;
+                    $keys_map['{UNI}']                   = $u_short;
+                    $keys_map['[UNI]']                   = $u_short;
                 }
             } catch (Exception $e) {}
         }
