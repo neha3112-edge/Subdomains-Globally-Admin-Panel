@@ -38,8 +38,7 @@ if (!defined('SODE_CENTRAL_ADMIN_URL')) {
 if (!function_exists('sode_client_get_global_keys')) {
     function sode_client_get_global_keys()
     {
-        // Per-request memory only (no cross-request caching)
-        // Fresh API call on every page load = always up-to-date values
+        // 1. Static in-memory cache for repeated calls within the same request
         static $mem = null;
         if ($mem !== null)
             return $mem;
@@ -56,17 +55,36 @@ if (!function_exists('sode_client_get_global_keys')) {
             }
         }
 
-        $api_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php?t=' . time();
-        if ($uni)
-            $api_url .= '&uni=' . urlencode($uni);
+        $cache_key = 'sode_keys_' . ($uni ?: 'global');
 
-        $resp = wp_remote_get($api_url, ['timeout' => 5, 'headers' => ['Cache-Control' => 'no-cache']]);
+        // 2. High-speed local Transient Cache (12 Hours)
+        // Automatically cleared whenever Admin edits content via ?sode_flush=sode_flush_2026
+        if (function_exists('get_transient')) {
+            $cached_keys = get_transient($cache_key);
+            if (!empty($cached_keys) && is_array($cached_keys)) {
+                $mem = $cached_keys;
+                return $mem;
+            }
+        }
+
+        $api_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/') . '/api/get_global_keys.php';
+        if ($uni)
+            $api_url .= '?uni=' . urlencode($uni);
+
+        $resp = wp_remote_get($api_url, [
+            'timeout' => 4,
+            'sslverify' => false,
+            'headers' => ['Accept' => 'application/json']
+        ]);
 
         $keys = [];
         if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
             $json = json_decode(wp_remote_retrieve_body($resp), true);
             if (!empty($json['keys']) && is_array($json['keys'])) {
                 $keys = $json['keys'];
+                if (function_exists('set_transient')) {
+                    set_transient($cache_key, $keys, 12 * HOUR_IN_SECONDS);
+                }
             }
         }
 
@@ -332,112 +350,142 @@ add_action('wp_head', function () {
             'use strict';
             var uniSlug = '<?php echo $uni_js; ?>';
             var adminRoot = '<?php echo $admin_root_js; ?>';
-            var apiUrl = '<?php echo $api_base; ?>?t=' + Date.now() + (uniSlug ? '&uni=' + encodeURIComponent(uniSlug) : '');
+            var apiUrl = '<?php echo $api_base; ?>' + (uniSlug ? '?uni=' + encodeURIComponent(uniSlug) : '');
+            var cacheKey = 'sode_k_' + (uniSlug || 'global');
 
-            // Fetch fresh global keys — no browser cache
-            fetch(apiUrl, {
-                method: 'GET',
-                cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache' }
-            })
+            function applyKeys(keys) {
+                if (!keys || !Object.keys(keys).length) return;
+
+                // Quick pre-check: if no template characters exist in body, skip heavy DOM traversal
+                if (document.body) {
+                    var bodyText = document.body.innerText || '';
+                    if (bodyText.indexOf('$') === -1 && bodyText.indexOf('{') === -1 && bodyText.indexOf('#') === -1 && bodyText.indexOf('[') === -1) {
+                        return;
+                    }
+                }
+
+                // Build a flat map of ALL pattern variants → value
+                var replacements = {};
+                var safeBareKeywords = [
+                    'UNIVERSITY_SHORT_NAME_LOWER',
+                    'UNIVERSITY_SHORT_NAME',
+                    'UNIVERSITY_SLUG',
+                    'UNI_SHORT_NAME_LOWER',
+                    'UNI_SHORT_NAME',
+                    'UNIVERSITY_NAME',
+                    'UNI_SLUG'
+                ];
+
+                Object.entries(keys).forEach(function ([code, val]) {
+                    var raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '').replace(/^\[|\]$/g, '').replace(/^#|#$/g, '');
+                    var strVal = String(val);
+                    [
+                        code,
+                        '$' + raw + '$',
+                        '{{' + raw + '}}',
+                        '{' + raw + '}',
+                        '[' + raw + ']',
+                        '#' + raw + '#'
+                    ].forEach(function (p) {
+                        if (p && !replacements[p]) replacements[p] = strVal;
+                    });
+
+                    var upperRaw = raw.toUpperCase();
+                    if (safeBareKeywords.indexOf(upperRaw) !== -1 && upperRaw === raw) {
+                        if (!replacements[upperRaw]) replacements[upperRaw] = strVal;
+                    }
+                });
+
+                var patterns = Object.keys(replacements);
+                if (!patterns.length) return;
+
+                // Sort patterns by length DESC so specific/longer patterns match first
+                patterns.sort(function (a, b) { return b.length - a.length; });
+
+                // Walk all text nodes in the DOM and replace
+                function walk(node) {
+                    if (!node) return;
+                    if (node.nodeType === 3) { // TEXT_NODE
+                        var t = node.textContent;
+                        var changed = false;
+                        patterns.forEach(function (p) {
+                            if (t.indexOf(p) !== -1) {
+                                t = t.split(p).join(replacements[p]);
+                                changed = true;
+                            }
+                        });
+                        if (changed) {
+                            if (t.indexOf('<') !== -1 && t.indexOf('>') !== -1) {
+                                var temp = document.createElement('span');
+                                temp.innerHTML = t;
+                                while (temp.firstChild) {
+                                    node.parentNode.insertBefore(temp.firstChild, node);
+                                }
+                                node.parentNode.removeChild(node);
+                            } else {
+                                node.textContent = t;
+                            }
+                        }
+                    } else if (node.nodeType === 1) {
+                        var tag = node.tagName;
+                        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
+                        ['href', 'title', 'alt', 'placeholder', 'data-title', 'content'].forEach(function (attr) {
+                            if (node.hasAttribute(attr)) {
+                                var a = node.getAttribute(attr);
+                                var ac = false;
+                                patterns.forEach(function (p) {
+                                    if (a.indexOf(p) !== -1) { a = a.split(p).join(replacements[p]); ac = true; }
+                                });
+                                if (ac) node.setAttribute(attr, a);
+                            }
+                        });
+                        node.childNodes.forEach(walk);
+                    }
+                }
+
+                // Run immediately on current DOM
+                if (document.body) walk(document.body);
+
+                // Observe future dynamic DOM additions
+                if (window.MutationObserver) {
+                    var observer = new MutationObserver(function (mutations) {
+                        mutations.forEach(function (m) {
+                            m.addedNodes.forEach(walk);
+                        });
+                    });
+                    observer.observe(document.body, { childList: true, subtree: true });
+                }
+            }
+
+            // 1. Check SessionStorage first (0ms instantaneous execution)
+            var sessionCached = null;
+            try {
+                sessionCached = JSON.parse(sessionStorage.getItem(cacheKey));
+            } catch (e) {}
+
+            if (sessionCached && typeof sessionCached === 'object') {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function () { applyKeys(sessionCached); });
+                } else {
+                    applyKeys(sessionCached);
+                }
+                return;
+            }
+
+            // 2. Fetch with browser caching enabled (no cache-busting time() param)
+            fetch(apiUrl)
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     var keys = data.keys || {};
                     if (!Object.keys(keys).length) return;
-
-                    // Build a flat map of ALL pattern variants → value
-                    var replacements = {};
-                    var safeBareKeywords = [
-                        'UNIVERSITY_SHORT_NAME_LOWER',
-                        'UNIVERSITY_SHORT_NAME',
-                        'UNIVERSITY_SLUG',
-                        'UNI_SHORT_NAME_LOWER',
-                        'UNI_SHORT_NAME',
-                        'UNIVERSITY_NAME',
-                        'UNI_SLUG'
-                    ];
-
-                    Object.entries(keys).forEach(function ([code, val]) {
-                        var raw = code.replace(/^\$|\$$/g, '').replace(/^\{|\}$/g, '').replace(/^\[|\]$/g, '');
-                        var strVal = String(val);
-                        [
-                            code,
-                            '$' + raw + '$',
-                            '{{' + raw + '}}',
-                            '{' + raw + '}',
-                            '[' + raw + ']'
-                        ].forEach(function (p) {
-                            if (p && !replacements[p]) replacements[p] = strVal;
-                        });
-
-                        var upperRaw = raw.toUpperCase();
-                        if (safeBareKeywords.indexOf(upperRaw) !== -1 && upperRaw === raw) {
-                            if (!replacements[upperRaw]) replacements[upperRaw] = strVal;
-                        }
-                    });
-
-                    var patterns = Object.keys(replacements);
-                    if (!patterns.length) return;
-
-                    // Sort patterns by length DESC so specific/longer patterns match first
-                    patterns.sort(function (a, b) { return b.length - a.length; });
-
-                    // Walk all text nodes in the DOM and replace
-                    function walk(node) {
-                        if (!node) return;
-                        if (node.nodeType === 3) { // TEXT_NODE
-                            var t = node.textContent;
-                            var changed = false;
-                            patterns.forEach(function (p) {
-                                if (t.indexOf(p) !== -1) {
-                                    t = t.split(p).join(replacements[p]);
-                                    changed = true;
-                                }
-                            });
-                            if (changed) {
-                                if (t.indexOf('<') !== -1 && t.indexOf('>') !== -1) {
-                                    var temp = document.createElement('span');
-                                    temp.innerHTML = t;
-                                    while (temp.firstChild) {
-                                        node.parentNode.insertBefore(temp.firstChild, node);
-                                    }
-                                    node.parentNode.removeChild(node);
-                                } else {
-                                    node.textContent = t;
-                                }
-                            }
-                        } else if (node.nodeType === 1) {
-                            var tag = node.tagName;
-                            if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
-                            // Replace placeholder in attribute values (href, title, alt, placeholder, etc.)
-                            ['href', 'title', 'alt', 'placeholder', 'data-title', 'content'].forEach(function (attr) {
-                                if (node.hasAttribute(attr)) {
-                                    var a = node.getAttribute(attr);
-                                    var ac = false;
-                                    patterns.forEach(function (p) {
-                                        if (a.indexOf(p) !== -1) { a = a.split(p).join(replacements[p]); ac = true; }
-                                    });
-                                    if (ac) node.setAttribute(attr, a);
-                                }
-                            });
-                            node.childNodes.forEach(walk);
-                        }
-                    }
-
-                    // Run immediately on current DOM
-                    if (document.body) walk(document.body);
-
-                    // Also observe future DOM changes (Elementor animations, AJAX loads)
-                    if (window.MutationObserver) {
-                        var observer = new MutationObserver(function (mutations) {
-                            mutations.forEach(function (m) {
-                                m.addedNodes.forEach(walk);
-                            });
-                        });
-                        observer.observe(document.body, { childList: true, subtree: true });
+                    try { sessionStorage.setItem(cacheKey, JSON.stringify(keys)); } catch (e) {}
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', function () { applyKeys(keys); });
+                    } else {
+                        applyKeys(keys);
                     }
                 })
-                .catch(function () { }); // Silent fail — PHP output buffer is the fallback
+                .catch(function () {});
         })();
     </script>
     <?php
@@ -456,7 +504,11 @@ add_action('init', function () {
 
     $cleared = [];
 
-    // 1. WordPress Transients (DB + Redis)
+    // 1. WordPress Transients (DB + Redis + Options)
+    global $wpdb;
+    if ($wpdb) {
+        $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_sode_%' OR option_name LIKE '_transient_timeout_sode_%'");
+    }
     delete_transient('sode_global_keys_map');
     if (function_exists('wp_cache_delete')) {
         wp_cache_delete('sode_global_keys_map', 'transient');
@@ -519,17 +571,9 @@ add_action('init', function () {
 add_filter('rocket_delay_js_exclusions', function ($exclusions) {
     if (!is_array($exclusions)) $exclusions = [];
     $sode_exclusions = [
-        'sode',
-        'sode-global-keys-engine',
-        'sf-ai-track',
-        'sf-slider',
-        'sf-cta',
+        'sode-universal-client',
         'lead-form',
-        'edu_banner',
-        'custom_lead_form',
-        'disclaimer-main-popup',
-        'privacy-main-popup',
-        'term-main-popup'
+        'custom_lead_form'
     ];
     return array_unique(array_merge($exclusions, $sode_exclusions));
 }, 99);
@@ -590,7 +634,8 @@ if (!function_exists('sode_client_detect_uni')) {
 }
 
 /**
- * Helper: Fetch remote rendered component (100% Live & Real-Time, No Caching)
+ * Helper: Fetch remote rendered component (Fast Local Transient Caching)
+ * Automatically flushed when Admin updates content via ?sode_flush=sode_flush_2026
  */
 if (!function_exists('sode_fetch_remote_component')) {
     function sode_fetch_remote_component($component, $args = [])
@@ -600,45 +645,55 @@ if (!function_exists('sode_fetch_remote_component')) {
         $args['uni'] = $uni;
         $args['university'] = $uni;
         $args['component'] = $component;
-        $args['_t'] = time(); // Live cache-buster
+
+        // Clean args for cache key (strip cache busters)
+        $cache_args = $args;
+        unset($cache_args['_t'], $cache_args['t'], $cache_args['_']);
+        $transient_key = 'sode_c_' . substr(md5($component . '_' . $uni . '_' . serialize($cache_args)), 0, 20);
+
+        // 1. Same-request memory cache
+        static $mem_comp = [];
+        if (isset($mem_comp[$transient_key])) {
+            return $mem_comp[$transient_key];
+        }
+
+        // 2. High-speed local Transient cache (12 Hours)
+        if (function_exists('get_transient')) {
+            $cached_html = get_transient($transient_key);
+            if ($cached_html !== false && !empty($cached_html)) {
+                $mem_comp[$transient_key] = $cached_html;
+                return $cached_html;
+            }
+        }
 
         $admin_url = rtrim(SODE_CENTRAL_ADMIN_URL, '/');
 
-        // Primary endpoint: /admin/api/render_component.php (POST transmits long text/symbols cleanly)
-        $primary_url = $admin_url . '/admin/api/render_component.php?_t=' . time();
+        // Primary endpoint: /admin/api/render_component.php
+        $primary_url = $admin_url . '/admin/api/render_component.php';
         $resp = wp_remote_post($primary_url, [
             'body' => $args,
-            'timeout' => 12,
+            'timeout' => 6,
             'sslverify' => false,
             'headers' => [
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache'
+                'Accept' => 'text/html'
             ]
         ]);
 
         // Fallback endpoint: /api/render_component.php or GET fallback
         if (is_wp_error($resp) || wp_remote_retrieve_response_code($resp) !== 200) {
-            $fallback_url = $admin_url . '/api/render_component.php?_t=' . time();
+            $fallback_url = $admin_url . '/api/render_component.php';
             $resp = wp_remote_post($fallback_url, [
                 'body' => $args,
-                'timeout' => 12,
-                'sslverify' => false,
-                'headers' => [
-                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                    'Pragma' => 'no-cache'
-                ]
+                'timeout' => 6,
+                'sslverify' => false
             ]);
 
             // Final fallback to GET if POST was blocked by security firewall
             if (is_wp_error($resp) || wp_remote_retrieve_response_code($resp) !== 200) {
                 $get_url = add_query_arg($args, $primary_url);
                 $resp = wp_remote_get($get_url, [
-                    'timeout' => 12,
-                    'sslverify' => false,
-                    'headers' => [
-                        'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                        'Pragma' => 'no-cache'
-                    ]
+                    'timeout' => 6,
+                    'sslverify' => false
                 ]);
             }
         }
@@ -660,8 +715,15 @@ if (!function_exists('sode_fetch_remote_component')) {
             if (strpos($html, 'SODE Universal Component SSR API Online') !== false) {
                 return '';
             }
+            // Save in Transient for 12 hours
+            if (function_exists('set_transient')) {
+                set_transient($transient_key, $html, 12 * HOUR_IN_SECONDS);
+            }
+            $mem_comp[$transient_key] = $html;
+            return $html;
         }
-        return $html;
+
+        return '';
     }
 }
 

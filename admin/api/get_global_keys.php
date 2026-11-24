@@ -3,9 +3,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Cache-Control, Pragma, Expires');
-header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Expires: 0');
+header('Cache-Control: public, max-age=3600, stale-while-revalidate=86400');
 
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);

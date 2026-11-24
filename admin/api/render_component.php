@@ -13,9 +13,7 @@
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Lead-Token, X-Requested-With');
-header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Expires: 0');
+header('Cache-Control: public, max-age=3600, stale-while-revalidate=86400');
 
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -107,9 +105,9 @@ if (!empty($params['university']) && empty($params['uni'])) {
 $cache_params = $params;
 unset($cache_params['_t'], $cache_params['t'], $cache_params['_']);
 
-// Cache all display components (banner, fees, syllabus, footer, courses, etc.) in Redis
-$non_cacheable_components = ['lead_form', 'popup_modals'];
-$is_cacheable = !in_array($component, $non_cacheable_components, true);
+// Cache all display components (lead_form, banner, fees, courses, popup_modals, etc.) in Redis
+// Dynamic CSRF tokens and lead submissions are handled client-side via AJAX endpoints.
+$is_cacheable = true;
 
 $cache_key = 'ssr:component:v4:' . md5($component . '|' . json_encode($cache_params));
 
