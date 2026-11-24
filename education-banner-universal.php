@@ -306,7 +306,7 @@ function edu_banner_shortcode($atts)
     $brochure_btn_class = !empty($atts['brochure_btn_class']) ? sanitize_html_class($atts['brochure_btn_class']) : 'download-brochure';
 
     // 1. Resolve university data from Admin Panel
-    $uni_slug = sode_detect_university_slug($atts['university'] ?? '');
+    $uni_slug = sode_detect_university_slug($atts['university'] ?? ($atts['uni'] ?? ''));
     $uni_data = sode_get_university_banner_data($uni_slug);
 
     if (empty($heading)) {

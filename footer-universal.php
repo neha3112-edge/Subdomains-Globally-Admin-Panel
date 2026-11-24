@@ -373,6 +373,53 @@ if (!function_exists('sode_footer_render')) {
         $use_slider_desktop = $tool_count > 4;
         $use_slider_mobile = $tool_count > 1;
 
+        // University Dynamic Key Replacements across AI Tools & Links ({DSU_LOWER}, {UNI_LOWER}, {UNIVERSITY_SLUG}, etc.)
+        $uni_slug_lower = strtolower($uni_slug);
+        $uni_slug_upper = strtoupper($uni_slug);
+        $footer_key_map = [
+            '{DSU_LOWER}' => $uni_slug_lower,
+            '[DSU_LOWER]' => $uni_slug_lower,
+            '$DSU_LOWER$' => $uni_slug_lower,
+            '{UNI_LOWER}' => $uni_slug_lower,
+            '[UNI_LOWER]' => $uni_slug_lower,
+            '$UNI_LOWER$' => $uni_slug_lower,
+            '{uni_lower}' => $uni_slug_lower,
+            '{UNIVERSITY_SHORT_NAME_LOWER}' => $uni_slug_lower,
+            '[UNIVERSITY_SHORT_NAME_LOWER]' => $uni_slug_lower,
+            '{UNIVERSITY_SLUG}' => $uni_slug_lower,
+            '[UNIVERSITY_SLUG]' => $uni_slug_lower,
+            '$UNIVERSITY_SLUG$' => $uni_slug_lower,
+            '{UNI_SLUG}' => $uni_slug_lower,
+            '[UNI_SLUG]' => $uni_slug_lower,
+            '$UNI_SLUG$' => $uni_slug_lower,
+            '{SLUG}' => $uni_slug_lower,
+            '{slug}' => $uni_slug_lower,
+            '{UNI}' => $uni_slug_upper,
+            '{UNIVERSITY_SHORT_NAME}' => $uni_slug_upper,
+            '{UNIVERSITY_NAME}' => ($uni_slug === 'dsu' ? 'Dayananda Sagar University' : $uni_slug_upper . ' University'),
+        ];
+
+        if (!empty($tools)) {
+            foreach ($tools as &$t) {
+                if (!empty($t['btn_link'])) {
+                    foreach ($footer_key_map as $fk => $fv) {
+                        $t['btn_link'] = str_replace($fk, $fv, $t['btn_link']);
+                    }
+                }
+                if (!empty($t['title'])) {
+                    foreach ($footer_key_map as $fk => $fv) {
+                        $t['title'] = str_replace($fk, $fv, $t['title']);
+                    }
+                }
+                if (!empty($t['desc'])) {
+                    foreach ($footer_key_map as $fk => $fv) {
+                        $t['desc'] = str_replace($fk, $fv, $t['desc']);
+                    }
+                }
+            }
+            unset($t);
+        }
+
         // Resolve {official_url} placeholder for legal notice
         $official_url = !empty($cfg['official_url']) ? $cfg['official_url'] : sode_footer_get_official_url($uni_slug);
         if (empty($official_url) && ($uni_slug === 'dsu' || stripos($uni_slug, 'dayananda') !== false)) {

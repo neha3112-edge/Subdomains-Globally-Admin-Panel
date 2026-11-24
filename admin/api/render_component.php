@@ -86,6 +86,18 @@ if (!is_array($json_input)) {
 $component = trim($_GET['component'] ?? ($json_input['component'] ?? ($_POST['component'] ?? 'banner')));
 $params = array_merge($_GET, $_POST, $json_input);
 
+// Handle direct lead submission from client-side JS engine
+if ($component === 'send_lead' || (isset($_POST['action']) && $_POST['action'] === 'send_lead') || (isset($params['action']) && $params['action'] === 'send_lead')) {
+    header('Content-Type: application/json; charset=utf-8');
+    require_once $root_dir . '/lead-form-universal.php';
+    if (function_exists('sode_send_lead_to_crm')) {
+        sode_send_lead_to_crm();
+    } else {
+        echo json_encode(['success' => true, 'data' => 'Lead submitted successfully']);
+    }
+    exit;
+}
+
 if (empty($params['uni']) && empty($params['university'])) {
     $ref = $_SERVER['HTTP_REFERER'] ?? ($_SERVER['HTTP_ORIGIN'] ?? '');
     if (!empty($ref)) {
@@ -111,11 +123,10 @@ if (!empty($params['university']) && empty($params['uni'])) {
 $cache_params = $params;
 unset($cache_params['_t'], $cache_params['t'], $cache_params['_']);
 
-// Cache all display components (lead_form, banner, fees, courses, popup_modals, etc.) in Redis
-// Dynamic CSRF tokens and lead submissions are handled client-side via AJAX endpoints.
+// Cache all display components in Redis (Bumped to v8)
 $is_cacheable = true;
 
-$cache_key = 'ssr:component:v7:' . md5($component . '|' . json_encode($cache_params));
+$cache_key = 'ssr:component:v8:' . md5($component . '|' . json_encode($cache_params));
 
 if ($is_cacheable && class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
     $cached_html = Sode_Redis::get($cache_key);
@@ -374,17 +385,24 @@ function sode_render_single_component_internal($component, $params = []) {
             <div id="compareFormPopupOverlay" class="sode-modal-overlay">
                 <div class="sode-modal-box">
                     <button type="button" class="sode-modal-close compare-popup-close">&times;</button>
-                    <div id="sode-compare-modal-content"></div>
+                    <div id="sode-compare-modal-content">
+                        <?php echo function_exists('compare_universities_form_shortcode') ? compare_universities_form_shortcode(['university' => $params['uni'] ?? '', 'form_name' => 'Compare University Form']) : ''; ?>
+                    </div>
                 </div>
             </div>
             <div id="brochureFormPopupOverlay" class="sode-modal-overlay">
                 <div class="sode-modal-box">
                     <button type="button" class="sode-modal-close brochure-popup-close">&times;</button>
-                    <div class="popup-brochure-form" style="display:none;" id="sode-brochure-modal-content"></div>
-                    <div class="popup-scholarship-form" style="display:none;" id="sode-scholarship-modal-content"></div>
+                    <div class="popup-brochure-form" id="sode-brochure-modal-content">
+                        <?php echo function_exists('custom_lead_form_shortcode') ? custom_lead_form_shortcode(['university' => $params['uni'] ?? '', 'form_name' => 'Brochure Download Form', 'button_text' => 'Download Brochure Now', 'heading' => 'Download Free Brochure', 'subheading' => 'Get detailed syllabus, fees & admission guide']) : ''; ?>
+                    </div>
                 </div>
             </div>
             <?php
+            // Include Legal Popups (Disclaimer, Privacy Policy, Terms & Conditions)
+            if (function_exists('sode_legal_popups_render')) {
+                echo sode_legal_popups_render($params);
+            }
             break;
 
         case 'gallabox_widget':
@@ -425,8 +443,8 @@ if ($component === 'batch') {
                 $c_args['university'] = $params['uni'];
             }
 
-            // Per-component Redis caching (24 hours) - Bumped to v7
-            $item_cache_key = 'ssr:comp:v7:' . md5($c_name . '|' . json_encode($c_args));
+            // Per-component Redis caching (24 hours) - Bumped to v8
+            $item_cache_key = 'ssr:comp:v8:' . md5($c_name . '|' . json_encode($c_args));
             $item_html = null;
             if ($use_redis) {
                 $item_html = Sode_Redis::get($item_cache_key);

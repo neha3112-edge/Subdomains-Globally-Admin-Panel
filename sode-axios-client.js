@@ -1,13 +1,14 @@
 /**
  * ====================================================================
- * SODE Central Universal Client Engine (Ultra Fast Priority Paint & 0ms Cache)
- * File: sode-axios-client.js - Version 7.1
+ * SODE Central Universal Client Engine (Ultra Fast Priority Paint & Full Modals)
+ * File: sode-axios-client.js - Version 8.0
  * 
- * - Instant Hero Priority Pipeline: Decoupled from slow batch Promise.all.
- * - 0ms Hero First-Paint: Hydrates from page/component localStorage at DOM insertion.
- * - Isolated High-Priority Banner Stream: Fetches banner first with priority: 'high'.
- * - Quote-Aware Shortcode Extractor: Full support for nested brackets in attributes.
- * - Zero Scroll-Jump Armor: Completely blocks empty "#" jumps and resets.
+ * 1. Legal Popups: Disclaimer, Privacy Policy, Terms & Conditions popups.
+ * 2. URL Key Cleanup: Replaces {DSU_LOWER}, {UNI_LOWER}, {UNIVERSITY_SLUG} across all links.
+ * 3. Inner Page Form Popups: Working Counseling, Brochure, Compare modals.
+ * 4. Direct CRM Integration: Sends leads to central admin API with 0 PHP plugins needed.
+ * 5. Instant Hero Priority Pipeline: Decoupled from slow batch Promise.all.
+ * 6. Zero Scroll-Jump Armor: Blocks empty "#" jumps and resets.
  * ====================================================================
  */
 (function () {
@@ -26,7 +27,7 @@
     }
 
     const uniSlug = getUniSlug();
-    const storagePrefix = 'sode_v7_' + uniSlug + '_';
+    const storagePrefix = 'sode_v8_' + uniSlug + '_';
     const pagePath = window.location.pathname;
 
     // Known university metadata dictionary for instant 0ms fallback
@@ -81,6 +82,25 @@
         '$UNI$': uniInfo.short,
 
         '{UNIVERSITY_SLUG}': uniSlug,
+        '[UNIVERSITY_SLUG]': uniSlug,
+        '$UNIVERSITY_SLUG$': uniSlug,
+        '{UNI_SLUG}': uniSlug,
+        '[UNI_SLUG]': uniSlug,
+        '$UNI_SLUG$': uniSlug,
+        '{SLUG}': uniSlug,
+        '{slug}': uniSlug,
+
+        // Specific lowercase keys ({DSU_LOWER}, {UNI_LOWER}, etc.)
+        '{DSU_LOWER}': uniSlug,
+        '[DSU_LOWER]': uniSlug,
+        '$DSU_LOWER$': uniSlug,
+        '{UNI_LOWER}': uniSlug,
+        '[UNI_LOWER]': uniSlug,
+        '$UNI_LOWER$': uniSlug,
+        '{uni_lower}': uniSlug,
+        '{UNIVERSITY_SHORT_NAME_LOWER}': uniSlug,
+        '[UNIVERSITY_SHORT_NAME_LOWER]': uniSlug,
+
         '$YEAR$': currentYear,
         '{YEAR}': currentYear,
         '[YEAR]': currentYear
@@ -106,6 +126,9 @@
     const earlyKeysPromise = fetch(`${BASE_URL}/api/get_global_keys.php?uni=${encodeURIComponent(uniSlug)}`)
         .then(res => res.json()).catch(() => null);
 
+    const earlyModalsPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
+        .then(res => res.text()).catch(() => null);
+
     // Comprehensive list of known shortcodes
     const knownShortcodes = [
         'edu_banner', 'banner',
@@ -128,6 +151,7 @@
         'application_process', 'university_application_process', 'uni_application_process', 'idol_application_process', 'admission_process', 'sode_application_process',
         'university_dates', 'important_dates', 'uni_important_dates', 'admission_dates', 'dates_table', 'university_dates_table', 'admission_last_date',
         'alternate_universities', 'alternative_universities', 'alternatives_universities', 'alternate_university_list', 'alternative_university_list', 'alternatives_list',
+        'legal_popups', 'disclaimer_popup', 'privacy_popup', 'terms_popup',
         'footer', 'universal_footer', 'sode_footer', 'footer_section'
     ];
 
@@ -235,6 +259,9 @@
             .replace(/\{UNIVERSITY_NAME\}|\[UNIVERSITY_NAME\]|\$UNIVERSITY_NAME\$|\{\{UNIVERSITY_NAME\}\}/gi, activeKeys['{UNIVERSITY_NAME}'])
             .replace(/\{MODE\}|\[MODE\]|\$MODE\$|\{\{MODE\}\}/gi, activeKeys['{MODE}'])
             .replace(/\{UNIVERSITY_SHORT_NAME\}|\[UNIVERSITY_SHORT_NAME\]|\$UNIVERSITY_SHORT_NAME\$|\{UNI_SHORT_NAME\}|\[UNI_SHORT_NAME\]|\{UNI\}|\[UNI\]/gi, activeKeys['{UNIVERSITY_SHORT_NAME}'])
+            .replace(/\{DSU_LOWER\}|\[DSU_LOWER\]|\$DSU_LOWER\$/gi, uniSlug)
+            .replace(/\{UNI_LOWER\}|\[UNI_LOWER\]|\$UNI_LOWER\$/gi, uniSlug)
+            .replace(/\{UNIVERSITY_SLUG\}|\[UNIVERSITY_SLUG\]|\$UNIVERSITY_SLUG\$/gi, uniSlug)
             .replace(/\$YEAR\$|\{YEAR\}|\[YEAR\]/gi, currentYear);
 
         if (activeKeys) {
@@ -347,7 +374,7 @@
         return matchedItems;
     }
 
-    // 6. Fast DOM Global Keys Replacement ({UNIVERSITY_NAME}, [UNIVERSITY_NAME], {MODE}, [MODE], $YEAR$)
+    // 6. Fast DOM Global Keys Replacement ({UNIVERSITY_NAME}, [UNIVERSITY_NAME], {DSU_LOWER}, {UNI_LOWER})
     function replaceDOMKeys(keys) {
         if (!keys || !Object.keys(keys).length || !document.body) return;
         Object.assign(activeKeys, keys);
@@ -417,7 +444,7 @@
                 const tag = node.tagName;
                 if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
 
-                ['href', 'title', 'alt', 'placeholder', 'data-title', 'content'].forEach(attr => {
+                ['href', 'src', 'title', 'alt', 'placeholder', 'data-title', 'content'].forEach(attr => {
                     if (node.hasAttribute(attr)) {
                         let a = node.getAttribute(attr);
                         let ac = false;
@@ -427,6 +454,22 @@
                                 ac = true;
                             }
                         });
+
+                        // Extra shield: Clean any {DSU_LOWER}, {UNI_LOWER}, {UNIVERSITY_SLUG} in URLs
+                        if (a.indexOf('_LOWER') !== -1 || a.indexOf('_lower') !== -1 || a.indexOf('SLUG') !== -1 || a.indexOf('slug') !== -1) {
+                            const cleaned = a
+                                .replace(/\{(?:[a-zA-Z0-9_-]+_)?(?:LOWER|lower)\}/g, uniSlug)
+                                .replace(/\[(?:[a-zA-Z0-9_-]+_)?(?:LOWER|lower)\]/g, uniSlug)
+                                .replace(/\{(?:UNI|UNIVERSITY)?_?SLUG\}/gi, uniSlug)
+                                .replace(/\[(?:UNI|UNIVERSITY)?_?SLUG\]/gi, uniSlug)
+                                .replace(/\{DSU_LOWER\}|\[DSU_LOWER\]/gi, uniSlug)
+                                .replace(/\{UNI_LOWER\}|\[UNI_LOWER\]/gi, uniSlug);
+                            if (cleaned !== a) {
+                                a = cleaned;
+                                ac = true;
+                            }
+                        }
+
                         if (ac) node.setAttribute(attr, a);
                     }
                 });
@@ -445,7 +488,6 @@
 
         matchedItems.forEach(item => {
             try {
-                // For banner, check exact raw, page-specific, or latest hero banner cache
                 let cachedHtml = localStorage.getItem(storagePrefix + 'comp_' + item.raw);
                 if (!cachedHtml && (item.name === 'edu_banner' || item.name === 'banner')) {
                     cachedHtml = localStorage.getItem(storagePrefix + 'hero_banner_' + pagePath) || localStorage.getItem(storagePrefix + 'latest_hero_banner');
@@ -465,7 +507,7 @@
         return false;
     }
 
-    // 8. Dedicated Priority Hero Banner Pipeline (Never waits for slow batch or Promise.all!)
+    // 8. Dedicated Priority Hero Banner Pipeline
     let isBannerRendered = false;
     function renderBannerPriority(bannerItem) {
         if (!bannerItem || isBannerRendered) return;
@@ -495,7 +537,6 @@
                 }
             });
         } else {
-            // Course page or custom attributes banner: fetch immediately with high priority
             fetch(`${BASE_URL}/admin/api/render_component.php?component=banner`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -514,7 +555,98 @@
         }
     }
 
-    // 9. High-Performance Parallel Execution Engine for Remaining Components
+    // 9. Modal Management System (Counseling, Brochure, Compare, and Legal Modals)
+    function ensureModalsInDOM(callback) {
+        if (document.getElementById('counselingFormPopupOverlay') && document.getElementById('mainDisclaimerPopup')) {
+            if (callback) callback();
+            return;
+        }
+
+        earlyModalsPromise.then(modalsHtml => {
+            if (modalsHtml && !document.getElementById('counselingFormPopupOverlay')) {
+                const modalWrap = document.createElement('div');
+                modalWrap.id = 'sode-footer-modals-wrap';
+                modalWrap.innerHTML = modalsHtml;
+                document.body.appendChild(modalWrap);
+                runScripts(modalWrap);
+                replaceDOMKeys(activeKeys);
+            }
+            if (callback) callback();
+        });
+    }
+
+    function openCounselingModal(courseName) {
+        ensureModalsInDOM(() => {
+            const overlay = document.getElementById('counselingFormPopupOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (courseName) {
+                    const sel = overlay.querySelector('select[name="course"], input[name="course"]');
+                    if (sel) sel.value = courseName;
+                }
+            }
+        });
+    }
+
+    function openBrochureModal(courseName) {
+        ensureModalsInDOM(() => {
+            const overlay = document.getElementById('brochureFormPopupOverlay') || document.getElementById('counselingFormPopupOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (courseName) {
+                    const sel = overlay.querySelector('select[name="course"], input[name="course"]');
+                    if (sel) sel.value = courseName;
+                }
+            }
+        });
+    }
+
+    function openCompareModal() {
+        ensureModalsInDOM(() => {
+            const overlay = document.getElementById('compareFormPopupOverlay') || document.getElementById('counselingFormPopupOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    }
+
+    function openLegalModal(type) {
+        const map = {
+            'disclaimer': 'mainDisclaimerPopup',
+            'privacy': 'mainPrivacyPopup',
+            'privacy-policy': 'mainPrivacyPopup',
+            'terms': 'mainTermsPopup',
+            'terms-conditions': 'mainTermsPopup'
+        };
+        const id = map[type] || 'mainDisclaimerPopup';
+
+        ensureModalsInDOM(() => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    }
+
+    // Expose Global Helper Functions
+    window.openApplyModal = openCounselingModal;
+    window.openCounselingModal = openCounselingModal;
+    window.openBrochureModal = openBrochureModal;
+    window.openCompareModal = openCompareModal;
+    window.openMainPopup = function (id) {
+        const el = document.getElementById(id);
+        if (el) { el.classList.add('active'); document.body.style.overflow = 'hidden'; }
+    };
+    window.closeMainPopup = function (id) {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('active'); document.body.style.overflow = ''; }
+    };
+
+    // 10. High-Performance Parallel Execution Engine for Remaining Components
     let isBatchExecuting = false;
     async function executeEngine() {
         if (isBatchExecuting) return;
@@ -549,7 +681,6 @@
 
         // 4. Parallel Requests for remaining widgets
         const keysPromise = earlyKeysPromise;
-
         const batchPromise = Object.keys(batchItems).length > 0
             ? fetch(`${BASE_URL}/admin/api/render_component.php?component=batch`, {
                 method: 'POST',
@@ -558,16 +689,11 @@
             }).then(res => res.json()).catch(() => null)
             : Promise.resolve(null);
 
-        const modalsPromise = !document.getElementById('counselingFormPopupOverlay')
-            ? fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
-                .then(res => res.text()).catch(() => null)
-            : Promise.resolve(null);
-
         try {
             const [keysData, batchData, modalsHtml] = await Promise.all([
                 keysPromise,
                 batchPromise,
-                modalsPromise
+                earlyModalsPromise
             ]);
 
             // Process Global Keys
@@ -600,8 +726,8 @@
                 });
             }
 
-            // Inject Footer Modals
-            if (modalsHtml && modalsHtml.indexOf('sode-modal-overlay') !== -1 && !document.getElementById('counselingFormPopupOverlay')) {
+            // Inject Modals (Counseling, Brochure, Compare, and Legal Popups)
+            if (modalsHtml && !document.getElementById('counselingFormPopupOverlay')) {
                 const modalWrap = document.createElement('div');
                 modalWrap.id = 'sode-footer-modals-wrap';
                 modalWrap.innerHTML = modalsHtml;
@@ -622,8 +748,62 @@
         }
     }
 
-    // 10. Zero Scroll-Jump Armor: Prevent jumping to top on halfway scroll or empty "#" clicks
+    // 11. Universal Event Delegation (Legal Popups, Form Triggers, Zero Scroll-Jump Armor)
     document.addEventListener('click', function (e) {
+        // A. Legal Popups Triggers
+        const legalBtn = e.target.closest('.disclaimer-main-popup, .privacy-main-popup, .term-main-popup, [href*="#disclaimer"], [href*="#privacy"], [href*="#terms"]');
+        if (legalBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const href = (legalBtn.getAttribute('href') || '').toLowerCase();
+            if (legalBtn.classList.contains('disclaimer-main-popup') || href.includes('disclaimer')) {
+                openLegalModal('disclaimer');
+            } else if (legalBtn.classList.contains('privacy-main-popup') || href.includes('privacy')) {
+                openLegalModal('privacy');
+            } else if (legalBtn.classList.contains('term-main-popup') || href.includes('term')) {
+                openLegalModal('terms');
+            }
+            return;
+        }
+
+        // B. Brochure Download Popups
+        const brochureBtn = e.target.closest('.download-brochure, .edu-brochure-btn, [href*="#brochure"], [href="#download-brochure"], [data-action="brochure"]');
+        if (brochureBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const course = brochureBtn.dataset.course || '';
+            openBrochureModal(course);
+            return;
+        }
+
+        // C. Counseling / Apply Now Popups
+        const applyBtn = e.target.closest('.applynow, .sode-apply-btn, .sf-cta-btn, [href="#custom_lead_form"], [href="#apply"], [href="#counseling"], [data-action="apply"]');
+        if (applyBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const course = applyBtn.dataset.course || '';
+            openCounselingModal(course);
+            return;
+        }
+
+        // D. Compare University Popups / Buttons
+        const compareBtn = e.target.closest('[href="#compare-university"], [href="#compare"], .compare-btn');
+        if (compareBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            openCompareModal();
+            return;
+        }
+
+        // E. Close Any Active Modal
+        if (e.target.closest('.sode-modal-close, .sode-modal-overlay, .des-popup-close-btn, .main-popup-overlay')) {
+            if (e.target.classList.contains('sode-modal-overlay') || e.target.classList.contains('main-popup-overlay') || e.target.closest('.sode-modal-close') || e.target.closest('.des-popup-close-btn')) {
+                document.querySelectorAll('.sode-modal-overlay, .main-popup-overlay').forEach(o => o.classList.remove('active'));
+                document.body.style.overflow = '';
+            }
+        }
+
+        // F. Zero Scroll-Jump Armor for bare '#' links
         const a = e.target.closest('a');
         if (a) {
             const href = (a.getAttribute('href') || '').trim();
@@ -631,19 +811,66 @@
                 e.preventDefault();
             }
         }
+    }, { capture: true, passive: false });
 
-        const target = e.target.closest('.applynow, .sode-apply-btn, [href="#custom_lead_form"], [href="#apply"]');
-        if (target) {
-            e.preventDefault();
-            const overlay = document.getElementById('counselingFormPopupOverlay');
-            if (overlay) overlay.classList.add('active');
-        }
-        if (e.target.closest('.sode-modal-close, .sode-modal-overlay')) {
-            if (e.target.classList.contains('sode-modal-overlay') || e.target.closest('.sode-modal-close')) {
-                document.querySelectorAll('.sode-modal-overlay').forEach(o => o.classList.remove('active'));
+    // 12. Direct Client-Side Form Submission (Sends to central admin API with zero PHP plugin dependencies)
+    document.addEventListener('submit', function (e) {
+        const form = e.target.closest('.customLeadForm');
+        if (!form) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const btn = form.querySelector('.submitBtn, button[type="submit"]');
+        if (btn && btn.disabled) return;
+
+        const phoneInput = form.querySelector('input[type="tel"], input[name="phone"], .phone');
+        if (phoneInput) {
+            const cleanPhone = phoneInput.value.replace(/[^0-9]/g, '');
+            if (cleanPhone.length < 10) {
+                alert('Please enter a valid 10-digit mobile number');
+                return;
             }
         }
-    }, { capture: true, passive: false });
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = 'Submitting...';
+        }
+
+        const formData = new FormData(form);
+        formData.append('uni_slug', uniSlug);
+        formData.append('page_url', window.location.href);
+
+        fetch(`${BASE_URL}/admin/api/render_component.php?component=send_lead`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (btn) {
+                btn.innerText = 'Submitted Successfully ✓';
+                btn.style.backgroundColor = '#16a34a';
+            }
+            setTimeout(() => {
+                document.querySelectorAll('.sode-modal-overlay, .main-popup-overlay').forEach(o => o.classList.remove('active'));
+                document.body.style.overflow = '';
+                form.reset();
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'Submit';
+                    btn.style.backgroundColor = '';
+                }
+            }, 1500);
+        })
+        .catch(err => {
+            console.error('Lead error:', err);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = 'Submit';
+            }
+        });
+    }, true);
 
     // Clean up any empty "#" pushed to URL without jumping scroll
     window.addEventListener('hashchange', function () {
@@ -654,12 +881,7 @@
         }
     });
 
-    window.openApplyModal = function () {
-        const overlay = document.getElementById('counselingFormPopupOverlay');
-        if (overlay) overlay.classList.add('active');
-    };
-
-    // 11. Instant Hero Mutation Detection (Runs continuously as DOM nodes are streamed)
+    // 13. Instant Hero Mutation Detection
     function scanAndHydrateBanner() {
         if (isBannerRendered || !document.body) return;
         const items = collectShortcodes();
@@ -669,10 +891,8 @@
         }
     }
 
-    // Step 1: Scan immediately
     scanAndHydrateBanner();
 
-    // Step 2: MutationObserver detects hero banner instantly upon insertion
     const observer = new MutationObserver(function () {
         if (!isBannerRendered) {
             scanAndHydrateBanner();
@@ -689,7 +909,6 @@
         observer.observe(document.documentElement, { childList: true, subtree: true });
     }
 
-    // Step 3: Event Listeners for full page finish
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             scanAndHydrateBanner();
