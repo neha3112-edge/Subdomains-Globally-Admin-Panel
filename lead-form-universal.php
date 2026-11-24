@@ -108,27 +108,28 @@ if (!function_exists('sode_get_university_form_config')) {
                 require_once $local_config;
                 if (function_exists('get_db_connection')) {
                     $db = get_db_connection();
+                    if ($db) {
+                        // Global API settings
+                        $global_rows = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group = 'integrations'")->fetchAll(PDO::FETCH_KEY_PAIR);
 
-                    // Global API settings
-                    $global_rows = $db->query("SELECT setting_key, setting_value FROM global_settings WHERE setting_group = 'integrations'")->fetchAll(PDO::FETCH_KEY_PAIR);
-
-                    $stmt = $db->prepare("
-                        SELECT ufc.*, u.full_name, u.short_name, u.slug, u.brochure_pdf_url, u.mode
-                        FROM university_form_configs ufc 
-                        INNER JOIN universities u ON ufc.university_id = u.id 
-                        WHERE (u.slug = ? OR LOWER(u.short_name) = ?) AND u.is_active = 1
-                        LIMIT 1
-                    ");
-                    $stmt->execute([$slug, strtolower($slug)]);
-                    $row = $stmt->fetch();
-                    if ($row) {
-                        $row['crm_api_url'] = $global_rows['crm_api_url'] ?? (getenv('CRM_API_URL') ?: 'https://api.crm.mysode.com/api/lead/apicreated');
-                        $row['crm_api_key'] = $global_rows['crm_api_key'] ?? (getenv('CRM_API_KEY') ?: '');
-                        $row['crm_secret'] = $global_rows['crm_secret'] ?? (getenv('CRM_SECRET') ?: '');
-                        $row['brevo_api_url'] = $global_rows['brevo_api_url'] ?? (getenv('BREVO_API_URL') ?: 'https://api.brevo.com/v3/contacts');
-                        $row['brevo_api_key'] = $global_rows['brevo_api_key'] ?? (getenv('BREVO_API_KEY') ?: '');
-                        $row['gallabox_webhook_url'] = $global_rows['gallabox_webhook_url'] ?? (getenv('GALLABOX_WEBHOOK_URL') ?: '');
-                        return $row;
+                        $stmt = $db->prepare("
+                            SELECT ufc.*, u.full_name, u.short_name, u.slug, u.brochure_pdf_url, u.mode
+                            FROM university_form_configs ufc 
+                            INNER JOIN universities u ON ufc.university_id = u.id 
+                            WHERE (u.slug = ? OR LOWER(u.short_name) = ?) AND u.is_active = 1
+                            LIMIT 1
+                        ");
+                        $stmt->execute([$slug, strtolower($slug)]);
+                        $row = $stmt->fetch();
+                        if ($row) {
+                            $row['crm_api_url'] = $global_rows['crm_api_url'] ?? (getenv('CRM_API_URL') ?: 'https://api.crm.mysode.com/api/lead/apicreated');
+                            $row['crm_api_key'] = $global_rows['crm_api_key'] ?? (getenv('CRM_API_KEY') ?: '');
+                            $row['crm_secret'] = $global_rows['crm_secret'] ?? (getenv('CRM_SECRET') ?: '');
+                            $row['brevo_api_url'] = $global_rows['brevo_api_url'] ?? (getenv('BREVO_API_URL') ?: 'https://api.brevo.com/v3/contacts');
+                            $row['brevo_api_key'] = $global_rows['brevo_api_key'] ?? (getenv('BREVO_API_KEY') ?: '');
+                            $row['gallabox_webhook_url'] = $global_rows['gallabox_webhook_url'] ?? (getenv('GALLABOX_WEBHOOK_URL') ?: '');
+                            return $row;
+                        }
                     }
                 }
             } catch (Exception $e) {

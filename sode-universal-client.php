@@ -122,7 +122,7 @@ if (!function_exists('sode_client_replace_keys')) {
         foreach ($keys as $code => $val) {
             $val = (string) $val;
             $code_clean = trim($code);
-            $raw = trim($code_clean, '$[]{}');
+            $raw = trim($code_clean, '$[]{}#');
 
             // Exact case variants for this specific key
             $variants = [
@@ -131,6 +131,7 @@ if (!function_exists('sode_client_replace_keys')) {
                 '$' . $raw . '$',
                 '{' . $raw . '}',
                 '[' . $raw . ']',
+                '#' . $raw . '#',
             ];
 
             // ONLY specific full multi-word uppercase identifiers are allowed without delimiters
@@ -143,6 +144,17 @@ if (!function_exists('sode_client_replace_keys')) {
                 if ($p !== '' && !isset($pattern_map[$p])) {
                     $pattern_map[$p] = $val;
                 }
+            }
+        }
+
+        // Dynamic Lead Form Key Fallback: if #LEAD_FORM# is used and not yet in pattern_map, fetch it
+        if ((strpos($text, '#LEAD_FORM#') !== false || strpos($text, '#lead_form#') !== false) && !isset($pattern_map['#LEAD_FORM#'])) {
+            $lead_form_ssr = function_exists('sode_fetch_remote_component') ? sode_fetch_remote_component('lead_form', []) : '';
+            if (!empty($lead_form_ssr)) {
+                $pattern_map['#LEAD_FORM#']   = $lead_form_ssr;
+                $pattern_map['#lead_form#']   = $lead_form_ssr;
+                $pattern_map['{#LEAD_FORM#}'] = $lead_form_ssr;
+                $pattern_map['{#lead_form#}'] = $lead_form_ssr;
             }
         }
 
@@ -382,7 +394,18 @@ add_action('wp_head', function () {
                                     changed = true;
                                 }
                             });
-                            if (changed) node.textContent = t;
+                            if (changed) {
+                                if (t.indexOf('<') !== -1 && t.indexOf('>') !== -1) {
+                                    var temp = document.createElement('span');
+                                    temp.innerHTML = t;
+                                    while (temp.firstChild) {
+                                        node.parentNode.insertBefore(temp.firstChild, node);
+                                    }
+                                    node.parentNode.removeChild(node);
+                                } else {
+                                    node.textContent = t;
+                                }
+                            }
                         } else if (node.nodeType === 1) {
                             var tag = node.tagName;
                             if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
@@ -671,6 +694,18 @@ add_shortcode('custom_lead_form', function ($atts) {
         'button_text' => 'Submit',
         'university' => ''
     ], $atts, 'custom_lead_form');
+
+    return sode_fetch_remote_component('lead_form', $atts);
+});
+
+add_shortcode('lead_form', function ($atts) {
+    $atts = shortcode_atts([
+        'heading' => 'Book 100% Free Counseling',
+        'subheading' => 'Get 1 to 1 Expert Guidance from SODE™',
+        'form_name' => '',
+        'button_text' => 'Submit',
+        'university' => ''
+    ], $atts, 'lead_form');
 
     return sode_fetch_remote_component('lead_form', $atts);
 });

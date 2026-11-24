@@ -566,6 +566,53 @@ if (!empty($uni_slug)) {
     }
 }
 
+// ── Lead Form Universal Component Key Injection (#LEAD_FORM#) ────────
+if (!function_exists('custom_lead_form_shortcode')) {
+    $lead_file = dirname(__DIR__, 2) . '/lead-form-universal.php';
+    if (file_exists($lead_file)) {
+        require_once $lead_file;
+    }
+}
+
+if (function_exists('custom_lead_form_shortcode')) {
+    $lead_form_html = custom_lead_form_shortcode([
+        'university' => $uni_slug ?: '',
+        'form_name'  => (!empty($uni['short_name']) ? $uni['short_name'] : 'Main') . ' Lead Form'
+    ]);
+
+    if (!empty($lead_form_html)) {
+        $lead_form_aliases = [
+            '#LEAD_FORM#'        => $lead_form_html,
+            '#lead_form#'        => $lead_form_html,
+            '{#LEAD_FORM#}'      => $lead_form_html,
+            '{#lead_form#}'      => $lead_form_html,
+            '${#LEAD_FORM#}$'    => $lead_form_html,
+            '${#lead_form#}$'    => $lead_form_html,
+            '{LEAD_FORM}'        => $lead_form_html,
+            '{lead_form}'        => $lead_form_html,
+            '$LEAD_FORM$'        => $lead_form_html,
+            '$lead_form$'        => $lead_form_html,
+            '#MAIN_LEAD_FORM#'   => $lead_form_html,
+            '#main_lead_form#'   => $lead_form_html,
+            '{MAIN_LEAD_FORM}'   => $lead_form_html,
+            '{main_lead_form}'   => $lead_form_html,
+            '$MAIN_LEAD_FORM$'   => $lead_form_html,
+            '$main_lead_form$'   => $lead_form_html,
+            '#COUNSELING_FORM#'  => $lead_form_html,
+            '#counseling_form#'  => $lead_form_html,
+            '{COUNSELING_FORM}'  => $lead_form_html,
+            '{counseling_form}'  => $lead_form_html,
+            '$COUNSELING_FORM$'  => $lead_form_html,
+            '$counseling_form$'  => $lead_form_html,
+            '[custom_lead_form]' => $lead_form_html,
+            '[lead_form]'        => $lead_form_html,
+        ];
+        foreach ($lead_form_aliases as $l_k => $l_v) {
+            $map[$l_k] = $l_v;
+        }
+    }
+}
+
 $response = [
     'success'       => true,
     'site_logo_url' => $site_logo_url ?: null,
