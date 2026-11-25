@@ -364,9 +364,13 @@
             }
         } catch (e) {}
 
+        const isBlock = /<(?:div|table|section|article|ul|ol|header|footer|form|nav|aside|h[1-6]|p)\b/i.test(html);
+
         if (item.element && item.element.parentNode) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
+            const tag = isBlock ? 'div' : 'span';
+            const wrapper = document.createElement(tag);
+            wrapper.className = (isBlock ? 'sode-rendered-component' : 'sode-rendered-inline') + ' sode-' + item.name + ' sode-hydrated';
+            if (!isBlock) wrapper.style.display = 'inline';
             wrapper.innerHTML = html;
             markAncestorsHydrated(item.element);
             item.element.parentNode.replaceChild(wrapper, item.element);
@@ -383,11 +387,13 @@
             markAncestorsHydrated(parent);
 
             if (textVal.trim() === item.raw.trim()) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
+                const tag = isBlock ? 'div' : 'span';
+                const wrapper = document.createElement(tag);
+                wrapper.className = (isBlock ? 'sode-rendered-component' : 'sode-rendered-inline') + ' sode-' + item.name + ' sode-hydrated';
+                if (!isBlock) wrapper.style.display = 'inline';
                 wrapper.innerHTML = html;
 
-                if ((parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
+                if (isBlock && (parent.tagName === 'P' || parent.tagName === 'DIV' || parent.classList.contains('elementor-widget-container')) && parent.childNodes.length === 1) {
                     parent.parentNode.replaceChild(wrapper, parent);
                 } else {
                     parent.replaceChild(wrapper, item.node);
@@ -402,8 +408,9 @@
                     const beforeText = textVal.substring(0, idx);
                     const afterText = textVal.substring(idx + item.raw.length);
 
-                    const span = document.createElement('span');
-                    span.className = 'sode-rendered-inline sode-' + item.name + ' sode-hydrated';
+                    const span = document.createElement(isBlock ? 'div' : 'span');
+                    span.className = (isBlock ? 'sode-rendered-component' : 'sode-rendered-inline') + ' sode-' + item.name + ' sode-hydrated';
+                    if (!isBlock) span.style.display = 'inline';
                     span.innerHTML = html;
 
                     const frag = document.createDocumentFragment();
@@ -793,6 +800,29 @@
         const el = document.getElementById(id);
         if (el) { el.classList.remove('active'); document.body.style.overflow = ''; }
     };
+    window.sodeToggleEligRows = function (tableId) {
+        var wrapper = document.getElementById(tableId);
+        if (!wrapper) return;
+        var btn = wrapper.querySelector('.sode-elig-view-more-btn');
+        var btnText = btn ? (btn.querySelector('.sode-btn-text') || btn) : null;
+        var extraRows = wrapper.querySelectorAll('.sode-elig-row-extra');
+        var isExpanded = wrapper.classList.contains('is-expanded');
+
+        if (isExpanded) {
+            extraRows.forEach(function (row) { row.style.display = 'none'; });
+            wrapper.classList.remove('is-expanded');
+            if (btnText && btn) {
+                var moreCount = btn.getAttribute('data-more-count') || '';
+                btnText.innerHTML = 'View More Courses' + (moreCount ? ' (' + moreCount + ' More)' : '') + ' &darr;';
+            }
+        } else {
+            extraRows.forEach(function (row) { row.style.display = 'table-row'; });
+            wrapper.classList.add('is-expanded');
+            if (btnText) {
+                btnText.innerHTML = 'View Less Courses &uarr;';
+            }
+        }
+    };
 
     // 10. High-Performance Parallel Execution Engine for Remaining Components
     let isBatchExecuting = false;
@@ -962,7 +992,130 @@
             return;
         }
 
-        // E. Close Any Active Modal
+        // E. Table Expand / Collapse Toggles ("Read More / Less", "View More / Less")
+        const tableToggleBtn = e.target.closest(
+            '.job-roles-table-toggle-btn, .course-table-toggle-btn, .sode-uni-fees-toggle-btn, .sode-elig-view-more-btn, .sode-toggle-courses, .sode-alt-btn-courses, .sode-alt-view-more-btn, [data-action="toggle-table-rows"]'
+        );
+        if (tableToggleBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const targetId = tableToggleBtn.getAttribute('data-target') || tableToggleBtn.dataset.target || '';
+            let container = targetId ? document.getElementById(targetId) : null;
+            if (!container) {
+                container = tableToggleBtn.closest('.job-roles-table-wrapper, .course-table-wrapper, .sode-table-wrap, .sode-courses-wrapper, .sode-alt-wrapper, .sode-alt-container, .sode-rendered-component');
+            }
+            if (!container) {
+                let curr = tableToggleBtn.parentElement;
+                while (curr && curr !== document.body) {
+                    if (curr.querySelector('table, .job-roles-table-extra-rows, .course-table-extra-rows, .sode-uni-fees-extra-rows, .sode-elig-row-extra, .sode-alt-card-extra')) {
+                        container = curr;
+                        break;
+                    }
+                    curr = curr.parentElement;
+                }
+            }
+
+            if (container) {
+                // 1. Job Roles Table Toggle (Read More <-> Read Less)
+                const jobExtra = container.querySelector('.job-roles-table-extra-rows');
+                if (jobExtra) {
+                    const isHidden = jobExtra.style.display === 'none' || window.getComputedStyle(jobExtra).display === 'none';
+                    jobExtra.style.display = isHidden ? 'table-row-group' : 'none';
+                    tableToggleBtn.textContent = isHidden ? 'Read Less' : 'Read More';
+                    return;
+                }
+
+                // 2. Course Fees Table Toggle (View More <-> View Less)
+                const courseExtra = container.querySelector('.course-table-extra-rows');
+                if (courseExtra) {
+                    const isHidden = courseExtra.style.display === 'none' || window.getComputedStyle(courseExtra).display === 'none';
+                    courseExtra.style.display = isHidden ? 'table-row-group' : 'none';
+                    tableToggleBtn.textContent = isHidden ? 'View Less' : 'View More';
+                    return;
+                }
+
+                // 3. University Fees Table Toggle (View More <-> View Less)
+                const uniFeesExtra = container.querySelector('.sode-uni-fees-extra-rows');
+                if (uniFeesExtra) {
+                    const isHidden = uniFeesExtra.style.display === 'none' || window.getComputedStyle(uniFeesExtra).display === 'none';
+                    uniFeesExtra.style.display = isHidden ? 'table-row-group' : 'none';
+                    tableToggleBtn.textContent = isHidden ? 'View Less' : 'View More';
+                    return;
+                }
+
+                // 4. Courses Eligibility Table View More (View More Courses <-> View Less Courses)
+                const eligRows = container.querySelectorAll('.sode-elig-row-extra');
+                if (eligRows.length > 0) {
+                    const isExpanded = container.classList.contains('is-expanded');
+                    if (isExpanded) {
+                        eligRows.forEach(r => r.style.display = 'none');
+                        container.classList.remove('is-expanded');
+                        const moreCount = tableToggleBtn.getAttribute('data-more-count') || '';
+                        const btnText = tableToggleBtn.querySelector('.sode-btn-text') || tableToggleBtn;
+                        btnText.innerHTML = 'View More Courses' + (moreCount ? ' (' + moreCount + ' More)' : '') + ' &darr;';
+                    } else {
+                        eligRows.forEach(r => r.style.display = 'table-row');
+                        container.classList.add('is-expanded');
+                        const btnText = tableToggleBtn.querySelector('.sode-btn-text') || tableToggleBtn;
+                        btnText.innerHTML = 'View Less Courses &uarr;';
+                    }
+                    return;
+                }
+
+                // 5. Alternate Universities Cards View More
+                const altCardsExtra = container.querySelectorAll('.sode-alt-card-extra');
+                if (altCardsExtra.length > 0) {
+                    const isExpanded = container.classList.contains('is-expanded') || tableToggleBtn.classList.contains('is-expanded');
+                    const textSpan = tableToggleBtn.querySelector('.sode-alt-view-more-text') || tableToggleBtn;
+                    if (isExpanded) {
+                        container.classList.remove('is-expanded');
+                        tableToggleBtn.classList.remove('is-expanded');
+                        altCardsExtra.forEach(c => {
+                            c.classList.remove('is-expanded-card');
+                            c.style.setProperty('display', 'none', 'important');
+                        });
+                        textSpan.textContent = 'View More';
+                    } else {
+                        container.classList.add('is-expanded');
+                        tableToggleBtn.classList.add('is-expanded');
+                        altCardsExtra.forEach(c => {
+                            c.classList.add('is-expanded-card');
+                            c.style.setProperty('display', 'flex', 'important');
+                        });
+                        textSpan.textContent = 'View Less';
+                    }
+                    return;
+                }
+
+                // 6. Alternate Universities Accordion Course List
+                const altCourseList = container.querySelector('.sode-alt-courses-list');
+                if (altCourseList) {
+                    const isHidden = altCourseList.style.display === 'none' || window.getComputedStyle(altCourseList).display === 'none';
+                    altCourseList.style.display = isHidden ? 'block' : 'none';
+                    tableToggleBtn.classList.toggle('active', isHidden);
+                    return;
+                }
+
+                // 7. Generic Fallback for any tbody.extra-rows or tr.extra-row
+                const genericExtra = container.querySelector('tbody[class*="extra"], tr[class*="extra"]');
+                if (genericExtra) {
+                    const isHidden = genericExtra.style.display === 'none' || window.getComputedStyle(genericExtra).display === 'none';
+                    container.querySelectorAll('tbody[class*="extra"], tr[class*="extra"]').forEach(el => {
+                        el.style.display = isHidden ? (el.tagName === 'TBODY' ? 'table-row-group' : 'table-row') : 'none';
+                    });
+                    const curTxt = tableToggleBtn.textContent.trim().toLowerCase();
+                    if (curTxt.includes('more')) {
+                        tableToggleBtn.textContent = tableToggleBtn.textContent.replace(/more/i, 'Less');
+                    } else if (curTxt.includes('less')) {
+                        tableToggleBtn.textContent = tableToggleBtn.textContent.replace(/less/i, 'More');
+                    }
+                    return;
+                }
+            }
+        }
+
+        // F. Close Any Active Modal
         if (e.target.closest('.sode-modal-close, .sode-modal-overlay, .des-popup-close-btn, .main-popup-overlay')) {
             if (e.target.classList.contains('sode-modal-overlay') || e.target.classList.contains('main-popup-overlay') || e.target.closest('.sode-modal-close') || e.target.closest('.des-popup-close-btn')) {
                 document.querySelectorAll('.sode-modal-overlay, .main-popup-overlay').forEach(o => o.classList.remove('active'));
@@ -970,7 +1123,7 @@
             }
         }
 
-        // F. Zero Scroll-Jump Armor for bare '#' links
+        // G. Zero Scroll-Jump Armor for bare '#' links
         const a = e.target.closest('a');
         if (a) {
             const href = (a.getAttribute('href') || '').trim();

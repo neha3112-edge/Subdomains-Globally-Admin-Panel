@@ -523,6 +523,16 @@ if ($component === 'batch') {
                     $keys_map['[UNI_SHORT_NAME]']        = $u_short;
                     $keys_map['{UNI}']                   = $u_short;
                     $keys_map['[UNI]']                   = $u_short;
+
+                    if (function_exists('sode_courses_list_render')) {
+                        $c_list = sode_courses_list_render(['uni' => $uni_slug, 'and' => 'true']);
+                        if (!empty($c_list)) {
+                            $keys_map['{UNIVERSITY_COURSES_LIST}'] = $c_list;
+                            $keys_map['[UNIVERSITY_COURSES_LIST]'] = $c_list;
+                            $keys_map['{COURSES_LIST}']            = $c_list;
+                            $keys_map['[COURSES_LIST]']            = $c_list;
+                        }
+                    }
                 }
             } catch (Exception $e) {}
         }
