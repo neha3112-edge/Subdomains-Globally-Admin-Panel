@@ -59,6 +59,21 @@
         return false;
     });
 
+    // Intercept local WordPress get_lead_token to eliminate 400 Bad Request error when plugin is deactivated
+    const _origFetch = window.fetch;
+    window.fetch = function (resource, init) {
+        const urlStr = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
+        if (urlStr.indexOf('admin-ajax.php') !== -1 && urlStr.indexOf('action=get_lead_token') !== -1) {
+            const token = window.sodeSessionToken || ('tok_' + Math.random().toString(36).substring(2) + Date.now().toString(36));
+            window.sodeSessionToken = token;
+            return Promise.resolve(new Response(JSON.stringify({ success: true, data: token }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }));
+        }
+        return _origFetch.apply(this, arguments);
+    };
+
     // 1. Detect University Slug from Subdomain
     function getUniSlug() {
         const host = window.location.hostname.toLowerCase();
