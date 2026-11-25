@@ -1,5 +1,5 @@
 <!-- ==================================================== -->
-<!-- 🚀 SODE Central Universal Client Engine (v9.0 Ultra Fast & Isolated Banners) -->
+<!-- 🚀 SODE Central Universal Client Engine (v9.0 Ultra Fast & WhatsApp Widget) -->
 <!-- Copy-paste this block into WordPress Code Snippets / WPCode -->
 <!-- Location: Header or Footer (Run Everywhere - JavaScript Snippet) -->
 <!-- ==================================================== -->
@@ -7,6 +7,8 @@
 <!-- 1. Resource Hints for Instant Network Handshake -->
 <link rel="preconnect" href="https://admin.distanceeducationschool.com" crossorigin>
 <link rel="dns-prefetch" href="https://admin.distanceeducationschool.com">
+<link rel="preconnect" href="https://waw.gallabox.com" crossorigin>
+<link rel="dns-prefetch" href="https://waw.gallabox.com">
 
 <!-- 2. Safe Anti-Flash Armor (Only unhydrated shortcodes hidden until rendered) -->
 <style id="sode-anti-flash" data-nowprocket="1" data-no-optimize="1">
@@ -136,6 +138,52 @@
     // 4. Early Modals Preload
     const earlyModalsPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=popup_modals&uni=${encodeURIComponent(uniSlug)}`)
         .then(res => res.text()).catch(() => null);
+
+    // 5. Early Gallabox WhatsApp Floating Widget Preload & 0ms Instant Cache
+    const widgetCacheKey = storagePrefix + 'gallabox_widget';
+    let cachedWidget = null;
+    try {
+        cachedWidget = localStorage.getItem(widgetCacheKey);
+    } catch (e) {}
+
+    const earlyWidgetPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=gallabox_widget&uni=${encodeURIComponent(uniSlug)}`)
+        .then(res => res.text())
+        .then(html => {
+            if (html && html.trim()) {
+                try {
+                    localStorage.setItem(widgetCacheKey, html);
+                } catch (e) {}
+                injectGallaboxWidget(html);
+            }
+            return html;
+        })
+        .catch(() => null);
+
+    function injectGallaboxWidget(html) {
+        if (!html || !html.trim() || window.gbwawc || document.getElementById('sode-gallabox-widget-wrap')) return;
+        if (!document.body) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => injectGallaboxWidget(html));
+            } else {
+                window.addEventListener('load', () => injectGallaboxWidget(html));
+            }
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.id = 'sode-gallabox-widget-wrap';
+        wrap.innerHTML = html;
+        document.body.appendChild(wrap);
+        runScripts(wrap);
+    }
+
+    // Microsecond 0 instant render from cache if available
+    if (cachedWidget) {
+        if (document.body) {
+            injectGallaboxWidget(cachedWidget);
+        } else {
+            document.addEventListener('DOMContentLoaded', () => injectGallaboxWidget(cachedWidget));
+        }
+    }
 
     // Comprehensive list of known shortcodes
     const knownShortcodes = [
@@ -593,6 +641,43 @@
         });
     }
 
+    // Preload modals into DOM during idle
+    if (window.requestIdleCallback) {
+        requestIdleCallback(() => ensureModalsInDOM());
+    } else {
+        setTimeout(() => ensureModalsInDOM(), 1500);
+    }
+
+    // Fallback Floating WhatsApp Button (Zero Dependencies, Activates if Gallabox is Blocked/Slow)
+    setTimeout(function () {
+        if (document.querySelector('iframe[src*="gallabox"], .gbwawc-widget, [class*="gallabox"]') || document.getElementById('sode-fallback-whatsapp-widget')) {
+            return;
+        }
+        const phone = '917065777755';
+        const uniName = activeKeys['{UNIVERSITY_NAME}'] || activeKeys['{UNI}'] || 'Dayananda Sagar University';
+        const msg = encodeURIComponent(`Start Your ${uniName} Online Counseling with an Expert Now`);
+        const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
+
+        const fallback = document.createElement('div');
+        fallback.id = 'sode-fallback-whatsapp-widget';
+        fallback.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999990;display:flex;align-items:center;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
+        fallback.innerHTML = `
+            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:flex;align-items:center;gap:10px;">
+                <span style="background:#ffffff;color:#1e293b;font-size:14px;font-weight:600;padding:7px 14px;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,0.18);position:relative;display:inline-block;white-space:nowrap;">
+                    Get Help
+                    <span style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:7px solid #ffffff;"></span>
+                </span>
+                <span style="position:relative;width:60px;height:60px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(37,211,102,0.4);transition:transform 0.2s ease;">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.82 2.791.82 3.181 0 5.768-2.587 5.768-5.766.001-3.187-2.575-5.77-5.768-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.101.005.24-.038.376.289.144.346.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+                    <span style="position:absolute;top:-2px;right:-2px;background:#e11d48;color:#ffffff;font-size:12px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #ffffff;box-shadow:0 2px 5px rgba(0,0,0,0.2);">1</span>
+                </span>
+            </a>
+        `;
+        if (document.body) {
+            document.body.appendChild(fallback);
+        }
+    }, 3500);
+
     function openCounselingModal(courseName) {
         ensureModalsInDOM(() => {
             const overlay = document.getElementById('counselingFormPopupOverlay');
@@ -751,6 +836,13 @@
                 modalWrap.innerHTML = modalsHtml;
                 document.body.appendChild(modalWrap);
                 runScripts(modalWrap);
+            }
+
+            // Ensure WhatsApp Floating Widget is active
+            if (!window.gbwawc && !document.getElementById('sode-gallabox-widget-wrap')) {
+                earlyWidgetPromise.then(widgetHtml => {
+                    if (widgetHtml) injectGallaboxWidget(widgetHtml);
+                });
             }
 
             // Final Key Sweep on Whole Page
@@ -959,4 +1051,5 @@
         observer.disconnect();
     });
 })();
+
 </script>

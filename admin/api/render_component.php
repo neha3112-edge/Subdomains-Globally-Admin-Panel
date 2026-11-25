@@ -417,6 +417,10 @@ function sode_render_single_component_internal($component, $params = []) {
             if (function_exists('sode_legal_popups_render')) {
                 echo sode_legal_popups_render($params);
             }
+            // Include Gallabox WhatsApp Floating Widget
+            if (function_exists('sode_gallabox_widget_render')) {
+                echo sode_gallabox_widget_render($params);
+            }
             break;
 
         case 'gallabox_widget':

@@ -139,11 +139,15 @@ function getParameterByName(name) {
   return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
-var h = d.getElementsByTagName(s)[0],
+var h = d.getElementsByTagName(s)[0] || d.head || d.body,
 j = d.createElement(s);
 j.async = true;
 j.src = u + "/whatsapp-widget.min.js?_=" + Math.random();
-h.parentNode.insertBefore(j, h);
+if (h && h.parentNode) {
+  h.parentNode.insertBefore(j, h);
+} else if (d.body) {
+  d.body.appendChild(j);
+}
 })(window, document, "script", "<?php echo $js_cdn_url; ?>");
 </script>
         <?php
