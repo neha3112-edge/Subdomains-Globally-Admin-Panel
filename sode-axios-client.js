@@ -992,9 +992,110 @@
             return;
         }
 
-        // E. Table Expand / Collapse Toggles ("Read More / Less", "View More / Less")
+        // E. Alternate Universities: "View course List" Accordion Dropdown
+        const altCourseBtn = e.target.closest('.sode-toggle-courses, .sode-alt-btn-courses');
+        if (altCourseBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const targetId = altCourseBtn.getAttribute('data-target') || altCourseBtn.dataset.target || '';
+            const wrap = (targetId ? document.getElementById(targetId) : null)
+                || (altCourseBtn.closest('.sode-alt-card') ? altCourseBtn.closest('.sode-alt-card').querySelector('.sode-alt-courses-wrap') : null);
+
+            if (wrap) {
+                const isOpen = wrap.classList.contains('is-open');
+                if (isOpen) {
+                    wrap.classList.remove('is-open');
+                    altCourseBtn.classList.remove('is-active');
+                    const span = altCourseBtn.querySelector('span');
+                    if (span) span.textContent = 'View course List';
+                } else {
+                    wrap.classList.add('is-open');
+                    altCourseBtn.classList.add('is-active');
+                    const span = altCourseBtn.querySelector('span');
+                    if (span) span.textContent = 'Hide course List';
+                }
+            }
+            return;
+        }
+
+        // F. Alternate Universities: "View More / View Less" Cards Toggle
+        const altViewMoreBtn = e.target.closest('.sode-alt-view-more-btn');
+        if (altViewMoreBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const targetId = altViewMoreBtn.getAttribute('data-target') || altViewMoreBtn.dataset.target || '';
+            const container = (targetId ? document.getElementById(targetId) : null) || altViewMoreBtn.closest('.sode-alt-container');
+            if (container) {
+                const extraCards = container.querySelectorAll('.sode-alt-card-extra');
+                if (extraCards.length > 0) {
+                    const isExpanded = container.classList.contains('is-expanded') || altViewMoreBtn.classList.contains('is-expanded');
+                    const textSpan = altViewMoreBtn.querySelector('.sode-alt-view-more-text') || altViewMoreBtn;
+
+                    if (isExpanded) {
+                        container.classList.remove('is-expanded');
+                        altViewMoreBtn.classList.remove('is-expanded');
+                        extraCards.forEach(card => {
+                            card.classList.remove('is-expanded-card');
+                            card.style.setProperty('display', 'none', 'important');
+                        });
+                        textSpan.textContent = 'View More';
+
+                        const rect = container.getBoundingClientRect();
+                        if (rect.top < 0) {
+                            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    } else {
+                        container.classList.add('is-expanded');
+                        altViewMoreBtn.classList.add('is-expanded');
+                        extraCards.forEach(card => {
+                            card.classList.add('is-expanded-card');
+                            card.style.setProperty('display', 'block', 'important');
+                        });
+                        textSpan.textContent = 'View Less';
+                    }
+                }
+            }
+            return;
+        }
+
+        // G. Alternate Universities: View Sample Degree Modal
+        const sampleBtn = e.target.closest('.sode-open-sample-modal, .sode-alt-sample-btn');
+        if (sampleBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const sampleModal = document.getElementById('sodeAltSampleModal');
+            const sampleModalTitle = document.getElementById('sodeSampleModalTitle');
+            const sampleModalContent = document.getElementById('sodeSampleModalContent');
+            const uniName = sampleBtn.dataset.uniName || sampleBtn.getAttribute('data-uni-name') || 'University';
+            const sampleImg = sampleBtn.dataset.sampleImg || sampleBtn.getAttribute('data-sample-img') || '';
+
+            if (sampleModal && sampleModalContent) {
+                if (sampleModalTitle) sampleModalTitle.textContent = uniName + ' - Sample Degree';
+                if (sampleImg && sampleImg.trim() !== '') {
+                    sampleModalContent.innerHTML = `<img src="${sampleImg}" alt="${uniName} Sample Degree" class="sode-degree-img is-loaded" style="width:100%;height:auto;display:block;border-radius:8px;">`;
+                } else {
+                    sampleModalContent.innerHTML = `<div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 15px;">Sample Degree image for <strong>${uniName}</strong> will be updated soon.</div>`;
+                }
+                sampleModal.classList.add('is-visible');
+                document.body.style.overflow = 'hidden';
+            }
+            return;
+        }
+
+        if (e.target.closest('.sode-alt-modal-close, .sode-close-modal') || (e.target.classList && e.target.classList.contains('sode-alt-modal-overlay'))) {
+            const sampleModal = document.getElementById('sodeAltSampleModal');
+            if (sampleModal) {
+                sampleModal.classList.remove('is-visible');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // H. Inner Page Tables Expand / Collapse Toggles
         const tableToggleBtn = e.target.closest(
-            '.job-roles-table-toggle-btn, .course-table-toggle-btn, .sode-uni-fees-toggle-btn, .sode-elig-view-more-btn, .sode-toggle-courses, .sode-alt-btn-courses, .sode-alt-view-more-btn, [data-action="toggle-table-rows"]'
+            '.job-roles-table-toggle-btn, .course-table-toggle-btn, .sode-uni-fees-toggle-btn, .sode-elig-view-more-btn, [data-action="toggle-table-rows"]'
         );
         if (tableToggleBtn) {
             e.preventDefault();
@@ -1003,12 +1104,12 @@
             const targetId = tableToggleBtn.getAttribute('data-target') || tableToggleBtn.dataset.target || '';
             let container = targetId ? document.getElementById(targetId) : null;
             if (!container) {
-                container = tableToggleBtn.closest('.job-roles-table-wrapper, .course-table-wrapper, .sode-table-wrap, .sode-courses-wrapper, .sode-alt-wrapper, .sode-alt-container, .sode-rendered-component');
+                container = tableToggleBtn.closest('.job-roles-table-wrapper, .course-table-wrapper, .sode-table-wrap, .sode-courses-wrapper, .sode-rendered-component');
             }
             if (!container) {
                 let curr = tableToggleBtn.parentElement;
                 while (curr && curr !== document.body) {
-                    if (curr.querySelector('table, .job-roles-table-extra-rows, .course-table-extra-rows, .sode-uni-fees-extra-rows, .sode-elig-row-extra, .sode-alt-card-extra')) {
+                    if (curr.querySelector('table, .job-roles-table-extra-rows, .course-table-extra-rows, .sode-uni-fees-extra-rows, .sode-elig-row-extra')) {
                         container = curr;
                         break;
                     }
@@ -1063,41 +1164,7 @@
                     return;
                 }
 
-                // 5. Alternate Universities Cards View More
-                const altCardsExtra = container.querySelectorAll('.sode-alt-card-extra');
-                if (altCardsExtra.length > 0) {
-                    const isExpanded = container.classList.contains('is-expanded') || tableToggleBtn.classList.contains('is-expanded');
-                    const textSpan = tableToggleBtn.querySelector('.sode-alt-view-more-text') || tableToggleBtn;
-                    if (isExpanded) {
-                        container.classList.remove('is-expanded');
-                        tableToggleBtn.classList.remove('is-expanded');
-                        altCardsExtra.forEach(c => {
-                            c.classList.remove('is-expanded-card');
-                            c.style.setProperty('display', 'none', 'important');
-                        });
-                        textSpan.textContent = 'View More';
-                    } else {
-                        container.classList.add('is-expanded');
-                        tableToggleBtn.classList.add('is-expanded');
-                        altCardsExtra.forEach(c => {
-                            c.classList.add('is-expanded-card');
-                            c.style.setProperty('display', 'flex', 'important');
-                        });
-                        textSpan.textContent = 'View Less';
-                    }
-                    return;
-                }
-
-                // 6. Alternate Universities Accordion Course List
-                const altCourseList = container.querySelector('.sode-alt-courses-list');
-                if (altCourseList) {
-                    const isHidden = altCourseList.style.display === 'none' || window.getComputedStyle(altCourseList).display === 'none';
-                    altCourseList.style.display = isHidden ? 'block' : 'none';
-                    tableToggleBtn.classList.toggle('active', isHidden);
-                    return;
-                }
-
-                // 7. Generic Fallback for any tbody.extra-rows or tr.extra-row
+                // 5. Generic Fallback for any tbody.extra-rows or tr.extra-row
                 const genericExtra = container.querySelector('tbody[class*="extra"], tr[class*="extra"]');
                 if (genericExtra) {
                     const isHidden = genericExtra.style.display === 'none' || window.getComputedStyle(genericExtra).display === 'none';

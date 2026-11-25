@@ -817,14 +817,15 @@ if (!function_exists('sode_alternate_universities_render')) {
                 color: #0c2340;
                 margin: 0 0 10px 0;
                 line-height: 1.3;
+                padding-right: 170px;
             }
 
             .sode-alt-uni-desc {
-                font-size: 13px;
+                font-size: 13.5px;
                 color: #374151;
                 line-height: 1.6;
                 margin: 0 0 14px 0;
-                padding-right: 150px;
+                padding-right: 0px;
             }
 
             .sode-alt-meta-row {
@@ -1001,6 +1002,10 @@ if (!function_exists('sode_alternate_universities_render')) {
             /* Responsive Breakpoints */
             @media (max-width: 900px) {
                 .sode-alt-info-box {
+                    padding-right: 0;
+                }
+
+                .sode-alt-uni-title {
                     padding-right: 0;
                 }
 
