@@ -86,6 +86,17 @@ if (!is_array($json_input)) {
 $component = trim($_GET['component'] ?? ($json_input['component'] ?? ($_POST['component'] ?? 'banner')));
 $params = array_merge($_GET, $_POST, $json_input);
 
+// Handle lead token generation for client-side JS engine
+if ($component === 'get_lead_token' || (isset($_GET['action']) && $_GET['action'] === 'get_lead_token')) {
+    header('Content-Type: application/json; charset=utf-8');
+    $token = bin2hex(random_bytes(16));
+    if (class_exists('Sode_Redis') && Sode_Redis::isAvailable()) {
+        Sode_Redis::set('lead_token_' . $token, '1', 86400);
+    }
+    echo json_encode(['success' => true, 'data' => $token]);
+    exit;
+}
+
 // Handle direct lead submission from client-side JS engine
 if ($component === 'send_lead' || (isset($_POST['action']) && $_POST['action'] === 'send_lead') || (isset($params['action']) && $params['action'] === 'send_lead')) {
     header('Content-Type: application/json; charset=utf-8');

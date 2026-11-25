@@ -15,6 +15,18 @@
     'use strict';
 
     const BASE_URL = 'https://admin.distanceeducationschool.com';
+    window.SODE_BASE_URL = BASE_URL;
+
+    // Early Lead Token Preload
+    let earlyTokenPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=get_lead_token`)
+        .then(res => res.json())
+        .then(res => {
+            if (res && res.success) {
+                window.sodeSessionToken = res.data;
+            }
+            return res;
+        })
+        .catch(() => null);
 
     // Suppress Browser PWA "Install App" Icon in Address Bar
     window.addEventListener('beforeinstallprompt', function (e) {
@@ -804,33 +816,50 @@
             btn.innerText = 'Submitting...';
         }
 
+        const formName = form.dataset.formName || form.querySelector('input[name="form_name"]')?.value || 'Lead Form';
         const formData = new FormData(form);
+        const countryCode = form.querySelector('.country_code')?.value || '+91';
+        const rawPhone = phoneInput ? phoneInput.value.replace(/[^0-9]/g, '') : '';
+        formData.set('phone', countryCode + rawPhone);
         formData.append('uni_slug', uniSlug);
+        formData.append('form_name', formName);
         formData.append('page_url', window.location.href);
 
         fetch(`${BASE_URL}/admin/api/render_component.php?component=send_lead`, {
             method: 'POST',
+            headers: {
+                'X-Lead-Token': window.sodeSessionToken || ''
+            },
             body: formData
         })
         .then(res => res.json())
         .then(data => {
-            if (btn) {
-                btn.innerText = 'Submitted Successfully ✓';
-                btn.style.backgroundColor = '#16a34a';
-            }
-            setTimeout(() => {
-                document.querySelectorAll('.sode-modal-overlay, .main-popup-overlay').forEach(o => o.classList.remove('active'));
-                document.body.style.overflow = '';
-                form.reset();
+            if (data && data.success) {
+                if (btn) {
+                    btn.innerText = 'Submitted Successfully ✓';
+                    btn.style.backgroundColor = '#16a34a';
+                }
+
+                // Redirect to Thank You page
+                if (formName.includes('Brochure') || form.classList.contains('popup-brochure-form') || form.closest('#brochureFormPopupOverlay')) {
+                    window.location.href = '/thank-you?download_brochure=1';
+                } else if (formName.includes('Compare')) {
+                    window.open('https://distanceeducationschool.com/compare-university/', '_blank');
+                    window.location.href = '/thank-you';
+                } else {
+                    window.location.href = '/thank-you';
+                }
+            } else {
+                alert((data && data.data) ? data.data : 'Something went wrong. Please try again.');
                 if (btn) {
                     btn.disabled = false;
                     btn.innerText = 'Submit';
-                    btn.style.backgroundColor = '';
                 }
-            }, 1500);
+            }
         })
         .catch(err => {
             console.error('Lead error:', err);
+            alert('Submission failed. Please check your connection.');
             if (btn) {
                 btn.disabled = false;
                 btn.innerText = 'Submit';

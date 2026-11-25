@@ -211,6 +211,103 @@ if (function_exists('add_action')) {
     add_action('wp_ajax_nopriv_send_lead', 'sode_send_lead_to_crm');
 }
 
+if (!function_exists('sode_generate_lead_token')) {
+    function sode_generate_lead_token()
+    {
+        $token = bin2hex(random_bytes(16));
+        if (function_exists('set_transient')) {
+            set_transient('lead_token_' . $token, true, 86400);
+        }
+        if (function_exists('wp_send_json_success')) {
+            wp_send_json_success($token);
+        } else {
+            echo json_encode(['success' => true, 'data' => $token]);
+            exit;
+        }
+    }
+}
+
+if (!function_exists('sode_http_post_json')) {
+    function sode_http_post_json($url, $data, $headers = [])
+    {
+        if (empty($url)) return false;
+        $payload = is_string($data) ? $data : json_encode($data);
+
+        // 1. Prefer cURL
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            $formatted_headers = [];
+            $has_content_type = false;
+            foreach ($headers as $k => $v) {
+                if (strtolower($k) === 'content-type') $has_content_type = true;
+                $formatted_headers[] = "$k: $v";
+            }
+            if (!$has_content_type) {
+                $formatted_headers[] = "Content-Type: application/json";
+            }
+
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_HTTPHEADER => $formatted_headers,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 15,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_FOLLOWLOCATION => true
+            ]);
+            $response = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+            curl_close($ch);
+            return [
+                'code' => $code,
+                'body' => $response,
+                'error' => $err
+            ];
+        }
+
+        // 2. Fallback to wp_remote_post if in WordPress
+        if (function_exists('wp_remote_post')) {
+            $wp_res = wp_remote_post($url, [
+                'method' => 'POST',
+                'timeout' => 15,
+                'headers' => array_merge(['Content-Type' => 'application/json'], $headers),
+                'body' => $payload,
+            ]);
+            if (is_wp_error($wp_res)) {
+                return ['code' => 0, 'body' => '', 'error' => $wp_res->get_error_message()];
+            }
+            return [
+                'code' => wp_remote_retrieve_response_code($wp_res),
+                'body' => wp_remote_retrieve_body($wp_res),
+                'error' => ''
+            ];
+        }
+
+        // 3. Fallback to stream context
+        $ctx_headers = "Content-Type: application/json\r\n";
+        foreach ($headers as $k => $v) {
+            $ctx_headers .= "$k: $v\r\n";
+        }
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => $ctx_headers,
+                'content' => $payload,
+                'timeout' => 15,
+                'ignore_errors' => true
+            ],
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false
+            ]
+        ]);
+        $res = @file_get_contents($url, false, $context);
+        return ['code' => 200, 'body' => $res, 'error' => ''];
+    }
+}
+
 function sode_send_lead_to_crm()
 {
     // Token consume (one-time use)
@@ -326,25 +423,15 @@ function sode_send_lead_to_crm()
 
     error_log('🔵 [CRM] Sending data for ' . $uni_slug . ' to ' . $configured_crm_url . ': ' . json_encode($crm_data));
 
-    if (function_exists('wp_remote_post')) {
-        $crm_response = wp_remote_post($configured_crm_url, [
-            'method' => 'POST',
-            'timeout' => 15,
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'x-api-key' => $configured_crm_key,
-                'secret' => $configured_crm_secret
-            ],
-            'body' => json_encode($crm_data),
-        ]);
-
-        if (is_wp_error($crm_response)) {
-            error_log('🔵 [CRM] ❌ WP Error: ' . $crm_response->get_error_message());
-        } else {
-            $crm_code = wp_remote_retrieve_response_code($crm_response);
-            $crm_body = wp_remote_retrieve_body($crm_response);
-            error_log('🔵 [CRM] ✅ Status: ' . $crm_code . ' | Response: ' . $crm_body);
-        }
+    // 1. Dispatch to CRM
+    $crm_response = sode_http_post_json($configured_crm_url, $crm_data, [
+        'x-api-key' => $configured_crm_key,
+        'secret' => $configured_crm_secret
+    ]);
+    if (!empty($crm_response['error'])) {
+        error_log('🔵 [CRM] ❌ Error: ' . $crm_response['error']);
+    } else {
+        error_log('🔵 [CRM] ✅ Status: ' . ($crm_response['code'] ?? '') . ' | Response: ' . ($crm_response['body'] ?? ''));
     }
 
     // ============================================================
@@ -369,24 +456,13 @@ function sode_send_lead_to_crm()
 
     error_log('🟢 [BREVO] Sending data for ' . $uni_slug . ' to ' . $configured_brevo_url . ': ' . json_encode($brevo_data));
 
-    if (function_exists('wp_remote_post')) {
-        $brevo_response = wp_remote_post($configured_brevo_url, [
-            'method' => 'POST',
-            'timeout' => 15,
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'api-key' => $configured_brevo_key,
-            ],
-            'body' => json_encode($brevo_data),
-        ]);
-
-        if (is_wp_error($brevo_response)) {
-            error_log('🟢 [BREVO] ❌ WP Error: ' . $brevo_response->get_error_message());
-        } else {
-            $brevo_code = wp_remote_retrieve_response_code($brevo_response);
-            $brevo_body = wp_remote_retrieve_body($brevo_response);
-            error_log('🟢 [BREVO] ✅ Status: ' . $brevo_code . ' | Response: ' . $brevo_body);
-        }
+    $brevo_response = sode_http_post_json($configured_brevo_url, $brevo_data, [
+        'api-key' => $configured_brevo_key,
+    ]);
+    if (!empty($brevo_response['error'])) {
+        error_log('🟢 [BREVO] ❌ Error: ' . $brevo_response['error']);
+    } else {
+        error_log('🟢 [BREVO] ✅ Status: ' . ($brevo_response['code'] ?? '') . ' | Response: ' . ($brevo_response['body'] ?? ''));
     }
 
     // ============================================================
@@ -409,23 +485,11 @@ function sode_send_lead_to_crm()
 
         error_log('🟡 [GALLABOX WEBHOOK] Sending data for ' . $uni_slug . ': ' . json_encode($gallabox_webhook_data));
 
-        if (function_exists('wp_remote_post')) {
-            $gallabox_response = wp_remote_post($configured_gallabox_url, [
-                'method' => 'POST',
-                'timeout' => 15,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => json_encode($gallabox_webhook_data),
-            ]);
-
-            if (is_wp_error($gallabox_response)) {
-                error_log('🟡 [GALLABOX WEBHOOK] ❌ WP Error: ' . $gallabox_response->get_error_message());
-            } else {
-                $gallabox_code = wp_remote_retrieve_response_code($gallabox_response);
-                $gallabox_body = wp_remote_retrieve_body($gallabox_response);
-                error_log('🟡 [GALLABOX WEBHOOK] ✅ Status: ' . $gallabox_code . ' | Response: ' . $gallabox_body);
-            }
+        $gallabox_response = sode_http_post_json($configured_gallabox_url, $gallabox_webhook_data);
+        if (!empty($gallabox_response['error'])) {
+            error_log('🟡 [GALLABOX WEBHOOK] ❌ Error: ' . $gallabox_response['error']);
+        } else {
+            error_log('🟡 [GALLABOX WEBHOOK] ✅ Status: ' . ($gallabox_response['code'] ?? '') . ' | Response: ' . ($gallabox_response['body'] ?? ''));
         }
     }
 
@@ -800,18 +864,28 @@ function custom_lead_form_shortcode($atts = [])
             // ================================================
             // ✅ TOKEN
             // ================================================
-            let sessionToken = "";
+            let sessionToken = window.sodeSessionToken || "";
 
             function loadToken() {
-                return fetch("/wp-admin/admin-ajax.php?action=get_lead_token")
+                const baseUrl = window.SODE_BASE_URL || (window.location.hostname.includes('distanceeducationschool.com') ? 'https://admin.distanceeducationschool.com' : '');
+                const tokenUrl = baseUrl
+                    ? `${baseUrl}/admin/api/render_component.php?component=get_lead_token`
+                    : '/wp-admin/admin-ajax.php?action=get_lead_token';
+
+                return fetch(tokenUrl)
                     .then(res => res.json())
                     .then(res => {
-                        if (res.success) sessionToken = res.data;
+                        if (res && res.success) {
+                            sessionToken = res.data;
+                            window.sodeSessionToken = res.data;
+                        }
                     })
-                    .catch(() => console.error("Token load failed"));
+                    .catch(() => {});
             }
 
-            loadToken();
+            if (!sessionToken) {
+                loadToken();
+            }
 
             // ================================================
             // ✅ UTM PARSER
@@ -931,10 +1005,15 @@ function custom_lead_form_shortcode($atts = [])
                     console.log(`   ➡️ ${key}: ${value}`);
                 }
 
-                fetch("/wp-admin/admin-ajax.php", {
+                const baseUrl = window.SODE_BASE_URL || (window.location.hostname.includes('distanceeducationschool.com') ? 'https://admin.distanceeducationschool.com' : '');
+                const targetUrl = baseUrl 
+                    ? `${baseUrl}/admin/api/render_component.php?component=send_lead`
+                    : '/wp-admin/admin-ajax.php';
+
+                fetch(targetUrl, {
                     method: "POST",
                     headers: {
-                        "X-Lead-Token": sessionToken
+                        "X-Lead-Token": sessionToken || window.sodeSessionToken || ""
                     },
                     body: formData
                 })
