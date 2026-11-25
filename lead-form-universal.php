@@ -393,6 +393,29 @@ function sode_send_lead_to_crm()
     $utm_content = sanitize_text_field($_POST['utm_content'] ?? '');
     $page_url = function_exists('esc_url_raw') ? esc_url_raw($_POST['page_url'] ?? '') : filter_var($_POST['page_url'] ?? '', FILTER_SANITIZE_URL);
 
+    // ✅ Fallback: If page_url has UTM query parameters, extract and prioritize them
+    if (!empty($page_url)) {
+        $parsed_url = parse_url($page_url);
+        if (!empty($parsed_url['query'])) {
+            parse_str($parsed_url['query'], $url_query_params);
+            if ((empty($_POST['utm_source']) || $_POST['utm_source'] === 'Organic') && !empty($url_query_params['utm_source'])) {
+                $utm_source = sanitize_text_field($url_query_params['utm_source']);
+            }
+            if ((empty($_POST['utm_medium']) || strpos($_POST['utm_medium'], 'Organic') !== false) && !empty($url_query_params['utm_medium'])) {
+                $utm_medium = sanitize_text_field($url_query_params['utm_medium']);
+            }
+            if ((empty($_POST['utm_campaign']) || strpos($_POST['utm_campaign'], 'Organic') !== false) && !empty($url_query_params['utm_campaign'])) {
+                $utm_campaign = sanitize_text_field($url_query_params['utm_campaign']);
+            }
+            if (empty($_POST['utm_term']) && !empty($url_query_params['utm_term'])) {
+                $utm_term = sanitize_text_field($url_query_params['utm_term']);
+            }
+            if (empty($_POST['utm_content']) && !empty($url_query_params['utm_content'])) {
+                $utm_content = sanitize_text_field($url_query_params['utm_content']);
+            }
+        }
+    }
+
     $ip_address = $_SERVER['HTTP_CF_CONNECTING_IP']
         ?? $_SERVER['HTTP_X_FORWARDED_FOR']
         ?? $_SERVER['REMOTE_ADDR']
