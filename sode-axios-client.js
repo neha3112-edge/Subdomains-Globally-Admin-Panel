@@ -313,6 +313,24 @@
         return { tag, params };
     }
 
+    // Helper: Mark all ancestor shortcode & widget containers as hydrated so anti-flash reveals them
+    function markAncestorsHydrated(target) {
+        if (!target) return;
+        let curr = target;
+        while (curr && curr !== document.body && curr !== document.documentElement) {
+            if (curr.classList && (
+                curr.classList.contains('elementor-widget-shortcode') ||
+                curr.classList.contains('elementor-shortcode') ||
+                curr.classList.contains('elementor-widget') ||
+                curr.classList.contains('elementor-widget-container') ||
+                curr.classList.contains('wp-block-shortcode')
+            )) {
+                curr.classList.add('sode-hydrated');
+            }
+            curr = curr.parentNode;
+        }
+    }
+
     // Helper: Safely insert rendered HTML replacing shortcode node or element
     function applyRenderedHTML(item, html) {
         if (!html) return;
@@ -341,15 +359,20 @@
             if (item.name === 'edu_banner' || item.name === 'banner') {
                 localStorage.setItem(storagePrefix + 'hero_banner_' + pagePath, html);
             }
+            if (item.name === 'universal_footer' || item.name === 'footer' || item.name === 'sode_footer' || item.name === 'footer_section') {
+                localStorage.setItem(storagePrefix + 'universal_footer', html);
+            }
         } catch (e) {}
 
         if (item.element && item.element.parentNode) {
             const wrapper = document.createElement('div');
             wrapper.className = 'sode-rendered-component sode-' + item.name + ' sode-hydrated';
             wrapper.innerHTML = html;
+            markAncestorsHydrated(item.element);
             item.element.parentNode.replaceChild(wrapper, item.element);
             item.element = wrapper;
             item.node = null;
+            markAncestorsHydrated(wrapper);
             runScripts(wrapper);
             return;
         }
@@ -357,8 +380,7 @@
         if (item.node && item.node.parentNode) {
             const parent = item.node.parentNode;
             const textVal = item.node.nodeValue;
-            const shortcodeContainer = parent.closest ? parent.closest('.elementor-shortcode, .wp-block-shortcode') : null;
-            if (shortcodeContainer) shortcodeContainer.classList.add('sode-hydrated');
+            markAncestorsHydrated(parent);
 
             if (textVal.trim() === item.raw.trim()) {
                 const wrapper = document.createElement('div');
@@ -372,6 +394,7 @@
                 }
                 item.element = wrapper;
                 item.node = null;
+                markAncestorsHydrated(wrapper);
                 runScripts(wrapper);
             } else {
                 const idx = textVal.indexOf(item.raw);
@@ -391,13 +414,14 @@
                     parent.replaceChild(frag, item.node);
                     item.element = span;
                     item.node = null;
+                    markAncestorsHydrated(span);
                     runScripts(span);
                 }
             }
         }
     }
 
-    // 5. Collect all shortcodes currently in the DOM
+    // 5. Collect all shortcodes currently in the DOM (Safe, unpolluted, de-duplicated)
     function collectShortcodes() {
         if (!document.body) return [];
 
@@ -410,6 +434,7 @@
             if (!parent) continue;
             const tag = parent.tagName;
             if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'NOSCRIPT') continue;
+            if (parent.classList && (parent.classList.contains('sode-hydrated') || parent.closest('.sode-hydrated'))) continue;
 
             const val = node.nodeValue;
             if (val && val.indexOf('[') !== -1 && val.indexOf(']') !== -1) {
@@ -426,7 +451,7 @@
 
         const elementorWidgets = document.querySelectorAll('.elementor-shortcode, .elementor-widget-shortcode .elementor-widget-container');
         elementorWidgets.forEach(el => {
-            if (el.dataset.sodeProcessed) return;
+            if (el.classList.contains('sode-hydrated') || el.closest('.sode-hydrated')) return;
             const txt = el.textContent.trim();
             if (txt.startsWith('[') && txt.endsWith(']')) {
                 const found = extractShortcodesFromText(txt);
@@ -436,12 +461,22 @@
                         raw: txt,
                         name: found[0].name
                     });
-                    el.dataset.sodeProcessed = '1';
                 }
             }
         });
 
-        return matchedItems;
+        // Deduplicate matchedItems
+        const seen = new Set();
+        const uniqueItems = [];
+        matchedItems.forEach(it => {
+            const key = it.element || it.node || it.raw;
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueItems.push(it);
+            }
+        });
+
+        return uniqueItems;
     }
 
     // 6. Fast DOM Global Keys Replacement ({UNIVERSITY_NAME}, [UNIVERSITY_NAME], {DSU_LOWER}, {UNI_LOWER})
@@ -554,6 +589,9 @@
                 let cachedHtml = localStorage.getItem(storagePrefix + 'comp_' + item.raw);
                 if (!cachedHtml && (item.name === 'edu_banner' || item.name === 'banner')) {
                     cachedHtml = localStorage.getItem(storagePrefix + 'hero_banner_' + pagePath);
+                }
+                if (!cachedHtml && (item.name === 'universal_footer' || item.name === 'footer' || item.name === 'sode_footer' || item.name === 'footer_section')) {
+                    cachedHtml = localStorage.getItem(storagePrefix + 'universal_footer');
                 }
 
                 if (cachedHtml) {
@@ -758,9 +796,14 @@
 
     // 10. High-Performance Parallel Execution Engine for Remaining Components
     let isBatchExecuting = false;
+    let hasPendingBatch = false;
     async function executeEngine() {
-        if (isBatchExecuting) return;
+        if (isBatchExecuting) {
+            hasPendingBatch = true;
+            return;
+        }
         isBatchExecuting = true;
+        hasPendingBatch = false;
 
         const startTime = performance.now();
         const matchedItems = collectShortcodes();
@@ -862,6 +905,13 @@
         } finally {
             isBatchExecuting = false;
             replaceDOMKeys(activeKeys);
+
+            // Re-check for any late-arriving shortcodes (e.g. footer at bottom of HTML)
+            const remaining = collectShortcodes();
+            if (hasPendingBatch || remaining.length > 0) {
+                hasPendingBatch = false;
+                setTimeout(executeEngine, 40);
+            }
         }
     }
 
@@ -1031,24 +1081,36 @@
     // 13. Instant Hero Mutation Detection
     function scanAndHydrateBanner() {
         if (!document.body && !document.documentElement) return;
-        const items = collectShortcodes();
-        const bItem = items.find(it => it.name === 'edu_banner' || it.name === 'banner');
-        if (bItem && !hydratedBanners.has(bItem.raw)) {
-            renderBannerPriority(bItem);
+        const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while ((node = walker.nextNode())) {
+            const val = node.nodeValue;
+            if (val && (val.indexOf('[edu_banner') !== -1 || val.indexOf('[banner') !== -1)) {
+                const found = extractShortcodesFromText(val);
+                const b = found.find(it => it.name === 'edu_banner' || it.name === 'banner');
+                if (b && !hydratedBanners.has(b.raw)) {
+                    renderBannerPriority({ node: node, raw: b.raw, name: b.name });
+                    return;
+                }
+            }
         }
     }
 
     scanAndHydrateBanner();
 
+    let mutationTimer = null;
     const observer = new MutationObserver(function () {
         if (hydratedBanners.size === 0) {
             scanAndHydrateBanner();
         }
-        if (!isBatchExecuting && document.body) {
-            const items = collectShortcodes();
-            if (items.length > 0) {
-                executeEngine();
-            }
+        if (document.body) {
+            if (mutationTimer) clearTimeout(mutationTimer);
+            mutationTimer = setTimeout(() => {
+                const items = collectShortcodes();
+                if (items.length > 0) {
+                    executeEngine();
+                }
+            }, 30);
         }
     });
 
@@ -1070,4 +1132,10 @@
         executeEngine();
         observer.disconnect();
     });
+
+    // Safety: Remove anti-flash stylesheet after 2.5s maximum timeout
+    setTimeout(() => {
+        const af = document.getElementById('sode-anti-flash');
+        if (af) af.remove();
+    }, 2500);
 })();
