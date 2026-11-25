@@ -17,6 +17,48 @@
     const BASE_URL = 'https://admin.distanceeducationschool.com';
     window.SODE_BASE_URL = BASE_URL;
 
+    // 0. Ensure Anti-Flash Armor style is immediately active in DOM
+    if (!document.getElementById('sode-anti-flash')) {
+        const afStyle = document.createElement('style');
+        afStyle.id = 'sode-anti-flash';
+        afStyle.setAttribute('data-nowprocket', '1');
+        afStyle.setAttribute('data-no-optimize', '1');
+        afStyle.textContent = `
+            .elementor-widget-shortcode:not(.sode-hydrated),
+            .elementor-widget-shortcode:not(.sode-hydrated) *,
+            .elementor-shortcode:not(.sode-hydrated),
+            .elementor-shortcode:not(.sode-hydrated) *,
+            .wp-block-shortcode:not(.sode-hydrated),
+            .wp-block-shortcode:not(.sode-hydrated) *,
+            [data-widget_type*="shortcode"]:not(.sode-hydrated),
+            [data-widget_type*="shortcode"]:not(.sode-hydrated) *,
+            [class*="shortcode"]:not(.sode-hydrated),
+            [class*="shortcode"]:not(.sode-hydrated) * {
+                visibility: hidden !important;
+                opacity: 0 !important;
+                font-size: 0 !important;
+                color: transparent !important;
+                line-height: 0 !important;
+            }
+            .sode-hydrated,
+            .sode-hydrated *,
+            .sode-rendered-component,
+            .sode-rendered-component *,
+            .sode-rendered-inline,
+            .sode-rendered-inline * {
+                visibility: visible !important;
+                opacity: 1 !important;
+                font-size: inherit;
+                color: inherit;
+                line-height: inherit;
+            }
+            .sode-rendered-inline {
+                display: inline !important;
+            }
+        `;
+        (document.head || document.documentElement).appendChild(afStyle);
+    }
+
     // Early Lead Token Preload
     let earlyTokenPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=get_lead_token`)
         .then(res => res.json())
@@ -634,16 +676,18 @@
             // Wipe raw shortcode text IMMEDIATELY (0ms) so user NEVER sees [edu_banner...] on screen
             const placeholder = document.createElement('div');
             placeholder.className = 'sode-rendered-component sode-edu_banner sode-hydrated';
-            placeholder.style.cssText = 'min-height:480px; width:100%;';
+            placeholder.style.cssText = 'min-height:500px; width:100%; background:linear-gradient(135deg, #0c2340 0%, #1e3a5f 100%); border-radius:12px; margin-bottom:24px;';
             if (bannerItem.node && bannerItem.node.parentNode) {
                 const parent = bannerItem.node.parentNode;
-                const shortcodeContainer = parent.closest ? parent.closest('.elementor-shortcode, .wp-block-shortcode') : null;
+                const shortcodeContainer = parent.closest ? parent.closest('.elementor-shortcode, .wp-block-shortcode, [data-widget_type*="shortcode"]') : null;
                 if (shortcodeContainer) shortcodeContainer.classList.add('sode-hydrated');
                 parent.replaceChild(placeholder, bannerItem.node);
                 bannerItem.element = placeholder;
                 bannerItem.node = null;
             } else if (bannerItem.element) {
                 bannerItem.element.classList.add('sode-hydrated');
+                bannerItem.element.innerHTML = '';
+                bannerItem.element.appendChild(placeholder);
             }
         }
 
@@ -1301,7 +1345,26 @@
     // 13. Instant Hero Mutation Detection
     function scanAndHydrateBanner() {
         if (!document.body && !document.documentElement) return;
-        const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT, null, false);
+        const root = document.body || document.documentElement;
+
+        // 1. Instant 0.01ms direct querySelector lookup
+        const candidates = root.querySelectorAll('.elementor-shortcode, [data-widget_type*="shortcode"] .elementor-widget-container, .wp-block-shortcode');
+        for (let i = 0; i < candidates.length; i++) {
+            const el = candidates[i];
+            if (el.classList.contains('sode-hydrated') || (el.closest && el.closest('.sode-hydrated'))) continue;
+            const txt = (el.textContent || '').trim();
+            if (txt.indexOf('[edu_banner') !== -1 || txt.indexOf('[banner') !== -1) {
+                const found = extractShortcodesFromText(txt);
+                const b = found.find(it => it.name === 'edu_banner' || it.name === 'banner');
+                if (b && !hydratedBanners.has(b.raw)) {
+                    renderBannerPriority({ element: el, raw: b.raw, name: b.name });
+                    return;
+                }
+            }
+        }
+
+        // 2. TreeWalker fallback for text nodes anywhere in DOM
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
         let node;
         while ((node = walker.nextNode())) {
             const val = node.nodeValue;
