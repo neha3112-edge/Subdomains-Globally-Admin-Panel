@@ -17,47 +17,48 @@
     const BASE_URL = 'https://admin.distanceeducationschool.com';
     window.SODE_BASE_URL = BASE_URL;
 
-    // 0. Ensure Anti-Flash Armor style is immediately active in DOM
-    if (!document.getElementById('sode-anti-flash')) {
-        const afStyle = document.createElement('style');
+    // 0. Ensure Anti-Flash Armor style is unconditionally active in DOM
+    let afStyle = document.getElementById('sode-anti-flash');
+    if (!afStyle) {
+        afStyle = document.createElement('style');
         afStyle.id = 'sode-anti-flash';
         afStyle.setAttribute('data-nowprocket', '1');
         afStyle.setAttribute('data-no-optimize', '1');
-        afStyle.textContent = `
-            .elementor-widget-shortcode:not(.sode-hydrated),
-            .elementor-widget-shortcode:not(.sode-hydrated) *,
-            .elementor-shortcode:not(.sode-hydrated),
-            .elementor-shortcode:not(.sode-hydrated) *,
-            .wp-block-shortcode:not(.sode-hydrated),
-            .wp-block-shortcode:not(.sode-hydrated) *,
-            [data-widget_type*="shortcode"]:not(.sode-hydrated),
-            [data-widget_type*="shortcode"]:not(.sode-hydrated) *,
-            [class*="shortcode"]:not(.sode-hydrated),
-            [class*="shortcode"]:not(.sode-hydrated) * {
-                visibility: hidden !important;
-                opacity: 0 !important;
-                font-size: 0 !important;
-                color: transparent !important;
-                line-height: 0 !important;
-            }
-            .sode-hydrated,
-            .sode-hydrated *,
-            .sode-rendered-component,
-            .sode-rendered-component *,
-            .sode-rendered-inline,
-            .sode-rendered-inline * {
-                visibility: visible !important;
-                opacity: 1 !important;
-                font-size: inherit;
-                color: inherit;
-                line-height: inherit;
-            }
-            .sode-rendered-inline {
-                display: inline !important;
-            }
-        `;
         (document.head || document.documentElement).appendChild(afStyle);
     }
+    afStyle.textContent = `
+        .elementor-widget-shortcode:not(.sode-hydrated),
+        .elementor-widget-shortcode:not(.sode-hydrated) *,
+        .elementor-shortcode:not(.sode-hydrated),
+        .elementor-shortcode:not(.sode-hydrated) *,
+        .wp-block-shortcode:not(.sode-hydrated),
+        .wp-block-shortcode:not(.sode-hydrated) *,
+        [data-widget_type*="shortcode"]:not(.sode-hydrated),
+        [data-widget_type*="shortcode"]:not(.sode-hydrated) *,
+        [class*="shortcode"]:not(.sode-hydrated),
+        [class*="shortcode"]:not(.sode-hydrated) * {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            font-size: 0 !important;
+            color: transparent !important;
+            line-height: 0 !important;
+        }
+        .sode-hydrated,
+        .sode-hydrated *,
+        .sode-rendered-component,
+        .sode-rendered-component *,
+        .sode-rendered-inline,
+        .sode-rendered-inline * {
+            visibility: visible !important;
+            opacity: 1 !important;
+            font-size: inherit;
+            color: inherit;
+            line-height: inherit;
+        }
+        .sode-rendered-inline {
+            display: inline !important;
+        }
+    `;
 
     // Early Lead Token Preload
     let earlyTokenPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=get_lead_token`)
@@ -427,6 +428,9 @@
             const parent = item.node.parentNode;
             const textVal = item.node.nodeValue;
             markAncestorsHydrated(parent);
+            if (parent.style && parent.style.visibility === 'hidden') {
+                parent.style.visibility = '';
+            }
 
             if (textVal.trim() === item.raw.trim()) {
                 const tag = isBlock ? 'div' : 'span';
@@ -488,13 +492,18 @@
             const val = node.nodeValue;
             if (val && val.indexOf('[') !== -1 && val.indexOf(']') !== -1) {
                 const found = extractShortcodesFromText(val);
-                found.forEach(sc => {
-                    matchedItems.push({
-                        node: node,
-                        raw: sc.raw,
-                        name: sc.name
+                if (found.length > 0) {
+                    if (parent && !parent.classList.contains('sode-hydrated') && val.trim().startsWith('[') && val.trim().endsWith(']')) {
+                        parent.style.visibility = 'hidden';
+                    }
+                    found.forEach(sc => {
+                        matchedItems.push({
+                            node: node,
+                            raw: sc.raw,
+                            name: sc.name
+                        });
                     });
-                });
+                }
             }
         }
 
@@ -673,19 +682,16 @@
             applyRenderedHTML(bannerItem, cached);
             replaceDOMKeys(activeKeys);
         } else {
-            // Wipe raw shortcode text IMMEDIATELY (0ms) so user NEVER sees [edu_banner...] on screen
+            // Wipe raw shortcode text IMMEDIATELY (0ms) with a transparent invisible placeholder (no dark blue void)
             const placeholder = document.createElement('div');
-            placeholder.className = 'sode-rendered-component sode-edu_banner sode-hydrated';
-            placeholder.style.cssText = 'min-height:500px; width:100%; background:linear-gradient(135deg, #0c2340 0%, #1e3a5f 100%); border-radius:12px; margin-bottom:24px;';
+            placeholder.className = 'sode-rendered-component sode-edu_banner';
+            placeholder.style.cssText = 'min-height:480px; width:100%; visibility:hidden;';
             if (bannerItem.node && bannerItem.node.parentNode) {
                 const parent = bannerItem.node.parentNode;
-                const shortcodeContainer = parent.closest ? parent.closest('.elementor-shortcode, .wp-block-shortcode, [data-widget_type*="shortcode"]') : null;
-                if (shortcodeContainer) shortcodeContainer.classList.add('sode-hydrated');
                 parent.replaceChild(placeholder, bannerItem.node);
                 bannerItem.element = placeholder;
                 bannerItem.node = null;
             } else if (bannerItem.element) {
-                bannerItem.element.classList.add('sode-hydrated');
                 bannerItem.element.innerHTML = '';
                 bannerItem.element.appendChild(placeholder);
             }
@@ -1415,10 +1421,4 @@
         executeEngine();
         observer.disconnect();
     });
-
-    // Safety: Remove anti-flash stylesheet after 2.5s maximum timeout
-    setTimeout(() => {
-        const af = document.getElementById('sode-anti-flash');
-        if (af) af.remove();
-    }, 2500);
 })();
