@@ -195,6 +195,13 @@ if (!function_exists('sode_server_universal_processor')) {
                 return strlen($b) - strlen($a);
             });
             $html = str_replace(array_keys($rendered_map), array_values($rendered_map), $html);
+
+            // Mark shortcode containers as hydrated so sode-anti-flash reveals them instantly
+            $html = str_replace(
+                ['elementor-widget-shortcode', 'elementor-shortcode', 'wp-block-shortcode'],
+                ['elementor-widget-shortcode sode-hydrated', 'elementor-shortcode sode-hydrated', 'wp-block-shortcode sode-hydrated'],
+                $html
+            );
         }
 
         // Step 5: Dynamically substitute all global admin keys

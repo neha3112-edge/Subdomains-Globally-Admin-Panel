@@ -109,6 +109,22 @@
         }
     `;
 
+    // Immediately reveal any server-rendered components
+    function unhideRenderedWidgets() {
+        const widgets = document.querySelectorAll('.elementor-widget-shortcode, .elementor-shortcode, .wp-block-shortcode, [data-widget_type*="shortcode"]');
+        widgets.forEach(el => {
+            if (el.classList.contains('sode-hydrated')) return;
+            const txt = (el.textContent || '').trim();
+            if ((!txt.startsWith('[') || !txt.endsWith(']')) || el.querySelector('.sode-rendered-component, .edu-banner-desktop, .sode-news-card-wrapper, .sode-courses-wrapper, .sode-footer-wrap, table, section, div')) {
+                el.classList.add('sode-hydrated');
+            }
+        });
+    }
+    unhideRenderedWidgets();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', unhideRenderedWidgets);
+    }
+
     // Early Lead Token Preload
     let earlyTokenPromise = fetch(`${BASE_URL}/admin/api/render_component.php?component=get_lead_token`)
         .then(res => res.json())
@@ -1470,6 +1486,13 @@
         executeEngine();
         observer.disconnect();
     });
+
+    // Failsafe: Remove anti-flash stylesheet after 1.5s so nothing stays hidden
+    setTimeout(() => {
+        const af = document.getElementById('sode-anti-flash');
+        if (af) af.remove();
+        unhideRenderedWidgets();
+    }, 1500);
 })();
 
 </script>
