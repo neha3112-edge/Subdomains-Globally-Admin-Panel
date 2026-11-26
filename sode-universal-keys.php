@@ -265,6 +265,22 @@ if (!function_exists('sode_server_universal_processor')) {
             $html = strtr($html, $protected);
         }
 
+        // Step 7: Automatically extract & inject Dynamic LCP Banner Image Preloads into <head>
+        if (strpos($html, '<head') !== false) {
+            $preload_tags = '';
+            // Extract desktop banner background URL
+            if (preg_match('/\.edu-banner-desktop\b[^{]*\{[^}]*background-image:\s*url\(["\']?([^"\')]+)["\']?\)/i', $html, $m_desk)) {
+                $preload_tags .= '<link rel="preload" as="image" href="' . esc_url($m_desk[1]) . '" fetchpriority="high" media="(min-width: 769px)">' . "\n";
+            }
+            // Extract mobile banner background URL
+            if (preg_match('/\.edu-banner-mobile\b[^{]*\{[^}]*background-image:\s*url\(["\']?([^"\')]+)["\']?\)/i', $html, $m_mob)) {
+                $preload_tags .= '<link rel="preload" as="image" href="' . esc_url($m_mob[1]) . '" fetchpriority="high" media="(max-width: 768px)">' . "\n";
+            }
+            if (!empty($preload_tags)) {
+                $html = preg_replace('/<head\b[^>]*>/i', '$0' . "\n" . $preload_tags, $html, 1);
+            }
+        }
+
         return $html;
     }
 }

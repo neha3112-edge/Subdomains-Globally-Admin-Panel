@@ -683,6 +683,30 @@
     }
 
     // 8. Dedicated Priority Hero Banner Pipeline (Per-page isolated & Instant 0ms Paint)
+    function injectBannerPreload(bannerHTML) {
+        if (!bannerHTML || !document.head) return;
+        const deskMatch = bannerHTML.match(/\.edu-banner-desktop\b[^{]*\{[^}]*background-image:\s*url\(["']?([^"')]+)["']?\)/i);
+        const mobMatch = bannerHTML.match(/\.edu-banner-mobile\b[^{]*\{[^}]*background-image:\s*url\(["']?([^"')]+)["']?\)/i);
+        if (deskMatch && !document.querySelector(`link[rel="preload"][href="${deskMatch[1]}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = deskMatch[1];
+            link.setAttribute('fetchpriority', 'high');
+            link.setAttribute('media', '(min-width: 769px)');
+            document.head.appendChild(link);
+        }
+        if (mobMatch && !document.querySelector(`link[rel="preload"][href="${mobMatch[1]}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = mobMatch[1];
+            link.setAttribute('fetchpriority', 'high');
+            link.setAttribute('media', '(max-width: 768px)');
+            document.head.appendChild(link);
+        }
+    }
+
     const hydratedBanners = new Set();
     function renderBannerPriority(bannerItem) {
         if (!bannerItem || hydratedBanners.has(bannerItem.raw)) return;
@@ -695,6 +719,7 @@
 
         if (cached) {
             // Instant 0ms paint from local cache
+            injectBannerPreload(cached);
             applyRenderedHTML(bannerItem, cached);
             replaceDOMKeys(activeKeys);
         } else {
@@ -726,6 +751,7 @@
         .then(html => {
             if (html && html.indexOf('edu-banner') !== -1) {
                 // If content is new or differed from old cache, update seamlessly
+                injectBannerPreload(html);
                 if (!cached || html !== cached) {
                     applyRenderedHTML(bannerItem, html);
                     replaceDOMKeys(activeKeys);
